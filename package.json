@@ -8,7 +8,7 @@
 	"description": "A class to help parse text files",
 	"main": "./StringInput.js",
 	"exports": {
-		".": "./StringInput.js"
+		".": "./src/StringInput.js"
 	},
 	"scripts": {
 		"build": "cls && coffee -c .",

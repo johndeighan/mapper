@@ -1,0 +1,40 @@
+{
+	"name": "@jdeighan/string-input",
+	"type": "module",
+	"engines": {
+		"node": ">=12.0.0"
+	},
+	"version": "1.0.0",
+	"description": "A class to help parse text files",
+	"main": "./StringInput.js",
+	"exports": {
+		".": "./StringInput.js"
+	},
+	"scripts": {
+		"build": "cls && coffee -c .",
+		"pretest": "cls && coffee -c .",
+		"test": "ava ./test/*.test.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/johndeighan/string-input.git"
+	},
+	"keywords": [
+		"coffeescript"
+	],
+	"author": "John Deighan",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/johndeighan/string-input/issues"
+	},
+	"homepage": "https://github.com/johndeighan/string-input#readme",
+	"devDependencies": {
+		"@jdeighan/ava-tester": "^1.0.2",
+		"ava": "^3.15.0",
+		"ava-tester": "^1.0.2",
+		"coffeescript": "^2.5.1"
+	},
+	"dependencies": {
+		"@jdeighan/coffee-utils": "^1.0.2"
+	}
+}

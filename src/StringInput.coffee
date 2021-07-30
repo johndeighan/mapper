@@ -41,6 +41,7 @@ export class StringInput
 
 		if filename
 			try
+				# --- We only want the bare filename
 				{base} = path.parse(filename)
 				@filename = base
 			catch
@@ -54,24 +55,23 @@ export class StringInput
 		for own ext, dir of @hIncludePaths
 			assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
 			assert fs.existsSync(dir), "dir #{dir} does not exist"
-		@lookahead = undef     # lookahead token
+		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
 
+	unget: (item) ->
+		debug 'UNGET:'
+		assert not @lookahead?
+		debug item, "Lookahead:"
+		@lookahead = item
+
 	peek: () ->
+		debug 'PEEK:'
 		if @lookahead?
 			debug "   return lookahead token"
 			return @lookahead
-		if (@lBuffer.length == 0)
-			debug "   return undef - at EOF"
-			return undef
-		line = @fetch()
-		result = @_mapped(line)
-		while not result? && (@lBuffer.length > 0)
-			line = @fetch()
-			result = @_mapped(line)
-		debug "   return '#{result}'"
-		@lookahead = result
-		return result
+		item = @get()
+		@unget(item)
+		return item
 
 	skip: () ->
 		debug 'SKIP:'
@@ -79,15 +79,7 @@ export class StringInput
 			debug "   undef lookahead token"
 			@lookahead = undef
 			return
-		if (@lBuffer.length == 0)
-			debug "   return - at EOF"
-			return
-		line = @fetch()
-		result = @_mapped(line)
-		while not result? && (@lBuffer.length > 0)
-			line = @fetch()
-			result = @_mapped(line)
-		debug "   return"
+		@get()
 		return
 
 	# --- Doesn't return anything

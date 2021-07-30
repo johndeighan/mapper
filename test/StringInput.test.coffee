@@ -8,6 +8,34 @@ import {AvaTester} from '@jdeighan/ava-tester'
 
 # ---------------------------------------------------------------------------
 
+(() ->
+	tester = new AvaTester()
+
+	input = new StringInput("""
+			abc
+			def
+			ghi
+			""")
+
+	item = input.peek()
+	tester.equal 21, item, 'abc'
+	item = input.peek()
+	tester.equal 23, item, 'abc'
+	item = input.get()
+	tester.equal 25, item, 'abc'
+	item = input.get()
+	tester.equal 27, item, 'def'
+	input.unget(item)
+	item = input.get()
+	tester.equal 30, item, 'def'
+	input.skip()
+	item = input.get()
+	tester.equal 33, item, undef
+
+	)()
+
+# ---------------------------------------------------------------------------
+
 class GatherTester extends AvaTester
 
 	transformValue: (input) ->
@@ -25,7 +53,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 28, new StringInput("""
+tester.equal 56, new StringInput("""
 		abc
 		def
 		"""), [
@@ -33,7 +61,7 @@ tester.equal 28, new StringInput("""
 		'def',
 		]
 
-tester.equal 36, new StringInput("""
+tester.equal 64, new StringInput("""
 		abc
 
 		def
@@ -43,7 +71,7 @@ tester.equal 36, new StringInput("""
 		'def',
 		]
 
-tester.equal 46, new StringInput("""
+tester.equal 74, new StringInput("""
 		abc
 
 		def
@@ -68,7 +96,7 @@ tester.equal 46, new StringInput("""
 		else
 			return 'x'
 
-	tester.equal 71, new StringInput("""
+	tester.equal 99, new StringInput("""
 			abc
 
 			def
@@ -91,7 +119,7 @@ tester.equal 46, new StringInput("""
 		else
 			return line
 
-	tester.equal 94, new StringInput("""
+	tester.equal 122, new StringInput("""
 			abc
 
 			def
@@ -122,7 +150,7 @@ tester.equal 46, new StringInput("""
 		else
 			return line
 
-	tester.equal 125, new StringInput("""
+	tester.equal 153, new StringInput("""
 			abc
 			#if x==y
 				def
@@ -152,7 +180,7 @@ tester.equal 46, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 155, new StringInput("""
+	tester.equal 183, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -185,7 +213,7 @@ tester.equal 46, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 188, new StringInput("""
+	tester.equal 216, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -228,7 +256,7 @@ tester.equal 46, new StringInput("""
 			hOptions.mapper = NewMapper
 			super content, hOptions
 
-	tester.equal 231, new NewInput("""
+	tester.equal 259, new NewInput("""
 			abc
 
 			def
@@ -242,7 +270,7 @@ tester.equal 46, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 245, new StringInput("""
+tester.equal 273, new StringInput("""
 		abc
 			#include title.md
 		def

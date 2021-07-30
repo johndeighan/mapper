@@ -1,36 +1,61 @@
 # StringInput.coffee
 
+import {strict as assert} from 'assert'
 import fs from 'fs'
+import path from 'path'
 import {
 	undef,
 	deepCopy,
 	stringToArray,
 	say,
+	pass,
 	debug,
 	sep_dash,
+	isString,
 	} from '@jdeighan/coffee-utils'
-import {splitLine, indentedStr} from '@jdeighan/coffee-utils/indent'
+import {splitLine, indentedStr, indentation} from '@jdeighan/coffee-utils/indent'
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
 
 export class StringInput
 
-	constructor: (
-			content,
-			@filename='unit test',
-			@mapper=null) ->
-		if typeof content == 'object'
+	constructor: (content, hOptions={}) ->
+		# --- Valid options:
+		#        filename
+		#        mapper
+		#        prefix        # auto-prepended to each defined ret val
+		#                      # from _mapped()
+		#        hIncludePaths    { <ext>: <dir>, ... }
+
+		{filename, mapper, prefix, hIncludePaths} = hOptions
+
+		if isString(content)
+			@lBuffer = stringToArray(content.trim())
+		else if isArray(content)
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
 		else
-			@lBuffer = stringToArray(content)
+			error "StringInput(): content must be array or string"
 		@lineNum = 0
 
-		@lookahead = undef     # lookahead token
+		if filename
+			try
+				{base} = path.parse(filename)
+				@filename = base
+			catch
+				@filename = filename
+		else
+			@filename = 'unit test'
 
-	eof: () ->
-		return not @peek()?
+		@mapper = mapper
+		@prefix = prefix || ''
+		@hIncludePaths = hOptions.hIncludePaths || {}
+		for own ext, dir of @hIncludePaths
+			assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
+			assert fs.existsSync(dir), "dir #{dir} does not exist"
+		@lookahead = undef     # lookahead token
+		@altInput = undef
 
 	peek: () ->
 		if @lookahead?
@@ -65,35 +90,103 @@ export class StringInput
 		debug "   return"
 		return
 
+	# --- Doesn't return anything
+	#     Just sets up @altInput if a usable #include
+
+	checkForInclude: (line) ->
+
+		assert not @altInput, "checkForInclude(): altInput already set"
+		[level, str] = splitLine(line)
+		if lMatches = str.match(///^
+				\# include
+				\s*
+				(.*)
+				$///)
+			[_, fname] = lMatches
+			filename = fname.trim()
+			{root, dir, base, ext} = path.parse(filename)
+			if not root \
+					&& not dir \
+					&& @hIncludePaths \
+					&& dir = @hIncludePaths[ext]
+				assert base == filename, "base = #{base}, filename = #{filename}"
+
+				# --- It's a plain file name with an extension
+				#     that we can handle
+
+				@altInput = new FileInput("#{dir}/#{base}", {
+						filename: fname,
+						mapper: @mapper,
+						prefix: indentation(level),
+						hIncludePaths: @hIncludePaths,
+						})
+				debug "   alt input created"
+		return
+
+	# --- Returns undef if either:
+	#        1. there's no alt input
+	#        2. get from alt input returns undef (then closes alt input)
+
+	getFromAlt: () ->
+		if not @altInput
+			return undef
+		result = @altInput.get()
+		if not result?
+			debug "   alt input removed"
+			@altInput = undef
+		return result
+
 	get: () ->
-		debug 'GET:'
+		debug "GET (#{@filename}):"
 		if @lookahead?
-			debug "   return lookahead token"
+			debug "   RETURN (#{@filename}) lookahead token"
 			save = @lookahead
 			@lookahead = undef
 			return save
-		if (@lBuffer.length == 0)
-			debug "   return undef - at EOF"
-			return undef
+		if line = @getFromAlt()
+			debug "   RETURN (#{@filename}) '#{line}' from alt input"
+			return line
+
 		line = @fetch()
+		if not line?
+			debug "   RETURN (#{@filename}) undef - at EOF"
+			return undef
+
+		# --- Handle #include here, before calling @_mapped
+		@checkForInclude(line)
+		if @altInput
+			result = @getFromAlt()
+			debug "   RETURN (#{@filename}) '#{result}' from alt input after #include"
+			return result
+
 		result = @_mapped(line)
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
 			result = @_mapped(line)
-		debug "   return '#{result}'"
+		debug "   RETURN (#{@filename}) '#{result}'"
 		return result
 
 	_mapped: (line) ->
+		assert isString(line), "Not a string: '#{line}'"
 		debug "   _MAPPED: '#{line}'"
-		console.assert not @lookahead?
+		assert not @lookahead?, "_mapped(): lookahead exists"
+		if not line?
+			return undef
 
-		if not @mapper
-			debug "      no mapper - returning '#{line}'"
-			return line
+		if @mapper
+			result = @mapper(line, this)
+			debug "      mapped to '#{result}'"
+		else
+			result = line
 
-		result = @mapper(line, this)
-		debug "      mapped to '#{result}'"
-		return result
+		if result?
+			if isString(result)
+				result = @prefix + result
+			debug "      _mapped(): returning '#{result}'"
+			return result
+		else
+			debug "      _mapped(): returning undef"
+			return undef
 
 	# --- This should be used to fetch from @lBuffer
 	#     to maintain proper @lineNum for error messages
@@ -134,11 +227,12 @@ export class StringInput
 
 export class FileInput extends StringInput
 
-	constructor: (filepath, mapper=null) ->
-		if not fs.existsSync(filepath)
-			throw new Error("FileInput(): file '#{filepath}' does not exist")
-		content = fs.readFileSync(filepath).toString()
-		super content, filepath, mapper
+	constructor: (filename, hOptions={}) ->
+		if not fs.existsSync(filename)
+			error "FileInput(): file '#{filename}' does not exist"
+		content = fs.readFileSync(filename).toString()
+		hOptions.filename = filename
+		super content, hOptions
 
 # ---------------------------------------------------------------------------
 #   utility func for processing content using a mapper
@@ -149,10 +243,10 @@ export procContent = (content, mapper) ->
 	debug content, "CONTENT (before proc):"
 	debug sep_dash
 
-	oInput = new StringInput(content, 'proc', mapper)
+	oInput = new StringInput(content, {filename:'proc', mapper})
 	lLines = []
-	while not oInput.eof()
-		lLines.push oInput.get()
+	while line = oInput.get()
+		lLines.push line
 	if lLines.length == 0
 		result = ''
 	else

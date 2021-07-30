@@ -3,8 +3,14 @@
 var GatherTester, tester;
 
 import {
+  strict as assert
+} from 'assert';
+
+import {
   say,
-  undef
+  undef,
+  isEmpty,
+  setDebugging
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -41,28 +47,28 @@ GatherTester = class GatherTester extends AvaTester {
 tester = new GatherTester();
 
 // ---------------------------------------------------------------------------
-
 // --- Test basic reading till EOF
-tester.equal(30, new StringInput(`abc
+tester.equal(28, new StringInput(`abc
 def`), ['abc', 'def']);
 
-tester.equal(38, new StringInput(`abc
+tester.equal(36, new StringInput(`abc
 
 def`), ['abc', '', 'def']);
 
-tester.equal(48, new StringInput(`abc
+tester.equal(46, new StringInput(`abc
 
-def`, undef, function(line) {
-  if (line === '') {
-    return undef;
-  } else {
-    return line;
+def`, {
+  mapper: function(line) {
+    if (line === '') {
+      return undef;
+    } else {
+      return line;
+    }
   }
 }), ['abc', 'def']);
 
 // ---------------------------------------------------------------------------
-
-  // --- Test basic use of mapping function
+// --- Test basic use of mapping function
 (function() {
   var mapper;
   mapper = function(line) {
@@ -72,14 +78,13 @@ def`, undef, function(line) {
       return 'x';
     }
   };
-  return tester.equal(74, new StringInput(`abc
+  return tester.equal(71, new StringInput(`abc
 
-def`, undef, mapper), ['x', 'x']);
+def`, {mapper}), ['x', 'x']);
 })();
 
 // ---------------------------------------------------------------------------
-
-  // --- Test ability to access 'this' object from a mapper
+// --- Test ability to access 'this' object from a mapper
 //     Goal: remove not only blank lines, but also the line following
 (function() {
   var mapper;
@@ -91,10 +96,10 @@ def`, undef, mapper), ['x', 'x']);
       return line;
     }
   };
-  return tester.equal(98, new StringInput(`abc
+  return tester.equal(94, new StringInput(`abc
 
 def
-ghi`, undef, mapper), ['abc', 'ghi']);
+ghi`, {mapper}), ['abc', 'ghi']);
 })();
 
 // ---------------------------------------------------------------------------
@@ -118,11 +123,11 @@ ghi`, undef, mapper), ['abc', 'ghi']);
       return line;
     }
   };
-  return tester.equal(199, new StringInput(`abc
+  return tester.equal(125, new StringInput(`abc
 #if x==y
 	def
 #else
-	ghi`, undef, mapper), [
+	ghi`, {mapper}), [
     'abc',
     {
       cmd: 'if',
@@ -138,8 +143,7 @@ ghi`, undef, mapper), ['abc', 'ghi']);
 })();
 
 // ---------------------------------------------------------------------------
-
-  // --- Test continuation lines
+// --- Test continuation lines
 (function() {
   var mapper;
   mapper = function(line, oInput) {
@@ -154,7 +158,7 @@ ghi`, undef, mapper), ['abc', 'ghi']);
     }
     return line;
   };
-  return tester.equal(283, new StringInput(`str = compare(
+  return tester.equal(155, new StringInput(`str = compare(
 		"abcde",
 		expected
 		)
@@ -163,12 +167,11 @@ call func
 		with multiple
 		long parameters
 
-# --- DONE ---`, undef, mapper), ['str = compare( "abcde", expected )', 'call func with multiple long parameters']);
+# --- DONE ---`, {mapper}), ['str = compare( "abcde", expected )', 'call func with multiple long parameters']);
 })();
 
 // ---------------------------------------------------------------------------
-
-  // --- Test continuation lines AND HEREDOCs
+// --- Test continuation lines AND HEREDOCs
 (function() {
   var mapper;
   mapper = function(line, oInput) {
@@ -183,7 +186,7 @@ call func
     }
     return line;
   };
-  return tester.equal(317, new StringInput(`str = compare(
+  return tester.equal(188, new StringInput(`str = compare(
 		"abcde",
 		expected
 		)
@@ -192,5 +195,45 @@ call func
 		with multiple
 		long parameters
 
-# --- DONE ---`, undef, mapper), ['str = compare( "abcde", expected )', 'call func with multiple long parameters']);
+# --- DONE ---`, {mapper}), ['str = compare( "abcde", expected )', 'call func with multiple long parameters']);
 })();
+
+// ---------------------------------------------------------------------------
+// --- Test overriding the class
+(function() {
+  var NewInput, NewMapper;
+  NewMapper = function(line, oInput) {
+    assert(oInput instanceof StringInput);
+    if (isEmpty(line)) {
+      return undef;
+    }
+    if (line === 'abc') {
+      return '123';
+    } else if (line === 'def') {
+      return '456';
+    } else {
+      return line;
+    }
+  };
+  NewInput = class NewInput extends StringInput {
+    constructor(content, hOptions = {}) {
+      assert(hOptions.mapper == null);
+      hOptions.mapper = NewMapper;
+      super(content, hOptions);
+    }
+
+  };
+  return tester.equal(231, new NewInput(`abc
+
+def`), ['123', '456']);
+})();
+
+// ---------------------------------------------------------------------------
+// --- Test #include
+tester.equal(245, new StringInput(`abc
+	#include title.md
+def`, {
+  hIncludePaths: {
+    '.md': 'c:\\Users\\johnd\\string-input\\src\\markdown'
+  }
+}), ['abc', '\ttitle', '\t=====', 'def']);

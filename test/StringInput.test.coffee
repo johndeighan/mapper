@@ -1,6 +1,7 @@
 # StringInput.test.coffee
 
-import {say, undef} from '@jdeighan/coffee-utils'
+import {strict as assert} from 'assert'
+import {say, undef, isEmpty, setDebugging} from '@jdeighan/coffee-utils'
 import {indentLevel, undentedStr} from '@jdeighan/coffee-utils/indent'
 import {StringInput} from '../src/StringInput.js'
 import {AvaTester} from '@jdeighan/ava-tester'
@@ -22,10 +23,9 @@ class GatherTester extends AvaTester
 tester = new GatherTester()
 
 # ---------------------------------------------------------------------------
-
 # --- Test basic reading till EOF
 
-tester.equal 30, new StringInput("""
+tester.equal 28, new StringInput("""
 		abc
 		def
 		"""), [
@@ -33,7 +33,7 @@ tester.equal 30, new StringInput("""
 		'def',
 		]
 
-tester.equal 38, new StringInput("""
+tester.equal 36, new StringInput("""
 		abc
 
 		def
@@ -43,23 +43,22 @@ tester.equal 38, new StringInput("""
 		'def',
 		]
 
-tester.equal 48, new StringInput("""
+tester.equal 46, new StringInput("""
 		abc
 
 		def
-		""", undef,
-		(line) ->
-			if line == ''
-				return undef
-			else
-				return line
-		), [
+		""", {
+			mapper: (line) ->
+				if line == ''
+					return undef
+				else
+					return line
+			}), [
 		'abc',
 		'def',
 		]
 
 # ---------------------------------------------------------------------------
-
 # --- Test basic use of mapping function
 
 (()->
@@ -69,18 +68,17 @@ tester.equal 48, new StringInput("""
 		else
 			return 'x'
 
-	tester.equal 74, new StringInput("""
+	tester.equal 71, new StringInput("""
 			abc
 
 			def
-			""", undef, mapper), [
+			""", {mapper}), [
 			'x',
 			'x',
 			]
 	)()
 
 # ---------------------------------------------------------------------------
-
 # --- Test ability to access 'this' object from a mapper
 #     Goal: remove not only blank lines, but also the line following
 
@@ -93,12 +91,12 @@ tester.equal 48, new StringInput("""
 		else
 			return line
 
-	tester.equal 98, new StringInput("""
+	tester.equal 94, new StringInput("""
 			abc
 
 			def
 			ghi
-			""", undef, mapper), [
+			""", {mapper}), [
 			'abc',
 			'ghi',
 			]
@@ -124,13 +122,13 @@ tester.equal 48, new StringInput("""
 		else
 			return line
 
-	tester.equal 199, new StringInput("""
+	tester.equal 125, new StringInput("""
 			abc
 			#if x==y
 				def
 			#else
 				ghi
-			""", undef, mapper), [
+			""", {mapper}), [
 			'abc',
 			{ cmd: 'if', argstr: 'x==y' },
 			'\tdef',
@@ -140,7 +138,6 @@ tester.equal 48, new StringInput("""
 	)()
 
 # ---------------------------------------------------------------------------
-
 # --- Test continuation lines
 
 (()->
@@ -155,7 +152,7 @@ tester.equal 48, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 283, new StringInput("""
+	tester.equal 155, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -166,7 +163,7 @@ tester.equal 48, new StringInput("""
 					long parameters
 
 			# --- DONE ---
-			""", undef, mapper), [
+			""", {mapper}), [
 			'str = compare( "abcde", expected )',
 			'call func with multiple long parameters',
 			]
@@ -174,7 +171,6 @@ tester.equal 48, new StringInput("""
 	)()
 
 # ---------------------------------------------------------------------------
-
 # --- Test continuation lines AND HEREDOCs
 
 (()->
@@ -189,7 +185,7 @@ tester.equal 48, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 317, new StringInput("""
+	tester.equal 188, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -200,9 +196,64 @@ tester.equal 48, new StringInput("""
 					long parameters
 
 			# --- DONE ---
-			""", undef, mapper), [
+			""", {mapper}), [
 			'str = compare( "abcde", expected )',
 			'call func with multiple long parameters',
 			]
 
 	)()
+
+# ---------------------------------------------------------------------------
+# --- Test overriding the class
+
+(()->
+
+	NewMapper = (line, oInput) ->
+
+		assert oInput instanceof StringInput
+		if isEmpty(line)
+			return undef
+		if line == 'abc'
+			return '123'
+		else if line == 'def'
+			return '456'
+		else
+			return line
+
+	class NewInput extends StringInput
+
+		constructor: (content, hOptions={}) ->
+
+			assert not hOptions.mapper?
+			hOptions.mapper = NewMapper
+			super content, hOptions
+
+	tester.equal 231, new NewInput("""
+			abc
+
+			def
+			"""), [
+			'123',
+			'456',
+			]
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test #include
+
+tester.equal 245, new StringInput("""
+		abc
+			#include title.md
+		def
+		""", {
+			hIncludePaths: {
+				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
+				}
+			}), [
+		'abc',
+		'\ttitle',
+		'\t=====',
+		'def',
+		]
+

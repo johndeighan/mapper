@@ -27,6 +27,29 @@ import {
 } from '@jdeighan/ava-tester';
 
 // ---------------------------------------------------------------------------
+(function() {
+  var input, item, tester;
+  tester = new AvaTester();
+  input = new StringInput(`abc
+def
+ghi`);
+  item = input.peek();
+  tester.equal(21, item, 'abc');
+  item = input.peek();
+  tester.equal(23, item, 'abc');
+  item = input.get();
+  tester.equal(25, item, 'abc');
+  item = input.get();
+  tester.equal(27, item, 'def');
+  input.unget(item);
+  item = input.get();
+  tester.equal(30, item, 'def');
+  input.skip();
+  item = input.get();
+  return tester.equal(33, item, undef);
+})();
+
+// ---------------------------------------------------------------------------
 GatherTester = class GatherTester extends AvaTester {
   transformValue(input) {
     var lLines, line;
@@ -48,14 +71,14 @@ tester = new GatherTester();
 
 // ---------------------------------------------------------------------------
 // --- Test basic reading till EOF
-tester.equal(28, new StringInput(`abc
+tester.equal(56, new StringInput(`abc
 def`), ['abc', 'def']);
 
-tester.equal(36, new StringInput(`abc
+tester.equal(64, new StringInput(`abc
 
 def`), ['abc', '', 'def']);
 
-tester.equal(46, new StringInput(`abc
+tester.equal(74, new StringInput(`abc
 
 def`, {
   mapper: function(line) {
@@ -78,7 +101,7 @@ def`, {
       return 'x';
     }
   };
-  return tester.equal(71, new StringInput(`abc
+  return tester.equal(99, new StringInput(`abc
 
 def`, {mapper}), ['x', 'x']);
 })();
@@ -96,7 +119,7 @@ def`, {mapper}), ['x', 'x']);
       return line;
     }
   };
-  return tester.equal(94, new StringInput(`abc
+  return tester.equal(122, new StringInput(`abc
 
 def
 ghi`, {mapper}), ['abc', 'ghi']);
@@ -123,7 +146,7 @@ ghi`, {mapper}), ['abc', 'ghi']);
       return line;
     }
   };
-  return tester.equal(125, new StringInput(`abc
+  return tester.equal(153, new StringInput(`abc
 #if x==y
 	def
 #else
@@ -158,7 +181,7 @@ ghi`, {mapper}), ['abc', 'ghi']);
     }
     return line;
   };
-  return tester.equal(155, new StringInput(`str = compare(
+  return tester.equal(183, new StringInput(`str = compare(
 		"abcde",
 		expected
 		)
@@ -186,7 +209,7 @@ call func
     }
     return line;
   };
-  return tester.equal(188, new StringInput(`str = compare(
+  return tester.equal(216, new StringInput(`str = compare(
 		"abcde",
 		expected
 		)
@@ -223,14 +246,14 @@ call func
     }
 
   };
-  return tester.equal(231, new NewInput(`abc
+  return tester.equal(259, new NewInput(`abc
 
 def`), ['123', '456']);
 })();
 
 // ---------------------------------------------------------------------------
 // --- Test #include
-tester.equal(245, new StringInput(`abc
+tester.equal(273, new StringInput(`abc
 	#include title.md
 def`, {
   hIncludePaths: {

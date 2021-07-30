@@ -50,6 +50,7 @@ export var StringInput = class StringInput {
     this.lineNum = 0;
     if (filename) {
       try {
+        // --- We only want the bare filename
         ({base} = path.parse(filename));
         this.filename = base;
       } catch (error1) {
@@ -68,50 +69,37 @@ export var StringInput = class StringInput {
       assert(ext.indexOf('.') === 0, "invalid key in hIncludePaths");
       assert(fs.existsSync(dir), `dir ${dir} does not exist`);
     }
-    this.lookahead = undef; // lookahead token
+    this.lookahead = undef; // lookahead token, placed by unget
     this.altInput = undef;
   }
 
+  unget(item) {
+    debug('UNGET:');
+    assert(this.lookahead == null);
+    debug(item, "Lookahead:");
+    return this.lookahead = item;
+  }
+
   peek() {
-    var line, result;
+    var item;
+    debug('PEEK:');
     if (this.lookahead != null) {
       debug("   return lookahead token");
       return this.lookahead;
     }
-    if (this.lBuffer.length === 0) {
-      debug("   return undef - at EOF");
-      return undef;
-    }
-    line = this.fetch();
-    result = this._mapped(line);
-    while ((result == null) && (this.lBuffer.length > 0)) {
-      line = this.fetch();
-      result = this._mapped(line);
-    }
-    debug(`   return '${result}'`);
-    this.lookahead = result;
-    return result;
+    item = this.get();
+    this.unget(item);
+    return item;
   }
 
   skip() {
-    var line, result;
     debug('SKIP:');
     if (this.lookahead != null) {
       debug("   undef lookahead token");
       this.lookahead = undef;
       return;
     }
-    if (this.lBuffer.length === 0) {
-      debug("   return - at EOF");
-      return;
-    }
-    line = this.fetch();
-    result = this._mapped(line);
-    while ((result == null) && (this.lBuffer.length > 0)) {
-      line = this.fetch();
-      result = this._mapped(line);
-    }
-    debug("   return");
+    this.get();
   }
 
   // --- Doesn't return anything

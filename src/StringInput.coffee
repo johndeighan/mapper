@@ -31,7 +31,7 @@ export class StringInput
 		{filename, mapper, prefix, hIncludePaths} = hOptions
 
 		if isString(content)
-			@lBuffer = stringToArray(content.trim())
+			@lBuffer = stringToArray(content)
 		else if isArray(content)
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)

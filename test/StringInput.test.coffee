@@ -1,7 +1,14 @@
 # StringInput.test.coffee
 
 import {strict as assert} from 'assert'
-import {say, undef, isEmpty, setDebugging} from '@jdeighan/coffee-utils'
+import {
+	say,
+	undef,
+	isEmpty,
+	setDebugging,
+	debugging,
+	escapeStr,
+	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel,
 	undentedStr,
@@ -24,19 +31,19 @@ import {AvaTester} from '@jdeighan/ava-tester'
 			""")
 
 	item = input.peek()
-	tester.equal 21, item, 'abc'
+	tester.equal 34, item, 'abc'
 	item = input.peek()
-	tester.equal 23, item, 'abc'
+	tester.equal 36, item, 'abc'
 	item = input.get()
-	tester.equal 25, item, 'abc'
+	tester.equal 38, item, 'abc'
 	item = input.get()
-	tester.equal 27, item, 'def'
+	tester.equal 40, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 30, item, 'def'
+	tester.equal 43, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 33, item, undef
+	tester.equal 46, item, undef
 
 	)()
 
@@ -59,7 +66,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 56, new StringInput("""
+tester.equal 69, new StringInput("""
 		abc
 		def
 		"""), [
@@ -67,7 +74,7 @@ tester.equal 56, new StringInput("""
 		'def',
 		]
 
-tester.equal 64, new StringInput("""
+tester.equal 77, new StringInput("""
 		abc
 
 		def
@@ -77,7 +84,7 @@ tester.equal 64, new StringInput("""
 		'def',
 		]
 
-tester.equal 74, new StringInput("""
+tester.equal 87, new StringInput("""
 		abc
 
 		def
@@ -102,7 +109,7 @@ tester.equal 74, new StringInput("""
 		else
 			return 'x'
 
-	tester.equal 99, new StringInput("""
+	tester.equal 112, new StringInput("""
 			abc
 
 			def
@@ -125,7 +132,7 @@ tester.equal 74, new StringInput("""
 		else
 			return line
 
-	tester.equal 122, new StringInput("""
+	tester.equal 135, new StringInput("""
 			abc
 
 			def
@@ -156,7 +163,7 @@ tester.equal 74, new StringInput("""
 		else
 			return line
 
-	tester.equal 153, new StringInput("""
+	tester.equal 166, new StringInput("""
 			abc
 			#if x==y
 				def
@@ -186,7 +193,7 @@ tester.equal 74, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 183, new StringInput("""
+	tester.equal 196, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -219,7 +226,7 @@ tester.equal 74, new StringInput("""
 			line += ' ' + undentedStr(next)
 		return line
 
-	tester.equal 216, new StringInput("""
+	tester.equal 229, new StringInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -262,7 +269,7 @@ tester.equal 74, new StringInput("""
 			hOptions.mapper = NewMapper
 			super content, hOptions
 
-	tester.equal 259, new NewInput("""
+	tester.equal 272, new NewInput("""
 			abc
 
 			def
@@ -276,7 +283,7 @@ tester.equal 74, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 273, new StringInput("""
+tester.equal 286, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -308,11 +315,12 @@ tester.equal 273, new StringInput("""
 				\s*
 				(.*)
 				$///)
-			return indentedStr(line, level)
+			result = indentedStr(line, level)
 		else
-			return orgLine
+			result = orgLine
+		return result
 
-	tester.equal 99, new StringInput("""
+	tester.equal 323, new StringInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
@@ -323,4 +331,3 @@ tester.equal 273, new StringInput("""
 			'\tdef'
 			]
 	)()
-

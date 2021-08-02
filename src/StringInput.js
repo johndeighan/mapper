@@ -40,7 +40,7 @@ export var StringInput = class StringInput {
     //        hIncludePaths    { <ext>: <dir>, ... }
     ({filename, mapper, prefix, hIncludePaths} = hOptions);
     if (isString(content)) {
-      this.lBuffer = stringToArray(content.trim());
+      this.lBuffer = stringToArray(content);
     } else if (isArray(content)) {
       // -- make a deep copy
       this.lBuffer = deepCopy(content);

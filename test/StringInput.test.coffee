@@ -2,7 +2,13 @@
 
 import {strict as assert} from 'assert'
 import {say, undef, isEmpty, setDebugging} from '@jdeighan/coffee-utils'
-import {indentLevel, undentedStr} from '@jdeighan/coffee-utils/indent'
+import {
+	indentLevel,
+	undentedStr,
+	splitLine,
+	indentedStr,
+	indentedBlock,
+	} from '@jdeighan/coffee-utils/indent'
 import {StringInput} from '../src/StringInput.js'
 import {AvaTester} from '@jdeighan/ava-tester'
 
@@ -284,4 +290,37 @@ tester.equal 273, new StringInput("""
 		'\t=====',
 		'def',
 		]
+
+# ---------------------------------------------------------------------------
+# --- Test advanced use of mapping function
+
+(()->
+	coffeeMapper = (orgLine) ->
+		[level, line] = splitLine(orgLine)
+		if isEmpty(line) || line.match(/^#\s/)
+			return undef
+		if lMatches = line.match(///^
+				(?:
+					([A-Za-z][A-Za-z0-9_]*)   # variable name
+					\s*
+					)?
+				\<\=\=
+				\s*
+				(.*)
+				$///)
+			return indentedStr(line, level)
+		else
+			return orgLine
+
+	tester.equal 99, new StringInput("""
+			\tabc
+			\t	myvar <== 2 * 3
+
+			\tdef
+			""", {mapper: coffeeMapper}), [
+			'\tabc'
+			'\t\tmyvar <== 2 * 3'
+			'\tdef'
+			]
+	)()
 

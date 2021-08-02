@@ -31,7 +31,6 @@
 	"devDependencies": {
 		"@jdeighan/ava-tester": "^1.0.2",
 		"ava": "^3.15.0",
-		"ava-tester": "^1.0.2",
 		"coffeescript": "^2.5.1"
 	},
 	"dependencies": {

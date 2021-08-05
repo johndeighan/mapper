@@ -2,7 +2,7 @@
 
 import {strict as assert} from 'assert'
 import fs from 'fs'
-import path from 'path'
+import pathlib from 'path'
 import {
 	undef,
 	deepCopy,
@@ -12,7 +12,10 @@ import {
 	debug,
 	sep_dash,
 	isString,
+	setUnitTesting,
+	unitTesting,
 	} from '@jdeighan/coffee-utils'
+import {slurp} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine,
 	indentedStr,
@@ -46,7 +49,7 @@ export class StringInput
 		if filename
 			try
 				# --- We only want the bare filename
-				{base} = path.parse(filename)
+				{base} = pathlib.parse(filename)
 				@filename = base
 			catch
 				@filename = filename
@@ -62,11 +65,15 @@ export class StringInput
 		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
 
+	# ........................................................................
+
 	unget: (item) ->
 		debug 'UNGET:'
 		assert not @lookahead?
 		debug item, "Lookahead:"
 		@lookahead = item
+
+	# ........................................................................
 
 	peek: () ->
 		debug 'PEEK:'
@@ -77,6 +84,8 @@ export class StringInput
 		@unget(item)
 		return item
 
+	# ........................................................................
+
 	skip: () ->
 		debug 'SKIP:'
 		if @lookahead?
@@ -86,8 +95,9 @@ export class StringInput
 		@get()
 		return
 
-	# --- Doesn't return anything
-	#     Just sets up @altInput if a usable #include
+
+	# ........................................................................
+	# --- Doesn't return anything - sets up @altInput
 
 	checkForInclude: (line) ->
 
@@ -100,7 +110,7 @@ export class StringInput
 				$///)
 			[_, fname] = lMatches
 			filename = fname.trim()
-			{root, dir, base, ext} = path.parse(filename)
+			{root, dir, base, ext} = pathlib.parse(filename)
 			if not root \
 					&& not dir \
 					&& @hIncludePaths \
@@ -119,6 +129,7 @@ export class StringInput
 				debug "   alt input created"
 		return
 
+	# ........................................................................
 	# --- Returns undef if either:
 	#        1. there's no alt input
 	#        2. get from alt input returns undef (then closes alt input)
@@ -131,6 +142,8 @@ export class StringInput
 			debug "   alt input removed"
 			@altInput = undef
 		return result
+
+	# ........................................................................
 
 	get: () ->
 		debug "GET (#{@filename}):"
@@ -162,6 +175,8 @@ export class StringInput
 		debug "   RETURN (#{@filename}) '#{result}'"
 		return result
 
+	# ........................................................................
+
 	_mapped: (line) ->
 		assert isString(line), "Not a string: '#{line}'"
 		debug "   _MAPPED: '#{line}'"
@@ -184,20 +199,25 @@ export class StringInput
 			debug "      _mapped(): returning undef"
 			return undef
 
+	# ........................................................................
 	# --- This should be used to fetch from @lBuffer
 	#     to maintain proper @lineNum for error messages
+
 	fetch: () ->
 		if @lBuffer.length == 0
 			return undef
 		@lineNum += 1
 		return @lBuffer.shift()
 
+	# ........................................................................
 	# --- Put one or more lines into lBuffer, to be fetched later
 	#     TO DO: maintain correct line numbering!!!
+
 	unfetch: (block) ->
 		lLines = stringToArray(block)
 		@lBuffer.unshift(lLines...)
 
+	# ........................................................................
 	# --- Fetch a block of text at level or greater than 'level'
 	#     as one long string
 	# --- Designed to use in a mapper
@@ -218,21 +238,22 @@ export class StringInput
 			block += line + '\n'
 		return block
 
-	getFileContents = (filename) ->
+	# ........................................................................
+
+	getFileContents: (filename) ->
 
 		{dir, root, base, name, ext} = pathlib.parse(filename)
 		if dir
 			error "#include: Full paths not allowed: '#{filename}'"
-		switch ext
-			when '.md'
-				if unitTesting
-					return "Contents of #{filename}"
-				fullpath = "#{@hOptions.markdownDir}/#{base}"
-			else
-				error "#include: invalid extension: '#{filename}'"
+		dir = @hIncludePaths[ext]
+		if not dir?
+			error "#include: invalid extension: '#{filename}'"
+		if unitTesting
+			return "Contents of #{filename}"
+		else
+			return slurp("#{dir}/#{base}")
 
-		return slurp(fullpath)
-
+# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 #   class FileInput - contents from a file
 
@@ -268,18 +289,3 @@ export procContent = (content, mapper) ->
 	debug sep_dash
 
 	return result
-
-# ---------------------------------------------------------------------------
-#    1. Skips blank lines and comments
-#    2. returns { level, line, lineNum }
-
-export SimpleMapper = (line, oInput) ->
-
-	# --- line has indentation stripped off
-	[level, line] = splitLine(line)
-
-	if (line == '') || line.match(/^#\s/)
-		return undef     # skip comments and blank lines
-
-	lineNum = oInput.lineNum   # save line number
-	return { level, line, lineNum }

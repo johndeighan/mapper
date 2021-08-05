@@ -7,6 +7,8 @@ import {
 	isEmpty,
 	setDebugging,
 	debugging,
+	setUnitTesting,
+	unitTesting,
 	escapeStr,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -18,6 +20,9 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {StringInput} from '../src/StringInput.js'
 import {AvaTester} from '@jdeighan/ava-tester'
+
+simple = new AvaTester()
+setUnitTesting(true)
 
 # ---------------------------------------------------------------------------
 
@@ -330,4 +335,21 @@ tester.equal 286, new StringInput("""
 			'\t\tmyvar <== 2 * 3'
 			'\tdef'
 			]
+	)()
+
+# ---------------------------------------------------------------------------
+# test getFileContents
+
+(()->
+	oInput = new StringInput('nothing', {
+		hIncludePaths:
+			'.md': 'c:/Users/johnd/string-input/src/markdown'
+		})
+
+	simple.equal 344, oInput.getFileContents('title.md'), "Contents of title.md"
+	simple.fails 345, () -> getFileContents('title.txt')
+
+	setUnitTesting(false)
+	simple.equal 348, oInput.getFileContents('title.md'), "title\n=====\n"
+	setUnitTesting(true)
 	)()

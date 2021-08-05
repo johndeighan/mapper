@@ -30,15 +30,16 @@ import {
 // ---------------------------------------------------------------------------
 //   class StringInput - stream in lines from a string or array
 export var StringInput = class StringInput {
-  constructor(content, hOptions = {}) {
+  constructor(content, hOptions1 = {}) {
     var base, dir, ext, filename, hIncludePaths, mapper, prefix, ref;
+    this.hOptions = hOptions1;
     // --- Valid options:
     //        filename
     //        mapper
     //        prefix        # auto-prepended to each defined ret val
     //                      # from _mapped()
     //        hIncludePaths    { <ext>: <dir>, ... }
-    ({filename, mapper, prefix, hIncludePaths} = hOptions);
+    ({filename, mapper, prefix, hIncludePaths} = this.hOptions);
     if (isString(content)) {
       this.lBuffer = stringToArray(content);
     } else if (isArray(content)) {
@@ -61,7 +62,7 @@ export var StringInput = class StringInput {
     }
     this.mapper = mapper;
     this.prefix = prefix || '';
-    this.hIncludePaths = hOptions.hIncludePaths || {};
+    this.hIncludePaths = this.hOptions.hIncludePaths || {};
     ref = this.hIncludePaths;
     for (ext in ref) {
       if (!hasProp.call(ref, ext)) continue;

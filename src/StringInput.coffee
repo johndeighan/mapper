@@ -20,7 +20,7 @@ import {splitLine, indentedStr, indentation} from '@jdeighan/coffee-utils/indent
 
 export class StringInput
 
-	constructor: (content, hOptions={}) ->
+	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
 		#        mapper
@@ -28,7 +28,7 @@ export class StringInput
 		#                      # from _mapped()
 		#        hIncludePaths    { <ext>: <dir>, ... }
 
-		{filename, mapper, prefix, hIncludePaths} = hOptions
+		{filename, mapper, prefix, hIncludePaths} = @hOptions
 
 		if isString(content)
 			@lBuffer = stringToArray(content)
@@ -51,7 +51,7 @@ export class StringInput
 
 		@mapper = mapper
 		@prefix = prefix || ''
-		@hIncludePaths = hOptions.hIncludePaths || {}
+		@hIncludePaths = @hOptions.hIncludePaths || {}
 		for own ext, dir of @hIncludePaths
 			assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
 			assert fs.existsSync(dir), "dir #{dir} does not exist"

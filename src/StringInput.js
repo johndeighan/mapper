@@ -266,7 +266,7 @@ export var StringInput = class StringInput {
     dir = this.hIncludePaths[ext];
     if (dir == null) {
       say(this.hIncludePaths, 'hIncludePaths:');
-      error(`#include: invalid extension: '${filename}'`);
+      error(`getFileContents(): invalid extension: '${filename}'`);
     }
     return slurp(`${dir}/${base}`);
   }

@@ -251,7 +251,7 @@ export class StringInput
 		dir = @hIncludePaths[ext]
 		if not dir?
 			say @hIncludePaths, 'hIncludePaths:'
-			error "#include: invalid extension: '#{filename}'"
+			error "getFileContents(): invalid extension: '#{filename}'"
 		return slurp("#{dir}/#{base}")
 
 # ---------------------------------------------------------------------------

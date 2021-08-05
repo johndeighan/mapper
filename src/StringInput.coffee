@@ -13,7 +13,11 @@ import {
 	sep_dash,
 	isString,
 	} from '@jdeighan/coffee-utils'
-import {splitLine, indentedStr, indentation} from '@jdeighan/coffee-utils/indent'
+import {
+	splitLine,
+	indentedStr,
+	indentation,
+	} from '@jdeighan/coffee-utils/indent'
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
@@ -213,6 +217,21 @@ export class StringInput
 				)
 			block += line + '\n'
 		return block
+
+	getFileContents = (filename) ->
+
+		{dir, root, base, name, ext} = pathlib.parse(filename)
+		if dir
+			error "#include: Full paths not allowed: '#{filename}'"
+		switch ext
+			when '.md'
+				if unitTesting
+					return "Contents of #{filename}"
+				fullpath = "#{@hOptions.markdownDir}/#{base}"
+			else
+				error "#include: invalid extension: '#{filename}'"
+
+		return slurp(fullpath)
 
 # ---------------------------------------------------------------------------
 #   class FileInput - contents from a file

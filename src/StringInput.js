@@ -17,6 +17,7 @@ import {
   say,
   pass,
   debug,
+  error,
   sep_dash,
   isString,
   setUnitTesting,

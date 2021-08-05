@@ -256,19 +256,19 @@ export var StringInput = class StringInput {
   // ........................................................................
   getFileContents(filename) {
     var base, dir, ext, name, root;
+    if (unitTesting) {
+      return `Contents of ${filename}`;
+    }
     ({dir, root, base, name, ext} = pathlib.parse(filename));
     if (dir) {
       error(`#include: Full paths not allowed: '${filename}'`);
     }
     dir = this.hIncludePaths[ext];
     if (dir == null) {
+      say(this.hIncludePaths, 'hIncludePaths:');
       error(`#include: invalid extension: '${filename}'`);
     }
-    if (unitTesting) {
-      return `Contents of ${filename}`;
-    } else {
-      return slurp(`${dir}/${base}`);
-    }
+    return slurp(`${dir}/${base}`);
   }
 
 };

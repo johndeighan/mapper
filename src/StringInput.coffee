@@ -243,16 +243,16 @@ export class StringInput
 
 	getFileContents: (filename) ->
 
+		if unitTesting
+			return "Contents of #{filename}"
 		{dir, root, base, name, ext} = pathlib.parse(filename)
 		if dir
 			error "#include: Full paths not allowed: '#{filename}'"
 		dir = @hIncludePaths[ext]
 		if not dir?
+			say @hIncludePaths, 'hIncludePaths:'
 			error "#include: invalid extension: '#{filename}'"
-		if unitTesting
-			return "Contents of #{filename}"
-		else
-			return slurp("#{dir}/#{base}")
+		return slurp("#{dir}/#{base}")
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

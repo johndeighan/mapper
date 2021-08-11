@@ -254,6 +254,23 @@ export class StringInput
 			error "getFileContents(): invalid extension: '#{filename}'"
 		return slurp("#{dir}/#{base}")
 
+	# ........................................................................
+
+	getAll: () ->
+
+		lLines = []
+		line = @get()
+		while line?
+			lLines.push(line)
+			line = @get()
+		return lLines
+
+	# ........................................................................
+
+	getAllText: () ->
+
+		return @getAll().join('\n') + '\n'
+
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 #   class FileInput - contents from a file
@@ -266,4 +283,6 @@ export class FileInput extends StringInput
 		content = fs.readFileSync(filename).toString()
 		hOptions.filename = filename
 		super content, hOptions
+
+# ---------------------------------------------------------------------------
 

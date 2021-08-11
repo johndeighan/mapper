@@ -56,15 +56,10 @@ setUnitTesting(true)
 
 class GatherTester extends AvaTester
 
-	transformValue: (input) ->
-		if input not instanceof StringInput
-			throw new Error("input should be a StringInput object")
-		lLines = []
-		line = input.get()
-		while line?
-			lLines.push(line)
-			line = input.get()
-		return lLines
+	transformValue: (oInput) ->
+		if oInput not instanceof StringInput
+			throw new Error("oInput should be a StringInput object")
+		return oInput.getAll()
 
 tester = new GatherTester()
 

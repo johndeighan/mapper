@@ -268,6 +268,23 @@ export var StringInput = class StringInput {
     return slurp(`${dir}/${base}`);
   }
 
+  // ........................................................................
+  getAll() {
+    var lLines, line;
+    lLines = [];
+    line = this.get();
+    while (line != null) {
+      lLines.push(line);
+      line = this.get();
+    }
+    return lLines;
+  }
+
+  // ........................................................................
+  getAllText() {
+    return this.getAll().join('\n') + '\n';
+  }
+
 };
 
 // ---------------------------------------------------------------------------
@@ -285,3 +302,5 @@ export var FileInput = class FileInput extends StringInput {
   }
 
 };
+
+// ---------------------------------------------------------------------------

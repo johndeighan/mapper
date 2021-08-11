@@ -20,7 +20,6 @@ import {
   error,
   sep_dash,
   isString,
-  setUnitTesting,
   unitTesting
 } from '@jdeighan/coffee-utils';
 
@@ -38,15 +37,14 @@ import {
 //   class StringInput - stream in lines from a string or array
 export var StringInput = class StringInput {
   constructor(content, hOptions1 = {}) {
-    var base, dir, ext, filename, hIncludePaths, mapper, prefix, ref;
+    var base, dir, ext, filename, hIncludePaths, prefix, ref;
     this.hOptions = hOptions1;
     // --- Valid options:
     //        filename
-    //        mapper
     //        prefix        # auto-prepended to each defined ret val
     //                      # from _mapped()
     //        hIncludePaths    { <ext>: <dir>, ... }
-    ({filename, mapper, prefix, hIncludePaths} = this.hOptions);
+    ({filename, prefix, hIncludePaths} = this.hOptions);
     if (isString(content)) {
       this.lBuffer = stringToArray(content);
     } else if (isArray(content)) {
@@ -67,7 +65,6 @@ export var StringInput = class StringInput {
     } else {
       this.filename = 'unit test';
     }
-    this.mapper = mapper;
     this.prefix = prefix || '';
     this.hIncludePaths = this.hOptions.hIncludePaths || {};
     ref = this.hIncludePaths;
@@ -79,6 +76,11 @@ export var StringInput = class StringInput {
     }
     this.lookahead = undef; // lookahead token, placed by unget
     this.altInput = undef;
+  }
+
+  // ........................................................................
+  mapLine(line) {
+    return line;
   }
 
   // ........................................................................
@@ -129,7 +131,6 @@ export var StringInput = class StringInput {
         //     that we can handle
         this.altInput = new FileInput(`${dir}/${base}`, {
           filename: fname,
-          mapper: this.mapper,
           prefix: indentation(level),
           hIncludePaths: this.hIncludePaths
         });
@@ -199,12 +200,8 @@ export var StringInput = class StringInput {
     if (line == null) {
       return undef;
     }
-    if (this.mapper) {
-      result = this.mapper(line, this);
-      debug(`      mapped to '${result}'`);
-    } else {
-      result = line;
-    }
+    result = this.mapLine(line);
+    debug(`      mapped to '${result}'`);
     if (result != null) {
       if (isString(result)) {
         result = this.prefix + result;
@@ -240,7 +237,7 @@ export var StringInput = class StringInput {
   // ........................................................................
   // --- Fetch a block of text at level or greater than 'level'
   //     as one long string
-  // --- Designed to use in a mapper
+  // --- Designed to use in mapLine()
   fetchBlock(atLevel) {
     var block, level, line, str;
     block = '';
@@ -287,30 +284,4 @@ export var FileInput = class FileInput extends StringInput {
     super(content, hOptions);
   }
 
-};
-
-// ---------------------------------------------------------------------------
-//   utility func for processing content using a mapper
-export var procContent = function(content, mapper) {
-  var lLines, line, oInput, result;
-  debug(sep_dash);
-  debug(content, "CONTENT (before proc):");
-  debug(sep_dash);
-  oInput = new StringInput(content, {
-    filename: 'proc',
-    mapper
-  });
-  lLines = [];
-  while (line = oInput.get()) {
-    lLines.push(line);
-  }
-  if (lLines.length === 0) {
-    result = '';
-  } else {
-    result = lLines.join('\n') + '\n';
-  }
-  debug(sep_dash);
-  debug(result, "CONTENT (after proc):");
-  debug(sep_dash);
-  return result;
 };

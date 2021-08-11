@@ -13,7 +13,6 @@ import {
 	error,
 	sep_dash,
 	isString,
-	setUnitTesting,
 	unitTesting,
 	} from '@jdeighan/coffee-utils'
 import {slurp} from '@jdeighan/coffee-utils/fs'
@@ -31,12 +30,11 @@ export class StringInput
 	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
-		#        mapper
 		#        prefix        # auto-prepended to each defined ret val
 		#                      # from _mapped()
 		#        hIncludePaths    { <ext>: <dir>, ... }
 
-		{filename, mapper, prefix, hIncludePaths} = @hOptions
+		{filename, prefix, hIncludePaths} = @hOptions
 
 		if isString(content)
 			@lBuffer = stringToArray(content)
@@ -57,7 +55,6 @@ export class StringInput
 		else
 			@filename = 'unit test'
 
-		@mapper = mapper
 		@prefix = prefix || ''
 		@hIncludePaths = @hOptions.hIncludePaths || {}
 		for own ext, dir of @hIncludePaths
@@ -65,6 +62,12 @@ export class StringInput
 			assert fs.existsSync(dir), "dir #{dir} does not exist"
 		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
+
+	# ........................................................................
+
+	mapLine: (line) ->
+
+		return line
 
 	# ........................................................................
 
@@ -123,7 +126,6 @@ export class StringInput
 
 				@altInput = new FileInput("#{dir}/#{base}", {
 						filename: fname,
-						mapper: @mapper,
 						prefix: indentation(level),
 						hIncludePaths: @hIncludePaths,
 						})
@@ -179,17 +181,15 @@ export class StringInput
 	# ........................................................................
 
 	_mapped: (line) ->
+
 		assert isString(line), "Not a string: '#{line}'"
 		debug "   _MAPPED: '#{line}'"
 		assert not @lookahead?, "_mapped(): lookahead exists"
 		if not line?
 			return undef
 
-		if @mapper
-			result = @mapper(line, this)
-			debug "      mapped to '#{result}'"
-		else
-			result = line
+		result = @mapLine(line)
+		debug "      mapped to '#{result}'"
 
 		if result?
 			if isString(result)
@@ -221,7 +221,7 @@ export class StringInput
 	# ........................................................................
 	# --- Fetch a block of text at level or greater than 'level'
 	#     as one long string
-	# --- Designed to use in a mapper
+	# --- Designed to use in mapLine()
 
 	fetchBlock: (atLevel) ->
 
@@ -267,26 +267,3 @@ export class FileInput extends StringInput
 		hOptions.filename = filename
 		super content, hOptions
 
-# ---------------------------------------------------------------------------
-#   utility func for processing content using a mapper
-
-export procContent = (content, mapper) ->
-
-	debug sep_dash
-	debug content, "CONTENT (before proc):"
-	debug sep_dash
-
-	oInput = new StringInput(content, {filename:'proc', mapper})
-	lLines = []
-	while line = oInput.get()
-		lLines.push line
-	if lLines.length == 0
-		result = ''
-	else
-		result = lLines.join('\n') + '\n'
-
-	debug sep_dash
-	debug result, "CONTENT (after proc):"
-	debug sep_dash
-
-	return result

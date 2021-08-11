@@ -36,19 +36,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	tester.equal 34, item, 'abc'
+	tester.equal 39, item, 'abc'
 	item = input.peek()
-	tester.equal 36, item, 'abc'
+	tester.equal 41, item, 'abc'
 	item = input.get()
-	tester.equal 38, item, 'abc'
+	tester.equal 43, item, 'abc'
 	item = input.get()
-	tester.equal 40, item, 'def'
+	tester.equal 45, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 43, item, 'def'
+	tester.equal 48, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 46, item, undef
+	tester.equal 51, item, undef
 
 	)()
 
@@ -71,7 +71,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 69, new StringInput("""
+tester.equal 74, new StringInput("""
 		abc
 		def
 		"""), [
@@ -79,7 +79,7 @@ tester.equal 69, new StringInput("""
 		'def',
 		]
 
-tester.equal 77, new StringInput("""
+tester.equal 82, new StringInput("""
 		abc
 
 		def
@@ -89,36 +89,42 @@ tester.equal 77, new StringInput("""
 		'def',
 		]
 
-tester.equal 87, new StringInput("""
-		abc
+(() ->
+	class TestInput extends StringInput
 
-		def
-		""", {
-			mapper: (line) ->
-				if line == ''
-					return undef
-				else
-					return line
-			}), [
-		'abc',
-		'def',
-		]
+		mapLine: (line) ->
+			if line == ''
+				return undef
+			else
+				return line
+
+	tester.equal 101, new TestInput("""
+			abc
+
+			def
+			"""), [
+			'abc',
+			'def',
+			]
+	)()
 
 # ---------------------------------------------------------------------------
 # --- Test basic use of mapping function
 
 (()->
-	mapper = (line) ->
-		if line == ''
-			return undef
-		else
-			return 'x'
+	class TestInput extends StringInput
 
-	tester.equal 112, new StringInput("""
+		mapLine: (line) ->
+			if line == ''
+				return undef
+			else
+				return 'x'
+
+	tester.equal 123, new TestInput("""
 			abc
 
 			def
-			""", {mapper}), [
+			"""), [
 			'x',
 			'x',
 			]
@@ -130,19 +136,21 @@ tester.equal 87, new StringInput("""
 
 (()->
 
-	mapper = (line, oInput) ->
-		if line == ''
-			oInput.get()
-			return undef
-		else
-			return line
+	class TestInput extends StringInput
 
-	tester.equal 135, new StringInput("""
+		mapLine: (line) ->
+			if line == ''
+				follow = @fetch()
+				return undef
+			else
+				return line
+
+	tester.equal 148, new TestInput("""
 			abc
 
 			def
 			ghi
-			""", {mapper}), [
+			"""), [
 			'abc',
 			'ghi',
 			]
@@ -161,20 +169,22 @@ tester.equal 87, new StringInput("""
 			(.*)               # command arguments
 			$///
 
-	mapper = (line, oInput) ->
-		lMatches = line.match(cmdRE)
-		if lMatches?
-			return { cmd: lMatches[1], argstr: lMatches[2] }
-		else
-			return line
+	class TestInput extends StringInput
 
-	tester.equal 166, new StringInput("""
+		mapLine: (line) ->
+			lMatches = line.match(cmdRE)
+			if lMatches?
+				return { cmd: lMatches[1], argstr: lMatches[2] }
+			else
+				return line
+
+	tester.equal 181, new TestInput("""
 			abc
 			#if x==y
 				def
 			#else
 				ghi
-			""", {mapper}), [
+			"""), [
 			'abc',
 			{ cmd: 'if', argstr: 'x==y' },
 			'\tdef',
@@ -188,17 +198,19 @@ tester.equal 87, new StringInput("""
 
 (()->
 
-	mapper = (line, oInput) ->
-		if line == '' || line.match(/^\s*#\s/)
-			return undef     # skip comments and blank lines
+	class TestInput extends StringInput
 
-		n = indentLevel(line)    # current line indent
-		while (oInput.lBuffer.length > 0) && (indentLevel(oInput.lBuffer[0]) >= n+2)
-			next = oInput.lBuffer.shift()
-			line += ' ' + undentedStr(next)
-		return line
+		mapLine: (line) ->
+			if line == '' || line.match(/^\s*#\s/)
+				return undef     # skip comments and blank lines
 
-	tester.equal 196, new StringInput("""
+			n = indentLevel(line)    # current line indent
+			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
+				next = @lBuffer.shift()
+				line += ' ' + undentedStr(next)
+			return line
+
+	tester.equal 213, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -209,7 +221,7 @@ tester.equal 87, new StringInput("""
 					long parameters
 
 			# --- DONE ---
-			""", {mapper}), [
+			"""), [
 			'str = compare( "abcde", expected )',
 			'call func with multiple long parameters',
 			]
@@ -221,17 +233,19 @@ tester.equal 87, new StringInput("""
 
 (()->
 
-	mapper = (line, oInput) ->
-		if line == '' || line.match(/^\s*#\s/)
-			return undef     # skip comments and blank lines
+	class TestInput extends StringInput
 
-		n = indentLevel(line)    # current line indent
-		while (oInput.lBuffer.length > 0) && (indentLevel(oInput.lBuffer[0]) >= n+2)
-			next = oInput.lBuffer.shift()
-			line += ' ' + undentedStr(next)
-		return line
+		mapLine: (line) ->
+			if line == '' || line.match(/^\s*#\s/)
+				return undef     # skip comments and blank lines
 
-	tester.equal 229, new StringInput("""
+			n = indentLevel(line)    # current line indent
+			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
+				next = @lBuffer.shift()
+				line += ' ' + undentedStr(next)
+			return line
+
+	tester.equal 248, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -242,7 +256,7 @@ tester.equal 87, new StringInput("""
 					long parameters
 
 			# --- DONE ---
-			""", {mapper}), [
+			"""), [
 			'str = compare( "abcde", expected )',
 			'call func with multiple long parameters',
 			]
@@ -254,27 +268,25 @@ tester.equal 87, new StringInput("""
 
 (()->
 
-	NewMapper = (line, oInput) ->
 
-		assert oInput instanceof StringInput
-		if isEmpty(line)
-			return undef
-		if line == 'abc'
-			return '123'
-		else if line == 'def'
-			return '456'
-		else
-			return line
+	class TestInput extends StringInput
 
-	class NewInput extends StringInput
+		constructor: (content) ->
 
-		constructor: (content, hOptions={}) ->
+			super content
 
-			assert not hOptions.mapper?
-			hOptions.mapper = NewMapper
-			super content, hOptions
+		mapLine: (line) ->
 
-	tester.equal 272, new NewInput("""
+			if isEmpty(line)
+				return undef
+			if line == 'abc'
+				return '123'
+			else if line == 'def'
+				return '456'
+			else
+				return line
+
+	tester.equal 289, new TestInput("""
 			abc
 
 			def
@@ -288,7 +300,7 @@ tester.equal 87, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 286, new StringInput("""
+tester.equal 303, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -307,30 +319,32 @@ tester.equal 286, new StringInput("""
 # --- Test advanced use of mapping function
 
 (()->
-	coffeeMapper = (orgLine) ->
-		[level, line] = splitLine(orgLine)
-		if isEmpty(line) || line.match(/^#\s/)
-			return undef
-		if lMatches = line.match(///^
-				(?:
-					([A-Za-z][A-Za-z0-9_]*)   # variable name
-					\s*
-					)?
-				\<\=\=
-				\s*
-				(.*)
-				$///)
-			result = indentedStr(line, level)
-		else
-			result = orgLine
-		return result
+	class TestInput extends StringInput
 
-	tester.equal 323, new StringInput("""
+		mapLine: (orgLine) ->
+			[level, line] = splitLine(orgLine)
+			if isEmpty(line) || line.match(/^#\s/)
+				return undef
+			if lMatches = line.match(///^
+					(?:
+						([A-Za-z][A-Za-z0-9_]*)   # variable name
+						\s*
+						)?
+					\<\=\=
+					\s*
+					(.*)
+					$///)
+				result = indentedStr(line, level)
+			else
+				result = orgLine
+			return result
+
+	tester.equal 342, new TestInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
 			\tdef
-			""", {mapper: coffeeMapper}), [
+			"""), [
 			'\tabc'
 			'\t\tmyvar <== 2 * 3'
 			'\tdef'
@@ -346,10 +360,10 @@ tester.equal 286, new StringInput("""
 			'.md': 'c:/Users/johnd/string-input/src/markdown'
 		})
 
-	simple.equal 344, oInput.getFileContents('title.md'), "Contents of title.md"
-	simple.fails 345, () -> getFileContents('title.txt')
+	simple.equal 363, oInput.getFileContents('title.md'), "Contents of title.md"
+	simple.fails 364, () -> getFileContents('title.txt')
 
 	setUnitTesting(false)
-	simple.equal 348, oInput.getFileContents('title.md'), "title\n=====\n"
+	simple.equal 367, oInput.getFileContents('title.md'), "title\n=====\n"
 	setUnitTesting(true)
 	)()

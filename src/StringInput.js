@@ -41,8 +41,7 @@ export var StringInput = class StringInput {
     this.hOptions = hOptions1;
     // --- Valid options:
     //        filename
-    //        prefix        # auto-prepended to each defined ret val
-    //                      # from _mapped()
+    //        prefix       # prepended to each defined retval from _mapped()
     //        hIncludePaths    { <ext>: <dir>, ... }
     ({filename, prefix, hIncludePaths} = this.hOptions);
     if (isString(content)) {
@@ -155,7 +154,7 @@ export var StringInput = class StringInput {
 
   // ........................................................................
   get() {
-    var base, dir, lResult, level, line, result, save, str;
+    var line, result, save;
     debug(`GET (${this.filename}):`);
     if (this.lookahead != null) {
       debug(`   RETURN (${this.filename}) lookahead token`);
@@ -172,20 +171,6 @@ export var StringInput = class StringInput {
       debug(`   RETURN (${this.filename}) undef - at EOF`);
       return undef;
     }
-    // --- Handle #include here, before calling @_mapped
-    [level, str] = splitLine(line);
-    if (lResult = this.checkForInclude(str)) {
-      assert(!this.altInput, "get(): altInput already set");
-      [dir, base] = lResult;
-      this.altInput = new FileInput(`${dir}/${base}`, {
-        prefix: indentation(level),
-        hIncludePaths: this.hIncludePaths
-      });
-      debug("   alt input created");
-      result = this.getFromAlt();
-      debug(`   RETURN (${this.filename}) '${result}'` + "from alt input after #include");
-      return result;
-    }
     result = this._mapped(line);
     while ((result == null) && (this.lBuffer.length > 0)) {
       line = this.fetch();
@@ -197,12 +182,29 @@ export var StringInput = class StringInput {
 
   // ........................................................................
   _mapped(line) {
-    var result;
+    var altLine, base, dir, lResult, level, result, str;
     assert(isString(line), `Not a string: '${line}'`);
     debug(`   _MAPPED: '${line}'`);
     assert(this.lookahead == null, "_mapped(): lookahead exists");
     if (line == null) {
       return undef;
+    }
+    [level, str] = splitLine(line);
+    if (lResult = this.checkForInclude(str)) {
+      assert(!this.altInput, "get(): altInput already set");
+      [dir, base] = lResult;
+      this.altInput = new FileInput(`${dir}/${base}`, {
+        prefix: indentation(level),
+        hIncludePaths: this.hIncludePaths
+      });
+      debug("   alt input created");
+      altLine = this.getFromAlt();
+      if (altLine != null) {
+        debug(`   _mapped(): line becomes '${altLine}'`);
+        line = altLine;
+      } else {
+        debug(`   _mapped(): alt was undef, retain line '${line}'`);
+      }
     }
     result = this.mapLine(line);
     debug(`      mapped to '${result}'`);

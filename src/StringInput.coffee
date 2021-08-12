@@ -30,8 +30,7 @@ export class StringInput
 	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
-		#        prefix        # auto-prepended to each defined ret val
-		#                      # from _mapped()
+		#        prefix       # prepended to each defined retval from _mapped()
 		#        hIncludePaths    { <ext>: <dir>, ... }
 
 		{filename, prefix, hIncludePaths} = @hOptions
@@ -157,23 +156,6 @@ export class StringInput
 			debug "   RETURN (#{@filename}) undef - at EOF"
 			return undef
 
-		# --- Handle #include here, before calling @_mapped
-
-		[level, str] = splitLine(line)
-		if lResult = @checkForInclude(str)
-			assert not @altInput, "get(): altInput already set"
-			[dir, base] = lResult
-			@altInput = new FileInput("#{dir}/#{base}", {
-					prefix: indentation(level),
-					hIncludePaths: @hIncludePaths,
-					})
-			debug "   alt input created"
-
-			result = @getFromAlt()
-			debug "   RETURN (#{@filename}) '#{result}'" \
-					+ "from alt input after #include"
-			return result
-
 		result = @_mapped(line)
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
@@ -190,6 +172,25 @@ export class StringInput
 		assert not @lookahead?, "_mapped(): lookahead exists"
 		if not line?
 			return undef
+
+
+		[level, str] = splitLine(line)
+		if lResult = @checkForInclude(str)
+			assert not @altInput, "get(): altInput already set"
+			[dir, base] = lResult
+			@altInput = new FileInput("#{dir}/#{base}", {
+					prefix: indentation(level),
+					hIncludePaths: @hIncludePaths,
+					})
+			debug "   alt input created"
+
+			altLine = @getFromAlt()
+			if altLine?
+				debug "   _mapped(): line becomes '#{altLine}'"
+				line = altLine
+			else
+				debug "   _mapped(): alt was undef, retain line '#{line}'"
+
 
 		result = @mapLine(line)
 		debug "      mapped to '#{result}'"

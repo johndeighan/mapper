@@ -173,7 +173,6 @@ export class StringInput
 		if not line?
 			return undef
 
-
 		[level, str] = splitLine(line)
 		if lResult = @checkForInclude(str)
 			assert not @altInput, "get(): altInput already set"
@@ -190,7 +189,6 @@ export class StringInput
 				line = altLine
 			else
 				debug "   _mapped(): alt was undef, retain line '#{line}'"
-
 
 		result = @mapLine(line)
 		debug "      mapped to '#{result}'"

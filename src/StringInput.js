@@ -86,52 +86,67 @@ export var StringInput = class StringInput {
 
   // ........................................................................
   unget(item) {
-    debug('UNGET:');
+    debug('enter unget():');
     assert(this.lookahead == null);
-    debug(item, "Lookahead:");
-    return this.lookahead = item;
+    this.lookahead = item;
+    debug(item, "Lookahead:", 'exit');
   }
 
   // ........................................................................
   peek() {
     var item;
-    debug('PEEK:');
+    debug('enter peek():');
     if (this.lookahead != null) {
-      debug("   return lookahead token");
+      debug("exit with lookahead token");
       return this.lookahead;
     }
     item = this.get();
     this.unget(item);
+    debug(item, 'exit with:');
     return item;
   }
 
   // ........................................................................
   skip() {
-    debug('SKIP:');
+    debug('enter skip():');
     if (this.lookahead != null) {
-      debug("   undef lookahead token");
       this.lookahead = undef;
+      debug("exit: undef lookahead token");
       return;
     }
     this.get();
+    debug('exit');
   }
 
   // ........................................................................
   // --- returns [dir, base] if a valid #include
   checkForInclude(str) {
     var _, base, dir, ext, filename, fname, lMatches, root;
+    debug(`enter checkForInclude('${str}')`);
     assert(!str.match(/^\s/), "checkForInclude(): string has indentation");
     if (lMatches = str.match(/^\#include\s+(\S.*)$/)) {
       [_, fname] = lMatches;
       filename = fname.trim();
       ({root, dir, base, ext} = pathlib.parse(filename));
+      debug(`found #include ${fname}`);
       if (!root && !dir && this.hIncludePaths && (dir = this.hIncludePaths[ext])) {
         assert(base === filename, `base = ${base}, filename = ${filename}`);
         // --- It's a plain file name with an extension
         //     that we can handle
+        debug(`exit with dir='${dir}', base='${base}'`);
         return [dir, base];
+      } else {
+        // --- Output messages if debugging
+        if (root || dir) {
+          debug(`root='${root}', dir='${dir}'`);
+        } else if (!this.hIncludePaths) {
+          debug("no hIncludePaths");
+        } else if (!this.hIncludePaths[ext]) {
+          debug(`no hIncludePaths for ext '${ext}'`);
+        }
       }
     }
+    debug("exit: no #include found");
     return undef;
   }
 
@@ -141,34 +156,37 @@ export var StringInput = class StringInput {
   //        2. get from alt input returns undef (then closes alt input)
   getFromAlt() {
     var result;
+    debug("enter getFromAlt()");
     if (!this.altInput) {
+      debug("exit: no alt input");
       return undef;
     }
     result = this.altInput.get();
     if (result == null) {
-      debug("   alt input removed");
+      debug("alt input removed");
       this.altInput = undef;
     }
+    debug('exit');
     return result;
   }
 
   // ........................................................................
   get() {
     var line, result, save;
-    debug(`GET (${this.filename}):`);
+    debug(`enter get() (from ${this.filename}):`);
     if (this.lookahead != null) {
-      debug(`   RETURN (${this.filename}) lookahead token`);
       save = this.lookahead;
       this.lookahead = undef;
+      debug(`exit (from ${this.filename}) with lookahead token`);
       return save;
     }
     if (line = this.getFromAlt()) {
-      debug(`   RETURN (${this.filename}) '${line}' from alt input`);
+      debug(`exit (from ${this.filename}) '${line}' from alt input`);
       return line;
     }
     line = this.fetch();
     if (line == null) {
-      debug(`   RETURN (${this.filename}) undef - at EOF`);
+      debug(`exit (from ${this.filename}) undef - at EOF`);
       return undef;
     }
     result = this._mapped(line);
@@ -176,7 +194,7 @@ export var StringInput = class StringInput {
       line = this.fetch();
       result = this._mapped(line);
     }
-    debug(`   RETURN (${this.filename}) '${result}'`);
+    debug(`exit: return (from ${this.filename}) '${result}'`);
     return result;
   }
 
@@ -184,9 +202,10 @@ export var StringInput = class StringInput {
   _mapped(line) {
     var altLine, base, dir, lResult, level, result, str;
     assert(isString(line), `Not a string: '${line}'`);
-    debug(`   _MAPPED: '${line}'`);
+    debug(`enter _mapped: '${line}'`);
     assert(this.lookahead == null, "_mapped(): lookahead exists");
     if (line == null) {
+      debug("exit, empty line - return undef");
       return undef;
     }
     [level, str] = splitLine(line);
@@ -197,25 +216,25 @@ export var StringInput = class StringInput {
         prefix: indentation(level),
         hIncludePaths: this.hIncludePaths
       });
-      debug("   alt input created");
+      debug("alt input created");
       altLine = this.getFromAlt();
       if (altLine != null) {
-        debug(`   _mapped(): line becomes '${altLine}'`);
+        debug(`_mapped(): line becomes '${altLine}'`);
         line = altLine;
       } else {
-        debug(`   _mapped(): alt was undef, retain line '${line}'`);
+        debug(`_mapped(): alt was undef, retain line '${line}'`);
       }
     }
     result = this.mapLine(line);
-    debug(`      mapped to '${result}'`);
+    debug(result, "MAPPED TO:");
     if (result != null) {
       if (isString(result)) {
         result = this.prefix + result;
       }
-      debug(`      _mapped(): returning '${result}'`);
+      debug(`exit _mapped(): returning '${result}'`);
       return result;
     } else {
-      debug("      _mapped(): returning undef");
+      debug("exit _mapped(): returning undef");
       return undef;
     }
   }
@@ -245,27 +264,19 @@ export var StringInput = class StringInput {
   //     as one long string
   // --- Designed to use in mapLine()
   fetchBlock(atLevel) {
-    var base, dir, i, lLines, lResult, len, level, line, oInput, ref, str;
+    var lLines, level, line, result, str;
+    debug(`enter fetchBlock(${atLevel})`);
     lLines = [];
     // --- NOTE: I absolutely hate using a backslash for line continuation
     //           but CoffeeScript doesn't continue while there is an
     //           open parenthesis like Python does :-(
     while ((this.lBuffer.length > 0) && ([level, str] = splitLine(this.lBuffer[0])) && (level >= atLevel) && (line = this.fetch())) {
-      if (lResult = this.checkForInclude(str)) {
-        [dir, base] = lResult;
-        oInput = new FileInput(`${dir}/${base}`, {
-          prefix: indentation(level),
-          hIncludePaths: this.hIncludePaths
-        });
-        ref = oInput.getAll();
-        for (i = 0, len = ref.length; i < len; i++) {
-          line = ref[i];
-          lLines.push(line);
-        }
-      } else {
-        lLines.push(indentedStr(str, level - atLevel));
+      result = this._mapped(line);
+      if (result) {
+        lLines.push(indentedStr(result, level - atLevel));
       }
     }
+    debug('exit');
     return lLines.join('\n');
   }
 

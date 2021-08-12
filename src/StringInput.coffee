@@ -72,31 +72,34 @@ export class StringInput
 	# ........................................................................
 
 	unget: (item) ->
-		debug 'UNGET:'
+		debug 'enter unget():'
 		assert not @lookahead?
-		debug item, "Lookahead:"
 		@lookahead = item
+		debug item, "Lookahead:", 'exit'
+		return
 
 	# ........................................................................
 
 	peek: () ->
-		debug 'PEEK:'
+		debug 'enter peek():'
 		if @lookahead?
-			debug "   return lookahead token"
+			debug "exit with lookahead token"
 			return @lookahead
 		item = @get()
 		@unget(item)
+		debug item, 'exit with:'
 		return item
 
 	# ........................................................................
 
 	skip: () ->
-		debug 'SKIP:'
+		debug 'enter skip():'
 		if @lookahead?
-			debug "   undef lookahead token"
 			@lookahead = undef
+			debug "exit: undef lookahead token"
 			return
 		@get()
+		debug 'exit'
 		return
 
 	# ........................................................................
@@ -104,6 +107,7 @@ export class StringInput
 
 	checkForInclude: (str) ->
 
+		debug "enter checkForInclude('#{str}')"
 		assert not str.match(/^\s/), "checkForInclude(): string has indentation"
 		if lMatches = str.match(///^
 				\# include
@@ -113,6 +117,7 @@ export class StringInput
 			[_, fname] = lMatches
 			filename = fname.trim()
 			{root, dir, base, ext} = pathlib.parse(filename)
+			debug "found #include #{fname}"
 			if not root \
 					&& not dir \
 					&& @hIncludePaths \
@@ -121,7 +126,17 @@ export class StringInput
 
 				# --- It's a plain file name with an extension
 				#     that we can handle
+				debug "exit with dir='#{dir}', base='#{base}'"
 				return [dir, base]
+			else
+				# --- Output messages if debugging
+				if root || dir
+					debug "root='#{root}', dir='#{dir}'"
+				else if not @hIncludePaths
+					debug "no hIncludePaths"
+				else if not @hIncludePaths[ext]
+					debug "no hIncludePaths for ext '#{ext}'"
+		debug "exit: no #include found"
 		return undef
 
 	# ........................................................................
@@ -130,37 +145,40 @@ export class StringInput
 	#        2. get from alt input returns undef (then closes alt input)
 
 	getFromAlt: () ->
+		debug "enter getFromAlt()"
 		if not @altInput
+			debug "exit: no alt input"
 			return undef
 		result = @altInput.get()
 		if not result?
-			debug "   alt input removed"
+			debug "alt input removed"
 			@altInput = undef
+		debug 'exit'
 		return result
 
 	# ........................................................................
 
 	get: () ->
-		debug "GET (#{@filename}):"
+		debug "enter get() (from #{@filename}):"
 		if @lookahead?
-			debug "   RETURN (#{@filename}) lookahead token"
 			save = @lookahead
 			@lookahead = undef
+			debug "exit (from #{@filename}) with lookahead token"
 			return save
 		if line = @getFromAlt()
-			debug "   RETURN (#{@filename}) '#{line}' from alt input"
+			debug "exit (from #{@filename}) '#{line}' from alt input"
 			return line
 
 		line = @fetch()
 		if not line?
-			debug "   RETURN (#{@filename}) undef - at EOF"
+			debug "exit (from #{@filename}) undef - at EOF"
 			return undef
 
 		result = @_mapped(line)
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
 			result = @_mapped(line)
-		debug "   RETURN (#{@filename}) '#{result}'"
+		debug "exit: return (from #{@filename}) '#{result}'"
 		return result
 
 	# ........................................................................
@@ -168,9 +186,10 @@ export class StringInput
 	_mapped: (line) ->
 
 		assert isString(line), "Not a string: '#{line}'"
-		debug "   _MAPPED: '#{line}'"
+		debug "enter _mapped: '#{line}'"
 		assert not @lookahead?, "_mapped(): lookahead exists"
 		if not line?
+			debug "exit, empty line - return undef"
 			return undef
 
 		[level, str] = splitLine(line)
@@ -181,25 +200,25 @@ export class StringInput
 					prefix: indentation(level),
 					hIncludePaths: @hIncludePaths,
 					})
-			debug "   alt input created"
+			debug "alt input created"
 
 			altLine = @getFromAlt()
 			if altLine?
-				debug "   _mapped(): line becomes '#{altLine}'"
+				debug "_mapped(): line becomes '#{altLine}'"
 				line = altLine
 			else
-				debug "   _mapped(): alt was undef, retain line '#{line}'"
+				debug "_mapped(): alt was undef, retain line '#{line}'"
 
 		result = @mapLine(line)
-		debug "      mapped to '#{result}'"
+		debug result, "MAPPED TO:"
 
 		if result?
 			if isString(result)
 				result = @prefix + result
-			debug "      _mapped(): returning '#{result}'"
+			debug "exit _mapped(): returning '#{result}'"
 			return result
 		else
-			debug "      _mapped(): returning undef"
+			debug "exit _mapped(): returning undef"
 			return undef
 
 	# ........................................................................
@@ -227,6 +246,7 @@ export class StringInput
 
 	fetchBlock: (atLevel) ->
 
+		debug "enter fetchBlock(#{atLevel})"
 		lLines = []
 
 		# --- NOTE: I absolutely hate using a backslash for line continuation
@@ -238,16 +258,10 @@ export class StringInput
 				&& (level >= atLevel) \
 				&& (line = @fetch()) \
 				)
-			if lResult = @checkForInclude(str)
-				[dir, base] = lResult
-				oInput = new FileInput("#{dir}/#{base}", {
-						prefix: indentation(level),
-						hIncludePaths: @hIncludePaths,
-						})
-				for line in oInput.getAll()
-					lLines.push line
-			else
-				lLines.push indentedStr(str, level - atLevel)
+			result = @_mapped(line)
+			if result
+				lLines.push indentedStr(result, level - atLevel)
+		debug 'exit'
 		return lLines.join('\n')
 
 	# ........................................................................

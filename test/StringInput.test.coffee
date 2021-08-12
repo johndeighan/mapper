@@ -388,8 +388,29 @@ setUnitTesting(true)
 	line = oInput.get()
 	simple.equal 389, line, 'div:markdown'
 	simple.equal 390, block, 'Contents of title.md'
+	)()
+
+(() ->
+	text = """
+			p a paragraph
+			div:markdown
+				#include title.md
+			"""
 
 	block = undef
+
+	class TestParser extends StringInput
+
+		mapLine: (line) ->
+			if line == 'div:markdown'
+				setDebugging(true)
+				block = @fetchBlock(1)
+				setDebugging(false)
+			return line
+
+	oInput = new TestParser(text, {
+			hIncludePaths: {'.md': 'somewhere'}
+			})
 
 	setUnitTesting(false)
 	oInput = new TestParser(text, {
@@ -398,9 +419,14 @@ setUnitTesting(true)
 				}
 			})
 	line = oInput.get()
-	simple.equal 401, line, 'p a paragraph'
+	simple.equal 420, line, 'p a paragraph'
+
 	line = oInput.get()
-	simple.equal 403, line, 'div:markdown'
-	simple.equal 404, block, '\ttitle\n\t====='
+	simple.equal 423, line, 'div:markdown'
+
+	say "block = '#{escapeStr(block)}'"
+
+	simple.equal 427, block, '\ttitle\n\t====='
+
 	setUnitTesting(true)
 	)()

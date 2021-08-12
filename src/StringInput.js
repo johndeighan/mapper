@@ -121,7 +121,7 @@ export var StringInput = class StringInput {
     var _, base, dir, ext, filename, fname, lMatches, level, root, str;
     assert(!this.altInput, "checkForInclude(): altInput already set");
     [level, str] = splitLine(line);
-    if (lMatches = str.match(/^\#include\s*(.*)$/)) {
+    if (lMatches = str.match(/^\#include\s+(\S.*)$/)) {
       [_, fname] = lMatches;
       filename = fname.trim();
       ({root, dir, base, ext} = pathlib.parse(filename));
@@ -179,7 +179,7 @@ export var StringInput = class StringInput {
     this.checkForInclude(line);
     if (this.altInput) {
       result = this.getFromAlt();
-      debug(`   RETURN (${this.filename}) '${result}' from alt input after #include`);
+      debug(`   RETURN (${this.filename}) '${result}'` + "from alt input after #include");
       return result;
     }
     result = this._mapped(line);
@@ -248,24 +248,6 @@ export var StringInput = class StringInput {
       block += line + '\n';
     }
     return block;
-  }
-
-  // ........................................................................
-  getFileContents(filename) {
-    var base, dir, ext, name, root;
-    if (unitTesting) {
-      return `Contents of ${filename}`;
-    }
-    ({dir, root, base, name, ext} = pathlib.parse(filename));
-    if (dir) {
-      error(`#include: Full paths not allowed: '${filename}'`);
-    }
-    dir = this.hIncludePaths[ext];
-    if (dir == null) {
-      say(this.hIncludePaths, 'hIncludePaths:');
-      error(`getFileContents(): invalid extension: '${filename}'`);
-    }
-    return slurp(`${dir}/${base}`);
   }
 
   // ........................................................................

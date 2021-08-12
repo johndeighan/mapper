@@ -99,7 +99,6 @@ export class StringInput
 		@get()
 		return
 
-
 	# ........................................................................
 	# --- Doesn't return anything - sets up @altInput
 
@@ -109,8 +108,8 @@ export class StringInput
 		[level, str] = splitLine(line)
 		if lMatches = str.match(///^
 				\# include
-				\s*
-				(.*)
+				\s+
+				(\S.*)
 				$///)
 			[_, fname] = lMatches
 			filename = fname.trim()
@@ -168,7 +167,8 @@ export class StringInput
 		@checkForInclude(line)
 		if @altInput
 			result = @getFromAlt()
-			debug "   RETURN (#{@filename}) '#{result}' from alt input after #include"
+			debug "   RETURN (#{@filename}) '#{result}'" \
+					+ "from alt input after #include"
 			return result
 
 		result = @_mapped(line)
@@ -238,21 +238,6 @@ export class StringInput
 				)
 			block += line + '\n'
 		return block
-
-	# ........................................................................
-
-	getFileContents: (filename) ->
-
-		if unitTesting
-			return "Contents of #{filename}"
-		{dir, root, base, name, ext} = pathlib.parse(filename)
-		if dir
-			error "#include: Full paths not allowed: '#{filename}'"
-		dir = @hIncludePaths[ext]
-		if not dir?
-			say @hIncludePaths, 'hIncludePaths:'
-			error "getFileContents(): invalid extension: '#{filename}'"
-		return slurp("#{dir}/#{base}")
 
 	# ........................................................................
 

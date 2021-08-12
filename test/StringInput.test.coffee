@@ -266,10 +266,6 @@ tester.equal 82, new StringInput("""
 
 	class TestInput extends StringInput
 
-		constructor: (content) ->
-
-			super content
-
 		mapLine: (line) ->
 
 			if isEmpty(line)
@@ -344,21 +340,4 @@ tester.equal 303, new StringInput("""
 			'\t\tmyvar <== 2 * 3'
 			'\tdef'
 			]
-	)()
-
-# ---------------------------------------------------------------------------
-# test getFileContents
-
-(()->
-	oInput = new StringInput('nothing', {
-		hIncludePaths:
-			'.md': 'c:/Users/johnd/string-input/src/markdown'
-		})
-
-	simple.equal 363, oInput.getFileContents('title.md'), "Contents of title.md"
-	simple.fails 364, () -> getFileContents('title.txt')
-
-	setUnitTesting(false)
-	simple.equal 367, oInput.getFileContents('title.md'), "title\n=====\n"
-	setUnitTesting(true)
 	)()

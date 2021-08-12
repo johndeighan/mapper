@@ -67,12 +67,14 @@ export var StringInput = class StringInput {
     }
     this.prefix = prefix || '';
     this.hIncludePaths = this.hOptions.hIncludePaths || {};
-    ref = this.hIncludePaths;
-    for (ext in ref) {
-      if (!hasProp.call(ref, ext)) continue;
-      dir = ref[ext];
-      assert(ext.indexOf('.') === 0, "invalid key in hIncludePaths");
-      assert(fs.existsSync(dir), `dir ${dir} does not exist`);
+    if (!unitTesting) {
+      ref = this.hIncludePaths;
+      for (ext in ref) {
+        if (!hasProp.call(ref, ext)) continue;
+        dir = ref[ext];
+        assert(ext.indexOf('.') === 0, "invalid key in hIncludePaths");
+        assert(fs.existsSync(dir), `dir ${dir} does not exist`);
+      }
     }
     this.lookahead = undef; // lookahead token, placed by unget
     this.altInput = undef;
@@ -116,11 +118,10 @@ export var StringInput = class StringInput {
   }
 
   // ........................................................................
-  // --- Doesn't return anything - sets up @altInput
-  checkForInclude(line) {
-    var _, base, dir, ext, filename, fname, lMatches, level, root, str;
-    assert(!this.altInput, "checkForInclude(): altInput already set");
-    [level, str] = splitLine(line);
+  // --- returns [dir, base] if a valid #include
+  checkForInclude(str) {
+    var _, base, dir, ext, filename, fname, lMatches, root;
+    assert(!str.match(/^\s/), "checkForInclude(): string has indentation");
     if (lMatches = str.match(/^\#include\s+(\S.*)$/)) {
       [_, fname] = lMatches;
       filename = fname.trim();
@@ -129,14 +130,10 @@ export var StringInput = class StringInput {
         assert(base === filename, `base = ${base}, filename = ${filename}`);
         // --- It's a plain file name with an extension
         //     that we can handle
-        this.altInput = new FileInput(`${dir}/${base}`, {
-          filename: fname,
-          prefix: indentation(level),
-          hIncludePaths: this.hIncludePaths
-        });
-        debug("   alt input created");
+        return [dir, base];
       }
     }
+    return undef;
   }
 
   // ........................................................................
@@ -158,7 +155,7 @@ export var StringInput = class StringInput {
 
   // ........................................................................
   get() {
-    var line, result, save;
+    var base, dir, lResult, level, line, result, save, str;
     debug(`GET (${this.filename}):`);
     if (this.lookahead != null) {
       debug(`   RETURN (${this.filename}) lookahead token`);
@@ -176,8 +173,15 @@ export var StringInput = class StringInput {
       return undef;
     }
     // --- Handle #include here, before calling @_mapped
-    this.checkForInclude(line);
-    if (this.altInput) {
+    [level, str] = splitLine(line);
+    if (lResult = this.checkForInclude(str)) {
+      assert(!this.altInput, "get(): altInput already set");
+      [dir, base] = lResult;
+      this.altInput = new FileInput(`${dir}/${base}`, {
+        prefix: indentation(level),
+        hIncludePaths: this.hIncludePaths
+      });
+      debug("   alt input created");
       result = this.getFromAlt();
       debug(`   RETURN (${this.filename}) '${result}'` + "from alt input after #include");
       return result;
@@ -239,15 +243,28 @@ export var StringInput = class StringInput {
   //     as one long string
   // --- Designed to use in mapLine()
   fetchBlock(atLevel) {
-    var block, level, line, str;
-    block = '';
+    var base, dir, i, lLines, lResult, len, level, line, oInput, ref, str;
+    lLines = [];
     // --- NOTE: I absolutely hate using a backslash for line continuation
     //           but CoffeeScript doesn't continue while there is an
     //           open parenthesis like Python does :-(
     while ((this.lBuffer.length > 0) && ([level, str] = splitLine(this.lBuffer[0])) && (level >= atLevel) && (line = this.fetch())) {
-      block += line + '\n';
+      if (lResult = this.checkForInclude(str)) {
+        [dir, base] = lResult;
+        oInput = new FileInput(`${dir}/${base}`, {
+          prefix: indentation(level),
+          hIncludePaths: this.hIncludePaths
+        });
+        ref = oInput.getAll();
+        for (i = 0, len = ref.length; i < len; i++) {
+          line = ref[i];
+          lLines.push(line);
+        }
+      } else {
+        lLines.push(indentedStr(str, level - atLevel));
+      }
     }
-    return block;
+    return lLines.join('\n');
   }
 
   // ........................................................................
@@ -264,7 +281,7 @@ export var StringInput = class StringInput {
 
   // ........................................................................
   getAllText() {
-    return this.getAll().join('\n') + '\n';
+    return this.getAll().join('\n');
   }
 
 };
@@ -274,12 +291,17 @@ export var StringInput = class StringInput {
 //   class FileInput - contents from a file
 export var FileInput = class FileInput extends StringInput {
   constructor(filename, hOptions = {}) {
-    var content;
-    if (!fs.existsSync(filename)) {
-      error(`FileInput(): file '${filename}' does not exist`);
+    var base, content, dir, ext, root;
+    ({root, dir, base, ext} = pathlib.parse(filename.trim()));
+    hOptions.filename = base;
+    if (unitTesting) {
+      content = `Contents of ${base}`;
+    } else {
+      if (!fs.existsSync(filename)) {
+        error(`FileInput(): file '${filename}' does not exist`);
+      }
+      content = slurp(filename);
     }
-    content = fs.readFileSync(filename).toString();
-    hOptions.filename = filename;
     super(content, hOptions);
   }
 

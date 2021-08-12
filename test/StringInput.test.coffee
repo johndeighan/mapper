@@ -4,6 +4,7 @@ import {strict as assert} from 'assert'
 import {
 	say,
 	undef,
+	pass,
 	isEmpty,
 	setDebugging,
 	debugging,
@@ -36,19 +37,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	tester.equal 39, item, 'abc'
+	tester.equal 40, item, 'abc'
 	item = input.peek()
-	tester.equal 41, item, 'abc'
+	tester.equal 42, item, 'abc'
 	item = input.get()
-	tester.equal 43, item, 'abc'
+	tester.equal 44, item, 'abc'
 	item = input.get()
-	tester.equal 45, item, 'def'
+	tester.equal 46, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 48, item, 'def'
+	tester.equal 49, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 51, item, undef
+	tester.equal 52, item, undef
 
 	)()
 
@@ -66,7 +67,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 74, new StringInput("""
+tester.equal 70, new StringInput("""
 		abc
 		def
 		"""), [
@@ -74,7 +75,7 @@ tester.equal 74, new StringInput("""
 		'def',
 		]
 
-tester.equal 82, new StringInput("""
+tester.equal 78, new StringInput("""
 		abc
 
 		def
@@ -93,7 +94,7 @@ tester.equal 82, new StringInput("""
 			else
 				return line
 
-	tester.equal 101, new TestInput("""
+	tester.equal 97, new TestInput("""
 			abc
 
 			def
@@ -115,7 +116,7 @@ tester.equal 82, new StringInput("""
 			else
 				return 'x'
 
-	tester.equal 123, new TestInput("""
+	tester.equal 119, new TestInput("""
 			abc
 
 			def
@@ -140,7 +141,7 @@ tester.equal 82, new StringInput("""
 			else
 				return line
 
-	tester.equal 148, new TestInput("""
+	tester.equal 144, new TestInput("""
 			abc
 
 			def
@@ -173,7 +174,7 @@ tester.equal 82, new StringInput("""
 			else
 				return line
 
-	tester.equal 181, new TestInput("""
+	tester.equal 177, new TestInput("""
 			abc
 			#if x==y
 				def
@@ -205,7 +206,7 @@ tester.equal 82, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 213, new TestInput("""
+	tester.equal 209, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -240,7 +241,7 @@ tester.equal 82, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 248, new TestInput("""
+	tester.equal 244, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -263,7 +264,6 @@ tester.equal 82, new StringInput("""
 
 (()->
 
-
 	class TestInput extends StringInput
 
 		mapLine: (line) ->
@@ -277,7 +277,7 @@ tester.equal 82, new StringInput("""
 			else
 				return line
 
-	tester.equal 289, new TestInput("""
+	tester.equal 280, new TestInput("""
 			abc
 
 			def
@@ -291,7 +291,25 @@ tester.equal 82, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 303, new StringInput("""
+tester.equal 294, new StringInput("""
+		abc
+			#include title.md
+		def
+		""", {
+			hIncludePaths: {
+				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
+				}
+			}), [
+		'abc',
+		'\tContents of title.md',
+		'def',
+		]
+
+# ---------------------------------------------------------------------------
+# --- Test #include with unit testing off
+
+setUnitTesting(false)
+tester.equal 312, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -305,6 +323,7 @@ tester.equal 303, new StringInput("""
 		'\t=====',
 		'def',
 		]
+setUnitTesting(true)
 
 # ---------------------------------------------------------------------------
 # --- Test advanced use of mapping function
@@ -330,7 +349,7 @@ tester.equal 303, new StringInput("""
 				result = orgLine
 			return result
 
-	tester.equal 342, new TestInput("""
+	tester.equal 352, new TestInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
@@ -340,4 +359,48 @@ tester.equal 303, new StringInput("""
 			'\t\tmyvar <== 2 * 3'
 			'\tdef'
 			]
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test #include inside block processed by fetchBlock()
+
+(() ->
+	text = """
+			p a paragraph
+			div:markdown
+				#include title.md
+			"""
+
+	block = undef
+
+	class TestParser extends StringInput
+
+		mapLine: (line) ->
+			if line == 'div:markdown'
+				block = @fetchBlock(1)
+			return line
+
+	oInput = new TestParser(text, {
+			hIncludePaths: {'.md': 'somewhere'}
+			})
+	line = oInput.get()
+	simple.equal 387, line, 'p a paragraph'
+	line = oInput.get()
+	simple.equal 389, line, 'div:markdown'
+	simple.equal 390, block, 'Contents of title.md'
+
+	block = undef
+
+	setUnitTesting(false)
+	oInput = new TestParser(text, {
+			hIncludePaths: {
+				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
+				}
+			})
+	line = oInput.get()
+	simple.equal 401, line, 'p a paragraph'
+	line = oInput.get()
+	simple.equal 403, line, 'div:markdown'
+	simple.equal 404, block, '\ttitle\n\t====='
+	setUnitTesting(true)
 	)()

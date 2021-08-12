@@ -57,9 +57,10 @@ export class StringInput
 
 		@prefix = prefix || ''
 		@hIncludePaths = @hOptions.hIncludePaths || {}
-		for own ext, dir of @hIncludePaths
-			assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
-			assert fs.existsSync(dir), "dir #{dir} does not exist"
+		if not unitTesting
+			for own ext, dir of @hIncludePaths
+				assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
+				assert fs.existsSync(dir), "dir #{dir} does not exist"
 		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
 
@@ -100,12 +101,11 @@ export class StringInput
 		return
 
 	# ........................................................................
-	# --- Doesn't return anything - sets up @altInput
+	# --- returns [dir, base] if a valid #include
 
-	checkForInclude: (line) ->
+	checkForInclude: (str) ->
 
-		assert not @altInput, "checkForInclude(): altInput already set"
-		[level, str] = splitLine(line)
+		assert not str.match(/^\s/), "checkForInclude(): string has indentation"
 		if lMatches = str.match(///^
 				\# include
 				\s+
@@ -122,14 +122,8 @@ export class StringInput
 
 				# --- It's a plain file name with an extension
 				#     that we can handle
-
-				@altInput = new FileInput("#{dir}/#{base}", {
-						filename: fname,
-						prefix: indentation(level),
-						hIncludePaths: @hIncludePaths,
-						})
-				debug "   alt input created"
-		return
+				return [dir, base]
+		return undef
 
 	# ........................................................................
 	# --- Returns undef if either:
@@ -164,8 +158,17 @@ export class StringInput
 			return undef
 
 		# --- Handle #include here, before calling @_mapped
-		@checkForInclude(line)
-		if @altInput
+
+		[level, str] = splitLine(line)
+		if lResult = @checkForInclude(str)
+			assert not @altInput, "get(): altInput already set"
+			[dir, base] = lResult
+			@altInput = new FileInput("#{dir}/#{base}", {
+					prefix: indentation(level),
+					hIncludePaths: @hIncludePaths,
+					})
+			debug "   alt input created"
+
 			result = @getFromAlt()
 			debug "   RETURN (#{@filename}) '#{result}'" \
 					+ "from alt input after #include"
@@ -225,7 +228,7 @@ export class StringInput
 
 	fetchBlock: (atLevel) ->
 
-		block = ''
+		lLines = []
 
 		# --- NOTE: I absolutely hate using a backslash for line continuation
 		#           but CoffeeScript doesn't continue while there is an
@@ -236,8 +239,17 @@ export class StringInput
 				&& (level >= atLevel) \
 				&& (line = @fetch()) \
 				)
-			block += line + '\n'
-		return block
+			if lResult = @checkForInclude(str)
+				[dir, base] = lResult
+				oInput = new FileInput("#{dir}/#{base}", {
+						prefix: indentation(level),
+						hIncludePaths: @hIncludePaths,
+						})
+				for line in oInput.getAll()
+					lLines.push line
+			else
+				lLines.push indentedStr(str, level - atLevel)
+		return lLines.join('\n')
 
 	# ........................................................................
 
@@ -254,7 +266,7 @@ export class StringInput
 
 	getAllText: () ->
 
-		return @getAll().join('\n') + '\n'
+		return @getAll().join('\n')
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -263,11 +275,16 @@ export class StringInput
 export class FileInput extends StringInput
 
 	constructor: (filename, hOptions={}) ->
-		if not fs.existsSync(filename)
-			error "FileInput(): file '#{filename}' does not exist"
-		content = fs.readFileSync(filename).toString()
-		hOptions.filename = filename
+
+		{root, dir, base, ext} = pathlib.parse(filename.trim())
+		hOptions.filename = base
+		if unitTesting
+			content = "Contents of #{base}"
+		else
+			if not fs.existsSync(filename)
+				error "FileInput(): file '#{filename}' does not exist"
+			content = slurp(filename)
+
 		super content, hOptions
 
 # ---------------------------------------------------------------------------
-

@@ -122,7 +122,7 @@ export var StringInput = class StringInput {
     debug('enter skip():');
     if (this.lookahead != null) {
       this.lookahead = undef;
-      debug("return: undef lookahead token");
+      debug("return: clear lookahead token");
       return;
     }
     this.get();
@@ -230,7 +230,7 @@ export var StringInput = class StringInput {
       line = this.fetch();
       result = this.mapLine(line);
     }
-    debug(`return: return with '${result}' (from ${this.filename})`);
+    debug(result, `return (from ${this.filename})`);
     return result;
   }
 

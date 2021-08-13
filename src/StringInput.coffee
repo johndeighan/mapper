@@ -109,7 +109,7 @@ export class StringInput
 		debug 'enter skip():'
 		if @lookahead?
 			@lookahead = undef
-			debug "return: undef lookahead token"
+			debug "return: clear lookahead token"
 			return
 		@get()
 		debug 'return'
@@ -220,7 +220,7 @@ export class StringInput
 			line = @fetch()
 			result = @mapLine(line)
 
-		debug "return: return with '#{result}' (from #{@filename})"
+		debug result, "return (from #{@filename})"
 		return result
 
 	# ........................................................................

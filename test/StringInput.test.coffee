@@ -5,6 +5,7 @@ import {
 	say,
 	undef,
 	pass,
+	debug,
 	isEmpty,
 	setDebugging,
 	debugging,
@@ -37,19 +38,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	tester.equal 40, item, 'abc'
+	tester.equal 41, item, 'abc'
 	item = input.peek()
-	tester.equal 42, item, 'abc'
+	tester.equal 43, item, 'abc'
 	item = input.get()
-	tester.equal 44, item, 'abc'
+	tester.equal 45, item, 'abc'
 	item = input.get()
-	tester.equal 46, item, 'def'
+	tester.equal 47, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 49, item, 'def'
+	tester.equal 50, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 52, item, undef
+	tester.equal 53, item, undef
 
 	)()
 
@@ -67,7 +68,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 70, new StringInput("""
+tester.equal 71, new StringInput("""
 		abc
 		def
 		"""), [
@@ -75,7 +76,7 @@ tester.equal 70, new StringInput("""
 		'def',
 		]
 
-tester.equal 78, new StringInput("""
+tester.equal 79, new StringInput("""
 		abc
 
 		def
@@ -94,7 +95,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 97, new TestInput("""
+	tester.equal 98, new TestInput("""
 			abc
 
 			def
@@ -116,7 +117,7 @@ tester.equal 78, new StringInput("""
 			else
 				return 'x'
 
-	tester.equal 119, new TestInput("""
+	tester.equal 120, new TestInput("""
 			abc
 
 			def
@@ -141,7 +142,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 144, new TestInput("""
+	tester.equal 145, new TestInput("""
 			abc
 
 			def
@@ -174,7 +175,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 177, new TestInput("""
+	tester.equal 178, new TestInput("""
 			abc
 			#if x==y
 				def
@@ -206,7 +207,7 @@ tester.equal 78, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 209, new TestInput("""
+	tester.equal 210, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -241,7 +242,7 @@ tester.equal 78, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 244, new TestInput("""
+	tester.equal 245, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -277,7 +278,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 280, new TestInput("""
+	tester.equal 281, new TestInput("""
 			abc
 
 			def
@@ -291,7 +292,7 @@ tester.equal 78, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 294, new StringInput("""
+tester.equal 295, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -309,7 +310,7 @@ tester.equal 294, new StringInput("""
 # --- Test #include with unit testing off
 
 setUnitTesting(false)
-tester.equal 312, new StringInput("""
+tester.equal 313, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -349,7 +350,7 @@ setUnitTesting(true)
 				result = orgLine
 			return result
 
-	tester.equal 352, new TestInput("""
+	tester.equal 353, new TestInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
@@ -372,7 +373,6 @@ setUnitTesting(true)
 			"""
 
 	block = undef
-
 	class TestParser extends StringInput
 
 		mapLine: (line) ->
@@ -390,27 +390,21 @@ setUnitTesting(true)
 	simple.equal 390, block, 'Contents of title.md'
 	)()
 
+# ---------------------------------------------------------------------------
+
 (() ->
 	text = """
 			p a paragraph
 			div:markdown
 				#include title.md
 			"""
-
 	block = undef
-
 	class TestParser extends StringInput
 
 		mapLine: (line) ->
 			if line == 'div:markdown'
-				setDebugging(true)
 				block = @fetchBlock(1)
-				setDebugging(false)
 			return line
-
-	oInput = new TestParser(text, {
-			hIncludePaths: {'.md': 'somewhere'}
-			})
 
 	setUnitTesting(false)
 	oInput = new TestParser(text, {
@@ -419,14 +413,55 @@ setUnitTesting(true)
 				}
 			})
 	line = oInput.get()
-	simple.equal 420, line, 'p a paragraph'
+	simple.equal 416, line, 'p a paragraph'
 
 	line = oInput.get()
-	simple.equal 423, line, 'div:markdown'
+	simple.equal 419, line, 'div:markdown'
 
-	say "block = '#{escapeStr(block)}'"
+	simple.equal 421, block, '\ttitle\n\t====='
 
-	simple.equal 427, block, '\ttitle\n\t====='
+	setUnitTesting(true)
+	)()
 
+# ---------------------------------------------------------------------------
+
+(() ->
+	text = """
+			p a paragraph
+			div:markdown
+				#include header.md
+			"""
+
+	### Contents of files used:
+
+	```header.md
+	header
+	======
+
+		#include para.md
+	```
+
+	```para.md
+	para
+	----
+	```
+	###
+
+	oInput = new StringInput(text, {
+			hIncludePaths: {
+				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
+				}
+			})
+
+	setUnitTesting(false)
+	tester.equal 441, oInput, [
+		"p a paragraph"
+		"div:markdown"
+		"\theader"
+		"\t======"
+		"\t"
+		"\t\tpara"
+		"\t\t----"
+		]
 	setUnitTesting(true)
 	)()

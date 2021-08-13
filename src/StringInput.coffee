@@ -30,10 +30,9 @@ export class StringInput
 	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
-		#        prefix       # prepended to each defined retval from _mapped()
 		#        hIncludePaths    { <ext>: <dir>, ... }
 
-		{filename, prefix, hIncludePaths} = @hOptions
+		{filename, hIncludePaths} = @hOptions
 
 		if isString(content)
 			@lBuffer = stringToArray(content)
@@ -54,7 +53,6 @@ export class StringInput
 		else
 			@filename = 'unit test'
 
-		@prefix = prefix || ''
 		@hIncludePaths = @hOptions.hIncludePaths || {}
 		if not unitTesting
 			for own ext, dir of @hIncludePaths
@@ -62,44 +60,59 @@ export class StringInput
 				assert fs.existsSync(dir), "dir #{dir} does not exist"
 		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
+		@altLevel = undef      # controls prefix prepended to lines
 
 	# ........................................................................
+	# --- designed to override with a mapping method
 
-	mapLine: (line) ->
-
-		return line
+	mapLine: (line) -> return line
 
 	# ........................................................................
 
 	unget: (item) ->
-		debug 'enter unget():'
+
+		# --- item has already been mapped
+		debug item, 'enter unget() with:'
 		assert not @lookahead?
 		@lookahead = item
-		debug item, "Lookahead:", 'exit'
+		debug 'return from unget()'
+		return
+
+	# ........................................................................
+	# --- Put one or more lines back into lBuffer, to be fetched later
+
+	unfetch: (str) ->
+
+		debug str, "enter unfetch() with:"
+		@lBuffer.unshift(str)
+		@lineNum -= 1
+		debug 'return from unfetch()'
 		return
 
 	# ........................................................................
 
 	peek: () ->
+
 		debug 'enter peek():'
 		if @lookahead?
-			debug "exit with lookahead token"
+			debug "return lookahead token"
 			return @lookahead
 		item = @get()
 		@unget(item)
-		debug item, 'exit with:'
+		debug item, 'return with:'
 		return item
 
 	# ........................................................................
 
 	skip: () ->
+
 		debug 'enter skip():'
 		if @lookahead?
 			@lookahead = undef
-			debug "exit: undef lookahead token"
+			debug "return: undef lookahead token"
 			return
 		@get()
-		debug 'exit'
+		debug 'return'
 		return
 
 	# ........................................................................
@@ -108,7 +121,8 @@ export class StringInput
 	checkForInclude: (str) ->
 
 		debug "enter checkForInclude('#{str}')"
-		assert not str.match(/^\s/), "checkForInclude(): string has indentation"
+		assert not str.match(/^\s/),
+				"checkForInclude(): string has indentation"
 		if lMatches = str.match(///^
 				\# include
 				\s+
@@ -126,7 +140,7 @@ export class StringInput
 
 				# --- It's a plain file name with an extension
 				#     that we can handle
-				debug "exit with dir='#{dir}', base='#{base}'"
+				debug "return ['#{dir}', '#{base}']"
 				return [dir, base]
 			else
 				# --- Output messages if debugging
@@ -136,7 +150,7 @@ export class StringInput
 					debug "no hIncludePaths"
 				else if not @hIncludePaths[ext]
 					debug "no hIncludePaths for ext '#{ext}'"
-		debug "exit: no #include found"
+		debug "return: no #include found"
 		return undef
 
 	# ........................................................................
@@ -145,99 +159,110 @@ export class StringInput
 	#        2. get from alt input returns undef (then closes alt input)
 
 	getFromAlt: () ->
+
 		debug "enter getFromAlt()"
 		if not @altInput
-			debug "exit: no alt input"
-			return undef
+			error "getFromAlt(): There is no alt input"
 		result = @altInput.get()
-		if not result?
-			debug "alt input removed"
+		if result?
+			debug result, "return with:"
+			return indentedStr(result, @altLevel)
+		else
+			debug "return: alt returned undef, alt input removed"
 			@altInput = undef
-		debug 'exit'
-		return result
+			@altLevel = undef
+			return undef
+
+	# ........................................................................
+	# --- Returns undef if either:
+	#        1. there's no alt input
+	#        2. get from alt input returns undef (then closes alt input)
+
+	fetchFromAlt: () ->
+
+		debug "enter fetchFromAlt()"
+		if not @altInput
+			error "fetchFromAlt(): There is no alt input"
+		result = @altInput.fetch()
+		if result?
+			debug result, "return with:"
+			return indentedStr(result, @altLevel)
+		else
+			debug "return: alt returned undef, alt input removed"
+			@altInput = undef
+			@altLevel = undef
+			return undef
 
 	# ........................................................................
 
 	get: () ->
+
 		debug "enter get() (from #{@filename}):"
 		if @lookahead?
-			save = @lookahead
+			saved = @lookahead
 			@lookahead = undef
-			debug "exit (from #{@filename}) with lookahead token"
-			return save
-		if line = @getFromAlt()
-			debug "exit (from #{@filename}) '#{line}' from alt input"
+			debug "return (from #{@filename}) with lookahead token"
+			return saved
+
+		if @altInput && (line = @getFromAlt())?
+			debug "return with '#{line}' (from alt #{@filename})"
 			return line
 
-		line = @fetch()
+		line = @fetch()    # will handle #include
+		debug line, "line ="
+
 		if not line?
-			debug "exit (from #{@filename}) undef - at EOF"
+			debug "return with undef (from #{@filename}) at EOF"
 			return undef
 
-		result = @_mapped(line)
+		result = @mapLine(line)
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
-			result = @_mapped(line)
-		debug "exit: return (from #{@filename}) '#{result}'"
+			result = @mapLine(line)
+
+		debug "return: return with '#{result}' (from #{@filename})"
 		return result
 
 	# ........................................................................
+	# --- This should be used to fetch from @lBuffer
+	#     to maintain proper @lineNum for error messages
+	#     MUST handle #include
 
-	_mapped: (line) ->
+	fetch: () ->
 
-		assert isString(line), "Not a string: '#{line}'"
-		debug "enter _mapped: '#{line}'"
-		assert not @lookahead?, "_mapped(): lookahead exists"
-		if not line?
-			debug "exit, empty line - return undef"
+		debug "enter fetch()"
+		if @altInput && (result = @fetchFromAlt())?
+			debug result, "return with:"
+			return result
+
+		if @lBuffer.length == 0
+			debug "return - empty buffer, return undef"
 			return undef
+
+		@lineNum += 1
+		line = @lBuffer.shift()
 
 		[level, str] = splitLine(line)
 		if lResult = @checkForInclude(str)
 			assert not @altInput, "get(): altInput already set"
 			[dir, base] = lResult
 			@altInput = new FileInput("#{dir}/#{base}", {
-					prefix: indentation(level),
 					hIncludePaths: @hIncludePaths,
 					})
-			debug "alt input created"
+			@altLevel = level
+			debug "alt input created at level #{level}"
 
+			# --- We just created an alt input
+			#     we need to get its first line
 			altLine = @getFromAlt()
 			if altLine?
-				debug "_mapped(): line becomes '#{altLine}'"
+				debug "fetch(): getFromAlt returned '#{altLine}'"
 				line = altLine
 			else
-				debug "_mapped(): alt was undef, retain line '#{line}'"
+				debug "fetch(): alt was undef, retain line '#{line}'"
 
-		result = @mapLine(line)
-		debug result, "MAPPED TO:"
-
-		if result?
-			if isString(result)
-				result = @prefix + result
-			debug "exit _mapped(): returning '#{result}'"
-			return result
-		else
-			debug "exit _mapped(): returning undef"
-			return undef
-
-	# ........................................................................
-	# --- This should be used to fetch from @lBuffer
-	#     to maintain proper @lineNum for error messages
-
-	fetch: () ->
-		if @lBuffer.length == 0
-			return undef
-		@lineNum += 1
-		return @lBuffer.shift()
-
-	# ........................................................................
-	# --- Put one or more lines into lBuffer, to be fetched later
-	#     TO DO: maintain correct line numbering!!!
-
-	unfetch: (block) ->
-		lLines = stringToArray(block)
-		@lBuffer.unshift(lLines...)
+		debug line, "return from buffer:"
+		return line
 
 	# ........................................................................
 	# --- Fetch a block of text at level or greater than 'level'
@@ -253,16 +278,25 @@ export class StringInput
 		#           but CoffeeScript doesn't continue while there is an
 		#           open parenthesis like Python does :-(
 
-		while (  (@lBuffer.length > 0) \
-				&& ([level, str] = splitLine(@lBuffer[0])) \
-				&& (level >= atLevel) \
-				&& (line = @fetch()) \
-				)
-			result = @_mapped(line)
-			if result
-				lLines.push indentedStr(result, level - atLevel)
-		debug 'exit'
-		return lLines.join('\n')
+		line = undef
+		while (line = @fetch())
+			[level, str] = splitLine(line)
+			debug "LOOP: level = #{level}, str = '#{str}'"
+			if (level < atLevel)
+				@unfetch(line)
+				debug "RESULT: unfetch the line"
+				break
+			result = @mapLine(str)
+			if result?
+				result = indentedStr(result, level-atLevel)
+				debug result, "RESULT from mapLine() was:"
+				lLines.push result
+			else
+				debug "RESULT from mapLine() was undef"
+
+		retval = lLines.join('\n')
+		debug retval, "return with:"
+		return retval
 
 	# ........................................................................
 

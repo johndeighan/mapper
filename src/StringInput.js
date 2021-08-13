@@ -16,7 +16,6 @@ import {
   stringToArray,
   say,
   pass,
-  debug,
   error,
   sep_dash,
   isString,
@@ -32,6 +31,10 @@ import {
   indentedStr,
   indentation
 } from '@jdeighan/coffee-utils/indent';
+
+import {
+  debug
+} from '@jdeighan/coffee-utils/debug';
 
 // ---------------------------------------------------------------------------
 //   class StringInput - stream in lines from a string or array

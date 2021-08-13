@@ -1,14 +1,13 @@
 # StringInput.test.coffee
 
 import {strict as assert} from 'assert'
+
+import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say,
 	undef,
 	pass,
-	debug,
 	isEmpty,
-	setDebugging,
-	debugging,
 	setUnitTesting,
 	unitTesting,
 	escapeStr,
@@ -20,8 +19,12 @@ import {
 	indentedStr,
 	indentedBlock,
 	} from '@jdeighan/coffee-utils/indent'
-import {StringInput} from '../src/StringInput.js'
-import {AvaTester} from '@jdeighan/ava-tester'
+import {
+	debug,
+	debugging,
+	setDebugging,
+	} from '@jdeighan/coffee-utils/debug'
+import {StringInput} from '@jdeighan/string-input'
 
 simple = new AvaTester()
 setUnitTesting(true)

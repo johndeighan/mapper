@@ -98,15 +98,6 @@ export var StringInput = class StringInput {
   }
 
   // ........................................................................
-  // --- Put one or more lines back into lBuffer, to be fetched later
-  unfetch(str) {
-    debug(str, "enter unfetch() with:");
-    this.lBuffer.unshift(str);
-    this.lineNum -= 1;
-    debug('return from unfetch()');
-  }
-
-  // ........................................................................
   peek() {
     var item;
     debug('enter peek():');
@@ -275,6 +266,15 @@ export var StringInput = class StringInput {
     }
     debug(line, "return from buffer:");
     return line;
+  }
+
+  // ........................................................................
+  // --- Put one or more lines back into lBuffer, to be fetched later
+  unfetch(str) {
+    debug(str, "enter unfetch() with:");
+    this.lBuffer.unshift(str);
+    this.lineNum -= 1;
+    debug('return from unfetch()');
   }
 
   // ........................................................................

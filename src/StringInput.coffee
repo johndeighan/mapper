@@ -79,17 +79,6 @@ export class StringInput
 		return
 
 	# ........................................................................
-	# --- Put one or more lines back into lBuffer, to be fetched later
-
-	unfetch: (str) ->
-
-		debug str, "enter unfetch() with:"
-		@lBuffer.unshift(str)
-		@lineNum -= 1
-		debug 'return from unfetch()'
-		return
-
-	# ........................................................................
 
 	peek: () ->
 
@@ -263,6 +252,17 @@ export class StringInput
 
 		debug line, "return from buffer:"
 		return line
+
+	# ........................................................................
+	# --- Put one or more lines back into lBuffer, to be fetched later
+
+	unfetch: (str) ->
+
+		debug str, "enter unfetch() with:"
+		@lBuffer.unshift(str)
+		@lineNum -= 1
+		debug 'return from unfetch()'
+		return
 
 	# ........................................................................
 	# --- Fetch a block of text at level or greater than 'level'

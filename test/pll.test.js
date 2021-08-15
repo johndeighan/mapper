@@ -26,6 +26,56 @@ import {
 tester = new AvaTester();
 
 // ---------------------------------------------------------------------------
+// --- test using identity mapper
+(function() {
+  var contents, tree;
+  contents = `development = yes
+if development
+	color = red
+	if usemoods
+		mood = somber
+if not development
+	color = blue
+	if usemoods
+		mood = happy`;
+  tree = parsePLL(contents, function(x) {
+    return x;
+  });
+  return tester.equal(30, tree, taml(`---
+-
+	lineNum: 1
+	node: development = yes
+-
+	lineNum: 2
+	node: if development
+	body:
+		-
+			lineNum: 3
+			node: color = red
+		-
+			lineNum: 4
+			node: if usemoods
+			body:
+				-
+					lineNum: 5
+					node: mood = somber
+-
+	lineNum: 6
+	node: if not development
+	body:
+		-
+			lineNum: 7
+			node: color = blue
+		-
+			lineNum: 8
+			node: if usemoods
+			body:
+				-
+					lineNum: 9
+					node: mood = happy`));
+})();
+
+// ---------------------------------------------------------------------------
 mapper = function(str) {
   var _, dqstr, ident, key, lMatches, neg, number, op, sqstr, value;
   if (lMatches = str.match(/^([A-Za-z_]+)\s*=\s*(.*)$/)) { // identifier
@@ -70,7 +120,7 @@ if not development
 
 tree = parsePLL(str, mapper);
 
-tester.equal(89, tree, taml(`---
+tester.equal(139, tree, taml(`---
 -
 	node: if_truthy
 	lineNum: 1

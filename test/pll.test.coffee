@@ -9,6 +9,61 @@ import {parsePLL} from '@jdeighan/string-input/pll'
 tester = new AvaTester()
 
 # ---------------------------------------------------------------------------
+# --- test using identity mapper
+
+(() ->
+
+	contents = """
+			development = yes
+			if development
+				color = red
+				if usemoods
+					mood = somber
+			if not development
+				color = blue
+				if usemoods
+					mood = happy
+			"""
+
+	tree = parsePLL(contents, (x) -> x)
+
+	tester.equal 30, tree, taml("""
+		---
+		-
+			lineNum: 1
+			node: development = yes
+		-
+			lineNum: 2
+			node: if development
+			body:
+				-
+					lineNum: 3
+					node: color = red
+				-
+					lineNum: 4
+					node: if usemoods
+					body:
+						-
+							lineNum: 5
+							node: mood = somber
+		-
+			lineNum: 6
+			node: if not development
+			body:
+				-
+					lineNum: 7
+					node: color = blue
+				-
+					lineNum: 8
+					node: if usemoods
+					body:
+						-
+							lineNum: 9
+							node: mood = happy
+			""")
+	)()
+
+# ---------------------------------------------------------------------------
 
 mapper = (str) ->
 
@@ -81,7 +136,7 @@ str = """
 
 tree = parsePLL(str, mapper)
 
-tester.equal 89, tree, taml("""
+tester.equal 139, tree, taml("""
 		---
 		-
 			node: if_truthy

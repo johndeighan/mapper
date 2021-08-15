@@ -34,9 +34,10 @@ PLLInput = class PLLInput extends StringInput {
   }
 
   mapLine(line) {
-    var level, nextLevel, nextLine, nextStr, str;
+    var level, nextLevel, nextLine, nextStr, orgLineNum, str;
     assert(line != null, "mapLine(): line is undef");
     [level, str] = splitLine(line);
+    orgLineNum = this.lineNum;
     // --- Merge in any continuation lines
     while ((nextLine = this.fetch()) && ([nextLevel, nextStr] = splitLine(nextLine)) && (nextLevel >= level + 2)) {
       str += ' ' + nextStr;
@@ -44,7 +45,7 @@ PLLInput = class PLLInput extends StringInput {
     if (nextLine) {
       this.unfetch(nextLine);
     }
-    return [level, this.mapper(str)];
+    return [level, orgLineNum, this.mapper(str)];
   }
 
   getTree() {
@@ -61,24 +62,22 @@ export var parsePLL = function(contents, mapper) {
 };
 
 // ---------------------------------------------------------------------------
-// Each item must be a sub-array with 2 items: [<level>, <node>]
-export var treeify = function(lItems, level = 0) {
-  var h, item, itemLevel, itemNode, lChildren, lNodes, len;
+// Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
+export var treeify = function(lItems, atLevel = 0) {
+  var body, h, item, lNodes, len, level, lineNum, node;
   // --- stop when an item of lower level is found, or at end of array
   lNodes = [];
-  while ((lItems.length > 0) && (lItems[0][0] >= level)) {
+  while ((lItems.length > 0) && (lItems[0][0] >= atLevel)) {
     item = lItems.shift();
     assert(isArray(item), "treeify(): item is not an array");
     len = item.length;
-    assert(len === 2, `treeify(): item has length ${len}`);
-    [itemLevel, itemNode] = item;
-    assert(itemLevel === level, `treeify(): item at level ${itemLevel}, should be ${level}`);
-    h = {
-      node: itemNode
-    };
-    lChildren = treeify(lItems, level + 1);
-    if (lChildren != null) {
-      h.lChildren = lChildren;
+    assert(len === 3, `treeify(): item has length ${len}`);
+    [level, lineNum, node] = item;
+    assert(level === atLevel, `treeify(): item at level ${level}, should be ${atLevel}`);
+    h = {node, lineNum};
+    body = treeify(lItems, atLevel + 1);
+    if (body != null) {
+      h.body = body;
     }
     lNodes.push(h);
   }

@@ -35,6 +35,7 @@
 		"coffeescript": "^2.5.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^1.0.2"
+		"@jdeighan/coffee-utils": "^1.0.2",
+		"@jdeighan/env": "^1.0.1"
 	}
 }

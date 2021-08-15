@@ -19,6 +19,7 @@ class PLLInput extends StringInput
 	mapLine: (line) ->
 		assert line?, "mapLine(): line is undef"
 		[level, str] = splitLine(line)
+		orgLineNum = @lineNum
 
 		# --- Merge in any continuation lines
 		while (nextLine = @fetch()) \
@@ -28,7 +29,7 @@ class PLLInput extends StringInput
 		if nextLine
 			@unfetch nextLine
 
-		return [level, @mapper(str)]
+		return [level, orgLineNum, @mapper(str)]
 
 	getTree: () ->
 
@@ -42,24 +43,24 @@ export parsePLL = (contents, mapper) ->
 	return oInput.getTree()
 
 # ---------------------------------------------------------------------------
-# Each item must be a sub-array with 2 items: [<level>, <node>]
+# Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 
-export treeify = (lItems, level=0) ->
+export treeify = (lItems, atLevel=0) ->
 	# --- stop when an item of lower level is found, or at end of array
 
 	lNodes = []
-	while (lItems.length > 0) && (lItems[0][0] >= level)
+	while (lItems.length > 0) && (lItems[0][0] >= atLevel)
 		item = lItems.shift()
 		assert isArray(item), "treeify(): item is not an array"
 		len = item.length
-		assert len == 2, "treeify(): item has length #{len}"
-		[itemLevel, itemNode] = item
-		assert itemLevel==level,
-			"treeify(): item at level #{itemLevel}, should be #{level}"
-		h = {node: itemNode}
-		lChildren = treeify(lItems, level+1)
-		if lChildren?
-			h.lChildren = lChildren
+		assert len == 3, "treeify(): item has length #{len}"
+		[level, lineNum, node] = item
+		assert level==atLevel,
+			"treeify(): item at level #{level}, should be #{atLevel}"
+		h = {node, lineNum}
+		body = treeify(lItems, atLevel+1)
+		if body?
+			h.body = body
 		lNodes.push(h)
 	if lNodes.length==0
 		return undef

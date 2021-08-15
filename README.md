@@ -24,3 +24,10 @@ In addition:
 
 		The indentation of the line containing '#include' will be
 		added to each line of the file being included.
+
+Environment variables to control include paths:
+
+DIR_ROOT
+DIR_MARKDOWN
+DIR_DATA
+DIR_TEXT

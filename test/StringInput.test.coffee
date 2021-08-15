@@ -2,6 +2,7 @@
 
 import {strict as assert} from 'assert'
 
+import {loadEnvFrom} from '@jdeighan/env'
 import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say,
@@ -24,7 +25,11 @@ import {
 	debugging,
 	setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
+import {mydir} from '@jdeighan/coffee-utils/fs'
 import {StringInput} from '@jdeighan/string-input'
+
+dir = mydir(`import.meta.url`)
+loadEnvFrom(dir)
 
 simple = new AvaTester()
 setUnitTesting(true)
@@ -299,11 +304,7 @@ tester.equal 295, new StringInput("""
 		abc
 			#include title.md
 		def
-		""", {
-			hIncludePaths: {
-				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
-				}
-			}), [
+		"""), [
 		'abc',
 		'\tContents of title.md',
 		'def',
@@ -317,11 +318,7 @@ tester.equal 313, new StringInput("""
 		abc
 			#include title.md
 		def
-		""", {
-			hIncludePaths: {
-				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
-				}
-			}), [
+		"""), [
 		'abc',
 		'\ttitle',
 		'\t=====',
@@ -383,9 +380,7 @@ setUnitTesting(true)
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser(text, {
-			hIncludePaths: {'.md': 'somewhere'}
-			})
+	oInput = new TestParser(text)
 	line = oInput.get()
 	simple.equal 387, line, 'p a paragraph'
 	line = oInput.get()
@@ -410,11 +405,7 @@ setUnitTesting(true)
 			return line
 
 	setUnitTesting(false)
-	oInput = new TestParser(text, {
-			hIncludePaths: {
-				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
-				}
-			})
+	oInput = new TestParser(text)
 	line = oInput.get()
 	simple.equal 416, line, 'p a paragraph'
 
@@ -450,11 +441,7 @@ setUnitTesting(true)
 	```
 	###
 
-	oInput = new StringInput(text, {
-			hIncludePaths: {
-				'.md': 'c:\\Users\\johnd\\string-input\\src\\markdown',
-				}
-			})
+	oInput = new StringInput(text)
 
 	setUnitTesting(false)
 	tester.equal 441, oInput, [

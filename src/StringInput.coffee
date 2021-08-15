@@ -5,6 +5,7 @@ import fs from 'fs'
 import pathlib from 'path'
 import {
 	undef,
+	rtrim,
 	deepCopy,
 	stringToArray,
 	say,
@@ -22,6 +23,14 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
+# --- env var holding directory to search
+
+hExtToEnvVar = {
+	'.md':   'DIR_MARKDOWN',
+	'.taml': 'DIR_DATA',
+	'.txt':  'DIR_TEXT',
+	}
+
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
 
@@ -30,9 +39,8 @@ export class StringInput
 	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
-		#        hIncludePaths    { <ext>: <dir>, ... }
 
-		{filename, hIncludePaths} = @hOptions
+		{filename} = @hOptions
 
 		if isString(content)
 			@lBuffer = stringToArray(content)
@@ -53,11 +61,6 @@ export class StringInput
 		else
 			@filename = 'unit test'
 
-		@hIncludePaths = @hOptions.hIncludePaths || {}
-		if not unitTesting
-			for own ext, dir of @hIncludePaths
-				assert ext.indexOf('.') == 0, "invalid key in hIncludePaths"
-				assert fs.existsSync(dir), "dir #{dir} does not exist"
 		@lookahead = undef     # lookahead token, placed by unget
 		@altInput = undef
 		@altLevel = undef      # controls prefix prepended to lines
@@ -110,36 +113,23 @@ export class StringInput
 	checkForInclude: (str) ->
 
 		debug "enter checkForInclude('#{str}')"
-		assert not str.match(/^\s/),
-				"checkForInclude(): string has indentation"
 		if lMatches = str.match(///^
 				\# include
 				\s+
 				(\S.*)
 				$///)
 			[_, fname] = lMatches
-			filename = fname.trim()
-			{root, dir, base, ext} = pathlib.parse(filename)
+			fname = rtrim(fname)
+			{root, dir, base, ext} = pathlib.parse(fname)
+			if root || dir
+				error "checkForInclude(): root='#{root}', dir='#{dir}'" \
+						+ " - full path not allowed"
 			debug "found #include #{fname}"
-			if not root \
-					&& not dir \
-					&& @hIncludePaths \
-					&& dir = @hIncludePaths[ext]
-				assert base == filename, "base = #{base}, filename = #{filename}"
-
-				# --- It's a plain file name with an extension
-				#     that we can handle
-				debug "return ['#{dir}', '#{base}']"
-				return [dir, base]
-			else
-				# --- Output messages if debugging
-				if root || dir
-					debug "root='#{root}', dir='#{dir}'"
-				else if not @hIncludePaths
-					debug "no hIncludePaths"
-				else if not @hIncludePaths[ext]
-					debug "no hIncludePaths for ext '#{ext}'"
-		debug "return: no #include found"
+			envvar = hExtToEnvVar[ext]
+			assert envvar, "#include doesn't work for ext '#{ext}'"
+			dir = process.env[envvar]
+			assert dir, "No env var set for '#include *#{ext}'"
+			return [dir, base]
 		return undef
 
 	# ........................................................................
@@ -235,9 +225,7 @@ export class StringInput
 		if lResult = @checkForInclude(str)
 			assert not @altInput, "get(): altInput already set"
 			[dir, base] = lResult
-			@altInput = new FileInput("#{dir}/#{base}", {
-					hIncludePaths: @hIncludePaths,
-					})
+			@altInput = new FileInput("#{dir}/#{base}")
 			@altLevel = level
 			debug "alt input created at level #{level}"
 

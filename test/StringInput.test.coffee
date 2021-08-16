@@ -1,8 +1,8 @@
 # StringInput.test.coffee
 
 import {strict as assert} from 'assert'
+import {resolve} from 'path'
 
-import {loadEnvFrom} from '@jdeighan/env'
 import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say,
@@ -29,7 +29,8 @@ import {mydir} from '@jdeighan/coffee-utils/fs'
 import {StringInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
-loadEnvFrom(dir)
+root = resolve(dir, '..')
+process.env.DIR_MARKDOWN = "#{root}/src/markdown"
 
 simple = new AvaTester()
 setUnitTesting(true)
@@ -46,19 +47,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	tester.equal 41, item, 'abc'
+	tester.equal 50, item, 'abc'
 	item = input.peek()
-	tester.equal 43, item, 'abc'
+	tester.equal 52, item, 'abc'
 	item = input.get()
-	tester.equal 45, item, 'abc'
+	tester.equal 54, item, 'abc'
 	item = input.get()
-	tester.equal 47, item, 'def'
+	tester.equal 56, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 50, item, 'def'
+	tester.equal 59, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 53, item, undef
+	tester.equal 62, item, undef
 
 	)()
 
@@ -76,7 +77,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 71, new StringInput("""
+tester.equal 80, new StringInput("""
 		abc
 		def
 		"""), [
@@ -84,7 +85,7 @@ tester.equal 71, new StringInput("""
 		'def',
 		]
 
-tester.equal 79, new StringInput("""
+tester.equal 88, new StringInput("""
 		abc
 
 		def
@@ -103,7 +104,7 @@ tester.equal 79, new StringInput("""
 			else
 				return line
 
-	tester.equal 98, new TestInput("""
+	tester.equal 107, new TestInput("""
 			abc
 
 			def
@@ -125,7 +126,7 @@ tester.equal 79, new StringInput("""
 			else
 				return 'x'
 
-	tester.equal 120, new TestInput("""
+	tester.equal 129, new TestInput("""
 			abc
 
 			def
@@ -150,7 +151,7 @@ tester.equal 79, new StringInput("""
 			else
 				return line
 
-	tester.equal 145, new TestInput("""
+	tester.equal 154, new TestInput("""
 			abc
 
 			def
@@ -183,7 +184,7 @@ tester.equal 79, new StringInput("""
 			else
 				return line
 
-	tester.equal 178, new TestInput("""
+	tester.equal 187, new TestInput("""
 			abc
 			#if x==y
 				def
@@ -215,7 +216,7 @@ tester.equal 79, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 210, new TestInput("""
+	tester.equal 219, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -250,7 +251,7 @@ tester.equal 79, new StringInput("""
 				line += ' ' + undentedStr(next)
 			return line
 
-	tester.equal 245, new TestInput("""
+	tester.equal 254, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -286,7 +287,7 @@ tester.equal 79, new StringInput("""
 			else
 				return line
 
-	tester.equal 281, new TestInput("""
+	tester.equal 290, new TestInput("""
 			abc
 
 			def
@@ -300,7 +301,7 @@ tester.equal 79, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 295, new StringInput("""
+tester.equal 304, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -314,7 +315,7 @@ tester.equal 295, new StringInput("""
 # --- Test #include with unit testing off
 
 setUnitTesting(false)
-tester.equal 313, new StringInput("""
+tester.equal 318, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -350,7 +351,7 @@ setUnitTesting(true)
 				result = orgLine
 			return result
 
-	tester.equal 353, new TestInput("""
+	tester.equal 354, new TestInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
@@ -382,10 +383,10 @@ setUnitTesting(true)
 
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 387, line, 'p a paragraph'
+	simple.equal 386, line, 'p a paragraph'
 	line = oInput.get()
-	simple.equal 389, line, 'div:markdown'
-	simple.equal 390, block, 'Contents of title.md'
+	simple.equal 388, line, 'div:markdown'
+	simple.equal 389, block, 'Contents of title.md'
 	)()
 
 # ---------------------------------------------------------------------------
@@ -407,12 +408,12 @@ setUnitTesting(true)
 	setUnitTesting(false)
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 416, line, 'p a paragraph'
+	simple.equal 411, line, 'p a paragraph'
 
 	line = oInput.get()
-	simple.equal 419, line, 'div:markdown'
+	simple.equal 414, line, 'div:markdown'
 
-	simple.equal 421, block, '\ttitle\n\t====='
+	simple.equal 416, block, '\ttitle\n\t====='
 
 	setUnitTesting(true)
 	)()
@@ -444,7 +445,7 @@ setUnitTesting(true)
 	oInput = new StringInput(text)
 
 	setUnitTesting(false)
-	tester.equal 441, oInput, [
+	tester.equal 448, oInput, [
 		"p a paragraph"
 		"div:markdown"
 		"\theader"

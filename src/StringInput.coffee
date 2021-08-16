@@ -13,8 +13,7 @@ import {
 	isString,
 	unitTesting,
 	} from '@jdeighan/coffee-utils'
-import {slurp} from '@jdeighan/coffee-utils/fs'
-import {getFileContents} from '@jdeighan/coffee-utils/convert'
+import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine,
 	indentedStr,
@@ -195,7 +194,10 @@ export class StringInput
 				$///)
 			[_, fname] = lMatches
 			assert not @altInput, "fetch(): altInput already set"
-			contents = getFileContents(fname, false)
+			if unitTesting
+				return indentation(level) + "Contents of #{fname}"
+			fullpath = findFile(fname)
+			contents = slurp(fullpath)
 			@altInput = new StringInput(contents)
 			@altLevel = level
 			debug "alt input created at level #{level}"

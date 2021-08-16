@@ -7,14 +7,15 @@ import {splitLine} from '@jdeighan/coffee-utils/indent'
 import {StringInput} from '@jdeighan/string-input'
 
 # ---------------------------------------------------------------------------
+# --- To derive a class from this:
+#        1. Extend this class
+#        2. Override mapString(), which gets the line with
+#           any continuation lines appended
 
-class PLLInput extends StringInput
+export class PLLInput extends StringInput
 
-	constructor: (content, @mapper) ->
-
-		super content
-		if not isFunction(@mapper)
-			error "new PLLInput(): mapper is not a function"
+	mapString: (str) ->
+		return str
 
 	mapLine: (line) ->
 		assert line?, "mapLine(): line is undef"
@@ -29,7 +30,7 @@ class PLLInput extends StringInput
 		if nextLine
 			@unfetch nextLine
 
-		return [level, orgLineNum, @mapper(str)]
+		return [level, orgLineNum, @mapString(str)]
 
 	getTree: () ->
 

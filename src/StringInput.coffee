@@ -5,13 +5,11 @@ import fs from 'fs'
 import pathlib from 'path'
 import {
 	undef,
-	rtrim,
 	deepCopy,
 	stringToArray,
 	say,
 	pass,
 	error,
-	sep_dash,
 	isString,
 	unitTesting,
 	} from '@jdeighan/coffee-utils'

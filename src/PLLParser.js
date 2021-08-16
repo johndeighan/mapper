@@ -19,8 +19,7 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  StringInput,
-  FileInput
+  StringInput
 } from '@jdeighan/string-input';
 
 // ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 
 import {say, undef, error, isArray, isFunction} from '@jdeighan/coffee-utils'
 import {splitLine} from '@jdeighan/coffee-utils/indent'
-import {StringInput, FileInput} from '@jdeighan/string-input'
+import {StringInput} from '@jdeighan/string-input'
 
 # ---------------------------------------------------------------------------
 

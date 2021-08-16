@@ -37,13 +37,6 @@ export class PLLInput extends StringInput
 		return treeify(@getAll())
 
 # ---------------------------------------------------------------------------
-
-export parsePLL = (contents, mapper) ->
-
-	oInput = new PLLInput(contents, mapper)
-	return oInput.getTree()
-
-# ---------------------------------------------------------------------------
 # Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 
 export treeify = (lItems, atLevel=0) ->

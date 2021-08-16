@@ -52,13 +52,6 @@ export var PLLInput = class PLLInput extends StringInput {
 };
 
 // ---------------------------------------------------------------------------
-export var parsePLL = function(contents, mapper) {
-  var oInput;
-  oInput = new PLLInput(contents, mapper);
-  return oInput.getTree();
-};
-
-// ---------------------------------------------------------------------------
 // Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 export var treeify = function(lItems, atLevel = 0) {
   var body, h, item, lNodes, len, level, lineNum, node;

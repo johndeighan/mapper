@@ -16,20 +16,13 @@ import {
 	unitTesting,
 	} from '@jdeighan/coffee-utils'
 import {slurp} from '@jdeighan/coffee-utils/fs'
+import {getFileContents} from '@jdeighan/coffee-utils/convert'
 import {
 	splitLine,
 	indentedStr,
 	indentation,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
-
-# --- env var holding directory to search
-
-hExtToEnvVar = {
-	'.md':   'DIR_MARKDOWN',
-	'.taml': 'DIR_DATA',
-	'.txt':  'DIR_TEXT',
-	}
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
@@ -106,31 +99,6 @@ export class StringInput
 		@get()
 		debug 'return'
 		return
-
-	# ........................................................................
-	# --- returns [dir, base] if a valid #include
-
-	checkForInclude: (str) ->
-
-		debug "enter checkForInclude('#{str}')"
-		if lMatches = str.match(///^
-				\# include
-				\s+
-				(\S.*)
-				$///)
-			[_, fname] = lMatches
-			fname = rtrim(fname)
-			{root, dir, base, ext} = pathlib.parse(fname)
-			if root || dir
-				error "checkForInclude(): root='#{root}', dir='#{dir}'" \
-						+ " - full path not allowed"
-			debug "found #include #{fname}"
-			envvar = hExtToEnvVar[ext]
-			assert envvar, "#include doesn't work for ext '#{ext}'"
-			dir = process.env[envvar]
-			assert dir, "No env var set for '#include *#{ext}'"
-			return [dir, base]
-		return undef
 
 	# ........................................................................
 	# --- Returns undef if either:
@@ -220,12 +188,17 @@ export class StringInput
 
 		@lineNum += 1
 		line = @lBuffer.shift()
-
 		[level, str] = splitLine(line)
-		if lResult = @checkForInclude(str)
-			assert not @altInput, "get(): altInput already set"
-			[dir, base] = lResult
-			@altInput = new FileInput("#{dir}/#{base}")
+
+		if lMatches = str.match(///^
+				\# include
+				\s+
+				(\S.*)
+				$///)
+			[_, fname] = lMatches
+			assert not @altInput, "fetch(): altInput already set"
+			contents = getFileContents(fname, false)
+			@altInput = new StringInput(contents)
 			@altLevel = level
 			debug "alt input created at level #{level}"
 

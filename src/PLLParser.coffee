@@ -2,35 +2,98 @@
 
 import {strict as assert} from 'assert'
 
-import {say, undef, error, isArray, isFunction} from '@jdeighan/coffee-utils'
+import {
+	say, undef, error, isArray, isFunction, isEmpty,
+	escapeStr,
+	} from '@jdeighan/coffee-utils'
 import {splitLine} from '@jdeighan/coffee-utils/indent'
+import {
+	numHereDocs, patch, build,
+	} from '@jdeighan/coffee-utils/heredoc'
 import {StringInput} from '@jdeighan/string-input'
 
 # ---------------------------------------------------------------------------
 # --- To derive a class from this:
 #        1. Extend this class
 #        2. Override mapString(), which gets the line with
-#           any continuation lines appended
+#           any continuation lines appended, plus any
+#           HEREDOC sections
+#        3. If desired, override patchLine, which patches
+#           HEREDOC lines into the original string
 
-export class PLLInput extends StringInput
+export class PLLParser extends StringInput
 
-	mapString: (str) ->
-		return str
+	mapString: (str) -> return str
 
-	mapLine: (line) ->
-		assert line?, "mapLine(): line is undef"
-		[level, str] = splitLine(line)
+	getContLines: (curlevel) ->
+
+		lLines = []
+		while (nextLine = @fetch()) \
+				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
+				&& (nextLevel >= curlevel+2)
+			lLines.push(nextStr)
+		if nextLine
+			# --- we fetched a line we didn't want
+			@unfetch nextLine
+		return lLines
+
+	joinContLines: (line, lContLines) ->
+
+		for str in lContLines
+			line += ' ' + str
+		return line
+
+	getHereDocs: (line, orgLineNum) ->
+
+		n = numHereDocs(line)
+		lSections = []     # --- will have one subarray for each HEREDOC
+		# --- NOTE: [1..n] doesn't work here ?????
+		for i in [0...n]
+			lLines = []
+			while (@lBuffer.length > 0) && not isEmpty(@lBuffer[0])
+				lLines.push @fetch()
+			if (@lBuffer.length == 0)
+				error """
+						EOF while processing HEREDOC
+						at line #{orgLineNum}
+						'#{escapeStr(line)}'
+						n = #{n}
+						"""
+			else
+				@fetch()   # empty line
+			lSections.push lLines
+
+		return lSections
+
+	patchLine: (line, lSections) ->
+
+		return patch(line, lSections)
+
+	handleEmptyLine: (lineNum) ->
+
+		return undef      # skip blank lines by default
+
+	mapLine: (orgLine) ->
+
+		assert orgLine?, "mapLine(): orgLine is undef"
+		if isEmpty(orgLine)
+			return @handleEmptyLine(@lineNum)
+
+		[level, line] = splitLine(orgLine)
 		orgLineNum = @lineNum
 
 		# --- Merge in any continuation lines
-		while (nextLine = @fetch()) \
-				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
-				&& (nextLevel >= level+2)
-			str += ' ' + nextStr
-		if nextLine
-			@unfetch nextLine
+		lContLines = @getContLines(level)
+		line = @joinContLines(line, lContLines)
 
-		return [level, orgLineNum, @mapString(str)]
+		# --- handle HEREDOCs
+
+		lSections = @getHereDocs(line, orgLineNum)
+		if (lSections.length > 0)
+			line = @patchLine(line, lSections)
+
+		mapped = @mapString(line)
+		return [level, orgLineNum, mapped]
 
 	getTree: () ->
 

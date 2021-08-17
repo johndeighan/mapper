@@ -9,12 +9,20 @@ import {
   undef,
   error,
   isArray,
-  isFunction
+  isFunction,
+  isEmpty,
+  escapeStr
 } from '@jdeighan/coffee-utils';
 
 import {
   splitLine
 } from '@jdeighan/coffee-utils/indent';
+
+import {
+  numHereDocs,
+  patch,
+  build
+} from '@jdeighan/coffee-utils/heredoc';
 
 import {
   StringInput
@@ -24,25 +32,86 @@ import {
 // --- To derive a class from this:
 //        1. Extend this class
 //        2. Override mapString(), which gets the line with
-//           any continuation lines appended
-export var PLLInput = class PLLInput extends StringInput {
+//           any continuation lines appended, plus any
+//           HEREDOC sections
+//        3. If desired, override patchLine, which patches
+//           HEREDOC lines into the original string
+export var PLLParser = class PLLParser extends StringInput {
   mapString(str) {
     return str;
   }
 
-  mapLine(line) {
-    var level, nextLevel, nextLine, nextStr, orgLineNum, str;
-    assert(line != null, "mapLine(): line is undef");
-    [level, str] = splitLine(line);
-    orgLineNum = this.lineNum;
-    // --- Merge in any continuation lines
-    while ((nextLine = this.fetch()) && ([nextLevel, nextStr] = splitLine(nextLine)) && (nextLevel >= level + 2)) {
-      str += ' ' + nextStr;
+  getContLines(curlevel) {
+    var lLines, nextLevel, nextLine, nextStr;
+    lLines = [];
+    while ((nextLine = this.fetch()) && ([nextLevel, nextStr] = splitLine(nextLine)) && (nextLevel >= curlevel + 2)) {
+      lLines.push(nextStr);
     }
     if (nextLine) {
+      // --- we fetched a line we didn't want
       this.unfetch(nextLine);
     }
-    return [level, orgLineNum, this.mapString(str)];
+    return lLines;
+  }
+
+  joinContLines(line, lContLines) {
+    var j, len1, str;
+    for (j = 0, len1 = lContLines.length; j < len1; j++) {
+      str = lContLines[j];
+      line += ' ' + str;
+    }
+    return line;
+  }
+
+  getHereDocs(line, orgLineNum) {
+    var i, j, lLines, lSections, n, ref;
+    n = numHereDocs(line);
+    lSections = []; // --- will have one subarray for each HEREDOC
+// --- NOTE: [1..n] doesn't work here ?????
+    for (i = j = 0, ref = n; (0 <= ref ? j < ref : j > ref); i = 0 <= ref ? ++j : --j) {
+      lLines = [];
+      while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
+        lLines.push(this.fetch());
+      }
+      if (this.lBuffer.length === 0) {
+        error(`EOF while processing HEREDOC
+at line ${orgLineNum}
+'${escapeStr(line)}'
+n = ${n}`);
+      } else {
+        this.fetch(); // empty line
+      }
+      lSections.push(lLines);
+    }
+    return lSections;
+  }
+
+  patchLine(line, lSections) {
+    return patch(line, lSections);
+  }
+
+  handleEmptyLine(lineNum) {
+    return undef; // skip blank lines by default
+  }
+
+  mapLine(orgLine) {
+    var lContLines, lSections, level, line, mapped, orgLineNum;
+    assert(orgLine != null, "mapLine(): orgLine is undef");
+    if (isEmpty(orgLine)) {
+      return this.handleEmptyLine(this.lineNum);
+    }
+    [level, line] = splitLine(orgLine);
+    orgLineNum = this.lineNum;
+    // --- Merge in any continuation lines
+    lContLines = this.getContLines(level);
+    line = this.joinContLines(line, lContLines);
+    // --- handle HEREDOCs
+    lSections = this.getHereDocs(line, orgLineNum);
+    if (lSections.length > 0) {
+      line = this.patchLine(line, lSections);
+    }
+    mapped = this.mapString(line);
+    return [level, orgLineNum, mapped];
   }
 
   getTree() {

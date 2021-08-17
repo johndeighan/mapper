@@ -20,7 +20,11 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  PLLInput
+  patch
+} from '@jdeighan/coffee-utils/heredoc';
+
+import {
+  PLLParser
 } from '@jdeighan/string-input/pll';
 
 tester = new AvaTester();
@@ -38,9 +42,9 @@ if not development
 	color = blue
 	if usemoods
 		mood = happy`;
-  oInput = new PLLInput(contents);
+  oInput = new PLLParser(contents);
   tree = oInput.getTree();
-  return tester.equal(30, tree, taml(`---
+  return tester.equal(33, tree, taml(`---
 -
 	lineNum: 1
 	node: development = yes
@@ -77,7 +81,7 @@ if not development
 // ---------------------------------------------------------------------------
 (function() {
   var NewInput, content, oInput, tree;
-  NewInput = class NewInput extends PLLInput {
+  NewInput = class NewInput extends PLLParser {
     mapString(str) {
       var _, dqstr, ident, key, lMatches, neg, number, op, sqstr, value;
       if (lMatches = str.match(/^([A-Za-z_]+)\s*=\s*(.*)$/)) { // identifier
@@ -122,7 +126,7 @@ if not development
 		mood = happy`;
   oInput = new NewInput(content);
   tree = oInput.getTree();
-  return tester.equal(139, tree, taml(`---
+  return tester.equal(147, tree, taml(`---
 -
 	node: if_truthy
 	lineNum: 1
@@ -151,4 +155,96 @@ if not development
 				-
 					node: assign
 					lineNum: 8`));
+})();
+
+// ---------------------------------------------------------------------------
+// --- test HEREDOC handling
+(function() {
+  var contents, oInput, tree;
+  contents = `development = <<<
+	yes
+
+if development
+	color <<<
+		=
+		red
+
+	if usemoods
+		<<<
+			mood
+			=
+			somber
+
+if not development
+	color = blue
+	if usemoods
+		mood = happy`;
+  oInput = new PLLParser(contents);
+  tree = oInput.getTree();
+  return tester.equal(211, tree, taml(`---
+-
+	lineNum: 1
+	node: development = yes
+-
+	lineNum: 4
+	node: if development
+	body:
+		-
+			lineNum: 5
+			node: color = red
+		-
+			lineNum: 9
+			node: if usemoods
+			body:
+				-
+					lineNum: 10
+					node: mood = somber
+-
+	lineNum: 15
+	node: if not development
+	body:
+		-
+			lineNum: 16
+			node: color = blue
+		-
+			lineNum: 17
+			node: if usemoods
+			body:
+				-
+					lineNum: 18
+					node: mood = happy`));
+})();
+
+// ---------------------------------------------------------------------------
+(function() {
+  var JSParser, content, oInput, tree;
+  JSParser = class JSParser extends PLLParser {
+    patchLine(line, lSections) {
+      return patch(line, lSections, true);
+    }
+
+  };
+  content = `x = 23
+str = <<<
+	this is a
+	long string
+	of text
+
+console.log str`;
+  oInput = new JSParser(content);
+  tree = oInput.getTree();
+  return tester.equal(271, tree, [
+    {
+      lineNum: 1,
+      node: 'x = 23'
+    },
+    {
+      lineNum: 2,
+      node: "str = \"this is a\\nlong string\\nof text\""
+    },
+    {
+      lineNum: 7,
+      node: 'console.log str'
+    }
+  ]);
 })();

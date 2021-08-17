@@ -3,8 +3,11 @@
 import {strict as assert} from 'assert'
 
 import {AvaTester} from '@jdeighan/ava-tester'
-import {say, undef, error, taml, warn, rtrim} from '@jdeighan/coffee-utils'
-import {PLLInput} from '@jdeighan/string-input/pll'
+import {
+	say, undef, error, taml, warn, rtrim,
+	} from '@jdeighan/coffee-utils'
+import {patch} from '@jdeighan/coffee-utils/heredoc'
+import {PLLParser} from '@jdeighan/string-input/pll'
 
 tester = new AvaTester()
 
@@ -25,10 +28,10 @@ tester = new AvaTester()
 					mood = happy
 			"""
 
-	oInput = new PLLInput(contents)
+	oInput = new PLLParser(contents)
 	tree = oInput.getTree()
 
-	tester.equal 30, tree, taml("""
+	tester.equal 33, tree, taml("""
 		---
 		-
 			lineNum: 1
@@ -68,7 +71,7 @@ tester = new AvaTester()
 
 (() ->
 
-	class NewInput extends PLLInput
+	class NewInput extends PLLParser
 
 		mapString: (str) ->
 
@@ -142,7 +145,7 @@ tester = new AvaTester()
 	oInput = new NewInput(content)
 	tree = oInput.getTree()
 
-	tester.equal 139, tree, taml("""
+	tester.equal 147, tree, taml("""
 			---
 			-
 				node: if_truthy
@@ -173,5 +176,110 @@ tester = new AvaTester()
 								node: assign
 								lineNum: 8
 			""")
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test HEREDOC handling
+
+(() ->
+
+	contents = """
+			development = <<<
+				yes
+
+			if development
+				color <<<
+					=
+					red
+
+				if usemoods
+					<<<
+						mood
+						=
+						somber
+
+			if not development
+				color = blue
+				if usemoods
+					mood = happy
+			"""
+
+	oInput = new PLLParser(contents)
+	tree = oInput.getTree()
+
+	tester.equal 211, tree, taml("""
+		---
+		-
+			lineNum: 1
+			node: development = yes
+		-
+			lineNum: 4
+			node: if development
+			body:
+				-
+					lineNum: 5
+					node: color = red
+				-
+					lineNum: 9
+					node: if usemoods
+					body:
+						-
+							lineNum: 10
+							node: mood = somber
+		-
+			lineNum: 15
+			node: if not development
+			body:
+				-
+					lineNum: 16
+					node: color = blue
+				-
+					lineNum: 17
+					node: if usemoods
+					body:
+						-
+							lineNum: 18
+							node: mood = happy
+			""")
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	class JSParser extends PLLParser
+
+		patchLine: (line, lSections) ->
+
+			return patch(line, lSections, true)
+
+	content = """
+			x = 23
+			str = <<<
+				this is a
+				long string
+				of text
+
+			console.log str
+			"""
+
+	oInput = new JSParser(content)
+	tree = oInput.getTree()
+
+	tester.equal 271, tree, [
+		{
+			lineNum: 1
+			node: 'x = 23'
+			},
+		{
+			lineNum: 2
+			node: "str = \"this is a\\nlong string\\nof text\""
+			},
+		{
+			lineNum: 7
+			node: 'console.log str'
+			},
+		]
 
 	)()

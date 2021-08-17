@@ -23,8 +23,6 @@ import {StringInput} from '@jdeighan/string-input'
 
 export class PLLParser extends StringInput
 
-	mapString: (str) -> return str
-
 	getContLines: (curlevel) ->
 
 		lLines = []
@@ -37,11 +35,15 @@ export class PLLParser extends StringInput
 			@unfetch nextLine
 		return lLines
 
+	# ..........................................................
+
 	joinContLines: (line, lContLines) ->
 
 		for str in lContLines
 			line += ' ' + str
 		return line
+
+	# ..........................................................
 
 	getHereDocs: (line, orgLineNum) ->
 
@@ -65,13 +67,25 @@ export class PLLParser extends StringInput
 
 		return lSections
 
+	# ..........................................................
+
 	patchLine: (line, lSections) ->
 
 		return patch(line, lSections)
 
+	# ..........................................................
+
 	handleEmptyLine: (lineNum) ->
 
 		return undef      # skip blank lines by default
+
+	# ..........................................................
+
+	mapString: (str) ->
+
+		return str
+
+	# ..........................................................
 
 	mapLine: (orgLine) ->
 
@@ -94,6 +108,8 @@ export class PLLParser extends StringInput
 
 		mapped = @mapString(line)
 		return [level, orgLineNum, mapped]
+
+	# ..........................................................
 
 	getTree: () ->
 

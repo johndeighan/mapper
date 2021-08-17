@@ -37,10 +37,6 @@ import {
 //        3. If desired, override patchLine, which patches
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends StringInput {
-  mapString(str) {
-    return str;
-  }
-
   getContLines(curlevel) {
     var lLines, nextLevel, nextLine, nextStr;
     lLines = [];
@@ -54,6 +50,7 @@ export var PLLParser = class PLLParser extends StringInput {
     return lLines;
   }
 
+  // ..........................................................
   joinContLines(line, lContLines) {
     var j, len1, str;
     for (j = 0, len1 = lContLines.length; j < len1; j++) {
@@ -63,6 +60,7 @@ export var PLLParser = class PLLParser extends StringInput {
     return line;
   }
 
+  // ..........................................................
   getHereDocs(line, orgLineNum) {
     var i, j, lLines, lSections, n, ref;
     n = numHereDocs(line);
@@ -86,14 +84,23 @@ n = ${n}`);
     return lSections;
   }
 
+  // ..........................................................
   patchLine(line, lSections) {
     return patch(line, lSections);
   }
 
+  // ..........................................................
   handleEmptyLine(lineNum) {
     return undef; // skip blank lines by default
   }
 
+  
+    // ..........................................................
+  mapString(str) {
+    return str;
+  }
+
+  // ..........................................................
   mapLine(orgLine) {
     var lContLines, lSections, level, line, mapped, orgLineNum;
     assert(orgLine != null, "mapLine(): orgLine is undef");
@@ -114,6 +121,7 @@ n = ${n}`);
     return [level, orgLineNum, mapped];
   }
 
+  // ..........................................................
   getTree() {
     return treeify(this.getAll());
   }

@@ -69,13 +69,14 @@ export var StringInput = class StringInput {
   }
 
   
-    // ........................................................................
+    // ..........................................................
   // --- designed to override with a mapping method
+  //     NOTE: line includes the indentation
   mapLine(line) {
     return line;
   }
 
-  // ........................................................................
+  // ..........................................................
   unget(item) {
     // --- item has already been mapped
     debug(item, 'enter unget() with:');
@@ -84,7 +85,7 @@ export var StringInput = class StringInput {
     debug('return from unget()');
   }
 
-  // ........................................................................
+  // ..........................................................
   peek() {
     var item;
     debug('enter peek():');
@@ -98,7 +99,7 @@ export var StringInput = class StringInput {
     return item;
   }
 
-  // ........................................................................
+  // ..........................................................
   skip() {
     debug('enter skip():');
     if (this.lookahead != null) {
@@ -110,7 +111,7 @@ export var StringInput = class StringInput {
     debug('return');
   }
 
-  // ........................................................................
+  // ..........................................................
   // --- Returns undef if either:
   //        1. there's no alt input
   //        2. get from alt input returns undef (then closes alt input)
@@ -132,7 +133,7 @@ export var StringInput = class StringInput {
     }
   }
 
-  // ........................................................................
+  // ..........................................................
   // --- Returns undef if either:
   //        1. there's no alt input
   //        2. get from alt input returns undef (then closes alt input)
@@ -154,7 +155,7 @@ export var StringInput = class StringInput {
     }
   }
 
-  // ........................................................................
+  // ..........................................................
   get() {
     var line, result, saved;
     debug(`enter get() (from ${this.filename}):`);
@@ -183,7 +184,7 @@ export var StringInput = class StringInput {
     return result;
   }
 
-  // ........................................................................
+  // ..........................................................
   // --- This should be used to fetch from @lBuffer
   //     to maintain proper @lineNum for error messages
   //     MUST handle #include
@@ -226,7 +227,7 @@ export var StringInput = class StringInput {
     return line;
   }
 
-  // ........................................................................
+  // ..........................................................
   // --- Put one or more lines back into lBuffer, to be fetched later
   unfetch(str) {
     debug(str, "enter unfetch() with:");
@@ -235,7 +236,7 @@ export var StringInput = class StringInput {
     debug('return from unfetch()');
   }
 
-  // ........................................................................
+  // ..........................................................
   // --- Fetch a block of text at level or greater than 'level'
   //     as one long string
   // --- Designed to use in mapLine()
@@ -269,7 +270,7 @@ export var StringInput = class StringInput {
     return retval;
   }
 
-  // ........................................................................
+  // ..........................................................
   getAll() {
     var lLines, line;
     lLines = [];
@@ -281,7 +282,7 @@ export var StringInput = class StringInput {
     return lLines;
   }
 
-  // ........................................................................
+  // ..........................................................
   getAllText() {
     return this.getAll().join('\n');
   }

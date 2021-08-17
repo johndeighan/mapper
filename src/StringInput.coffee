@@ -55,12 +55,15 @@ export class StringInput
 		@altInput = undef
 		@altLevel = undef      # controls prefix prepended to lines
 
-	# ........................................................................
+	# ..........................................................
 	# --- designed to override with a mapping method
+	#     NOTE: line includes the indentation
 
-	mapLine: (line) -> return line
+	mapLine: (line) ->
 
-	# ........................................................................
+		return line
+
+	# ..........................................................
 
 	unget: (item) ->
 
@@ -71,7 +74,7 @@ export class StringInput
 		debug 'return from unget()'
 		return
 
-	# ........................................................................
+	# ..........................................................
 
 	peek: () ->
 
@@ -84,7 +87,7 @@ export class StringInput
 		debug item, 'return with:'
 		return item
 
-	# ........................................................................
+	# ..........................................................
 
 	skip: () ->
 
@@ -97,7 +100,7 @@ export class StringInput
 		debug 'return'
 		return
 
-	# ........................................................................
+	# ..........................................................
 	# --- Returns undef if either:
 	#        1. there's no alt input
 	#        2. get from alt input returns undef (then closes alt input)
@@ -117,7 +120,7 @@ export class StringInput
 			@altLevel = undef
 			return undef
 
-	# ........................................................................
+	# ..........................................................
 	# --- Returns undef if either:
 	#        1. there's no alt input
 	#        2. get from alt input returns undef (then closes alt input)
@@ -137,7 +140,7 @@ export class StringInput
 			@altLevel = undef
 			return undef
 
-	# ........................................................................
+	# ..........................................................
 
 	get: () ->
 
@@ -167,7 +170,7 @@ export class StringInput
 		debug result, "return (from #{@filename})"
 		return result
 
-	# ........................................................................
+	# ..........................................................
 	# --- This should be used to fetch from @lBuffer
 	#     to maintain proper @lineNum for error messages
 	#     MUST handle #include
@@ -214,7 +217,7 @@ export class StringInput
 		debug line, "return from buffer:"
 		return line
 
-	# ........................................................................
+	# ..........................................................
 	# --- Put one or more lines back into lBuffer, to be fetched later
 
 	unfetch: (str) ->
@@ -225,7 +228,7 @@ export class StringInput
 		debug 'return from unfetch()'
 		return
 
-	# ........................................................................
+	# ..........................................................
 	# --- Fetch a block of text at level or greater than 'level'
 	#     as one long string
 	# --- Designed to use in mapLine()
@@ -259,7 +262,7 @@ export class StringInput
 		debug retval, "return with:"
 		return retval
 
-	# ........................................................................
+	# ..........................................................
 
 	getAll: () ->
 
@@ -270,7 +273,7 @@ export class StringInput
 			line = @get()
 		return lLines
 
-	# ........................................................................
+	# ..........................................................
 
 	getAllText: () ->
 

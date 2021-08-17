@@ -96,8 +96,9 @@ n = ${n}`);
 
   
     // ..........................................................
-  mapString(str) {
-    return str;
+  mapString(line, level) {
+    // --- NOTE: line has indentation removed
+    return line;
   }
 
   // ..........................................................
@@ -117,7 +118,7 @@ n = ${n}`);
     if (lSections.length > 0) {
       line = this.patchLine(line, lSections);
     }
-    mapped = this.mapString(line);
+    mapped = this.mapString(line, level);
     return [level, orgLineNum, mapped];
   }
 

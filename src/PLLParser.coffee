@@ -81,9 +81,10 @@ export class PLLParser extends StringInput
 
 	# ..........................................................
 
-	mapString: (str) ->
+	mapString: (line, level) ->
+		# --- NOTE: line has indentation removed
 
-		return str
+		return line
 
 	# ..........................................................
 
@@ -106,7 +107,7 @@ export class PLLParser extends StringInput
 		if (lSections.length > 0)
 			line = @patchLine(line, lSections)
 
-		mapped = @mapString(line)
+		mapped = @mapString(line, level)
 		return [level, orgLineNum, mapped]
 
 	# ..........................................................

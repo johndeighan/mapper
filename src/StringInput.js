@@ -10,12 +10,12 @@ import pathlib from 'path';
 
 import {
   undef,
-  deepCopy,
-  stringToArray,
   say,
   pass,
   error,
   isString,
+  deepCopy,
+  stringToArray,
   unitTesting
 } from '@jdeighan/coffee-utils';
 
@@ -94,6 +94,9 @@ export var StringInput = class StringInput {
       return this.lookahead;
     }
     item = this.get();
+    if (item == null) {
+      return undef;
+    }
     this.unget(item);
     debug(item, 'return with:');
     return item;
@@ -108,7 +111,7 @@ export var StringInput = class StringInput {
       return;
     }
     this.get();
-    debug('return');
+    debug('return from skip()');
   }
 
   // ..........................................................

@@ -4,20 +4,12 @@ import {strict as assert} from 'assert'
 import fs from 'fs'
 import pathlib from 'path'
 import {
-	undef,
-	deepCopy,
-	stringToArray,
-	say,
-	pass,
-	error,
-	isString,
-	unitTesting,
+	undef, say, pass, error, isString,
+	deepCopy, stringToArray, unitTesting,
 	} from '@jdeighan/coffee-utils'
 import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
 import {
-	splitLine,
-	indentedStr,
-	indentation,
+	splitLine, indentedStr, indentation,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
@@ -83,6 +75,8 @@ export class StringInput
 			debug "return lookahead token"
 			return @lookahead
 		item = @get()
+		if not item?
+			return undef
 		@unget(item)
 		debug item, 'return with:'
 		return item
@@ -97,7 +91,7 @@ export class StringInput
 			debug "return: clear lookahead token"
 			return
 		@get()
-		debug 'return'
+		debug 'return from skip()'
 		return
 
 	# ..........................................................

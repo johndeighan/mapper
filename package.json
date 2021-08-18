@@ -9,7 +9,8 @@
 	"main": "./StringInput.js",
 	"exports": {
 		".": "./src/StringInput.js",
-		"./pll": "./src/PLLParser.js"
+		"./pll": "./src/PLLParser.js",
+		"./get": "./src/Getter.js"
 	},
 	"scripts": {
 		"build": "cls && coffee -c .",

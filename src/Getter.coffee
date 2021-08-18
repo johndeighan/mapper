@@ -23,13 +23,13 @@ export class Getter
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug "return with lookahead token #{saved}"
+			debug saved, "return with lookahead token:"
 			return saved
 		if (@pos == @len)
 			return undef
 		item = @lItems[@pos]
 		@pos += 1
-		debug "return #{item} from get()"
+		debug item, "return from get() with:"
 		return item
 
 	unget: (item) ->

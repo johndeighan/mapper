@@ -33,7 +33,7 @@ export var Getter = class Getter {
     if (this.lookahead != null) {
       saved = this.lookahead;
       this.lookahead = undef;
-      debug(`return with lookahead token ${saved}`);
+      debug(saved, "return with lookahead token:");
       return saved;
     }
     if (this.pos === this.len) {
@@ -41,7 +41,7 @@ export var Getter = class Getter {
     }
     item = this.lItems[this.pos];
     this.pos += 1;
-    debug(`return ${item} from get()`);
+    debug(item, "return from get() with:");
     return item;
   }
 

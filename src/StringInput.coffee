@@ -238,19 +238,18 @@ export class StringInput
 
 		line = undef
 		while (line = @fetch())
+			assert isString(line),
+				"StringInput.fetchBlock(#{atLevel}) - not a string: #{line}"
 			[level, str] = splitLine(line)
 			debug "LOOP: level = #{level}, str = '#{str}'"
 			if (level < atLevel)
 				@unfetch(line)
 				debug "RESULT: unfetch the line"
 				break
-			result = @mapLine(str)
-			if result?
-				result = indentedStr(result, level-atLevel)
-				debug result, "RESULT from mapLine() was:"
-				lLines.push result
-			else
-				debug "RESULT from mapLine() was undef"
+#			result = @mapLine(str)
+			result = indentedStr(str, level-atLevel)
+			debug result, "RESULT:"
+			lLines.push result
 
 		retval = lLines.join('\n')
 		debug retval, "return with:"

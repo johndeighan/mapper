@@ -252,6 +252,7 @@ export var StringInput = class StringInput {
     //           open parenthesis like Python does :-(
     line = undef;
     while ((line = this.fetch())) {
+      assert(isString(line), `StringInput.fetchBlock(${atLevel}) - not a string: ${line}`);
       [level, str] = splitLine(line);
       debug(`LOOP: level = ${level}, str = '${str}'`);
       if (level < atLevel) {
@@ -259,14 +260,10 @@ export var StringInput = class StringInput {
         debug("RESULT: unfetch the line");
         break;
       }
-      result = this.mapLine(str);
-      if (result != null) {
-        result = indentedStr(result, level - atLevel);
-        debug(result, "RESULT from mapLine() was:");
-        lLines.push(result);
-      } else {
-        debug("RESULT from mapLine() was undef");
-      }
+      //			result = @mapLine(str)
+      result = indentedStr(str, level - atLevel);
+      debug(result, "RESULT:");
+      lLines.push(result);
     }
     retval = lLines.join('\n');
     debug(retval, "return with:");

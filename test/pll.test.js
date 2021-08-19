@@ -14,14 +14,11 @@ import {
   say,
   undef,
   error,
+  isTAML,
   taml,
   warn,
   rtrim
 } from '@jdeighan/coffee-utils';
-
-import {
-  patch
-} from '@jdeighan/coffee-utils/heredoc';
 
 import {
   PLLParser
@@ -219,8 +216,12 @@ if not development
 (function() {
   var JSParser, content, oInput, tree;
   JSParser = class JSParser extends PLLParser {
-    patchLine(line, lSections) {
-      return patch(line, lSections, true);
+    heredocStr(str) {
+      if (isTAML(str)) {
+        return taml(str);
+      } else {
+        return JSON.stringify(str);
+      }
     }
 
   };

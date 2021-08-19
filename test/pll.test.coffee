@@ -4,9 +4,8 @@ import {strict as assert} from 'assert'
 
 import {AvaTester} from '@jdeighan/ava-tester'
 import {
-	say, undef, error, taml, warn, rtrim,
+	say, undef, error, isTAML, taml, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
-import {patch} from '@jdeighan/coffee-utils/heredoc'
 import {PLLParser} from '@jdeighan/string-input/pll'
 
 tester = new AvaTester()
@@ -250,9 +249,12 @@ tester = new AvaTester()
 
 	class JSParser extends PLLParser
 
-		patchLine: (line, lSections) ->
+		heredocStr: (str) ->
 
-			return patch(line, lSections, true)
+			if isTAML(str)
+				return taml(str)
+			else
+				return JSON.stringify(str)
 
 	content = """
 			x = 23

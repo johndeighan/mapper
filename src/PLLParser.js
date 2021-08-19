@@ -11,18 +11,19 @@ import {
   isArray,
   isFunction,
   isEmpty,
-  escapeStr
+  escapeStr,
+  isTAML,
+  taml
 } from '@jdeighan/coffee-utils';
 
 import {
-  splitLine
+  splitLine,
+  undentedBlock
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  numHereDocs,
-  patch,
-  build
-} from '@jdeighan/coffee-utils/heredoc';
+  debug
+} from '@jdeighan/coffee-utils/debug';
 
 import {
   StringInput
@@ -52,41 +53,62 @@ export var PLLParser = class PLLParser extends StringInput {
 
   // ..........................................................
   joinContLines(line, lContLines) {
-    var j, len1, str;
-    for (j = 0, len1 = lContLines.length; j < len1; j++) {
-      str = lContLines[j];
+    var i, len1, str;
+    for (i = 0, len1 = lContLines.length; i < len1; i++) {
+      str = lContLines[i];
       line += ' ' + str;
     }
     return line;
   }
 
   // ..........................................................
-  getHereDocs(line, orgLineNum) {
-    var i, j, lLines, lSections, n, ref;
-    n = numHereDocs(line);
-    lSections = []; // --- will have one subarray for each HEREDOC
-// --- NOTE: [1..n] doesn't work here ?????
-    for (i = j = 0, ref = n; (0 <= ref ? j < ref : j > ref); i = 0 <= ref ? ++j : --j) {
-      lLines = [];
-      while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
-        lLines.push(this.fetch());
-      }
-      if (this.lBuffer.length === 0) {
-        error(`EOF while processing HEREDOC
+  // ..........................................................
+  getHereDocLines() {
+    var lLines;
+    // --- Get all lines until empty line is found
+    lLines = [];
+    while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
+      lLines.push(this.fetch());
+    }
+    if (this.lBuffer.length === 0) {
+      error(`EOF while processing HEREDOC
 at line ${orgLineNum}
 '${escapeStr(line)}'
 n = ${n}`);
-      } else {
-        this.fetch(); // empty line
-      }
-      lSections.push(lLines);
+    } else {
+      this.fetch(); // empty line
     }
-    return lSections;
+    return lLines;
   }
 
   // ..........................................................
-  patchLine(line, lSections) {
-    return patch(line, lSections);
+  heredocStr(str) {
+    // --- return replacement string for '<<<'
+    return str.replace(/\n/g, ' ');
+  }
+
+  // ..........................................................
+  patchLine(line) {
+    var lLines, lParts, pos, result, start;
+    // --- Find each '<<<' and replace with result of heredocStr()
+    debug(`enter patchLine('${line}')`);
+    lParts = []; // joined at the end
+    pos = 0;
+    while ((start = line.indexOf('<<<', pos)) !== -1) {
+      lParts.push(line.substring(pos, start));
+      lLines = this.getHereDocLines();
+      if ((lLines != null) && (lLines.length > 0)) {
+        lParts.push(this.heredocStr(undentedBlock(lLines)));
+      }
+      pos = start + 3;
+    }
+    if (line.indexOf('<<<', pos) !== -1) {
+      error(`patchLine(): Not all ${n} HEREDOC markers were replaced` + `in '${line}'`);
+    }
+    lParts.push(line.substring(pos, line.length));
+    result = lParts.join('');
+    debug(`return '${result}'`);
+    return result;
   }
 
   // ..........................................................
@@ -103,7 +125,7 @@ n = ${n}`);
 
   // ..........................................................
   mapLine(orgLine) {
-    var lContLines, lSections, level, line, mapped, orgLineNum;
+    var lContLines, level, line, mapped, orgLineNum;
     assert(orgLine != null, "mapLine(): orgLine is undef");
     if (isEmpty(orgLine)) {
       return this.handleEmptyLine(this.lineNum);
@@ -114,10 +136,7 @@ n = ${n}`);
     lContLines = this.getContLines(level);
     line = this.joinContLines(line, lContLines);
     // --- handle HEREDOCs
-    lSections = this.getHereDocs(line, orgLineNum);
-    if (lSections.length > 0) {
-      line = this.patchLine(line, lSections);
-    }
+    line = this.patchLine(line);
     mapped = this.mapString(line, level);
     return [level, orgLineNum, mapped];
   }

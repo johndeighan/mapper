@@ -5,7 +5,7 @@ import fs from 'fs'
 import pathlib from 'path'
 import {
 	undef, say, pass, error, isString,
-	deepCopy, stringToArray, unitTesting,
+	deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
 import {
@@ -138,22 +138,22 @@ export class StringInput
 
 	get: () ->
 
-		debug "enter get() (from #{@filename}):"
+		debug "enter StringInput.get() - from #{@filename}"
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug "return (from #{@filename}) with lookahead token"
+			debug "return lookahead token - from #{@filename}"
 			return saved
 
 		if @altInput && (line = @getFromAlt())?
-			debug "return with '#{line}' (from alt #{@filename})"
+			debug "return with '#{oneline(line)}' - from alt #{@filename}"
 			return line
 
 		line = @fetch()    # will handle #include
-		debug line, "line ="
+		debug "line = '#{oneline(line)}'"
 
 		if not line?
-			debug "return with undef (from #{@filename}) at EOF"
+			debug "return with undef at EOF - from #{@filename}"
 			return undef
 
 		result = @mapLine(line)
@@ -161,7 +161,7 @@ export class StringInput
 			line = @fetch()
 			result = @mapLine(line)
 
-		debug result, "return (from #{@filename})"
+		debug "return '#{oneline(result)}' - from #{@filename}"
 		return result
 
 	# ..........................................................

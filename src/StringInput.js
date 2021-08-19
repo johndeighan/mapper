@@ -16,7 +16,8 @@ import {
   isString,
   deepCopy,
   stringToArray,
-  unitTesting
+  unitTesting,
+  oneline
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -161,21 +162,21 @@ export var StringInput = class StringInput {
   // ..........................................................
   get() {
     var line, result, saved;
-    debug(`enter get() (from ${this.filename}):`);
+    debug(`enter StringInput.get() - from ${this.filename}`);
     if (this.lookahead != null) {
       saved = this.lookahead;
       this.lookahead = undef;
-      debug(`return (from ${this.filename}) with lookahead token`);
+      debug(`return lookahead token - from ${this.filename}`);
       return saved;
     }
     if (this.altInput && ((line = this.getFromAlt()) != null)) {
-      debug(`return with '${line}' (from alt ${this.filename})`);
+      debug(`return with '${oneline(line)}' - from alt ${this.filename}`);
       return line;
     }
     line = this.fetch(); // will handle #include
-    debug(line, "line =");
+    debug(`line = '${oneline(line)}'`);
     if (line == null) {
-      debug(`return with undef (from ${this.filename}) at EOF`);
+      debug(`return with undef at EOF - from ${this.filename}`);
       return undef;
     }
     result = this.mapLine(line);
@@ -183,7 +184,7 @@ export var StringInput = class StringInput {
       line = this.fetch();
       result = this.mapLine(line);
     }
-    debug(result, `return (from ${this.filename})`);
+    debug(`return '${oneline(result)}' - from ${this.filename}`);
     return result;
   }
 

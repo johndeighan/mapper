@@ -7,7 +7,6 @@ import {
 	say, undef, error, taml, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {patch} from '@jdeighan/coffee-utils/heredoc'
 import {Getter} from '@jdeighan/string-input/get'
 
 simple = new AvaTester()

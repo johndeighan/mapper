@@ -24,10 +24,6 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  patch
-} from '@jdeighan/coffee-utils/heredoc';
-
-import {
   Getter
 } from '@jdeighan/string-input/get';
 

@@ -109,9 +109,9 @@ export class StringInput
 			debug result, "return with:"
 			return indentedStr(result, @altLevel)
 		else
-			debug "return: alt returned undef, alt input removed"
 			@altInput = undef
 			@altLevel = undef
+			debug "return: alt returned undef, alt input removed"
 			return undef
 
 	# ..........................................................
@@ -173,7 +173,7 @@ export class StringInput
 
 		debug "enter fetch()"
 		if @altInput && (result = @fetchFromAlt())?
-			debug result, "return with:"
+			debug result, "return from alt with:"
 			return result
 
 		if @lBuffer.length == 0
@@ -192,6 +192,7 @@ export class StringInput
 			[_, fname] = lMatches
 			assert not @altInput, "fetch(): altInput already set"
 			if unitTesting
+				debug "return 'Contents of #{fname}' - unit testing"
 				return indentation(level) + "Contents of #{fname}"
 			fullpath = findFile(fname)
 			contents = slurp(fullpath)
@@ -208,7 +209,7 @@ export class StringInput
 			else
 				debug "fetch(): alt was undef, retain line '#{line}'"
 
-		debug line, "return from buffer:"
+		debug "return '#{oneline(line)}' from buffer:"
 		return line
 
 	# ..........................................................

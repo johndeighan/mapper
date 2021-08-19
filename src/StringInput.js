@@ -130,9 +130,9 @@ export var StringInput = class StringInput {
       debug(result, "return with:");
       return indentedStr(result, this.altLevel);
     } else {
-      debug("return: alt returned undef, alt input removed");
       this.altInput = undef;
       this.altLevel = undef;
+      debug("return: alt returned undef, alt input removed");
       return undef;
     }
   }
@@ -196,7 +196,7 @@ export var StringInput = class StringInput {
     var _, altLine, contents, fname, fullpath, lMatches, level, line, result, str;
     debug("enter fetch()");
     if (this.altInput && ((result = this.fetchFromAlt()) != null)) {
-      debug(result, "return with:");
+      debug(result, "return from alt with:");
       return result;
     }
     if (this.lBuffer.length === 0) {
@@ -210,6 +210,7 @@ export var StringInput = class StringInput {
       [_, fname] = lMatches;
       assert(!this.altInput, "fetch(): altInput already set");
       if (unitTesting) {
+        debug(`return 'Contents of ${fname}' - unit testing`);
         return indentation(level) + `Contents of ${fname}`;
       }
       fullpath = findFile(fname);
@@ -227,7 +228,7 @@ export var StringInput = class StringInput {
         debug(`fetch(): alt was undef, retain line '${line}'`);
       }
     }
-    debug(line, "return from buffer:");
+    debug(`return '${oneline(line)}' from buffer:`);
     return line;
   }
 

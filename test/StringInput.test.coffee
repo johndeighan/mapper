@@ -401,10 +401,10 @@ setUnitTesting(true)
 
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 376, line, 'p a paragraph'
+	simple.equal 404, line, 'p a paragraph'
 	line = oInput.get()
-	simple.equal 378, line, 'div:markdown'
-	simple.equal -379, block, """
+	simple.equal 406, line, 'div:markdown'
+	simple.equal 407, block, """
 			line 1
 
 			line 3
@@ -430,12 +430,12 @@ setUnitTesting(true)
 	setUnitTesting(false)
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 401, line, 'p a paragraph'
+	simple.equal 433, line, 'p a paragraph'
 
 	line = oInput.get()
-	simple.equal 404, line, 'div:markdown'
+	simple.equal 436, line, 'div:markdown'
 
-	simple.equal 406, block, '\ttitle\n\t====='
+	simple.equal 438, block, '\ttitle\n\t====='
 
 	setUnitTesting(true)
 	)()
@@ -467,7 +467,7 @@ setUnitTesting(true)
 	oInput = new StringInput(text)
 
 	setUnitTesting(false)
-	tester.equal 438, oInput, [
+	tester.equal 470, oInput, [
 		"p a paragraph"
 		"div:markdown"
 		"\theader"

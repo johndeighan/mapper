@@ -6,9 +6,11 @@ import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say, undef, error, isTAML, taml, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
+import {StringInput} from '@jdeighan/string-input'
 import {PLLParser} from '@jdeighan/string-input/pll'
 
-tester = new AvaTester()
+simple = new AvaTester()
 
 # ---------------------------------------------------------------------------
 # --- test using identity mapper
@@ -30,7 +32,7 @@ tester = new AvaTester()
 	oInput = new PLLParser(contents)
 	tree = oInput.getTree()
 
-	tester.equal 33, tree, taml("""
+	simple.equal 33, tree, taml("""
 		---
 		-
 			lineNum: 1
@@ -144,7 +146,7 @@ tester = new AvaTester()
 	oInput = new NewInput(content)
 	tree = oInput.getTree()
 
-	tester.equal 147, tree, taml("""
+	simple.equal 147, tree, taml("""
 			---
 			-
 				node: if_truthy
@@ -207,7 +209,7 @@ tester = new AvaTester()
 	oInput = new PLLParser(contents)
 	tree = oInput.getTree()
 
-	tester.equal 211, tree, taml("""
+	simple.equal 211, tree, taml("""
 		---
 		-
 			lineNum: 1
@@ -258,7 +260,7 @@ tester = new AvaTester()
 	oInput = new PLLParser(contents)
 	tree = oInput.getTree()
 
-	tester.equal 211, tree, taml("""
+	simple.equal 211, tree, taml("""
 		---
 		-
 			lineNum: 1
@@ -292,7 +294,7 @@ tester = new AvaTester()
 	oInput = new JSParser(content)
 	tree = oInput.getTree()
 
-	tester.equal 271, tree, [
+	simple.equal 271, tree, [
 		{
 			lineNum: 1
 			node: 'x = 23'
@@ -306,5 +308,34 @@ tester = new AvaTester()
 			node: 'console.log str'
 			},
 		]
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test comment
+
+(() ->
+
+	class GatherTester extends AvaTester
+
+		transformValue: (oInput) ->
+			if oInput not instanceof StringInput
+				throw new Error("oInput should be a StringInput object")
+			lLines = for lParts in oInput.getAll()
+				lParts[2]
+			return lLines
+
+	tester = new GatherTester()
+
+	tester.equal 294, new PLLParser("""
+			abc
+
+			# --- this is a comment
+
+			def
+			"""), [
+			'abc',
+			'def',
+			]
 
 	)()

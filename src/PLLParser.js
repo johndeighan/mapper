@@ -11,6 +11,7 @@ import {
   isArray,
   isFunction,
   isEmpty,
+  isComment,
   escapeStr,
   isTAML,
   taml
@@ -120,6 +121,12 @@ export var PLLParser = class PLLParser extends StringInput {
 
   
     // ..........................................................
+  handleComment(lineNum) {
+    return undef; // skip comments by default
+  }
+
+  
+    // ..........................................................
   mapString(line, level) {
     // --- NOTE: line has indentation removed
     return line;
@@ -132,6 +139,9 @@ export var PLLParser = class PLLParser extends StringInput {
     if (isEmpty(orgLine)) {
       return this.handleEmptyLine(this.lineNum);
     }
+    if (isComment(orgLine)) {
+      return this.handleComment(this.lineNum);
+    }
     [level, line] = splitLine(orgLine);
     orgLineNum = this.lineNum;
     // --- Merge in any continuation lines
@@ -140,7 +150,11 @@ export var PLLParser = class PLLParser extends StringInput {
     // --- handle HEREDOCs
     line = this.patchLine(line);
     mapped = this.mapString(line, level);
-    return [level, orgLineNum, mapped];
+    if (mapped != null) {
+      return [level, orgLineNum, mapped];
+    } else {
+      return undef;
+    }
   }
 
   // ..........................................................

@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	say, undef, error, isArray, isFunction, isEmpty,
+	say, undef, error, isArray, isFunction, isEmpty, isComment,
 	escapeStr, isTAML, taml,
 	} from '@jdeighan/coffee-utils'
 import {splitLine, undentedBlock} from '@jdeighan/coffee-utils/indent'
@@ -98,6 +98,12 @@ export class PLLParser extends StringInput
 
 	# ..........................................................
 
+	handleComment: (lineNum) ->
+
+		return undef      # skip comments by default
+
+	# ..........................................................
+
 	mapString: (line, level) ->
 		# --- NOTE: line has indentation removed
 
@@ -111,6 +117,9 @@ export class PLLParser extends StringInput
 		if isEmpty(orgLine)
 			return @handleEmptyLine(@lineNum)
 
+		if isComment(orgLine)
+			return @handleComment(@lineNum)
+
 		[level, line] = splitLine(orgLine)
 		orgLineNum = @lineNum
 
@@ -122,7 +131,10 @@ export class PLLParser extends StringInput
 		line = @patchLine(line)
 
 		mapped = @mapString(line, level)
-		return [level, orgLineNum, mapped]
+		if mapped?
+			return [level, orgLineNum, mapped]
+		else
+			return undef
 
 	# ..........................................................
 

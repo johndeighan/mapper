@@ -28,8 +28,6 @@ setUnitTesting(true)
 # ---------------------------------------------------------------------------
 
 (() ->
-	tester = new AvaTester()
-
 	input = new StringInput("""
 			abc
 			def
@@ -37,19 +35,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	tester.equal 40, item, 'abc'
+	simple.equal 40, item, 'abc'
 	item = input.peek()
-	tester.equal 42, item, 'abc'
+	simple.equal 42, item, 'abc'
 	item = input.get()
-	tester.equal 44, item, 'abc'
+	simple.equal 44, item, 'abc'
 	item = input.get()
-	tester.equal 46, item, 'def'
+	simple.equal 46, item, 'def'
 	input.unget(item)
 	item = input.get()
-	tester.equal 49, item, 'def'
+	simple.equal 49, item, 'def'
 	input.skip()
 	item = input.get()
-	tester.equal 52, item, undef
+	simple.equal 52, item, undef
 
 	)()
 
@@ -478,3 +476,20 @@ setUnitTesting(true)
 		]
 	setUnitTesting(true)
 	)()
+
+# ---------------------------------------------------------------------------
+# --- Test comment
+
+tester.equal 294, new StringInput("""
+		abc
+
+		# --- this is a comment
+
+		def
+		"""), [
+		'abc',
+		'',
+		'# --- this is a comment',
+		'',
+		'def',
+		]

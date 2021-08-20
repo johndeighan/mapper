@@ -244,6 +244,29 @@ tester = new AvaTester()
 	)()
 
 # ---------------------------------------------------------------------------
+# Test empty lines in HEREDOC using '.'
+
+(() ->
+
+	contents = """
+			development = <<<
+				yes
+				.
+				no
+			"""
+
+	oInput = new PLLParser(contents)
+	tree = oInput.getTree()
+
+	tester.equal 211, tree, taml("""
+		---
+		-
+			lineNum: 1
+			node: development = yes  no
+			""")
+	)()
+
+# ---------------------------------------------------------------------------
 
 (() ->
 

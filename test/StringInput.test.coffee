@@ -380,6 +380,38 @@ setUnitTesting(true)
 	)()
 
 # ---------------------------------------------------------------------------
+# --- Test blank lines inside a block
+
+(() ->
+	text = """
+			p a paragraph
+			div:markdown
+				line 1
+
+				line 3
+			"""
+
+	block = undef
+	class TestParser extends StringInput
+
+		mapLine: (line) ->
+			if line == 'div:markdown'
+				block = @fetchBlock(1)
+			return line
+
+	oInput = new TestParser(text)
+	line = oInput.get()
+	simple.equal 376, line, 'p a paragraph'
+	line = oInput.get()
+	simple.equal 378, line, 'div:markdown'
+	simple.equal -379, block, """
+			line 1
+
+			line 3
+			"""
+	)()
+
+# ---------------------------------------------------------------------------
 
 (() ->
 	text = """

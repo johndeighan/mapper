@@ -14,6 +14,7 @@ import {
   pass,
   error,
   isString,
+  isEmpty,
   deepCopy,
   stringToArray,
   unitTesting,
@@ -174,7 +175,7 @@ export var StringInput = class StringInput {
       return line;
     }
     line = this.fetch(); // will handle #include
-    debug(`line = '${oneline(line)}'`);
+    debug(`LINE: '${oneline(line)}'`);
     if (line == null) {
       debug(`return with undef at EOF - from ${this.filename}`);
       return undef;
@@ -247,28 +248,33 @@ export var StringInput = class StringInput {
   // --- Designed to use in mapLine()
   fetchBlock(atLevel) {
     var lLines, level, line, result, retval, str;
-    debug(`enter fetchBlock(${atLevel})`);
+    debug(`enter fetchBlock(atLevel = ${atLevel})`);
     lLines = [];
     // --- NOTE: I absolutely hate using a backslash for line continuation
     //           but CoffeeScript doesn't continue while there is an
     //           open parenthesis like Python does :-(
     line = undef;
-    while ((line = this.fetch())) {
+    while ((line = this.fetch()) != null) {
+      debug(`LINE IS '${oneline(line)}'`);
       assert(isString(line), `StringInput.fetchBlock(${atLevel}) - not a string: ${line}`);
+      if (isEmpty(line)) {
+        debug("empty line");
+        lLines.push('');
+        continue;
+      }
       [level, str] = splitLine(line);
-      debug(`LOOP: level = ${level}, str = '${str}'`);
+      debug(`LOOP: level = ${level}, str = '${oneline(str)}'`);
       if (level < atLevel) {
         this.unfetch(line);
         debug("RESULT: unfetch the line");
         break;
       }
-      //			result = @mapLine(str)
       result = indentedStr(str, level - atLevel);
       debug(result, "RESULT:");
       lLines.push(result);
     }
     retval = lLines.join('\n');
-    debug(retval, "return with:");
+    debug(retval, `return with (${lLines.length} lines):`);
     return retval;
   }
 

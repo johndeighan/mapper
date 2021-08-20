@@ -213,6 +213,22 @@ if not development
 })();
 
 // ---------------------------------------------------------------------------
+// Test empty lines in HEREDOC using '.'
+(function() {
+  var contents, oInput, tree;
+  contents = `development = <<<
+	yes
+	.
+	no`;
+  oInput = new PLLParser(contents);
+  tree = oInput.getTree();
+  return tester.equal(211, tree, taml(`---
+-
+	lineNum: 1
+	node: development = yes  no`));
+})();
+
+// ---------------------------------------------------------------------------
 (function() {
   var JSParser, content, oInput, tree;
   JSParser = class JSParser extends PLLParser {

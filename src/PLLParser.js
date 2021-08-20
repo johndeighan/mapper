@@ -64,18 +64,20 @@ export var PLLParser = class PLLParser extends StringInput {
   // ..........................................................
   // ..........................................................
   getHereDocLines() {
-    var lLines;
+    var lLines, line, orgLineNum;
     // --- Get all lines until empty line is found
+    //     BUT treat line of a single period as empty line
+    orgLineNum = this.lineNum;
     lLines = [];
     while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
-      lLines.push(this.fetch());
+      line = this.fetch();
+      if (line.match(/^\s*\.\s*$/)) {
+        lLines.push('');
+      } else {
+        lLines.push(line);
+      }
     }
-    if (this.lBuffer.length === 0) {
-      error(`EOF while processing HEREDOC
-at line ${orgLineNum}
-'${escapeStr(line)}'
-n = ${n}`);
-    } else {
+    if (this.lBuffer.length > 0) {
       this.fetch(); // empty line
     }
     return lLines;

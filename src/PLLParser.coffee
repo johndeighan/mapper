@@ -46,18 +46,17 @@ export class PLLParser extends StringInput
 
 	getHereDocLines: () ->
 		# --- Get all lines until empty line is found
+		#     BUT treat line of a single period as empty line
 
+		orgLineNum = @lineNum
 		lLines = []
 		while (@lBuffer.length > 0) && not isEmpty(@lBuffer[0])
-			lLines.push @fetch()
-		if (@lBuffer.length == 0)
-			error """
-					EOF while processing HEREDOC
-					at line #{orgLineNum}
-					'#{escapeStr(line)}'
-					n = #{n}
-					"""
-		else
+			line = @fetch()
+			if line.match(/^\s*\.\s*$/)
+				lLines.push ''
+			else
+				lLines.push line
+		if (@lBuffer.length > 0)
 			@fetch()   # empty line
 		return lLines
 

@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import fs from 'fs'
 import pathlib from 'path'
 import {
-	undef, say, pass, error, isString,
+	undef, say, pass, error, isString, isEmpty,
 	deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
@@ -150,7 +150,7 @@ export class StringInput
 			return line
 
 		line = @fetch()    # will handle #include
-		debug "line = '#{oneline(line)}'"
+		debug "LINE: '#{oneline(line)}'"
 
 		if not line?
 			debug "return with undef at EOF - from #{@filename}"
@@ -230,7 +230,7 @@ export class StringInput
 
 	fetchBlock: (atLevel) ->
 
-		debug "enter fetchBlock(#{atLevel})"
+		debug "enter fetchBlock(atLevel = #{atLevel})"
 		lLines = []
 
 		# --- NOTE: I absolutely hate using a backslash for line continuation
@@ -238,22 +238,26 @@ export class StringInput
 		#           open parenthesis like Python does :-(
 
 		line = undef
-		while (line = @fetch())
+		while (line = @fetch())?
+			debug "LINE IS '#{oneline(line)}'"
 			assert isString(line),
 				"StringInput.fetchBlock(#{atLevel}) - not a string: #{line}"
+			if isEmpty(line)
+				debug "empty line"
+				lLines.push ''
+				continue
 			[level, str] = splitLine(line)
-			debug "LOOP: level = #{level}, str = '#{str}'"
+			debug "LOOP: level = #{level}, str = '#{oneline(str)}'"
 			if (level < atLevel)
 				@unfetch(line)
 				debug "RESULT: unfetch the line"
 				break
-#			result = @mapLine(str)
 			result = indentedStr(str, level-atLevel)
 			debug result, "RESULT:"
 			lLines.push result
 
 		retval = lLines.join('\n')
-		debug retval, "return with:"
+		debug retval, "return with (#{lLines.length} lines):"
 		return retval
 
 	# ..........................................................

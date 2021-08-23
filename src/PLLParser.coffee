@@ -144,7 +144,11 @@ export class PLLParser extends StringInput
 
 	getTree: () ->
 
+		debug "enter getTree()"
 		lLines = @getAll()
+		assert lLines?, "lLines is undef"
+		assert isArray(lLines), "getTree(): lLines is not an array"
+		debug "return #{lLines.length} lines from getTree()"
 		return treeify(lLines)
 
 # ---------------------------------------------------------------------------
@@ -153,6 +157,8 @@ export class PLLParser extends StringInput
 export treeify = (lItems, atLevel=0) ->
 	# --- stop when an item of lower level is found, or at end of array
 
+	debug "enter treeify()"
+	debug lItems, "lItems:"
 	lNodes = []
 	while (lItems.length > 0) && (lItems[0][0] >= atLevel)
 		item = lItems.shift()
@@ -168,6 +174,8 @@ export treeify = (lItems, atLevel=0) ->
 			h.body = body
 		lNodes.push(h)
 	if lNodes.length==0
+		debug "return undef from treeify"
 		return undef
 	else
+		debug "return #{lNodes.length} nodes from treeify"
 		return lNodes

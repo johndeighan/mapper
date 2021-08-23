@@ -164,7 +164,11 @@ export var PLLParser = class PLLParser extends StringInput {
   // ..........................................................
   getTree() {
     var lLines;
+    debug("enter getTree()");
     lLines = this.getAll();
+    assert(lLines != null, "lLines is undef");
+    assert(isArray(lLines), "getTree(): lLines is not an array");
+    debug(`return ${lLines.length} lines from getTree()`);
     return treeify(lLines);
   }
 
@@ -175,6 +179,8 @@ export var PLLParser = class PLLParser extends StringInput {
 export var treeify = function(lItems, atLevel = 0) {
   var body, h, item, lNodes, len, level, lineNum, node;
   // --- stop when an item of lower level is found, or at end of array
+  debug("enter treeify()");
+  debug(lItems, "lItems:");
   lNodes = [];
   while ((lItems.length > 0) && (lItems[0][0] >= atLevel)) {
     item = lItems.shift();
@@ -191,8 +197,10 @@ export var treeify = function(lItems, atLevel = 0) {
     lNodes.push(h);
   }
   if (lNodes.length === 0) {
+    debug("return undef from treeify");
     return undef;
   } else {
+    debug(`return ${lNodes.length} nodes from treeify`);
     return lNodes;
   }
 };

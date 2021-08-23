@@ -282,12 +282,14 @@ export var StringInput = class StringInput {
   // ..........................................................
   getAll() {
     var lLines, line;
+    debug("enter getAll()");
     lLines = [];
     line = this.get();
     while (line != null) {
       lLines.push(line);
       line = this.get();
     }
+    debug(`return ${lLines.length} lines from getAll()`);
     return lLines;
   }
 

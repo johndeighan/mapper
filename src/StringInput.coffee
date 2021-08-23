@@ -266,11 +266,13 @@ export class StringInput
 
 	getAll: () ->
 
+		debug "enter getAll()"
 		lLines = []
 		line = @get()
 		while line?
 			lLines.push(line)
 			line = @get()
+		debug "return #{lLines.length} lines from getAll()"
 		return lLines
 
 	# ..........................................................

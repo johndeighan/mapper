@@ -41,6 +41,7 @@ import {
 export var PLLParser = class PLLParser extends StringInput {
   constructor(content, hOptions = {}) {
     super(content, hOptions);
+    debug(content, "new PLLParser: contents");
   }
 
   getContLines(curlevel) {

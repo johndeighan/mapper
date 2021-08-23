@@ -339,3 +339,57 @@ simple = new AvaTester()
 			]
 
 	)()
+
+# ---------------------------------------------------------------------------
+# --- Test getTree
+
+(() ->
+
+	pll = new PLLParser("""
+		development = yes
+		if development
+			color = red
+			if usemoods
+				mood = somber
+		if not development
+			color = blue
+			if usemoods
+				mood = happy
+			""")
+	tree = pll.getTree()
+	simple.equal 363, tree, taml("""
+			---
+			-
+				node: development = yes
+				lineNum: 1
+			-
+				node: if development
+				lineNum: 2
+				body:
+					-
+						node: color = red
+						lineNum: 3
+					-
+						node: if usemoods
+						lineNum: 4
+						body:
+							-
+								node: mood = somber
+								lineNum: 5
+			-
+				node: if not development
+				lineNum: 6
+				body:
+					-
+						node: color = blue
+						lineNum: 7
+					-
+						node: if usemoods
+						lineNum: 8
+						body:
+							-
+								node: mood = happy
+								lineNum: 9
+			""")
+
+	)()

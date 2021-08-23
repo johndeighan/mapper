@@ -3,6 +3,7 @@
 import {strict as assert} from 'assert'
 import fs from 'fs'
 import pathlib from 'path'
+
 import {
 	undef, say, pass, error, isString, isEmpty,
 	deepCopy, stringToArray, unitTesting, oneline,
@@ -24,6 +25,7 @@ export class StringInput
 
 		{filename} = @hOptions
 
+		assert not isEmpty(content), "StringInput: empty content"
 		if isString(content)
 			@lBuffer = stringToArray(content)
 		else if isArray(content)

@@ -21,6 +21,10 @@ import {StringInput} from '@jdeighan/string-input'
 
 export class PLLParser extends StringInput
 
+	constructor: (content, hOptions={}) ->
+
+		super content, hOptions
+
 	getContLines: (curlevel) ->
 
 		lLines = []
@@ -140,7 +144,8 @@ export class PLLParser extends StringInput
 
 	getTree: () ->
 
-		return treeify(@getAll())
+		lLines = @getAll()
+		return treeify(lLines)
 
 # ---------------------------------------------------------------------------
 # Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]

@@ -39,6 +39,10 @@ import {
 //        3. If desired, override patchLine, which patches
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends StringInput {
+  constructor(content, hOptions = {}) {
+    super(content, hOptions);
+  }
+
   getContLines(curlevel) {
     var lLines, nextLevel, nextLine, nextStr;
     lLines = [];
@@ -159,7 +163,9 @@ export var PLLParser = class PLLParser extends StringInput {
 
   // ..........................................................
   getTree() {
-    return treeify(this.getAll());
+    var lLines;
+    lLines = this.getAll();
+    return treeify(lLines);
   }
 
 };

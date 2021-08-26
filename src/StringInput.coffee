@@ -25,8 +25,9 @@ export class StringInput
 
 		{filename} = @hOptions
 
-		assert not isEmpty(content), "StringInput: empty content"
-		if isString(content)
+		if isEmpty(content)
+			@lBuffer = []
+		else if isString(content)
 			@lBuffer = stringToArray(content)
 		else if isArray(content)
 			# -- make a deep copy

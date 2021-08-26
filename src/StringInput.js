@@ -45,8 +45,9 @@ export var StringInput = class StringInput {
     // --- Valid options:
     //        filename
     ({filename} = this.hOptions);
-    assert(!isEmpty(content), "StringInput: empty content");
-    if (isString(content)) {
+    if (isEmpty(content)) {
+      this.lBuffer = [];
+    } else if (isString(content)) {
       this.lBuffer = stringToArray(content);
     } else if (isArray(content)) {
       // -- make a deep copy

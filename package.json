@@ -33,12 +33,12 @@
 	},
 	"homepage": "https://github.com/johndeighan/string-input#readme",
 	"devDependencies": {
-		"@jdeighan/ava-tester": "^1.0.22",
+		"@jdeighan/ava-tester": "^1.0.23",
 		"ava": "^3.15.0",
 		"coffeescript": "^2.5.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^1.1.29",
+		"@jdeighan/coffee-utils": "^1.1.31",
 		"cross-env": "^7.0.3"
 	}
 }

@@ -9,8 +9,7 @@ import {
 	setUnitTesting, unitTesting, escapeStr,
 	} from '@jdeighan/coffee-utils'
 import {
-	indentLevel, undentedStr, splitLine,
-	indentedStr, indentedBlock,
+	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
 import {
 	debug, debugging, setDebugging,
@@ -56,8 +55,9 @@ setUnitTesting(true)
 class GatherTester extends AvaTester
 
 	transformValue: (oInput) ->
-		if oInput not instanceof StringInput
-			throw new Error("oInput should be a StringInput object")
+
+		assert oInput instanceof StringInput,
+			"oInput should be a StringInput object"
 		return oInput.getAll()
 
 tester = new GatherTester()
@@ -201,7 +201,7 @@ tester.equal 78, new StringInput("""
 			n = indentLevel(line)    # current line indent
 			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
 				next = @lBuffer.shift()
-				line += ' ' + undentedStr(next)
+				line += ' ' + undented(next)
 			return line
 
 	tester.equal 209, new TestInput("""
@@ -236,7 +236,7 @@ tester.equal 78, new StringInput("""
 			n = indentLevel(line)    # current line indent
 			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
 				next = @lBuffer.shift()
-				line += ' ' + undentedStr(next)
+				line += ' ' + undented(next)
 			return line
 
 	tester.equal 244, new TestInput("""
@@ -334,7 +334,7 @@ setUnitTesting(true)
 					\s*
 					(.*)
 					$///)
-				result = indentedStr(line, level)
+				result = indented(line, level)
 			else
 				result = orgLine
 			return result
@@ -470,7 +470,7 @@ setUnitTesting(true)
 		"div:markdown"
 		"\theader"
 		"\t======"
-		"\t"
+		""
 		"\t\tpara"
 		"\t\t----"
 		]

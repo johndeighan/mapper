@@ -28,8 +28,7 @@ import {
 
 import {
   splitLine,
-  indentedStr,
-  indentation
+  indented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -131,7 +130,7 @@ export var StringInput = class StringInput {
     result = this.altInput.get();
     if (result != null) {
       debug(result, "return with:");
-      return indentedStr(result, this.altLevel);
+      return indented(result, this.altLevel);
     } else {
       this.altInput = undef;
       this.altLevel = undef;
@@ -153,7 +152,7 @@ export var StringInput = class StringInput {
     result = this.altInput.fetch();
     if (result != null) {
       debug(result, "return with:");
-      return indentedStr(result, this.altLevel);
+      return indented(result, this.altLevel);
     } else {
       debug("return: alt returned undef, alt input removed");
       this.altInput = undef;
@@ -214,7 +213,7 @@ export var StringInput = class StringInput {
       assert(!this.altInput, "fetch(): altInput already set");
       if (unitTesting) {
         debug(`return 'Contents of ${fname}' - unit testing`);
-        return indentation(level) + `Contents of ${fname}`;
+        return indented(`Contents of ${fname}`, level);
       }
       fullpath = findFile(fname);
       contents = slurp(fullpath);
@@ -271,7 +270,7 @@ export var StringInput = class StringInput {
         debug("RESULT: unfetch the line");
         break;
       }
-      result = indentedStr(str, level - atLevel);
+      result = indented(str, level - atLevel);
       debug(result, "RESULT:");
       lLines.push(result);
     }

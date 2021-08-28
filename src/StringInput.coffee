@@ -9,9 +9,7 @@ import {
 	deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
-import {
-	splitLine, indentedStr, indentation,
-	} from '@jdeighan/coffee-utils/indent'
+import {splitLine, indented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 # ---------------------------------------------------------------------------
@@ -110,7 +108,7 @@ export class StringInput
 		result = @altInput.get()
 		if result?
 			debug result, "return with:"
-			return indentedStr(result, @altLevel)
+			return indented(result, @altLevel)
 		else
 			@altInput = undef
 			@altLevel = undef
@@ -130,7 +128,7 @@ export class StringInput
 		result = @altInput.fetch()
 		if result?
 			debug result, "return with:"
-			return indentedStr(result, @altLevel)
+			return indented(result, @altLevel)
 		else
 			debug "return: alt returned undef, alt input removed"
 			@altInput = undef
@@ -196,7 +194,7 @@ export class StringInput
 			assert not @altInput, "fetch(): altInput already set"
 			if unitTesting
 				debug "return 'Contents of #{fname}' - unit testing"
-				return indentation(level) + "Contents of #{fname}"
+				return indented("Contents of #{fname}", level)
 			fullpath = findFile(fname)
 			contents = slurp(fullpath)
 			@altInput = new StringInput(contents)
@@ -255,7 +253,7 @@ export class StringInput
 				@unfetch(line)
 				debug "RESULT: unfetch the line"
 				break
-			result = indentedStr(str, level-atLevel)
+			result = indented(str, level-atLevel)
 			debug result, "RESULT:"
 			lLines.push result
 

@@ -12,6 +12,7 @@ import {
   isFunction,
   isEmpty,
   isComment,
+  isString,
   escapeStr,
   isTAML,
   taml
@@ -19,7 +20,7 @@ import {
 
 import {
   splitLine,
-  undentedBlock
+  undented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -69,6 +70,33 @@ export var PLLParser = class PLLParser extends StringInput {
 
   // ..........................................................
   // ..........................................................
+  patchLine(line) {
+    var lLines, lParts, newstr, pos, result, start, str;
+    // --- Find each '<<<' and replace with result of heredocStr()
+    assert(isString(line), "patchLine(): not a string");
+    debug(`enter patchLine('${escapeStr(line)}')`);
+    lParts = []; // joined at the end
+    pos = 0;
+    while ((start = line.indexOf('<<<', pos)) !== -1) {
+      lParts.push(line.substring(pos, start));
+      lLines = this.getHereDocLines();
+      assert(isArray(lLines), "patchLine(): lLines is not an array");
+      if (lLines.length > 0) {
+        str = undented(lLines).join('\n');
+        newstr = this.heredocStr(str);
+        assert(isString(newstr), "patchLine(): newstr is not a string");
+        lParts.push(newstr);
+      }
+      pos = start + 3;
+    }
+    assert(line.indexOf('<<<', pos) === -1, "patchLine(): Not all HEREDOC markers were replaced" + `in '${line}'`);
+    lParts.push(line.substring(pos, line.length));
+    result = lParts.join('');
+    debug(`return '${result}'`);
+    return result;
+  }
+
+  // ..........................................................
   getHereDocLines() {
     var lLines, line, orgLineNum;
     // --- Get all lines until empty line is found
@@ -77,7 +105,7 @@ export var PLLParser = class PLLParser extends StringInput {
     lLines = [];
     while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
       line = this.fetch();
-      if (line.match(/^\s*\.\s*$/)) {
+      if (line.trim() === '.') {
         lLines.push('');
       } else {
         lLines.push(line);
@@ -93,30 +121,6 @@ export var PLLParser = class PLLParser extends StringInput {
   heredocStr(str) {
     // --- return replacement string for '<<<'
     return str.replace(/\n/g, ' ');
-  }
-
-  // ..........................................................
-  patchLine(line) {
-    var lLines, lParts, pos, result, start;
-    // --- Find each '<<<' and replace with result of heredocStr()
-    debug(`enter patchLine('${line}')`);
-    lParts = []; // joined at the end
-    pos = 0;
-    while ((start = line.indexOf('<<<', pos)) !== -1) {
-      lParts.push(line.substring(pos, start));
-      lLines = this.getHereDocLines();
-      if ((lLines != null) && (lLines.length > 0)) {
-        lParts.push(this.heredocStr(undentedBlock(lLines)));
-      }
-      pos = start + 3;
-    }
-    if (line.indexOf('<<<', pos) !== -1) {
-      error(`patchLine(): Not all ${n} HEREDOC markers were replaced` + `in '${line}'`);
-    }
-    lParts.push(line.substring(pos, line.length));
-    result = lParts.join('');
-    debug(`return '${result}'`);
-    return result;
   }
 
   // ..........................................................

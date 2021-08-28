@@ -3,10 +3,10 @@
 import {strict as assert} from 'assert'
 
 import {
-	say, undef, error, isArray, isFunction, isEmpty, isComment,
+	say, undef, error, isArray, isFunction, isEmpty, isComment, isString,
 	escapeStr, isTAML, taml,
 	} from '@jdeighan/coffee-utils'
-import {splitLine, undentedBlock} from '@jdeighan/coffee-utils/indent'
+import {splitLine, undented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {StringInput} from '@jdeighan/string-input'
 
@@ -49,6 +49,34 @@ export class PLLParser extends StringInput
 	# ..........................................................
 	# ..........................................................
 
+	patchLine: (line) ->
+		# --- Find each '<<<' and replace with result of heredocStr()
+
+		assert isString(line), "patchLine(): not a string"
+		debug "enter patchLine('#{escapeStr(line)}')"
+		lParts = []     # joined at the end
+		pos = 0
+		while ((start = line.indexOf('<<<', pos)) != -1)
+			lParts.push line.substring(pos, start)
+			lLines = @getHereDocLines()
+			assert isArray(lLines), "patchLine(): lLines is not an array"
+			if (lLines.length > 0)
+				str = undented(lLines).join('\n')
+				newstr = @heredocStr(str)
+				assert isString(newstr), "patchLine(): newstr is not a string"
+				lParts.push newstr
+			pos = start + 3
+
+		assert line.indexOf('<<<', pos) == -1,
+			"patchLine(): Not all HEREDOC markers were replaced" \
+				+ "in '#{line}'"
+		lParts.push line.substring(pos, line.length)
+		result = lParts.join('')
+		debug "return '#{result}'"
+		return result
+
+	# ..........................................................
+
 	getHereDocLines: () ->
 		# --- Get all lines until empty line is found
 		#     BUT treat line of a single period as empty line
@@ -57,7 +85,7 @@ export class PLLParser extends StringInput
 		lLines = []
 		while (@lBuffer.length > 0) && not isEmpty(@lBuffer[0])
 			line = @fetch()
-			if line.match(/^\s*\.\s*$/)
+			if (line.trim() == '.')
 				lLines.push ''
 			else
 				lLines.push line
@@ -71,29 +99,6 @@ export class PLLParser extends StringInput
 		# --- return replacement string for '<<<'
 
 		return str.replace(/\n/g, ' ')
-
-	# ..........................................................
-
-	patchLine: (line) ->
-		# --- Find each '<<<' and replace with result of heredocStr()
-
-		debug "enter patchLine('#{line}')"
-		lParts = []     # joined at the end
-		pos = 0
-		while ((start = line.indexOf('<<<', pos)) != -1)
-			lParts.push line.substring(pos, start)
-			lLines = @getHereDocLines()
-			if lLines? && (lLines.length > 0)
-				lParts.push @heredocStr(undentedBlock(lLines))
-			pos = start + 3
-
-		if line.indexOf('<<<', pos) != -1
-			error "patchLine(): Not all #{n} HEREDOC markers were replaced" \
-				+ "in '#{line}'"
-		lParts.push line.substring(pos, line.length)
-		result = lParts.join('')
-		debug "return '#{result}'"
-		return result
 
 	# ..........................................................
 

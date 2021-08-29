@@ -3,12 +3,13 @@
 import {strict as assert} from 'assert'
 
 import {
-	say, undef, error, isArray, isFunction, isEmpty, isComment, isString,
-	escapeStr, isTAML, taml,
+	say, undef, error, isArray, isFunction, isEmpty,
+	isComment, isString, escapeStr,
 	} from '@jdeighan/coffee-utils'
 import {splitLine, undented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {StringInput} from '@jdeighan/string-input'
+import {isTAML, taml} from '@jdeighan/string-input/convert'
 
 # ---------------------------------------------------------------------------
 # --- To derive a class from this:

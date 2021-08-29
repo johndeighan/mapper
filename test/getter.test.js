@@ -14,7 +14,6 @@ import {
   say,
   undef,
   error,
-  taml,
   warn,
   rtrim
 } from '@jdeighan/coffee-utils';
@@ -22,6 +21,11 @@ import {
 import {
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  isTAML,
+  taml
+} from '@jdeighan/string-input/convert';
 
 import {
   Getter

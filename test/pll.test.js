@@ -14,8 +14,6 @@ import {
   say,
   undef,
   error,
-  isTAML,
-  taml,
   warn,
   rtrim
 } from '@jdeighan/coffee-utils';
@@ -31,6 +29,11 @@ import {
 import {
   PLLParser
 } from '@jdeighan/string-input/pll';
+
+import {
+  isTAML,
+  taml
+} from '@jdeighan/string-input/convert';
 
 simple = new AvaTester();
 

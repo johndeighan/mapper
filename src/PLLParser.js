@@ -13,9 +13,7 @@ import {
   isEmpty,
   isComment,
   isString,
-  escapeStr,
-  isTAML,
-  taml
+  escapeStr
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -30,6 +28,11 @@ import {
 import {
   StringInput
 } from '@jdeighan/string-input';
+
+import {
+  isTAML,
+  taml
+} from '@jdeighan/string-input/convert';
 
 // ---------------------------------------------------------------------------
 // --- To derive a class from this:

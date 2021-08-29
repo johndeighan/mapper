@@ -4,11 +4,12 @@ import {strict as assert} from 'assert'
 
 import {AvaTester} from '@jdeighan/ava-tester'
 import {
-	say, undef, error, isTAML, taml, warn, rtrim,
+	say, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {StringInput} from '@jdeighan/string-input'
 import {PLLParser} from '@jdeighan/string-input/pll'
+import {isTAML, taml} from '@jdeighan/string-input/convert'
 
 simple = new AvaTester()
 

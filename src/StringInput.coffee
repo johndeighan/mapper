@@ -8,9 +8,10 @@ import {
 	undef, say, pass, error, isString, isEmpty,
 	deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
-import {slurp, findFile} from '@jdeighan/coffee-utils/fs'
+import {slurp} from '@jdeighan/coffee-utils/fs'
 import {splitLine, indented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {getFileContents} from '@jdeighan/string-input/convert'
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
@@ -195,8 +196,7 @@ export class StringInput
 			if unitTesting
 				debug "return 'Contents of #{fname}' - unit testing"
 				return indented("Contents of #{fname}", level)
-			fullpath = findFile(fname)
-			contents = slurp(fullpath)
+			contents = getFileContents(fname)
 			@altInput = new StringInput(contents)
 			@altLevel = level
 			debug "alt input created at level #{level}"

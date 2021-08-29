@@ -22,8 +22,7 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  slurp,
-  findFile
+  slurp
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -34,6 +33,10 @@ import {
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  getFileContents
+} from '@jdeighan/string-input/convert';
 
 // ---------------------------------------------------------------------------
 //   class StringInput - stream in lines from a string or array
@@ -195,7 +198,7 @@ export var StringInput = class StringInput {
   //     to maintain proper @lineNum for error messages
   //     MUST handle #include
   fetch() {
-    var _, altLine, contents, fname, fullpath, lMatches, level, line, result, str;
+    var _, altLine, contents, fname, lMatches, level, line, result, str;
     debug("enter fetch()");
     if (this.altInput && ((result = this.fetchFromAlt()) != null)) {
       debug(result, "return from alt with:");
@@ -215,8 +218,7 @@ export var StringInput = class StringInput {
         debug(`return 'Contents of ${fname}' - unit testing`);
         return indented(`Contents of ${fname}`, level);
       }
-      fullpath = findFile(fname);
-      contents = slurp(fullpath);
+      contents = getFileContents(fname);
       this.altInput = new StringInput(contents);
       this.altLevel = level;
       debug(`alt input created at level ${level}`);

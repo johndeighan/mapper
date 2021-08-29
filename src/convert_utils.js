@@ -69,7 +69,7 @@ export var isTAML = function(input) {
 // ---------------------------------------------------------------------------
 //   taml - convert valid TAML string to a JavaScript value
 export var taml = function(str) {
-  var code, err, func, header;
+  var header;
   debug(`enter taml('${escapeStr(str)}')`);
   if (str == null) {
     debug("return undef - str is not defined");
@@ -77,21 +77,7 @@ export var taml = function(str) {
   }
   assert(isString(str), "taml(): not a string");
   header = firstLine(str);
-  if (header === '--- function') {
-    code = str.substr(header.length + 1);
-    debug(code, "CODE:");
-    code = brewExpr(code, 1); // force even when unit testing
-    debug(code, "BREWED:");
-    try {
-      func = new Function(code);
-    } catch (error1) {
-      err = error1;
-      say("ERROR: Bad function code:");
-      say(code, "CODE:");
-      return undef;
-    }
-    return func;
-  }
+  assert(header.indexOf('---') === 0, "taml(): not a TAML string");
   return yaml.load(untabify(str, 1));
 };
 

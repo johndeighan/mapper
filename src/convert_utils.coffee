@@ -37,18 +37,7 @@ export taml = (str) ->
 		return undef
 	assert isString(str), "taml(): not a string"
 	header = firstLine(str)
-	if (header == '--- function')
-		code = str.substr(header.length + 1)
-		debug code, "CODE:"
-		code = brewExpr(code, 1)   # force even when unit testing
-		debug code, "BREWED:"
-		try
-			func = new Function(code)
-		catch err
-			say "ERROR: Bad function code:"
-			say code, "CODE:"
-			return undef
-		return func
+	assert (header.indexOf('---') == 0), "taml(): not a TAML string"
 	return yaml.load(untabify(str, 1))
 
 # ---------------------------------------------------------------------------

@@ -12,15 +12,3 @@ simple = new UnitTester()
 simple.truthy 34, isTAML("---\n- first\n- second")
 simple.falsy  35, isTAML("x---\n")
 simple.equal  36, taml("---\n- a\n- b"), ['a','b']
-
-# ---------------------------------------------------------------------------
-# test taml() for creating a function
-
-(() ->
-
-	func = taml("""
-			--- function
-			return "apple"
-			""")
-	simple.equal 117, func(), "apple"
-	)()

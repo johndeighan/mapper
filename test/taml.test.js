@@ -3,14 +3,14 @@
 var simple;
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   say,
   undef,
   setUnitTesting
 } from '@jdeighan/coffee-utils';
+
+import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
 
 import {
   isTAML,
@@ -19,7 +19,7 @@ import {
 
 setUnitTesting(true);
 
-simple = new AvaTester();
+simple = new UnitTester();
 
 // ---------------------------------------------------------------------------
 simple.truthy(34, isTAML("---\n- first\n- second"));

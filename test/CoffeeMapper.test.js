@@ -3,20 +3,17 @@
 var CoffeeMapperTester, tester;
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   undef,
   say,
   setUnitTesting
 } from '@jdeighan/coffee-utils';
 
 import {
-  StringInput
-} from '@jdeighan/string-input';
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
 
 import {
+  StringInput,
   CoffeeMapper
 } from '@jdeighan/string-input';
 
@@ -25,7 +22,7 @@ import {
 setUnitTesting(true);
 
 // ---------------------------------------------------------------------------
-CoffeeMapperTester = class CoffeeMapperTester extends AvaTester {
+CoffeeMapperTester = class CoffeeMapperTester extends UnitTester {
   transformValue(text) {
     var oInput;
     oInput = new CoffeeMapper(text);

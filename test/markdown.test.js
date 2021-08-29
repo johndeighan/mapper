@@ -3,10 +3,6 @@
 var MarkdownTester, root, simple, tester;
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   say,
   undef,
   setUnitTesting
@@ -17,6 +13,10 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
+
+import {
   markdownify
 } from '@jdeighan/string-input/convert';
 
@@ -24,12 +24,12 @@ root = process.env.dir_root = mydir(import.meta.url);
 
 process.env.dir_data = `${root}/data process.env.dir_markdown = `;
 
-simple = new AvaTester();
+simple = new UnitTester();
 
 setUnitTesting(false);
 
 // ---------------------------------------------------------------------------
-MarkdownTester = class MarkdownTester extends AvaTester {
+MarkdownTester = class MarkdownTester extends UnitTester {
   transformValue(text) {
     return markdownify(text);
   }

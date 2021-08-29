@@ -3,7 +3,6 @@
 import {strict as assert} from 'assert'
 import {resolve} from 'path'
 
-import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say, undef, pass, isEmpty,
 	setUnitTesting, unitTesting, escapeStr,
@@ -15,13 +14,14 @@ import {
 	debug, debugging, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
 root = resolve(dir, '..')
 process.env.DIR_MARKDOWN = mkpath(root, 'src', 'markdown')
 
-simple = new AvaTester()
+simple = new UnitTester()
 setUnitTesting(true)
 
 # ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ setUnitTesting(true)
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends AvaTester
+class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
 

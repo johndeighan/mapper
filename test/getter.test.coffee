@@ -1,16 +1,16 @@
-# pll.test.coffee
+# getter.test.coffee
 
 import {strict as assert} from 'assert'
 
-import {AvaTester} from '@jdeighan/ava-tester'
 import {
 	say, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {isTAML, taml} from '@jdeighan/string-input/convert'
+import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {Getter} from '@jdeighan/string-input/get'
 
-simple = new AvaTester()
+simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 

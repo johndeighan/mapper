@@ -3,10 +3,6 @@
 var SassTester, root, simple, tester;
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   say,
   undef,
   setUnitTesting
@@ -21,6 +17,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
+
+import {
   sassify
 } from '@jdeighan/string-input/convert';
 
@@ -28,12 +28,12 @@ root = process.env.dir_root = mydir(import.meta.url);
 
 process.env.dir_data = `${root}/data process.env.dir_markdown = `;
 
-simple = new AvaTester();
+simple = new UnitTester();
 
 setUnitTesting(true);
 
 // ---------------------------------------------------------------------------
-SassTester = class SassTester extends AvaTester {
+SassTester = class SassTester extends UnitTester {
   transformValue(text) {
     return sassify(text);
   }

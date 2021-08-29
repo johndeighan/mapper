@@ -1,19 +1,19 @@
 # markdown.test.coffee
 
-import {AvaTester} from '@jdeighan/ava-tester'
 import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
+import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {markdownify} from '@jdeighan/string-input/convert'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
 process.env.dir_data = "#{root}/data
 process.env.dir_markdown = "#{root}/markdown
-simple = new AvaTester()
+simple = new UnitTester()
 setUnitTesting(false)
 
 # ---------------------------------------------------------------------------
 
-class MarkdownTester extends AvaTester
+class MarkdownTester extends UnitTester
 
 	transformValue: (text) ->
 

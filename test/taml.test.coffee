@@ -1,11 +1,11 @@
 # taml.test.coffee
 
-import {AvaTester} from '@jdeighan/ava-tester'
 import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {isTAML, taml} from '@jdeighan/string-input/convert'
 
 setUnitTesting(true)
-simple = new AvaTester()
+simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 

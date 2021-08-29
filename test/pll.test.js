@@ -7,10 +7,6 @@ import {
 } from 'assert';
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   say,
   undef,
   error,
@@ -21,6 +17,10 @@ import {
 import {
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
 
 import {
   StringInput
@@ -35,7 +35,7 @@ import {
   taml
 } from '@jdeighan/string-input/convert';
 
-simple = new AvaTester();
+simple = new UnitTester();
 
 // ---------------------------------------------------------------------------
 // --- test using identity mapper
@@ -281,7 +281,7 @@ console.log str`;
 // --- Test comment
 (function() {
   var GatherTester, tester;
-  GatherTester = class GatherTester extends AvaTester {
+  GatherTester = class GatherTester extends UnitTester {
     transformValue(oInput) {
       var lLines, lParts;
       if (!(oInput instanceof StringInput)) {

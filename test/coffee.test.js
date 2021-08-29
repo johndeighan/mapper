@@ -3,10 +3,6 @@
 var CoffeeTester, root, simple, tester;
 
 import {
-  AvaTester
-} from '@jdeighan/ava-tester';
-
-import {
   say,
   undef,
   setUnitTesting
@@ -22,6 +18,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
+
+import {
   brewCoffee,
   brewExpr
 } from '@jdeighan/string-input/convert';
@@ -30,12 +30,12 @@ root = process.env.dir_root = mydir(import.meta.url);
 
 process.env.dir_data = `${root}/data process.env.dir_markdown = `;
 
-simple = new AvaTester();
+simple = new UnitTester();
 
 setUnitTesting(true);
 
 // ---------------------------------------------------------------------------
-CoffeeTester = class CoffeeTester extends AvaTester {
+CoffeeTester = class CoffeeTester extends UnitTester {
   transformValue(text) {
     return brewCoffee(text);
   }

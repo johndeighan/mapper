@@ -18,7 +18,7 @@ import {
 
 import {
   CoffeeMapper
-} from '@jdeighan/string-input/convert';
+} from '@jdeighan/string-input';
 
 // NOTE: In unit tests, CoffeeScript is NOT converted
 //       to JavaScript

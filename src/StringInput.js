@@ -15,6 +15,7 @@ import {
   error,
   isString,
   isEmpty,
+  isComment,
   deepCopy,
   stringToArray,
   unitTesting,
@@ -35,7 +36,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  getFileContents
+  getFileContents,
+  brewCoffee
 } from '@jdeighan/string-input/convert';
 
 // ---------------------------------------------------------------------------
@@ -298,6 +300,97 @@ export var StringInput = class StringInput {
   // ..........................................................
   getAllText() {
     return this.getAll().join('\n');
+  }
+
+};
+
+// ---------------------------------------------------------------------------
+/*
+
+- removes blank lines and comments
+
+- converts
+		<varname> <== <expr>
+	to:
+		`$: <varname> = <expr>;`
+
+- converts
+		<== <expr>
+	to:
+		`$: <expr>;`
+
+- converts
+		<===
+			<code>
+	to:
+		```
+		$: {
+			<code>
+			}
+*/
+// ---------------------------------------------------------------------------
+// --- export to allow unit testing
+export var CoffeeMapper = class CoffeeMapper extends StringInput {
+  // - removes blank lines and comments
+  // - converts <var> <== <expr> to `$: <var> = <expr>
+  constructor(content, hOptions) {
+    super(content, hOptions);
+  }
+
+  mapLine(orgLine) {
+    var _, code, err, expr, jsCode, jsExpr, lMatches, level, line, result, varname;
+    [level, line] = splitLine(orgLine);
+    if (isEmpty(line) || line.match(/^#\s/)) {
+      return undef;
+    }
+    if (lMatches = line.match(/^(?:([A-Za-z][A-Za-z0-9_]*)\s*)?\<\=\=\s*(.*)$/)) { // variable name
+      [_, varname, expr] = lMatches;
+      if (expr) {
+        try {
+          // --- convert to JavaScript if not unit testing ---
+          jsExpr = brewCoffee(expr).trim(); // will have trailing ';'
+        } catch (error1) {
+          err = error1;
+          error(err.message);
+        }
+        if (varname) {
+          result = indented(`\`\$\: ${varname} = ${jsExpr}\``, level);
+        } else {
+          result = indented(`\`\$\: ${jsExpr}\``, level);
+        }
+      } else {
+        if (varname) {
+          error("Invalid syntax - variable name not allowed");
+        }
+        code = this.fetchBlock(level + 1);
+        try {
+          jsCode = brewCoffee(code);
+        } catch (error1) {
+          err = error1;
+          error(err.message);
+        }
+        result = `\`\`\`
+\$\: {
+${indented(jsCode, 1)}
+${indented('}', 1)}
+\`\`\``;
+      }
+      return indented(result, level);
+    } else {
+      return orgLine;
+    }
+  }
+
+};
+
+// ---------------------------------------------------------------------------
+export var SassMapper = class SassMapper extends StringInput {
+  // --- only removes comments
+  mapLine(line) {
+    if (isComment(line)) {
+      return undef;
+    }
+    return line;
   }
 
 };

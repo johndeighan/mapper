@@ -17,7 +17,7 @@ import {
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
-import {StringInput} from '@jdeighan/string-input'
+import {StringInput, CoffeeMapper, SassMapper} from '@jdeighan/string-input'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?
@@ -31,13 +31,24 @@ export isTAML = (input) ->
 
 export taml = (str) ->
 
+	debug "enter taml('#{escapeStr(str)}')"
 	if not str?
+		debug "return undef - str is not defined"
 		return undef
 	assert isString(str), "taml(): not a string"
 	header = firstLine(str)
 	if (header == '--- function')
 		code = str.substr(header.length + 1)
-		return new Function(brewExpr(code))
+		debug code, "CODE:"
+		code = brewExpr(code, 1)   # force even when unit testing
+		debug code, "BREWED:"
+		try
+			func = new Function(code)
+		catch err
+			say "ERROR: Bad function code:"
+			say code, "CODE:"
+			return undef
+		return func
 	return yaml.load(untabify(str, 1))
 
 # ---------------------------------------------------------------------------
@@ -63,87 +74,10 @@ export slurpTAML = (filepath) ->
 	return taml(contents)
 
 # ---------------------------------------------------------------------------
-###
 
-- removes blank lines and comments
+export brewExpr = (expr, force=false) ->
 
-- converts
-		<varname> <== <expr>
-	to:
-		`$: <varname> = <expr>;`
-
-- converts
-		<== <expr>
-	to:
-		`$: <expr>;`
-
-- converts
-		<===
-			<code>
-	to:
-		```
-		$: {
-			<code>
-			}
-###
-# ---------------------------------------------------------------------------
-# --- export to allow unit testing
-
-export class CoffeeMapper extends StringInput
-	# - removes blank lines and comments
-	# - converts <var> <== <expr> to `$: <var> = <expr>
-
-	mapLine: (orgLine) ->
-
-		[level, line] = splitLine(orgLine)
-		if isEmpty(line) || line.match(/^#\s/)
-			return undef
-		if lMatches = line.match(///^
-				(?:
-					([A-Za-z][A-Za-z0-9_]*)   # variable name
-					\s*
-					)?
-				\< \= \=
-				\s*
-				(.*)
-				$///)
-			[_, varname, expr] = lMatches
-			if expr
-				# --- convert to JavaScript if not unit testing ---
-				try
-					jsExpr = brewCoffee(expr).trim()   # will have trailing ';'
-				catch err
-					error err.message
-
-				if varname
-					result = indented("\`\$\: #{varname} = #{jsExpr}\`", level)
-				else
-					result = indented("\`\$\: #{jsExpr}\`", level)
-			else
-				if varname
-					error "Invalid syntax - variable name not allowed"
-				code = @fetchBlock(level+1)
-				try
-					jsCode = brewCoffee(code)
-				catch err
-					error err.message
-
-				result = """
-						\`\`\`
-						\$\: {
-						#{indented(jsCode, 1)}
-						#{indented('}', 1)}
-						\`\`\`
-						"""
-			return indented(result, level)
-		else
-			return orgLine
-
-# ---------------------------------------------------------------------------
-
-export brewExpr = (expr) ->
-
-	if unitTesting
+	if unitTesting && not force
 		return expr
 	try
 		newexpr = CoffeeScript.compile(expr, {bare: true}).trim()
@@ -161,11 +95,11 @@ export brewExpr = (expr) ->
 
 # ---------------------------------------------------------------------------
 
-export brewCoffee = (text) ->
+export brewCoffee = (text, force=false) ->
 
 	oInput = new CoffeeMapper(text)
 	newtext = oInput.getAllText()
-	if unitTesting
+	if unitTesting && not force
 		return newtext
 	try
 		script = CoffeeScript.compile(newtext, {bare: true})
@@ -193,17 +127,6 @@ export markdownify = (text) ->
 	result = svelteHtmlEsc(html)
 	debug "return '#{escapeStr(result)}'"
 	return result
-
-# ---------------------------------------------------------------------------
-
-class SassMapper extends StringInput
-	# --- only removes comments
-
-	mapLine: (line) ->
-
-		if isComment(line)
-			return undef
-		return line
 
 # ---------------------------------------------------------------------------
 

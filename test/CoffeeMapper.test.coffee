@@ -3,7 +3,7 @@
 import {AvaTester} from '@jdeighan/ava-tester'
 import {undef, say, setUnitTesting} from '@jdeighan/coffee-utils'
 import {StringInput} from '@jdeighan/string-input'
-import {CoffeeMapper} from '@jdeighan/string-input/convert'
+import {CoffeeMapper} from '@jdeighan/string-input'
 
 # NOTE: In unit tests, CoffeeScript is NOT converted
 #       to JavaScript

@@ -3,6 +3,7 @@
 import {AvaTester} from '@jdeighan/ava-tester'
 import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {sassify} from '@jdeighan/string-input/convert'
 
 root = process.env.dir_root = mydir(`import.meta.url`)

@@ -17,6 +17,10 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
+  setDebugging
+} from '@jdeighan/coffee-utils/debug';
+
+import {
   sassify
 } from '@jdeighan/string-input/convert';
 

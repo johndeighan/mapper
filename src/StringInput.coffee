@@ -5,13 +5,13 @@ import fs from 'fs'
 import pathlib from 'path'
 
 import {
-	undef, say, pass, error, isString, isEmpty,
+	undef, say, pass, error, isString, isEmpty, isComment,
 	deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp} from '@jdeighan/coffee-utils/fs'
 import {splitLine, indented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {getFileContents} from '@jdeighan/string-input/convert'
+import {getFileContents, brewCoffee} from '@jdeighan/string-input/convert'
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
@@ -279,6 +279,100 @@ export class StringInput
 	getAllText: () ->
 
 		return @getAll().join('\n')
+
+# ---------------------------------------------------------------------------
+
+###
+
+- removes blank lines and comments
+
+- converts
+		<varname> <== <expr>
+	to:
+		`$: <varname> = <expr>;`
+
+- converts
+		<== <expr>
+	to:
+		`$: <expr>;`
+
+- converts
+		<===
+			<code>
+	to:
+		```
+		$: {
+			<code>
+			}
+###
+
+# ---------------------------------------------------------------------------
+# --- export to allow unit testing
+
+export class CoffeeMapper extends StringInput
+	# - removes blank lines and comments
+	# - converts <var> <== <expr> to `$: <var> = <expr>
+
+	constructor: (content, hOptions) ->
+
+		super content, hOptions
+
+	mapLine: (orgLine) ->
+
+		[level, line] = splitLine(orgLine)
+		if isEmpty(line) || line.match(/^#\s/)
+			return undef
+		if lMatches = line.match(///^
+				(?:
+					([A-Za-z][A-Za-z0-9_]*)   # variable name
+					\s*
+					)?
+				\< \= \=
+				\s*
+				(.*)
+				$///)
+			[_, varname, expr] = lMatches
+			if expr
+				# --- convert to JavaScript if not unit testing ---
+				try
+					jsExpr = brewCoffee(expr).trim()   # will have trailing ';'
+				catch err
+					error err.message
+
+				if varname
+					result = indented("\`\$\: #{varname} = #{jsExpr}\`", level)
+				else
+					result = indented("\`\$\: #{jsExpr}\`", level)
+			else
+				if varname
+					error "Invalid syntax - variable name not allowed"
+				code = @fetchBlock(level+1)
+				try
+					jsCode = brewCoffee(code)
+				catch err
+					error err.message
+
+				result = """
+						\`\`\`
+						\$\: {
+						#{indented(jsCode, 1)}
+						#{indented('}', 1)}
+						\`\`\`
+						"""
+			return indented(result, level)
+		else
+			return orgLine
+
+# ---------------------------------------------------------------------------
+
+export class SassMapper extends StringInput
+	# --- only removes comments
+
+	mapLine: (line) ->
+
+		if isComment(line)
+			return undef
+		return line
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

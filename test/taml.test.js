@@ -33,6 +33,6 @@ simple.equal(36, taml("---\n- a\n- b"), ['a', 'b']);
 (function() {
   var func;
   func = taml(`--- function
-() -> return "apple"`);
+return "apple"`);
   return simple.equal(117, func(), "apple");
 })();

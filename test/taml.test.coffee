@@ -20,7 +20,7 @@ simple.equal  36, taml("---\n- a\n- b"), ['a','b']
 
 	func = taml("""
 			--- function
-			() -> return "apple"
+			return "apple"
 			""")
 	simple.equal 117, func(), "apple"
 	)()

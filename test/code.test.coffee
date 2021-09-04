@@ -4,8 +4,9 @@ import {strict as assert} from 'assert'
 
 import {
 	undef, say, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
-	arrayToString, escapeStr,
+	arrayToString, escapeStr, sep_dash, sep_eq,
 	} from '@jdeighan/coffee-utils'
+import {indented} from '@jdeighan/coffee-utils/indent'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {
@@ -41,6 +42,16 @@ simple = new UnitTester()
 	await forEachSetOfBlocks filepath, callback
 
 	for [lineNum, src, expImports, expMissing] in lTests
+		[lImports, lMissing] = getNeededImports(src)
+		simple.equal lineNum, lImports.join('\n'), expImports
+		simple.equal lineNum, lMissing.join('\n'), expMissing
+
+		# --- embed the code in an IIFE
+		src = """
+			(() ->
+			#{indented(src, 1)}
+				)()
+			"""
 		[lImports, lMissing] = getNeededImports(src)
 		simple.equal lineNum, lImports.join('\n'), expImports
 		simple.equal lineNum, lMissing.join('\n'), expMissing

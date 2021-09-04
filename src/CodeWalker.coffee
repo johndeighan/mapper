@@ -136,6 +136,8 @@ export class CodeWalker extends TreeWalker
 				add node.test, node.consequent
 			when 'SwitchStatement'
 				add node.cases
+			when 'WhileStatement'
+				add node.test, node.body
 		return lSubTrees
 
 	# ..........................................................

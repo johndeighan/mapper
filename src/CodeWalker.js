@@ -166,6 +166,9 @@ export var CodeWalker = class CodeWalker extends TreeWalker {
         break;
       case 'SwitchStatement':
         add(node.cases);
+        break;
+      case 'WhileStatement':
+        add(node.test, node.body);
     }
     return lSubTrees;
   }

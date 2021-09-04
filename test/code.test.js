@@ -15,8 +15,14 @@ import {
   nonEmpty,
   setUnitTesting,
   arrayToString,
-  escapeStr
+  escapeStr,
+  sep_dash,
+  sep_eq
 } from '@jdeighan/coffee-utils';
+
+import {
+  indented
+} from '@jdeighan/coffee-utils/indent';
 
 import {
   mydir,
@@ -67,6 +73,13 @@ simple = new UnitTester();
   results = [];
   for (i = 0, len = lTests.length; i < len; i++) {
     [lineNum, src, expImports, expMissing] = lTests[i];
+    [lImports, lMissing] = getNeededImports(src);
+    simple.equal(lineNum, lImports.join('\n'), expImports);
+    simple.equal(lineNum, lMissing.join('\n'), expMissing);
+    // --- embed the code in an IIFE
+    src = `(() ->
+${indented(src, 1)}
+	)()`;
     [lImports, lMissing] = getNeededImports(src);
     simple.equal(lineNum, lImports.join('\n'), expImports);
     results.push(simple.equal(lineNum, lMissing.join('\n'), expMissing));

@@ -5,7 +5,6 @@ import {strict as assert} from 'assert'
 import {
 	say, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {isTAML, taml} from '@jdeighan/string-input/convert'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {Getter} from '@jdeighan/string-input/get'

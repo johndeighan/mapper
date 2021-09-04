@@ -2,7 +2,6 @@
 
 import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {brewCoffee, brewExpr} from '@jdeighan/string-input/convert'
 

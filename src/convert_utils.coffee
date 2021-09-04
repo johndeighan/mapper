@@ -15,7 +15,7 @@ import {
 	splitLine, indented, undented, tabify, untabify,
 	} from '@jdeighan/coffee-utils/indent'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
+import {debug} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 import {StringInput, CoffeeMapper, SassMapper} from '@jdeighan/string-input'
 

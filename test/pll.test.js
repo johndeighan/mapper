@@ -15,10 +15,6 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  setDebugging
-} from '@jdeighan/coffee-utils/debug';
-
-import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 

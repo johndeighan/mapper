@@ -11,7 +11,7 @@ import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
 import {
-	debug, debugging, setDebugging,
+	debug, debugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'

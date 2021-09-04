@@ -30,7 +30,8 @@ import {
 import {
   debug,
   debugging,
-  setDebugging
+  startDebugging,
+  endDebugging
 } from '@jdeighan/coffee-utils/debug';
 
 import {
@@ -51,18 +52,17 @@ import {
 
 // ---------------------------------------------------------------------------
 export var getMissingSymbols = function(code, hOptions = {}) {
-  var hMissingSymbols, saveDebugging, walker;
+  var hMissingSymbols, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //        debug: <bool>          - turn on debugging
   if (hOptions.debug) {
-    saveDebugging = debugging;
-    setDebugging(true);
+    startDebugging;
   }
   walker = new CodeWalker(code);
   hMissingSymbols = walker.getMissingSymbols();
   if (hOptions.debug) {
-    setDebugging(saveDebugging);
+    endDebugging;
   }
   if (hOptions.dumpfile) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast));

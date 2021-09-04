@@ -5,7 +5,6 @@ import {strict as assert} from 'assert'
 import {
 	say, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 import {PLLParser} from '@jdeighan/string-input/pll'

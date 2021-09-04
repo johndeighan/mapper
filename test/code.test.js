@@ -28,10 +28,6 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  setDebugging
-} from '@jdeighan/coffee-utils/debug';
-
-import {
   forEachLine,
   forEachBlock,
   forEachSetOfBlocks

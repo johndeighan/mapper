@@ -2,7 +2,7 @@
 
 import {say, undef, setUnitTesting, escapeStr} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
+import {debug} from '@jdeighan/coffee-utils/debug'
 import {taml} from '@jdeighan/string-input/convert'
 import {TreeWalker, TreeStringifier} from '@jdeighan/string-input/tree'
 

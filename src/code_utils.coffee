@@ -8,7 +8,9 @@ import {
 	unitTesting, escapeStr, firstLine,
 	} from '@jdeighan/coffee-utils'
 import {slurp, barf, mydir, pathTo} from '@jdeighan/coffee-utils/fs'
-import {debug, debugging, setDebugging} from '@jdeighan/coffee-utils/debug'
+import {
+	debug, debugging, startDebugging, endDebugging,
+	} from '@jdeighan/coffee-utils/debug'
 import {tamlStringify} from '@jdeighan/string-input/convert'
 import {splitLine} from '@jdeighan/coffee-utils/indent'
 import {CodeWalker} from './CodeWalker.js'
@@ -22,12 +24,11 @@ export getMissingSymbols = (code, hOptions={}) ->
 	#        debug: <bool>          - turn on debugging
 
 	if hOptions.debug
-		saveDebugging = debugging
-		setDebugging true
+		startDebugging
 	walker = new CodeWalker(code)
 	hMissingSymbols = walker.getMissingSymbols()
 	if hOptions.debug
-		setDebugging saveDebugging
+		endDebugging
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast)
 	return hMissingSymbols

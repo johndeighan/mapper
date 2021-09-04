@@ -1,52 +1,129 @@
 # TreeWalker.coffee
 
+import {strict as assert} from 'assert'
+import CoffeeScript from 'coffeescript'
+
 import {
-	say, pass, undef, error, warn, isString,
+	say, pass, undef, error, warn,
+	isString, isArray, isHash, isArrayOfHashes, nonEmpty,
 	} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
-import {indentStr} from '@jdeighan/coffee-utils/indent'
-import {Getter} from '@jdeighan/string-input/get'
+import {debug, debugging} from '@jdeighan/coffee-utils/debug'
+import {indented} from '@jdeighan/coffee-utils/indent'
 
 # ---------------------------------------------------------------------------
 
 export class TreeWalker
 
-	walk: (tree) ->
+	constructor: (@root) ->
+		# --- root can be a hash or array of hashes
 
-		debug "enter walk()"
-		getter = new Getter(tree)
-		@procNodes getter, 0
-		debug "return from walk()"
+		pass
+
+	# ..........................................................
+
+	walk: () ->
+
+		if isHash(@root)
+			@walkNode @root, 0
+		else if isArrayOfHashes(@root)
+			@walkNodes @root, 0
+		else
+			error "TreeWalker: Invalid root"
 		return
 
-	procNodes: (getter, level=0) ->
+	# ..........................................................
 
-		debug "enter procNodes()"
-		while hNode = getter.get()
-			{lineNum, node, body} = hNode
-			@visit node, body, lineNum, getter, level
-		debug "return from procNodes()"
+	walkSubTrees: (lSubTrees, level) ->
+
+		for subtree in lSubTrees
+			if subtree?
+				if isArray(subtree)
+					@walkNodes subtree, level
+				else if isHash(subtree)
+					@walkNode subtree, level
+				else
+					error "Invalid subtree"
 		return
 
-	visit: (node, body, lineNum, getter, level) ->
+	# ..........................................................
+
+	walkNode: (node, level) ->
+
+		lSubTrees = @visit node, level
+		if lSubTrees
+			@walkSubTrees lSubTrees, level+1
+		@endVisit node, level
+
+	# ..........................................................
+
+	walkNodes: (lNodes, level=0) ->
+
+		for node in lNodes
+			@walkNode node, level
+		return
+
+	# ..........................................................
+	# --- return lSubTrees, if any
+
+	visit: (node, level) ->
+
+		return node.body  # it's handled ok if node.body is undef
+
+	# ..........................................................
+	# --- called after all subtrees have been visited
+
+	endVisit: (node, level) ->
 
 		return
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-export class TreePrinter extends TreeWalker
+export class TreeStringifier extends TreeWalker
 
-	constructor: () ->
+	constructor: (tree) ->
 
-		super()
+		super(tree)      # sets @tree
 		@lLines = []
 
-	visit: (node, body, lineNum, getter, level) ->
+	# ..........................................................
 
-		assert isString(node), "TreePrinter: node is not a string"
-		@lLines.push indentStr(node, level)
-		return
+	visit: (node, level) ->
+
+		assert node?, "TreeStringifier.visit(): empty node"
+		debug "enter visit()"
+		str = indented(@stringify(node), level)
+		debug "stringified: '#{str}'"
+		@lLines.push str
+		if node.body
+			debug "return from visit() - has subtree 'body'"
+			return node.body
+		else
+			debug "return from visit()"
+			return undef
+
+	# ..........................................................
 
 	get: () ->
 
+		@walk()
 		return @lLines.join('\n')
+
+	# ..........................................................
+
+	excludeKey: (key) ->
+
+		return (key=='body')
+
+	# ..........................................................
+	# --- override this
+
+	stringify: (node) ->
+
+		assert isHash(node),
+				"TreeStringifier.stringify(): node '#{node}' is not a hash"
+		newnode = {}
+		for key,value of node
+			if (not @excludeKey(key))
+				newnode[key] = node[key]
+		return JSON.stringify(newnode)

@@ -31,3 +31,23 @@ DIR_ROOT
 DIR_MARKDOWN
 DIR_DATA
 DIR_TEXT
+
+class PLLParser
+===============
+
+SYNOPSIS:
+---------
+
+tree = new PLLParser(content).getTree()
+
+But in this case, all nodes will simply be strings
+To get non-string nodes, you must create a new class
+and override mapString()
+
+class SymbolParser extends PLLParser
+	mapString: (line, level) ->
+		return line.split(' ')
+
+tree = new SymbolParser(content).getTree()
+
+

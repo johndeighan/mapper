@@ -12,7 +12,7 @@ import {
 	unitTesting, escapeStr, firstLine,
 	} from '@jdeighan/coffee-utils'
 import {
-	splitLine, indented, undented, untabify,
+	splitLine, indented, undented, tabify, untabify,
 	} from '@jdeighan/coffee-utils/indent'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -176,20 +176,3 @@ export getFileContents = (fname, convert=false) ->
 			return contents
 		else
 			error "getFileContents(): No handler for ext '#{ext}'"
-
-# ---------------------------------------------------------------------------
-# to be removed
-
-findFile = (fname) ->
-
-	{root, dir, base, ext} = parse_fname(fname.trim())
-	assert not root && not dir, "findFile():" \
-		+ " root='#{root}', dir='#{dir}'" \
-		+ " - full path not allowed"
-	envvar = hExtToEnvVar[ext]
-	assert envvar, "findFile() doesn't work for ext '#{ext}'"
-	dir = process.env[envvar]
-	assert dir, "env var '#{envvar}' not set for file extension '#{ext}'"
-	fullpath = pathTo(base, dir)   # guarantees that file exists
-	assert fullpath, "findFile(): Can't find file #{fname}"
-	return fullpath

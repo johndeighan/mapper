@@ -17,7 +17,9 @@ import {
   isString,
   unitTesting,
   escapeStr,
-  firstLine
+  firstLine,
+  isHash,
+  arrayToString
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -28,6 +30,10 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
+  splitLine
+} from '@jdeighan/coffee-utils/indent';
+
+import {
   debug,
   debugging,
   startDebugging,
@@ -35,31 +41,78 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  PLLParser
+} from '@jdeighan/string-input';
+
+import {
+  ASTWalker
+} from '@jdeighan/string-input/tree';
+
+import {
   tamlStringify
 } from '@jdeighan/string-input/convert';
 
-import {
-  splitLine
-} from '@jdeighan/coffee-utils/indent';
-
-import {
-  CodeWalker
-} from './CodeWalker.js';
-
-import {
-  PLLParser
-} from '@jdeighan/string-input/pll';
+// ---------------------------------------------------------------------------
+export var getNeededImports = function(code, hOptions = {}) {
+  var hMissing, hNeeded, hSymbols, i, j, lImports, len, len1, lib, ref, ref1, sym, symbols;
+  // --- Valid options:
+  //        dumpfile: <filepath>   - where to dump ast
+  //        debug: <bool>          - turn on debugging
+  // --- returns lImports
+  debug("enter getNeededImports()");
+  hMissing = getMissingSymbols(code, hOptions);
+  if (isEmpty(hMissing)) {
+    return [];
+  }
+  hSymbols = getAvailSymbols();
+  if (isEmpty(hSymbols)) {
+    return [];
+  }
+  hNeeded = {}; // { <lib>: [<symbol>, ...], ...}
+  ref = Object.keys(hMissing);
+  for (i = 0, len = ref.length; i < len; i++) {
+    sym = ref[i];
+    if (lib = hSymbols[sym]) {
+      if (hNeeded[lib]) {
+        hNeeded[lib].push(sym);
+      } else {
+        hNeeded[lib] = [sym];
+      }
+    }
+  }
+  lImports = [];
+  ref1 = Object.keys(hNeeded);
+  for (j = 0, len1 = ref1.length; j < len1; j++) {
+    lib = ref1[j];
+    symbols = hNeeded[lib].join(',');
+    lImports.push(`import {${symbols}} from '${lib}'`);
+  }
+  debug("return from getNeededImports()");
+  return arrayToString(lImports);
+};
 
 // ---------------------------------------------------------------------------
+// export to allow unit testing
 export var getMissingSymbols = function(code, hOptions = {}) {
-  var hMissingSymbols, walker;
+  var ast, err, hMissingSymbols, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //        debug: <bool>          - turn on debugging
   if (hOptions.debug) {
     startDebugging;
   }
-  walker = new CodeWalker(code);
+  debug("enter getMissingSymbols()");
+  try {
+    debug(code, "COMPILE CODE:");
+    ast = CoffeeScript.compile(code, {
+      ast: true
+    });
+    assert(ast != null, "getMissingSymbols(): ast is empty");
+  } catch (error1) {
+    err = error1;
+    say(`ERROR in getMissingSymbols(): ${err.message}`);
+  }
+  walker = new ASTWalker(ast);
   hMissingSymbols = walker.getMissingSymbols();
   if (hOptions.debug) {
     endDebugging;
@@ -67,13 +120,22 @@ export var getMissingSymbols = function(code, hOptions = {}) {
   if (hOptions.dumpfile) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast));
   }
+  debug("return from getMissingSymbols()");
   return hMissingSymbols;
 };
 
 // ---------------------------------------------------------------------------
+// export to allow unit testing
 export var getAvailSymbols = function() {
-  var SymbolParser, body, contents, filepath, hItem, hSymbols, i, j, k, len, len1, len2, lib, ref, sym, tree;
-  filepath = pathTo('.symbols', mydir(import.meta.url), 'up');
+  var SymbolParser, body, contents, filepath, hItem, hSymbols, i, j, k, len, len1, len2, lib, ref, searchFromDir, sym, tree;
+  debug("enter getAvailSymbols()");
+  searchFromDir = mydir(import.meta.url);
+  debug(`search for .symbols from '${searchFromDir}'`);
+  filepath = pathTo('.symbols', searchFromDir, 'up');
+  if (filepath == null) {
+    return {};
+  }
+  debug(`.symbols file found at '${filepath}'`);
   contents = slurp(filepath);
   SymbolParser = class SymbolParser extends PLLParser {
     mapString(line, level) {
@@ -106,39 +168,6 @@ export var getAvailSymbols = function() {
       }
     }
   }
+  debug("return from getAvailSymbols()");
   return hSymbols;
-};
-
-// ---------------------------------------------------------------------------
-export var getNeededImports = function(code, hOptions = {}) {
-  var hMissing, hNeeded, hSymbols, i, j, lImports, lStillMissing, len, len1, lib, ref, ref1, sym, symbols;
-  // --- Valid options:
-  //        dumpfile: <filepath>   - where to dump ast
-  //        debug: <bool>          - turn on debugging
-  // --- returns [lImports, lStillMissing]
-  hMissing = getMissingSymbols(code, hOptions);
-  hSymbols = getAvailSymbols();
-  hNeeded = {}; // { <lib>: [<symbol>, ...], ...}
-  lStillMissing = [];
-  ref = Object.keys(hMissing);
-  for (i = 0, len = ref.length; i < len; i++) {
-    sym = ref[i];
-    if (lib = hSymbols[sym]) {
-      if (hNeeded[lib]) {
-        hNeeded[lib].push(sym);
-      } else {
-        hNeeded[lib] = [sym];
-      }
-    } else {
-      lStillMissing.push(sym);
-    }
-  }
-  lImports = [];
-  ref1 = Object.keys(hNeeded);
-  for (j = 0, len1 = ref1.length; j < len1; j++) {
-    lib = ref1[j];
-    symbols = hNeeded[lib].join(',');
-    lImports.push(`import {${symbols}} from '${lib}'`);
-  }
-  return [lImports, lStillMissing];
 };

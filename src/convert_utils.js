@@ -26,6 +26,7 @@ import {
   pass,
   error,
   isEmpty,
+  nonEmpty,
   isComment,
   isString,
   unitTesting,
@@ -59,6 +60,10 @@ import {
   CoffeeMapper,
   SassMapper
 } from '@jdeighan/string-input';
+
+import {
+  getNeededImports
+} from '@jdeighan/string-input/code';
 
 // ---------------------------------------------------------------------------
 //   isTAML - is the string valid TAML?
@@ -131,9 +136,18 @@ export var brewExpr = function(expr, force = false) {
 
 // ---------------------------------------------------------------------------
 export var brewCoffee = function(text, force = false) {
-  var err, newtext, oInput, script;
+  var err, newtext, oInput, script, strImports;
+  debug("enter brewCoffee()");
+  debug(text, "INPUT TEXT:");
   oInput = new CoffeeMapper(text);
   newtext = oInput.getAllText();
+  debug("call getNeededImports()");
+  strImports = getNeededImports(newtext);
+  debug(strImports, "strImports:");
+  if (nonEmpty(strImports)) {
+    newtext = strImports + '\n' + newtext;
+  }
+  debug(newtext, "NEW TEXT:");
   if (unitTesting && !force) {
     return newtext;
   }
@@ -141,6 +155,7 @@ export var brewCoffee = function(text, force = false) {
     script = CoffeeScript.compile(newtext, {
       bare: true
     });
+    debug(script, "SCRIPT:");
   } catch (error1) {
     err = error1;
     say("CoffeeScript error!");

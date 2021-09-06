@@ -3,57 +3,8 @@ AST:
 type: Program
 body:
 	-
-		type: WhileStatement
-		test:
-			type: BinaryExpression
-			left:
-				type: Identifier
-				name: x
-				declaration: false
-				loc:
-					start:
-						line: 1
-						column: 7
-					end:
-						line: 1
-						column: 8
-				range:
-					- 7
-					- 8
-				start: 7
-				end: 8
-			right:
-				type: NumericLiteral
-				value: 0
-				extra:
-					rawValue: 0
-					raw: '0'
-				loc:
-					start:
-						line: 1
-						column: 11
-					end:
-						line: 1
-						column: 12
-				range:
-					- 11
-					- 12
-				start: 11
-				end: 12
-			operator: '>'
-			loc:
-				start:
-					line: 1
-					column: 7
-				end:
-					line: 1
-					column: 12
-			range:
-				- 7
-				- 12
-			start: 7
-			end: 12
-		body:
+		type: TryStatement
+		block:
 			type: BlockStatement
 			body:
 				-
@@ -61,27 +12,25 @@ body:
 					expression:
 						type: AssignmentExpression
 						right:
-							type: NumericLiteral
-							value: 0
-							extra:
-								rawValue: 0
-								raw: '0'
+							type: Identifier
+							name: 'y'
+							declaration: false
 							loc:
 								start:
 									line: 2
-									column: 6
+									column: 5
 								end:
 									line: 2
-									column: 7
+									column: 6
 							range:
-								- 20
-								- 21
-							start: 20
-							end: 21
+								- 9
+								- 10
+							start: 9
+							end: 10
 						left:
 							type: Identifier
 							name: x
-							declaration: false
+							declaration: true
 							loc:
 								start:
 									line: 2
@@ -90,35 +39,35 @@ body:
 									line: 2
 									column: 2
 							range:
-								- 15
-								- 16
-							start: 15
-							end: 16
-						operator: +=
+								- 5
+								- 6
+							start: 5
+							end: 6
+						operator: '='
 						loc:
 							start:
 								line: 2
 								column: 1
 							end:
 								line: 2
-								column: 7
+								column: 6
 						range:
-							- 15
-							- 21
-						start: 15
-						end: 21
+							- 5
+							- 10
+						start: 5
+						end: 10
 					loc:
 						start:
 							line: 2
 							column: 1
 						end:
 							line: 2
-							column: 7
+							column: 6
 					range:
-						- 15
-						- 21
-					start: 15
-					end: 21
+						- 5
+						- 10
+					start: 5
+					end: 10
 			directives: []
 			loc:
 				start:
@@ -126,38 +75,177 @@ body:
 					column: 0
 				end:
 					line: 2
-					column: 7
+					column: 6
 			range:
-				- 14
-				- 21
-			start: 14
-			end: 21
-		guard: null
-		inverted: false
-		postfix: false
-		loop: false
+				- 4
+				- 10
+			start: 4
+			end: 10
+		handler:
+			type: CatchClause
+			param:
+				type: Identifier
+				name: err
+				declaration: true
+				loc:
+					start:
+						line: 3
+						column: 6
+					end:
+						line: 3
+						column: 9
+				range:
+					- 17
+					- 20
+				start: 17
+				end: 20
+			body:
+				type: BlockStatement
+				body:
+					-
+						type: ExpressionStatement
+						expression:
+							type: CallExpression
+							callee:
+								type: Identifier
+								name: say
+								declaration: false
+								loc:
+									start:
+										line: 4
+										column: 1
+									end:
+										line: 4
+										column: 4
+								range:
+									- 22
+									- 25
+								start: 22
+								end: 25
+							arguments:
+								-
+									type: MemberExpression
+									object:
+										type: Identifier
+										name: err
+										declaration: false
+										loc:
+											start:
+												line: 4
+												column: 5
+											end:
+												line: 4
+												column: 8
+										range:
+											- 26
+											- 29
+										start: 26
+										end: 29
+									property:
+										type: Identifier
+										name: message
+										declaration: false
+										loc:
+											start:
+												line: 4
+												column: 9
+											end:
+												line: 4
+												column: 16
+										range:
+											- 30
+											- 37
+										start: 30
+										end: 37
+									computed: false
+									optional: false
+									shorthand: false
+									loc:
+										start:
+											line: 4
+											column: 5
+										end:
+											line: 4
+											column: 16
+									range:
+										- 26
+										- 37
+									start: 26
+									end: 37
+							optional: false
+							implicit: true
+							loc:
+								start:
+									line: 4
+									column: 1
+								end:
+									line: 4
+									column: 16
+							range:
+								- 22
+								- 37
+							start: 22
+							end: 37
+						loc:
+							start:
+								line: 4
+								column: 1
+							end:
+								line: 4
+								column: 16
+						range:
+							- 22
+							- 37
+						start: 22
+						end: 37
+				directives: []
+				loc:
+					start:
+						line: 4
+						column: 0
+					end:
+						line: 4
+						column: 16
+				range:
+					- 21
+					- 37
+				start: 21
+				end: 37
+			loc:
+				start:
+					line: 3
+					column: 0
+				end:
+					line: 4
+					column: 16
+			range:
+				- 11
+				- 37
+			start: 11
+			end: 37
+		finalizer: null
 		loc:
 			start:
 				line: 1
 				column: 0
 			end:
-				line: 2
-				column: 7
+				line: 4
+				column: 16
 		range:
 			- 0
-			- 21
+			- 37
 		start: 0
-		end: 21
+		end: 37
 directives: []
 loc:
 	start:
 		line: 1
 		column: 0
 	end:
-		line: 2
-		column: 7
+		line: 4
+		column: 16
 range:
 	- 0
-	- 21
+	- 37
 start: 0
-end: 21
+end: 37

@@ -6,8 +6,7 @@ import {
 	say, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {StringInput} from '@jdeighan/string-input'
-import {PLLParser} from '@jdeighan/string-input/pll'
+import {StringInput, PLLParser} from '@jdeighan/string-input'
 import {isTAML, taml} from '@jdeighan/string-input/convert'
 
 simple = new UnitTester()

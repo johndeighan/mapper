@@ -19,6 +19,7 @@ import {
 testDir = mydir(`import.meta.url`)
 filepath = mkpath(testDir, 'code.test.txt')
 simple = new UnitTester()
+dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 
 # ----------------------------------------------------------------------------
 
@@ -26,25 +27,31 @@ simple = new UnitTester()
 	lTests = []
 
 	callback = (lBlocks, lineNum) ->
-		[src, expImports, expMissing] = lBlocks
+		[src, expImports] = lBlocks
 		if src
 			if lMatches = src.match(///^
-						\*          # an asterisk
-						[\*\s]*     # skip any following asterisks or whitespace
-						(.*)        # capture the real source string
+						\*        # an asterisk
+						(\*?)     # possible 2nd asterisk
+						\s*       # skip any whitespace
+						(.*)      # capture the real source string
 						$///s)
-				src = lMatches[1]
-				lTests.push [-lineNum, src, expImports, expMissing]
+				[doDebug, src] = lMatches
+				if doDebug
+					lTests.push [-(100000 + lineNum), src, expImports]
+				else
+					lTests.push [-lineNum, src, expImports]
 			else
 				lTests.push [lineNum, lBlocks...]
 		return
 
 	await forEachSetOfBlocks filepath, callback
 
-	for [lineNum, src, expImports, expMissing] in lTests
-		[lImports, lMissing] = getNeededImports(src)
-		simple.equal lineNum, lImports.join('\n'), expImports
-		simple.equal lineNum, lMissing.join('\n'), expMissing
+	for [lineNum, src, expImports] in lTests
+		hOptions = {}
+		if (lineNum < 0)
+			hOptions.dumpfile = dumpfile
+
+		simple.equal lineNum, getNeededImports(src, hOptions), expImports
 
 		# --- embed the code in an IIFE
 		src = """
@@ -52,9 +59,7 @@ simple = new UnitTester()
 			#{indented(src, 1)}
 				)()
 			"""
-		[lImports, lMissing] = getNeededImports(src)
-		simple.equal lineNum, lImports.join('\n'), expImports
-		simple.equal lineNum, lMissing.join('\n'), expMissing
+		simple.equal lineNum, getNeededImports(src), expImports
 
 	)()
 

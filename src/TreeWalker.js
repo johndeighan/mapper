@@ -4,30 +4,25 @@ import {
   strict as assert
 } from 'assert';
 
-import CoffeeScript from 'coffeescript';
-
 import {
+  undef,
   say,
   pass,
-  undef,
   error,
-  warn,
-  isString,
   isArray,
   isHash,
-  isArrayOfHashes,
-  nonEmpty
+  isArrayOfHashes
 } from '@jdeighan/coffee-utils';
 
 import {
-  debug,
-  debugging
+  debug
 } from '@jdeighan/coffee-utils/debug';
 
 import {
   indented
 } from '@jdeighan/coffee-utils/indent';
 
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 export var TreeWalker = class TreeWalker {
   constructor(root) {
@@ -93,6 +88,200 @@ export var TreeWalker = class TreeWalker {
     // ..........................................................
   // --- called after all subtrees have been visited
   endVisit(node, level) {}
+
+};
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+export var ASTWalker = class ASTWalker extends TreeWalker {
+  constructor(ast) {
+    super(ast.program);
+    this.ast = ast.program;
+    this.hImports = {};
+    this.hMissingSymbols = {};
+    // --- subarrays start out as list of formal parameters
+    //     to which are added locally assigned variables
+    this.lLocalSymbols = [[]];
+  }
+
+  // ..........................................................
+  isLocalSymbol(name) {
+    var i, len, ref, subarray;
+    ref = this.lLocalSymbols;
+    for (i = 0, len = ref.length; i < len; i++) {
+      subarray = ref[i];
+      if (subarray.includes(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ..........................................................
+  addImport(name, value = {}) {
+    assert(name, "addImport: empty name");
+    this.hImports[name] = value;
+  }
+
+  // ..........................................................
+  addMissingSymbol(name, value = {}) {
+    assert(name, "addMissingSymbol: empty name");
+    if (!this.isLocalSymbol(name)) {
+      this.hMissingSymbols[name] = value;
+    }
+  }
+
+  // ..........................................................
+  addLocalSymbol(name) {
+    var lSymbols;
+    assert(this.lLocalSymbols.length > 0, "no lLocalSymbols");
+    lSymbols = this.lLocalSymbols[this.lLocalSymbols.length - 1];
+    lSymbols.push(name);
+  }
+
+  // ..........................................................
+  visit(node, level) {
+    var add, i, lNames, lSubTrees, len, name, param, parm, ref;
+    // --- Identifiers that are not local vars or formal params
+    //     are symbols that should be imported
+    if (node.type === 'Identifier') {
+      name = node.name;
+      if (!this.isLocalSymbol(name)) {
+        this.addMissingSymbol(name);
+      }
+      return;
+    }
+    // --- add to local vars & formal params, where appropriate
+    switch (node.type) {
+      case 'CatchClause':
+        param = node.param;
+        if ((param != null) && param.type === 'Identifier') {
+          this.lLocalSymbols.push(param.name);
+        }
+        break;
+      case 'FunctionExpression':
+        lNames = [];
+        ref = node.params;
+        for (i = 0, len = ref.length; i < len; i++) {
+          parm = ref[i];
+          if (parm.type === 'Identifier') {
+            lNames.push(parm.name);
+          }
+        }
+        this.lLocalSymbols.push(lNames);
+        break;
+      case 'For':
+        lNames = [];
+        if ((node.name != null) && (node.name.type === 'Identifier')) {
+          lNames.push(node.name.name);
+        }
+        if ((node.index != null) && (node.name.type === 'Identifier')) {
+          lNames.push(node.index.name);
+        }
+        this.lLocalSymbols.push(lNames);
+        break;
+      case 'AssignmentExpression':
+        if (node.left.type === 'Identifier') {
+          this.addLocalSymbol(node.left.name);
+        }
+        break;
+      case 'AssignmentPattern':
+        if (node.left.type === 'Identifier') {
+          this.addLocalSymbol(node.left.name);
+        }
+    }
+    // --- Build and return array of subtrees
+    lSubTrees = [];
+    add = function(...subtrees) {
+      return lSubTrees.push(...subtrees);
+    };
+    switch (node.type) {
+      case 'AssignmentExpression':
+        add(node.left, node.right);
+        break;
+      case 'AssignmentPattern':
+        add(node.left, node.right);
+        break;
+      case 'BinaryExpression':
+        add(node.left, node.right);
+        break;
+      case 'BlockStatement':
+        add(node.body);
+        break;
+      case 'CallExpression':
+        add(node.callee, node.arguments);
+        break;
+      case 'CatchClause':
+        add(node.body);
+        break;
+      case 'ClassDeclaration':
+        add(node.body);
+        break;
+      case 'ClassBody':
+        add(node.body);
+        break;
+      case 'ClassMethod':
+        add(node.body);
+        break;
+      case 'ExpressionStatement':
+        add(node.expression);
+        break;
+      case 'For':
+        add(node.body, node.source);
+        break;
+      case 'FunctionExpression':
+        add(node.params, node.body);
+        break;
+      case 'IfStatement':
+        add(node.test, node.consequent);
+        break;
+      case 'Program':
+        add(node.body);
+        break;
+      case 'SwitchCase':
+        add(node.test, node.consequent);
+        break;
+      case 'SwitchStatement':
+        add(node.cases);
+        break;
+      case 'TryStatement':
+        add(node.block, node.handler, node.finalizer);
+        break;
+      case 'WhileStatement':
+        add(node.test, node.body);
+    }
+    return lSubTrees;
+  }
+
+  // ..........................................................
+  endVisit(node, level) {
+    // --- Called after the node's entire subtree has been walked
+    switch (node.type) {
+      case 'FunctionExpression':
+      case 'For':
+      case 'CatchClause':
+        this.lLocalSymbols.pop();
+    }
+    debug("untree");
+  }
+
+  // ..........................................................
+  getMissingSymbols() {
+    var i, key, len, ref;
+    debug("enter CodeWalker.getMissingSymbols()");
+    this.hImports = {};
+    this.hMissingSymbols = {};
+    this.walk();
+    ref = Object.keys(this.hImports);
+    for (i = 0, len = ref.length; i < len; i++) {
+      key = ref[i];
+      if (this.hMissingSymbols[key] != null) {
+        delete this.hMissingSymbols[key];
+      }
+    }
+    debug("return from CodeWalker.getMissingSymbols()");
+    return this.hMissingSymbols;
+  }
 
 };
 

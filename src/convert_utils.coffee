@@ -8,7 +8,7 @@ import sass from 'sass'
 import yaml from 'js-yaml'
 
 import {
-	say, undef, pass, error, isEmpty, isComment, isString,
+	say, undef, pass, error, isEmpty, nonEmpty, isComment, isString,
 	unitTesting, escapeStr, firstLine,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -17,7 +17,9 @@ import {
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
+
 import {StringInput, CoffeeMapper, SassMapper} from '@jdeighan/string-input'
+import {getNeededImports} from '@jdeighan/string-input/code'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?
@@ -86,12 +88,24 @@ export brewExpr = (expr, force=false) ->
 
 export brewCoffee = (text, force=false) ->
 
+	debug "enter brewCoffee()"
+	debug text, "INPUT TEXT:"
+
 	oInput = new CoffeeMapper(text)
 	newtext = oInput.getAllText()
+
+	debug "call getNeededImports()"
+	strImports = getNeededImports(newtext)
+	debug strImports, "strImports:"
+	if nonEmpty(strImports)
+		newtext = strImports + '\n' + newtext
+
+	debug newtext, "NEW TEXT:"
 	if unitTesting && not force
 		return newtext
 	try
 		script = CoffeeScript.compile(newtext, {bare: true})
+		debug script, "SCRIPT:"
 	catch err
 		say "CoffeeScript error!"
 		say text, "Original Text:"

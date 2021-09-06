@@ -5,18 +5,52 @@ import CoffeeScript from 'coffeescript'
 
 import {
 	say, undef, pass, error, isEmpty, nonEmpty, isComment, isString,
-	unitTesting, escapeStr, firstLine,
+	unitTesting, escapeStr, firstLine, isHash, arrayToString,
 	} from '@jdeighan/coffee-utils'
 import {slurp, barf, mydir, pathTo} from '@jdeighan/coffee-utils/fs'
+import {splitLine} from '@jdeighan/coffee-utils/indent'
 import {
 	debug, debugging, startDebugging, endDebugging,
 	} from '@jdeighan/coffee-utils/debug'
+
+import {PLLParser} from '@jdeighan/string-input'
+import {ASTWalker} from '@jdeighan/string-input/tree'
 import {tamlStringify} from '@jdeighan/string-input/convert'
-import {splitLine} from '@jdeighan/coffee-utils/indent'
-import {CodeWalker} from './CodeWalker.js'
-import {PLLParser} from '@jdeighan/string-input/pll'
 
 # ---------------------------------------------------------------------------
+
+export getNeededImports = (code, hOptions={}) ->
+	# --- Valid options:
+	#        dumpfile: <filepath>   - where to dump ast
+	#        debug: <bool>          - turn on debugging
+	# --- returns lImports
+
+	debug "enter getNeededImports()"
+	hMissing = getMissingSymbols(code, hOptions)
+	if isEmpty(hMissing)
+		return []
+
+	hSymbols = getAvailSymbols()
+	if isEmpty(hSymbols)
+		return []
+
+	hNeeded = {}    # { <lib>: [<symbol>, ...], ...}
+	for sym in Object.keys(hMissing)
+		if lib = hSymbols[sym]
+			if hNeeded[lib]
+				hNeeded[lib].push(sym)
+			else
+				hNeeded[lib] = [sym]
+
+	lImports = []
+	for lib in Object.keys(hNeeded)
+		symbols = hNeeded[lib].join(',')
+		lImports.push "import {#{symbols}} from '#{lib}'"
+	debug "return from getNeededImports()"
+	return arrayToString(lImports)
+
+# ---------------------------------------------------------------------------
+# export to allow unit testing
 
 export getMissingSymbols = (code, hOptions={}) ->
 	# --- Valid options:
@@ -25,19 +59,37 @@ export getMissingSymbols = (code, hOptions={}) ->
 
 	if hOptions.debug
 		startDebugging
-	walker = new CodeWalker(code)
+	debug "enter getMissingSymbols()"
+
+	try
+		debug code, "COMPILE CODE:"
+		ast = CoffeeScript.compile code, {ast: true}
+		assert ast?, "getMissingSymbols(): ast is empty"
+	catch err
+		say "ERROR in getMissingSymbols(): #{err.message}"
+
+	walker = new ASTWalker(ast)
 	hMissingSymbols = walker.getMissingSymbols()
 	if hOptions.debug
 		endDebugging
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast)
+	debug "return from getMissingSymbols()"
 	return hMissingSymbols
 
 # ---------------------------------------------------------------------------
+# export to allow unit testing
 
 export getAvailSymbols = () ->
 
-	filepath = pathTo('.symbols', mydir(`import.meta.url`), 'up')
+	debug "enter getAvailSymbols()"
+	searchFromDir = mydir(`import.meta.url`)
+	debug "search for .symbols from '#{searchFromDir}'"
+	filepath = pathTo('.symbols', searchFromDir, 'up')
+	if not filepath?
+		return {}
+
+	debug ".symbols file found at '#{filepath}'"
 	contents = slurp(filepath)
 
 	class SymbolParser extends PLLParser
@@ -58,31 +110,5 @@ export getAvailSymbols = () ->
 			for sym in hItem.node
 				assert not hSymbols[sym]?, "dup symbol: '#{sym}'"
 				hSymbols[sym] = lib
+	debug "return from getAvailSymbols()"
 	return hSymbols
-
-# ---------------------------------------------------------------------------
-
-export getNeededImports = (code, hOptions={}) ->
-	# --- Valid options:
-	#        dumpfile: <filepath>   - where to dump ast
-	#        debug: <bool>          - turn on debugging
-	# --- returns [lImports, lStillMissing]
-
-	hMissing = getMissingSymbols(code, hOptions)
-	hSymbols = getAvailSymbols()
-
-	hNeeded = {}    # { <lib>: [<symbol>, ...], ...}
-	lStillMissing = []
-	for sym in Object.keys(hMissing)
-		if lib = hSymbols[sym]
-			if hNeeded[lib]
-				hNeeded[lib].push(sym)
-			else
-				hNeeded[lib] = [sym]
-		else
-			lStillMissing.push(sym)
-	lImports = []
-	for lib in Object.keys(hNeeded)
-		symbols = hNeeded[lib].join(',')
-		lImports.push "import {#{symbols}} from '#{lib}'"
-	return [lImports, lStillMissing]

@@ -9,6 +9,11 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  startDebugging,
+  endDebugging
+} from '@jdeighan/coffee-utils/debug';
+
+import {
   mydir,
   mkpath
 } from '@jdeighan/coffee-utils/fs';
@@ -33,7 +38,9 @@ setUnitTesting(true);
 // ---------------------------------------------------------------------------
 CoffeeTester = class CoffeeTester extends UnitTester {
   transformValue(text) {
-    return brewCoffee(text);
+    var result;
+    result = brewCoffee(text);
+    return result;
   }
 
 };
@@ -42,18 +49,28 @@ tester = new CoffeeTester();
 
 // ---------------------------------------------------------------------------
 // NOTE: When not unit testing, there will be a semicolon after 1000
-tester.equal(26, `x <== a + 1000`, `\`$: x = a + 1000\``);
+tester.equal(27, `x <== a + 1000`, `\`$: x = a + 1000\``);
 
-tester.equal(32, `# --- a comment line
+tester.equal(33, `# --- a comment line
 
 x <== a + 1000`, `\`$: x = a + 1000\``);
 
 // ---------------------------------------------------------------------------
+// --- test auto-import of symbols from file '.symbols'
+tester.equal(44, `x = 23
+say x`, `import {say} from '@jdeighan/coffee-utils'
+x = 23
+say x`);
+
+// ---------------------------------------------------------------------------
+// --- test full translation to JavaScript
 setUnitTesting(false);
 
-tester.equal(44, `x = 23`, `var x;
+tester.equal(58, `x = 23`, `var x;
 x = 23;`);
 
-tester.equal(51, `# --- a comment
+tester.equal(65, `# --- a comment
 
 x <== a + 1000`, `$: x = a + 1000;;`);
+
+setUnitTesting(true);

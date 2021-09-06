@@ -19,12 +19,9 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  StringInput
-} from '@jdeighan/string-input';
-
-import {
+  StringInput,
   PLLParser
-} from '@jdeighan/string-input/pll';
+} from '@jdeighan/string-input';
 
 import {
   isTAML,

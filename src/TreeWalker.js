@@ -33,13 +33,17 @@ export var TreeWalker = class TreeWalker {
 
   // ..........................................................
   walk() {
+    debug("enter TreeWalker.walk");
     if (isHash(this.root)) {
+      debug("walking node");
       this.walkNode(this.root, 0);
     } else if (isArrayOfHashes(this.root)) {
+      debug("walking array");
       this.walkNodes(this.root, 0);
     } else {
       croak("TreeWalker: Invalid root", this.root, 'ROOT');
     }
+    debug("return from TreeWalker.walk");
   }
 
   // ..........................................................
@@ -271,7 +275,9 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
     debug("enter CodeWalker.getMissingSymbols()");
     this.hImports = {};
     this.hMissingSymbols = {};
+    debug("walking");
     this.walk();
+    debug("done walking");
     ref = Object.keys(this.hImports);
     for (i = 0, len = ref.length; i < len; i++) {
       key = ref[i];

@@ -22,12 +22,16 @@ export class TreeWalker
 
 	walk: () ->
 
+		debug "enter TreeWalker.walk"
 		if isHash(@root)
+			debug "walking node"
 			@walkNode @root, 0
 		else if isArrayOfHashes(@root)
+			debug "walking array"
 			@walkNodes @root, 0
 		else
 			croak "TreeWalker: Invalid root", @root, 'ROOT'
+		debug "return from TreeWalker.walk"
 		return
 
 	# ..........................................................
@@ -235,7 +239,9 @@ export class ASTWalker extends TreeWalker
 		debug "enter CodeWalker.getMissingSymbols()"
 		@hImports = {}
 		@hMissingSymbols = {}
+		debug "walking"
 		@walk()
+		debug "done walking"
 		for key in Object.keys(@hImports)
 			if @hMissingSymbols[key]?
 				delete @hMissingSymbols[key]

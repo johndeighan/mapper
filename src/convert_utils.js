@@ -32,7 +32,8 @@ import {
   isString,
   unitTesting,
   escapeStr,
-  firstLine
+  firstLine,
+  arrayToString
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -40,7 +41,8 @@ import {
   indented,
   undented,
   tabify,
-  untabify
+  untabify,
+  indentLevel
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -113,22 +115,23 @@ export var slurpTAML = function(filepath) {
 
 // ---------------------------------------------------------------------------
 export var preprocessCoffee = function(code) {
-  var newcode, oInput, strImports;
+  var lImports, newcode, oInput;
+  assert(indentLevel(code) === 0, "preprocessCoffee(): has indentation");
   oInput = new CoffeeMapper(code);
   newcode = oInput.getAllText();
   debug("call getNeededImports()");
-  strImports = getNeededImports(newcode);
-  debug(strImports, "strImports:");
-  if (isEmpty(strImports)) {
+  lImports = getNeededImports(newcode);
+  if (isEmpty(lImports)) {
     return newcode;
   } else {
-    return `${strImports}\n${newcode}`;
+    return `${arrayToString(lImports)}\n${newcode}`;
   }
 };
 
 // ---------------------------------------------------------------------------
 export var brewExpr = function(expr, force = false) {
   var err, newexpr, pos;
+  assert(indentLevel(expr) === 0, "brewCoffee(): has indentation");
   if (unitTesting && !force) {
     return expr;
   }

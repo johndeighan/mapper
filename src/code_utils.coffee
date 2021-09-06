@@ -22,16 +22,17 @@ import {tamlStringify} from '@jdeighan/string-input/convert'
 export getNeededImports = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
-	#        debug: <bool>          - turn on debugging
 	# --- returns lImports
 
 	debug "enter getNeededImports()"
 	hMissing = getMissingSymbols(code, hOptions)
 	if isEmpty(hMissing)
+		debug "return from getNeededImports() with []"
 		return []
 
 	hSymbols = getAvailSymbols()
 	if isEmpty(hSymbols)
+		debug "return from getNeededImports() with []"
 		return []
 
 	hNeeded = {}    # { <lib>: [<symbol>, ...], ...}
@@ -47,7 +48,7 @@ export getNeededImports = (code, hOptions={}) ->
 		symbols = hNeeded[lib].join(',')
 		lImports.push "import {#{symbols}} from '#{lib}'"
 	debug "return from getNeededImports()"
-	return arrayToString(lImports)
+	return lImports
 
 # ---------------------------------------------------------------------------
 # export to allow unit testing
@@ -55,10 +56,7 @@ export getNeededImports = (code, hOptions={}) ->
 export getMissingSymbols = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
-	#        debug: <bool>          - turn on debugging
 
-	if hOptions.debug
-		startDebugging
 	debug "enter getMissingSymbols()"
 
 	try
@@ -66,13 +64,10 @@ export getMissingSymbols = (code, hOptions={}) ->
 		ast = CoffeeScript.compile code, {ast: true}
 		assert ast?, "getMissingSymbols(): ast is empty"
 	catch err
-		say "ERROR in getMissingSymbols(): #{err.message}"
-		say code, "CODE:"
+		croak err, code, 'CODE'
 
 	walker = new ASTWalker(ast)
 	hMissingSymbols = walker.getMissingSymbols()
-	if hOptions.debug
-		endDebugging
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast)
 	debug "return from getMissingSymbols()"

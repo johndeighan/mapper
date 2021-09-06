@@ -8,6 +8,7 @@ import {
 
 import {
   undef,
+  log,
   say,
   isString,
   isHash,
@@ -15,6 +16,7 @@ import {
   nonEmpty,
   setUnitTesting,
   arrayToString,
+  stringToArray,
   escapeStr,
   sep_dash,
   sep_eq
@@ -32,6 +34,10 @@ import {
 import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
+
+import {
+  startDebugging
+} from '@jdeighan/coffee-utils/debug';
 
 import {
   forEachLine,
@@ -55,7 +61,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
 // ----------------------------------------------------------------------------
 (async function() {
-  var callback, expImports, hOptions, i, lTests, len, lineNum, results, src;
+  var callback, expImports, hOptions, i, lImports, lImports2, lTests, len, lineNum, results, src;
   lTests = [];
   callback = function(lBlocks, lineNum) {
     var doDebug, expImports, lMatches, src;
@@ -82,14 +88,17 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
     [lineNum, src, expImports] = lTests[i];
     hOptions = {};
     if (lineNum < 0) {
+      log("NEGATIVE lineNum");
       hOptions.dumpfile = dumpfile;
     }
-    simple.equal(lineNum, getNeededImports(src, hOptions), expImports);
+    lImports = getNeededImports(src, hOptions);
+    simple.equal(lineNum, lImports, stringToArray(expImports));
     // --- embed the code in an IIFE
     src = `(() ->
 ${indented(src, 1)}
 	)()`;
-    results.push(simple.equal(lineNum, getNeededImports(src), expImports));
+    lImports2 = getNeededImports(src);
+    results.push(simple.equal(lineNum, lImports2, stringToArray(expImports)));
   }
   return results;
 })();

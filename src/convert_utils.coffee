@@ -9,10 +9,10 @@ import yaml from 'js-yaml'
 
 import {
 	say, undef, pass, croak, log, isEmpty, nonEmpty, isComment, isString,
-	unitTesting, escapeStr, firstLine,
+	unitTesting, escapeStr, firstLine, arrayToString,
 	} from '@jdeighan/coffee-utils'
 import {
-	splitLine, indented, undented, tabify, untabify,
+	splitLine, indented, undented, tabify, untabify, indentLevel,
 	} from '@jdeighan/coffee-utils/indent'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -68,20 +68,23 @@ export slurpTAML = (filepath) ->
 
 export preprocessCoffee = (code) ->
 
+	assert (indentLevel(code)==0), "preprocessCoffee(): has indentation"
+
 	oInput = new CoffeeMapper(code)
 	newcode = oInput.getAllText()
 
 	debug "call getNeededImports()"
-	strImports = getNeededImports(newcode)
-	debug strImports, "strImports:"
-	if isEmpty(strImports)
+	lImports = getNeededImports(newcode)
+	if isEmpty(lImports)
 		return newcode
 	else
-		return "#{strImports}\n#{newcode}"
+		return "#{arrayToString(lImports)}\n#{newcode}"
 
 # ---------------------------------------------------------------------------
 
 export brewExpr = (expr, force=false) ->
+
+	assert (indentLevel(expr)==0), "brewCoffee(): has indentation"
 
 	if unitTesting && not force
 		return expr

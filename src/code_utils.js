@@ -57,15 +57,16 @@ export var getNeededImports = function(code, hOptions = {}) {
   var hMissing, hNeeded, hSymbols, i, j, lImports, len, len1, lib, ref, ref1, sym, symbols;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
-  //        debug: <bool>          - turn on debugging
   // --- returns lImports
   debug("enter getNeededImports()");
   hMissing = getMissingSymbols(code, hOptions);
   if (isEmpty(hMissing)) {
+    debug("return from getNeededImports() with []");
     return [];
   }
   hSymbols = getAvailSymbols();
   if (isEmpty(hSymbols)) {
+    debug("return from getNeededImports() with []");
     return [];
   }
   hNeeded = {}; // { <lib>: [<symbol>, ...], ...}
@@ -88,7 +89,7 @@ export var getNeededImports = function(code, hOptions = {}) {
     lImports.push(`import {${symbols}} from '${lib}'`);
   }
   debug("return from getNeededImports()");
-  return arrayToString(lImports);
+  return lImports;
 };
 
 // ---------------------------------------------------------------------------
@@ -97,10 +98,6 @@ export var getMissingSymbols = function(code, hOptions = {}) {
   var ast, err, hMissingSymbols, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
-  //        debug: <bool>          - turn on debugging
-  if (hOptions.debug) {
-    startDebugging;
-  }
   debug("enter getMissingSymbols()");
   try {
     debug(code, "COMPILE CODE:");
@@ -110,14 +107,10 @@ export var getMissingSymbols = function(code, hOptions = {}) {
     assert(ast != null, "getMissingSymbols(): ast is empty");
   } catch (error) {
     err = error;
-    say(`ERROR in getMissingSymbols(): ${err.message}`);
-    say(code, "CODE:");
+    croak(err, code, 'CODE');
   }
   walker = new ASTWalker(ast);
   hMissingSymbols = walker.getMissingSymbols();
-  if (hOptions.debug) {
-    endDebugging;
-  }
   if (hOptions.dumpfile) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast));
   }

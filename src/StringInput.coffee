@@ -5,7 +5,7 @@ import fs from 'fs'
 import pathlib from 'path'
 
 import {
-	undef, say, pass, error, isString, isEmpty, isComment, isArray, isHash,
+	undef, say, pass, croak, isString, isEmpty, isComment, isArray, isHash,
 	escapeStr, deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp} from '@jdeighan/coffee-utils/fs'
@@ -33,7 +33,8 @@ export class StringInput
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
 		else
-			error "StringInput(): content must be array or string"
+			croak "StringInput(): content must be array or string",
+					content, "CONTENT"
 		@lineNum = 0
 
 		if filename
@@ -106,7 +107,7 @@ export class StringInput
 
 		debug "enter getFromAlt()"
 		if not @altInput
-			error "getFromAlt(): There is no alt input"
+			croak "getFromAlt(): There is no alt input"
 		result = @altInput.get()
 		if result?
 			debug result, "return with:"
@@ -126,7 +127,7 @@ export class StringInput
 
 		debug "enter fetchFromAlt()"
 		if not @altInput
-			error "fetchFromAlt(): There is no alt input"
+			croak "fetchFromAlt(): There is no alt input"
 		result = @altInput.fetch()
 		if result?
 			debug result, "return with:"
@@ -339,7 +340,7 @@ export class CoffeeMapper extends StringInput
 				try
 					jsExpr = brewCoffee(expr).trim()   # will have trailing ';'
 				catch err
-					error err.message
+					croak err, expr, "EXPR"
 
 				if varname
 					result = indented("\`\$\: #{varname} = #{jsExpr}\`", level)
@@ -347,12 +348,13 @@ export class CoffeeMapper extends StringInput
 					result = indented("\`\$\: #{jsExpr}\`", level)
 			else
 				if varname
-					error "Invalid syntax - variable name not allowed"
+					croak "Invalid syntax - variable name not allowed",
+							orgLine, 'orgLine'
 				code = @fetchBlock(level+1)
 				try
 					jsCode = brewCoffee(code)
 				catch err
-					error err.message
+					croak err, code, 'CODE'
 
 				result = """
 						\`\`\`
@@ -392,7 +394,7 @@ export class FileInput extends StringInput
 			content = "Contents of #{base}"
 		else
 			if not fs.existsSync(filename)
-				error "FileInput(): file '#{filename}' does not exist"
+				croak "FileInput(): file '#{filename}' does not exist"
 			content = slurp(filename)
 
 		super content, hOptions

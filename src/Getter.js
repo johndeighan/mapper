@@ -8,7 +8,7 @@ import {
   undef,
   say,
   pass,
-  error
+  croak
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -49,7 +49,7 @@ export var Getter = class Getter {
     debug(`enter unget(${item})`);
     if (this.lookahead != null) {
       debug("return FAILURE from unget() - lookahead exists");
-      error("Getter.unget(): lookahead exists");
+      croak("Getter.unget(): lookahead exists");
     }
     this.lookahead = item;
     debug("return from unget()");

@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, say, pass, error, isArray, isHash, isArrayOfHashes,
+	undef, say, pass, croak, isArray, isHash, isArrayOfHashes,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'
@@ -27,7 +27,7 @@ export class TreeWalker
 		else if isArrayOfHashes(@root)
 			@walkNodes @root, 0
 		else
-			error "TreeWalker: Invalid root"
+			croak "TreeWalker: Invalid root", @root, 'ROOT'
 		return
 
 	# ..........................................................
@@ -41,7 +41,7 @@ export class TreeWalker
 				else if isHash(subtree)
 					@walkNode subtree, level
 				else
-					error "Invalid subtree"
+					croak "Invalid subtree", subtree, 'SUBTREE'
 		return
 
 	# ..........................................................

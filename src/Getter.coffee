@@ -1,7 +1,7 @@
 # Getter.coffee
 
 import {strict as assert} from 'assert'
-import {undef, say, pass, error} from '@jdeighan/coffee-utils'
+import {undef, say, pass, croak} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export class Getter
 		debug "enter unget(#{item})"
 		if @lookahead?
 			debug "return FAILURE from unget() - lookahead exists"
-			error "Getter.unget(): lookahead exists"
+			croak "Getter.unget(): lookahead exists"
 		@lookahead = item
 		debug "return from unget()"
 		return

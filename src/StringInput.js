@@ -12,7 +12,7 @@ import {
   undef,
   say,
   pass,
-  error,
+  croak,
   isString,
   isEmpty,
   isComment,
@@ -61,7 +61,7 @@ export var StringInput = class StringInput {
       // -- make a deep copy
       this.lBuffer = deepCopy(content);
     } else {
-      error("StringInput(): content must be array or string");
+      croak("StringInput(): content must be array or string", content, "CONTENT");
     }
     this.lineNum = 0;
     if (filename) {
@@ -69,7 +69,7 @@ export var StringInput = class StringInput {
         // --- We only want the bare filename
         ({base} = pathlib.parse(filename));
         this.filename = base;
-      } catch (error1) {
+      } catch (error) {
         this.filename = filename;
       }
     } else {
@@ -134,7 +134,7 @@ export var StringInput = class StringInput {
     var result;
     debug("enter getFromAlt()");
     if (!this.altInput) {
-      error("getFromAlt(): There is no alt input");
+      croak("getFromAlt(): There is no alt input");
     }
     result = this.altInput.get();
     if (result != null) {
@@ -156,7 +156,7 @@ export var StringInput = class StringInput {
     var result;
     debug("enter fetchFromAlt()");
     if (!this.altInput) {
-      error("fetchFromAlt(): There is no alt input");
+      croak("fetchFromAlt(): There is no alt input");
     }
     result = this.altInput.fetch();
     if (result != null) {
@@ -354,9 +354,9 @@ export var CoffeeMapper = class CoffeeMapper extends StringInput {
         try {
           // --- convert to JavaScript if not unit testing ---
           jsExpr = brewCoffee(expr).trim(); // will have trailing ';'
-        } catch (error1) {
-          err = error1;
-          error(err.message);
+        } catch (error) {
+          err = error;
+          croak(err, expr, "EXPR");
         }
         if (varname) {
           result = indented(`\`\$\: ${varname} = ${jsExpr}\``, level);
@@ -365,14 +365,14 @@ export var CoffeeMapper = class CoffeeMapper extends StringInput {
         }
       } else {
         if (varname) {
-          error("Invalid syntax - variable name not allowed");
+          croak("Invalid syntax - variable name not allowed", orgLine, 'orgLine');
         }
         code = this.fetchBlock(level + 1);
         try {
           jsCode = brewCoffee(code);
-        } catch (error1) {
-          err = error1;
-          error(err.message);
+        } catch (error) {
+          err = error;
+          croak(err, code, 'CODE');
         }
         result = `\`\`\`
 \$\: {
@@ -414,7 +414,7 @@ export var FileInput = class FileInput extends StringInput {
       content = `Contents of ${base}`;
     } else {
       if (!fs.existsSync(filename)) {
-        error(`FileInput(): file '${filename}' does not exist`);
+        croak(`FileInput(): file '${filename}' does not exist`);
       }
       content = slurp(filename);
     }

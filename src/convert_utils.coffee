@@ -8,7 +8,7 @@ import sass from 'sass'
 import yaml from 'js-yaml'
 
 import {
-	say, undef, pass, error, isEmpty, nonEmpty, isComment, isString,
+	say, undef, pass, croak, log, isEmpty, nonEmpty, isComment, isString,
 	unitTesting, escapeStr, firstLine,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -79,9 +79,7 @@ export brewExpr = (expr, force=false) ->
 			newexpr = newexpr.substr(0, pos)
 
 	catch err
-		say "CoffeeScript error!"
-		say expr, "expr:"
-		error "CoffeeScript error: #{err.message}"
+		croak err, expr, "brewExpr"
 	return newexpr
 
 # ---------------------------------------------------------------------------
@@ -107,10 +105,8 @@ export brewCoffee = (text, force=false) ->
 		script = CoffeeScript.compile(newtext, {bare: true})
 		debug script, "SCRIPT:"
 	catch err
-		say "CoffeeScript error!"
-		say text, "Original Text:"
-		say newtext, "Mapped Text:"
-		error "CoffeeScript error: #{err.message}"
+		log newtext, "Mapped Text:"
+		croak err, text, "Original Text"
 	return script
 
 # ---------------------------------------------------------------------------
@@ -189,4 +185,4 @@ export getFileContents = (fname, convert=false) ->
 		when '.txt'
 			return contents
 		else
-			error "getFileContents(): No handler for ext '#{ext}'"
+			croak "getFileContents(): No handler for ext '#{ext}'"

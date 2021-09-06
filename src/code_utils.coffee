@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	say, undef, pass, error, isEmpty, nonEmpty, isComment, isString,
+	say, undef, pass, croak, isEmpty, nonEmpty, isComment, isString,
 	unitTesting, escapeStr, firstLine, isHash, arrayToString,
 	} from '@jdeighan/coffee-utils'
 import {slurp, barf, mydir, pathTo} from '@jdeighan/coffee-utils/fs'
@@ -67,6 +67,7 @@ export getMissingSymbols = (code, hOptions={}) ->
 		assert ast?, "getMissingSymbols(): ast is empty"
 	catch err
 		say "ERROR in getMissingSymbols(): #{err.message}"
+		say code, "CODE:"
 
 	walker = new ASTWalker(ast)
 	hMissingSymbols = walker.getMissingSymbols()
@@ -100,7 +101,7 @@ export getAvailSymbols = () ->
 			else if level==1
 				return line.split(/\s+/).filter((s) -> nonEmpty(s))
 			else
-				error "Bad .symbols file - level = #{level}"
+				croak "Bad .symbols file - level = #{level}"
 
 	tree = new SymbolParser(contents).getTree()
 

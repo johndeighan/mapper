@@ -10,7 +10,7 @@ import {
   say,
   undef,
   pass,
-  error,
+  croak,
   isEmpty,
   nonEmpty,
   isComment,
@@ -108,9 +108,10 @@ export var getMissingSymbols = function(code, hOptions = {}) {
       ast: true
     });
     assert(ast != null, "getMissingSymbols(): ast is empty");
-  } catch (error1) {
-    err = error1;
+  } catch (error) {
+    err = error;
     say(`ERROR in getMissingSymbols(): ${err.message}`);
+    say(code, "CODE:");
   }
   walker = new ASTWalker(ast);
   hMissingSymbols = walker.getMissingSymbols();
@@ -146,7 +147,7 @@ export var getAvailSymbols = function() {
           return nonEmpty(s);
         });
       } else {
-        return error(`Bad .symbols file - level = ${level}`);
+        return croak(`Bad .symbols file - level = ${level}`);
       }
     }
 

@@ -8,7 +8,7 @@ import {
   undef,
   say,
   pass,
-  error,
+  croak,
   isArray,
   isHash,
   isArrayOfHashes
@@ -38,7 +38,7 @@ export var TreeWalker = class TreeWalker {
     } else if (isArrayOfHashes(this.root)) {
       this.walkNodes(this.root, 0);
     } else {
-      error("TreeWalker: Invalid root");
+      croak("TreeWalker: Invalid root", this.root, 'ROOT');
     }
   }
 
@@ -53,7 +53,7 @@ export var TreeWalker = class TreeWalker {
         } else if (isHash(subtree)) {
           this.walkNode(subtree, level);
         } else {
-          error("Invalid subtree");
+          croak("Invalid subtree", subtree, 'SUBTREE');
         }
       }
     }

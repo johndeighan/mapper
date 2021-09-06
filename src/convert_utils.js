@@ -24,7 +24,8 @@ import {
   say,
   undef,
   pass,
-  error,
+  croak,
+  log,
   isEmpty,
   nonEmpty,
   isComment,
@@ -125,11 +126,9 @@ export var brewExpr = function(expr, force = false) {
     if (newexpr.substr(pos, 1) === ';') {
       newexpr = newexpr.substr(0, pos);
     }
-  } catch (error1) {
-    err = error1;
-    say("CoffeeScript error!");
-    say(expr, "expr:");
-    error(`CoffeeScript error: ${err.message}`);
+  } catch (error) {
+    err = error;
+    croak(err, expr, "brewExpr");
   }
   return newexpr;
 };
@@ -156,12 +155,10 @@ export var brewCoffee = function(text, force = false) {
       bare: true
     });
     debug(script, "SCRIPT:");
-  } catch (error1) {
-    err = error1;
-    say("CoffeeScript error!");
-    say(text, "Original Text:");
-    say(newtext, "Mapped Text:");
-    error(`CoffeeScript error: ${err.message}`);
+  } catch (error) {
+    err = error;
+    log(newtext, "Mapped Text:");
+    croak(err, text, "Original Text");
   }
   return script;
 };
@@ -240,6 +237,6 @@ export var getFileContents = function(fname, convert = false) {
     case '.txt':
       return contents;
     default:
-      return error(`getFileContents(): No handler for ext '${ext}'`);
+      return croak(`getFileContents(): No handler for ext '${ext}'`);
   }
 };

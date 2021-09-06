@@ -66,6 +66,21 @@ export slurpTAML = (filepath) ->
 
 # ---------------------------------------------------------------------------
 
+export preprocessCoffee = (code) ->
+
+	oInput = new CoffeeMapper(code)
+	newcode = oInput.getAllText()
+
+	debug "call getNeededImports()"
+	strImports = getNeededImports(newcode)
+	debug strImports, "strImports:"
+	if isEmpty(strImports)
+		return newcode
+	else
+		return "#{strImports}\n#{newcode}"
+
+# ---------------------------------------------------------------------------
+
 export brewExpr = (expr, force=false) ->
 
 	if unitTesting && not force
@@ -89,14 +104,7 @@ export brewCoffee = (text, force=false) ->
 	debug "enter brewCoffee()"
 	debug text, "INPUT TEXT:"
 
-	oInput = new CoffeeMapper(text)
-	newtext = oInput.getAllText()
-
-	debug "call getNeededImports()"
-	strImports = getNeededImports(newtext)
-	debug strImports, "strImports:"
-	if nonEmpty(strImports)
-		newtext = strImports + '\n' + newtext
+	newtext = preprocessCoffee(text)
 
 	debug newtext, "NEW TEXT:"
 	if unitTesting && not force

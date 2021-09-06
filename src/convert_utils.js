@@ -112,6 +112,21 @@ export var slurpTAML = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
+export var preprocessCoffee = function(code) {
+  var newcode, oInput, strImports;
+  oInput = new CoffeeMapper(code);
+  newcode = oInput.getAllText();
+  debug("call getNeededImports()");
+  strImports = getNeededImports(newcode);
+  debug(strImports, "strImports:");
+  if (isEmpty(strImports)) {
+    return newcode;
+  } else {
+    return `${strImports}\n${newcode}`;
+  }
+};
+
+// ---------------------------------------------------------------------------
 export var brewExpr = function(expr, force = false) {
   var err, newexpr, pos;
   if (unitTesting && !force) {
@@ -135,17 +150,10 @@ export var brewExpr = function(expr, force = false) {
 
 // ---------------------------------------------------------------------------
 export var brewCoffee = function(text, force = false) {
-  var err, newtext, oInput, script, strImports;
+  var err, newtext, script;
   debug("enter brewCoffee()");
   debug(text, "INPUT TEXT:");
-  oInput = new CoffeeMapper(text);
-  newtext = oInput.getAllText();
-  debug("call getNeededImports()");
-  strImports = getNeededImports(newtext);
-  debug(strImports, "strImports:");
-  if (nonEmpty(strImports)) {
-    newtext = strImports + '\n' + newtext;
-  }
+  newtext = preprocessCoffee(text);
   debug(newtext, "NEW TEXT:");
   if (unitTesting && !force) {
     return newtext;

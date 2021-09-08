@@ -21,11 +21,10 @@ import sass from 'sass';
 import yaml from 'js-yaml';
 
 import {
-  say,
+  log,
   undef,
   pass,
   croak,
-  log,
   isEmpty,
   nonEmpty,
   isComment,
@@ -61,11 +60,15 @@ import {
 import {
   StringInput,
   CoffeeMapper,
+  CoffeePostMapper,
   SassMapper
 } from '@jdeighan/string-input';
 
 import {
-  getNeededImports
+  getNeededImports,
+  getNeededSymbols,
+  mergeNeededSymbols,
+  buildImportList
 } from '@jdeighan/string-input/code';
 
 // ---------------------------------------------------------------------------
@@ -114,21 +117,6 @@ export var slurpTAML = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
-export var preprocessCoffee = function(code) {
-  var lImports, newcode, oInput;
-  assert(indentLevel(code) === 0, "preprocessCoffee(): has indentation");
-  oInput = new CoffeeMapper(code);
-  newcode = oInput.getAllText();
-  debug("call getNeededImports()");
-  lImports = getNeededImports(newcode);
-  if (isEmpty(lImports)) {
-    return newcode;
-  } else {
-    return `${arrayToString(lImports)}\n${newcode}`;
-  }
-};
-
-// ---------------------------------------------------------------------------
 export var brewExpr = function(expr, force = false) {
   var err, newexpr, pos;
   assert(indentLevel(expr) === 0, "brewCoffee(): has indentation");
@@ -152,26 +140,73 @@ export var brewExpr = function(expr, force = false) {
 };
 
 // ---------------------------------------------------------------------------
-export var brewCoffee = function(text, force = false) {
-  var err, newtext, script;
+export var brewCoffee = function(...lBlocks) {
+  var blk, err, hAllNeeded, hNeeded, i, j, k, lResult, len, len1, newblk, script;
   debug("enter brewCoffee()");
-  debug(text, "INPUT TEXT:");
-  newtext = preprocessCoffee(text);
-  debug(newtext, "NEW TEXT:");
-  if (unitTesting && !force) {
-    return newtext;
+  for (i = j = 0, len = lBlocks.length; j < len; i = ++j) {
+    blk = lBlocks[i];
+    debug(blk, `BLOCK ${i}:`);
   }
-  try {
-    script = CoffeeScript.compile(newtext, {
-      bare: true
-    });
-    debug(script, "SCRIPT:");
-  } catch (error) {
-    err = error;
-    log(newtext, "Mapped Text:");
-    croak(err, text, "Original Text");
+  lResult = [];
+  hAllNeeded = {}; // { <lib>: [ <symbol>, ...], ...}
+  for (k = 0, len1 = lBlocks.length; k < len1; k++) {
+    blk = lBlocks[k];
+    newblk = preProcessCoffee(blk);
+    debug(newblk, "NEW BLOCK:");
+    // --- returns {<lib>: [<symbol>,... ],... }
+    hNeeded = getNeededSymbols(newblk);
+    mergeNeededSymbols(hAllNeeded, hNeeded);
+    if (unitTesting) {
+      lResult.push(newblk);
+    } else {
+      try {
+        script = CoffeeScript.compile(newblk, {
+          bare: true
+        });
+        // --- Unfortunately, the CoffeeScript compiler
+        //     adds a semicolon after `$:` or `$:{`  is compiled
+        script = script.replace(/\$\:\;/g, '$:');
+        script = script.replace(/\$\:\{\;/g, '$:{');
+        debug(script, "BREWED SCRIPT:");
+        lResult.push(postProcessCoffee(script));
+      } catch (error) {
+        err = error;
+        log(newblk, "Mapped Text:");
+        croak(err, blk, "Original Text");
+      }
+    }
   }
-  return script;
+  lResult.push(buildImportList(hAllNeeded));
+  return lResult;
+};
+
+// ---------------------------------------------------------------------------
+export var postProcessCoffee = function(code) {
+  var oInput;
+  // --- variable declaration immediately following one of:
+  //        $:{
+  //        $:
+  //     should be moved above this line
+  oInput = new CoffeePostMapper(code);
+  return oInput.getAllText();
+};
+
+// ---------------------------------------------------------------------------
+export var preProcessCoffee = function(code, addImports = false) {
+  var lImports, newcode, oInput;
+  assert(indentLevel(code) === 0, "preProcessCoffee(): has indentation");
+  oInput = new CoffeeMapper(code);
+  newcode = oInput.getAllText();
+  if (!addImports) {
+    return newcode;
+  }
+  debug("call getNeededImports()");
+  lImports = getNeededImports(newcode);
+  if (isEmpty(lImports)) {
+    return newcode;
+  } else {
+    return `${arrayToString(lImports)}\n${newcode}`;
+  }
 };
 
 // ---------------------------------------------------------------------------

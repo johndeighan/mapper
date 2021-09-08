@@ -5,14 +5,15 @@ import fs from 'fs'
 import pathlib from 'path'
 
 import {
-	undef, say, pass, croak, isString, isEmpty, isComment, isArray, isHash,
+	undef, log, pass, croak, isString, isEmpty, isComment, isArray, isHash,
 	escapeStr, deepCopy, stringToArray, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp} from '@jdeighan/coffee-utils/fs'
 import {splitLine, indented, undented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {getFileContents, brewCoffee} from '@jdeighan/string-input/convert'
+import {getFileContents} from '@jdeighan/string-input/convert'
 
 # ---------------------------------------------------------------------------
 #   class StringInput - stream in lines from a string or array
@@ -290,22 +291,40 @@ export class StringInput
 
 - converts
 		<varname> <== <expr>
+
 	to:
-		`$: <varname> = <expr>;`
+		`$:`
+		<varname> = <expr>
+
+	coffeescript to:
+		var <varname>;
+		$:;
+		<varname> = <js expr>;
+
+	brewCoffee() to:
+		var <varname>;
+		$:
+		<varname> = <js expr>;
 
 - converts
-		<== <expr>
-	to:
-		`$: <expr>;`
+		<==
+			<code>
 
-- converts
-		<===
-			<code>
 	to:
-		```
-		$: {
-			<code>
-			}
+		`$:{`
+		<code>
+		`}`
+
+	coffeescript to:
+		$:{;
+		<js code>
+		};
+
+	brewCoffee() to:
+		$:{
+		<js code>
+		}
+
 ###
 
 # ---------------------------------------------------------------------------
@@ -313,7 +332,7 @@ export class StringInput
 
 export class CoffeeMapper extends StringInput
 	# - removes blank lines and comments
-	# - converts <var> <== <expr> to `$: <var> = <expr>
+	# - makes above conversions
 
 	constructor: (content, hOptions) ->
 
@@ -323,51 +342,66 @@ export class CoffeeMapper extends StringInput
 
 		debug "enter mapLine()"
 		[level, line] = splitLine(orgLine)
-		if isEmpty(line) || line.match(/^#\s/)
+		if isEmpty(line) || isComment(line)
 			return undef
+		if (line == '<==')
+			# --- Generate a reactive block
+			code = @fetchBlock(level+1)    # might be empty
+			if isEmpty(code)
+				return undef
+			result = """
+					`$:{`
+					#{code}
+					`}`
+					"""
+			debug "return from mapLine()"
+			return indented(result, level)
 		if lMatches = line.match(///^
-				(?:
-					([A-Za-z][A-Za-z0-9_]*)   # variable name
-					\s*
-					)?
+				([A-Za-z][A-Za-z0-9_]*)   # variable name
+				\s*
 				\< \= \=
 				\s*
 				(.*)
 				$///)
 			[_, varname, expr] = lMatches
-			if expr
-				# --- convert to JavaScript if not unit testing ---
-				try
-					jsExpr = brewCoffee(expr).trim()   # will have trailing ';'
-				catch err
-					croak err, expr, "EXPR"
-
-				if varname
-					result = indented("\`\$\: #{varname} = #{jsExpr}\`", level)
-				else
-					result = indented("\`\$\: #{jsExpr}\`", level)
-			else
-				if varname
-					croak "Invalid syntax - variable name not allowed",
-							orgLine, 'orgLine'
-				code = @fetchBlock(level+1)
-				try
-					jsCode = brewCoffee(code)
-				catch err
-					croak err, code, 'CODE'
-
-				result = """
-						\`\`\`
-						\$\: {
-						#{indented(jsCode, 1)}
-						#{indented('}', 1)}
-						\`\`\`
-						"""
+			code = @fetchBlock(level+1)    # must be empty
+			assert isEmpty(code),
+					"mapLine(): indented code not allowed after '#{line}'"
+			assert not isEmpty(expr),
+					"mapLine(): empty expression in '#{line}'"
+			result = """
+					`$:`
+					#{varname} = #{expr}
+					"""
 			debug "return from mapLine()"
 			return indented(result, level)
 		else
 			debug "return from mapLine() - no match"
 			return orgLine
+
+# ---------------------------------------------------------------------------
+
+export class CoffeePostMapper extends StringInput
+	# --- variable declaration immediately following one of:
+	#        $:{
+	#        $:
+	#     should be moved above this line
+
+	mapLine: (line) ->
+
+		if @savedLine
+			if line.match(///^ \s* var \s ///)
+				result = "#{line}\n#{@savedLine}"
+			else
+				result = "#{@savedLine}\n#{line}"
+			@savedLine = undef
+			return result
+
+		if (line.match(///^ \s* \$ \: \{? ///))
+			@savedLine = line
+			return undef
+
+		return line
 
 # ---------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # markdown.test.coffee
 
-import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {log, undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {markdownify} from '@jdeighan/string-input/convert'

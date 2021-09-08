@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	say, undef, error, warn, rtrim,
+	log, undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput, PLLParser} from '@jdeighan/string-input'

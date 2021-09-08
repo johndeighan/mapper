@@ -3,7 +3,7 @@
 var simple;
 
 import {
-  say,
+  log,
   undef,
   setUnitTesting
 } from '@jdeighan/coffee-utils';

@@ -7,7 +7,7 @@ import {
 } from 'assert';
 
 import {
-  say,
+  log,
   undef,
   error,
   warn,

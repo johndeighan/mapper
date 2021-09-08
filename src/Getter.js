@@ -6,7 +6,7 @@ import {
 
 import {
   undef,
-  say,
+  log,
   pass,
   croak
 } from '@jdeighan/coffee-utils';

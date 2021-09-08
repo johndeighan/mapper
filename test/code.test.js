@@ -9,7 +9,6 @@ import {
 import {
   undef,
   log,
-  say,
   isString,
   isHash,
   isEmpty,
@@ -46,9 +45,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  getMissingSymbols,
-  getNeededImports,
-  getAvailSymbols
+  getNeededImports
 } from '@jdeighan/string-input/code';
 
 testDir = mydir(import.meta.url);

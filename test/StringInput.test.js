@@ -11,7 +11,7 @@ import {
 } from 'path';
 
 import {
-  say,
+  log,
   undef,
   pass,
   isEmpty,

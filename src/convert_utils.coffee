@@ -8,7 +8,7 @@ import sass from 'sass'
 import yaml from 'js-yaml'
 
 import {
-	say, undef, pass, croak, log, isEmpty, nonEmpty, isComment, isString,
+	log, undef, pass, croak, isEmpty, nonEmpty, isComment, isString,
 	unitTesting, escapeStr, firstLine, arrayToString,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -18,8 +18,12 @@ import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 
-import {StringInput, CoffeeMapper, SassMapper} from '@jdeighan/string-input'
-import {getNeededImports} from '@jdeighan/string-input/code'
+import {
+	StringInput, CoffeeMapper, CoffeePostMapper, SassMapper,
+	} from '@jdeighan/string-input'
+import {
+	getNeededImports, getNeededSymbols, mergeNeededSymbols, buildImportList,
+	} from '@jdeighan/string-input/code'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?
@@ -66,22 +70,6 @@ export slurpTAML = (filepath) ->
 
 # ---------------------------------------------------------------------------
 
-export preprocessCoffee = (code) ->
-
-	assert (indentLevel(code)==0), "preprocessCoffee(): has indentation"
-
-	oInput = new CoffeeMapper(code)
-	newcode = oInput.getAllText()
-
-	debug "call getNeededImports()"
-	lImports = getNeededImports(newcode)
-	if isEmpty(lImports)
-		return newcode
-	else
-		return "#{arrayToString(lImports)}\n#{newcode}"
-
-# ---------------------------------------------------------------------------
-
 export brewExpr = (expr, force=false) ->
 
 	assert (indentLevel(expr)==0), "brewCoffee(): has indentation"
@@ -102,23 +90,70 @@ export brewExpr = (expr, force=false) ->
 
 # ---------------------------------------------------------------------------
 
-export brewCoffee = (text, force=false) ->
+export brewCoffee = (lBlocks...) ->
 
 	debug "enter brewCoffee()"
-	debug text, "INPUT TEXT:"
+	debug blk, "BLOCK #{i}:" for blk,i in lBlocks
 
-	newtext = preprocessCoffee(text)
+	lResult = []
+	hAllNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
+	for blk in lBlocks
+		newblk = preProcessCoffee(blk)
+		debug newblk, "NEW BLOCK:"
 
-	debug newtext, "NEW TEXT:"
-	if unitTesting && not force
-		return newtext
-	try
-		script = CoffeeScript.compile(newtext, {bare: true})
-		debug script, "SCRIPT:"
-	catch err
-		log newtext, "Mapped Text:"
-		croak err, text, "Original Text"
-	return script
+		# --- returns {<lib>: [<symbol>,... ],... }
+		hNeeded = getNeededSymbols(newblk)
+		mergeNeededSymbols(hAllNeeded, hNeeded)
+
+		if unitTesting
+			lResult.push newblk
+		else
+			try
+				script = CoffeeScript.compile(newblk, {bare: true})
+
+				# --- Unfortunately, the CoffeeScript compiler
+				#     adds a semicolon after `$:` or `$:{`  is compiled
+				script = script.replace(/// \$ \: \; ///g,    '$:')
+				script = script.replace(/// \$ \: \{ \; ///g, '$:{')
+				debug script, "BREWED SCRIPT:"
+
+				lResult.push postProcessCoffee(script)
+			catch err
+				log newblk, "Mapped Text:"
+				croak err, blk, "Original Text"
+
+	lResult.push buildImportList(hAllNeeded)
+	return lResult
+
+# ---------------------------------------------------------------------------
+
+export postProcessCoffee = (code) ->
+	# --- variable declaration immediately following one of:
+	#        $:{
+	#        $:
+	#     should be moved above this line
+
+	oInput = new CoffeePostMapper(code)
+	return oInput.getAllText()
+
+# ---------------------------------------------------------------------------
+
+export preProcessCoffee = (code, addImports=false) ->
+
+	assert (indentLevel(code)==0), "preProcessCoffee(): has indentation"
+
+	oInput = new CoffeeMapper(code)
+	newcode = oInput.getAllText()
+
+	if not addImports
+		return newcode
+
+	debug "call getNeededImports()"
+	lImports = getNeededImports(newcode)
+	if isEmpty(lImports)
+		return newcode
+	else
+		return "#{arrayToString(lImports)}\n#{newcode}"
 
 # ---------------------------------------------------------------------------
 

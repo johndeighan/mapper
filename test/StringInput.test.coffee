@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import {resolve} from 'path'
 
 import {
-	say, undef, pass, isEmpty,
+	log, undef, pass, isEmpty,
 	setUnitTesting, unitTesting, escapeStr,
 	} from '@jdeighan/coffee-utils'
 import {

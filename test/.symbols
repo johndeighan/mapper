@@ -1,0 +1,4 @@
+@jdeighan/coffee-utils
+	say undef log
+@jdeighan/coffee-utils/fs
+	mydir mkpath slurp barf

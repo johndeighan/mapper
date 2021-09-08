@@ -4,7 +4,7 @@ var CoffeeMapperTester, tester;
 
 import {
   undef,
-  say,
+  log,
   setUnitTesting
 } from '@jdeighan/coffee-utils';
 
@@ -35,24 +35,28 @@ tester = new CoffeeMapperTester();
 
 // ---------------------------------------------------------------------------
 // --- Test basic mapping
-tester.equal(27, `x = 23
+tester.equal(25, `x = 23
 if x > 10
 	console.log "OK"`, `x = 23`);
 
 // ---------------------------------------------------------------------------
 // --- Test live assignment
-tester.equal(38, `x <== 2 * y
+tester.equal(36, `x <== 2 * y
 if x > 10
-	console.log "OK"`, `\`$: x = 2 * y\``);
+	console.log "OK"`, `\`$:\`
+x = 2 * y`);
 
 // ---------------------------------------------------------------------------
 // --- Test live execution
 (function() {
   var count;
   count = undef;
-  return tester.equal(51, `<== console.log "Count is \#{count}"
+  return tester.equal(50, `<==
+	console.log "Count is \#{count}"
 if x > 10
-	console.log "OK"`, `\`$: console.log "Count is \#{count}"\``);
+	console.log "OK"`, `\`$:{\`
+console.log "Count is \#{count}"
+\`}\``);
 })();
 
 // ---------------------------------------------------------------------------
@@ -60,16 +64,14 @@ if x > 10
 (function() {
   var count;
   count = undef;
-  return tester.equal(65, `<==
+  return tester.equal(67, `<==
 	double = 2 * count
 	console.log "Count is \#{count}"
 if x > 10
-	console.log "OK"`, `\`\`\`
-$: {
-	double = 2 * count
-	console.log "Count is \#{count}"
-	}
-\`\`\``);
+	console.log "OK"`, `\`$:{\`
+double = 2 * count
+console.log "Count is \#{count}"
+\`}\``);
 })();
 
 // ---------------------------------------------------------------------------
@@ -78,17 +80,14 @@ $: {
   var count;
   setUnitTesting(false);
   count = undef;
-  tester.equal(85, `<==
+  tester.equal(87, `<==
 	double = 2 * count
 	console.log "Count is \#{count}"
 if x > 10
-	console.log "OK"`, `\`\`\`
-$: {
-	var double;
-	double = 2 * count;
-	console.log(\`Count is \${count}\`);
-	}
-\`\`\``);
+	console.log "OK"`, `\`$:{\`
+double = 2 * count
+console.log "Count is \#{count}"
+\`}\``);
   return setUnitTesting(true);
 })();
 

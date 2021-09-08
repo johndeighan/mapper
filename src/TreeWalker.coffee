@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, say, pass, croak, isArray, isHash, isArrayOfHashes,
+	undef, log, pass, croak, isArray, isHash, isArrayOfHashes,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'

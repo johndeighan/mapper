@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, log, say, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
+	undef, log, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
 	arrayToString, stringToArray, escapeStr, sep_dash, sep_eq,
 	} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
@@ -13,9 +13,7 @@ import {startDebugging} from '@jdeighan/coffee-utils/debug'
 import {
 	forEachLine, forEachBlock, forEachSetOfBlocks,
 	} from '@jdeighan/coffee-utils/block'
-import {
-	getMissingSymbols, getNeededImports, getAvailSymbols,
-	} from '@jdeighan/string-input/code'
+import {getNeededImports} from '@jdeighan/string-input/code'
 
 testDir = mydir(`import.meta.url`)
 filepath = mkpath(testDir, 'code.test.txt')

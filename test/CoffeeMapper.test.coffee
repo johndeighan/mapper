@@ -1,6 +1,6 @@
 # CoffeeMapper.test.coffee
 
-import {undef, say, setUnitTesting} from '@jdeighan/coffee-utils'
+import {undef, log, setUnitTesting} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput, CoffeeMapper} from '@jdeighan/string-input'
 
@@ -22,7 +22,7 @@ tester = new CoffeeMapperTester()
 # ---------------------------------------------------------------------------
 # --- Test basic mapping
 
-tester.equal 27, """
+tester.equal 25, """
 		x = 23
 		if x > 10
 			console.log "OK"
@@ -33,12 +33,13 @@ tester.equal 27, """
 # ---------------------------------------------------------------------------
 # --- Test live assignment
 
-tester.equal 38, """
+tester.equal 36, """
 		x <== 2 * y
 		if x > 10
 			console.log "OK"
 		""", """
-		`$: x = 2 * y`
+		`$:`
+		x = 2 * y
 		"""
 
 # ---------------------------------------------------------------------------
@@ -46,12 +47,15 @@ tester.equal 38, """
 
 (() ->
 	count = undef
-	tester.equal 51, """
-			<== console.log "Count is \#{count}"
+	tester.equal 50, """
+			<==
+				console.log "Count is \#{count}"
 			if x > 10
 				console.log "OK"
 			""", """
-			`$: console.log "Count is \#{count}"`
+			`$:{`
+			console.log "Count is \#{count}"
+			`}`
 			"""
 	)()
 
@@ -60,19 +64,17 @@ tester.equal 38, """
 
 (() ->
 	count = undef
-	tester.equal 65, """
+	tester.equal 67, """
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"
 			if x > 10
 				console.log "OK"
 			""", """
-			\`\`\`
-			$: {
-				double = 2 * count
-				console.log "Count is \#{count}"
-				}
-			\`\`\`
+			`$:{`
+			double = 2 * count
+			console.log "Count is \#{count}"
+			`}`
 			"""
 	)()
 
@@ -82,20 +84,17 @@ tester.equal 38, """
 (() ->
 	setUnitTesting(false)
 	count = undef
-	tester.equal 85, """
+	tester.equal 87, """
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"
 			if x > 10
 				console.log "OK"
 			""", """
-			```
-			$: {
-				var double;
-				double = 2 * count;
-				console.log(`Count is \${count}`);
-				}
-			```
+			`$:{`
+			double = 2 * count
+			console.log "Count is \#{count}"
+			`}`
 			"""
 	setUnitTesting(true)
 	)()

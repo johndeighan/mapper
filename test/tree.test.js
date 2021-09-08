@@ -3,7 +3,7 @@
 var TreeTester, simple, tester;
 
 import {
-  say,
+  log,
   undef,
   setUnitTesting,
   escapeStr

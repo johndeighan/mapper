@@ -10,7 +10,7 @@ import pathlib from 'path';
 
 import {
   undef,
-  say,
+  log,
   pass,
   croak,
   isString,
@@ -40,8 +40,11 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  getFileContents,
-  brewCoffee
+  joinBlocks
+} from '@jdeighan/coffee-utils/block';
+
+import {
+  getFileContents
 } from '@jdeighan/string-input/convert';
 
 // ---------------------------------------------------------------------------
@@ -315,77 +318,108 @@ export var StringInput = class StringInput {
 
 - converts
 		<varname> <== <expr>
+
 	to:
-		`$: <varname> = <expr>;`
+		`$:`
+		<varname> = <expr>
+
+	coffeescript to:
+		var <varname>;
+		$:;
+		<varname> = <js expr>;
+
+	brewCoffee() to:
+		var <varname>;
+		$:
+		<varname> = <js expr>;
 
 - converts
-		<== <expr>
-	to:
-		`$: <expr>;`
+		<==
+			<code>
 
-- converts
-		<===
-			<code>
 	to:
-		```
-		$: {
-			<code>
-			}
+		`$:{`
+		<code>
+		`}`
+
+	coffeescript to:
+		$:{;
+		<js code>
+		};
+
+	brewCoffee() to:
+		$:{
+		<js code>
+		}
+
 */
 // ---------------------------------------------------------------------------
 // --- export to allow unit testing
 export var CoffeeMapper = class CoffeeMapper extends StringInput {
   // - removes blank lines and comments
-  // - converts <var> <== <expr> to `$: <var> = <expr>
+  // - makes above conversions
   constructor(content, hOptions) {
     super(content, hOptions);
   }
 
   mapLine(orgLine) {
-    var _, code, err, expr, jsCode, jsExpr, lMatches, level, line, result, varname;
+    var _, code, expr, lMatches, level, line, result, varname;
     debug("enter mapLine()");
     [level, line] = splitLine(orgLine);
-    if (isEmpty(line) || line.match(/^#\s/)) {
+    if (isEmpty(line) || isComment(line)) {
       return undef;
     }
-    if (lMatches = line.match(/^(?:([A-Za-z][A-Za-z0-9_]*)\s*)?\<\=\=\s*(.*)$/)) { // variable name
-      [_, varname, expr] = lMatches;
-      if (expr) {
-        try {
-          // --- convert to JavaScript if not unit testing ---
-          jsExpr = brewCoffee(expr).trim(); // will have trailing ';'
-        } catch (error) {
-          err = error;
-          croak(err, expr, "EXPR");
-        }
-        if (varname) {
-          result = indented(`\`\$\: ${varname} = ${jsExpr}\``, level);
-        } else {
-          result = indented(`\`\$\: ${jsExpr}\``, level);
-        }
-      } else {
-        if (varname) {
-          croak("Invalid syntax - variable name not allowed", orgLine, 'orgLine');
-        }
-        code = this.fetchBlock(level + 1);
-        try {
-          jsCode = brewCoffee(code);
-        } catch (error) {
-          err = error;
-          croak(err, code, 'CODE');
-        }
-        result = `\`\`\`
-\$\: {
-${indented(jsCode, 1)}
-${indented('}', 1)}
-\`\`\``;
+    if (line === '<==') {
+      // --- Generate a reactive block
+      code = this.fetchBlock(level + 1); // might be empty
+      if (isEmpty(code)) {
+        return undef;
       }
+      result = `\`$:{\`
+${code}
+\`}\``;
+      debug("return from mapLine()");
+      return indented(result, level);
+    }
+    if (lMatches = line.match(/^([A-Za-z][A-Za-z0-9_]*)\s*\<\=\=\s*(.*)$/)) { // variable name
+      [_, varname, expr] = lMatches;
+      code = this.fetchBlock(level + 1); // must be empty
+      assert(isEmpty(code), `mapLine(): indented code not allowed after '${line}'`);
+      assert(!isEmpty(expr), `mapLine(): empty expression in '${line}'`);
+      result = `\`$:\`
+${varname} = ${expr}`;
       debug("return from mapLine()");
       return indented(result, level);
     } else {
       debug("return from mapLine() - no match");
       return orgLine;
     }
+  }
+
+};
+
+// ---------------------------------------------------------------------------
+export var CoffeePostMapper = class CoffeePostMapper extends StringInput {
+  // --- variable declaration immediately following one of:
+  //        $:{
+  //        $:
+  //     should be moved above this line
+  mapLine(line) {
+    var result;
+    if (this.savedLine) {
+      if (line.match(/^\s*var\s/)) {
+        result = `${line}\n${this.savedLine}`;
+      } else {
+        result = `${this.savedLine}\n${line}`;
+      }
+      this.savedLine = undef;
+      return result;
+    }
+    if (line.match(/^\s*\$\:\{?/)) {
+      this.savedLine = line;
+      return undef;
+    }
+    return line;
   }
 
 };

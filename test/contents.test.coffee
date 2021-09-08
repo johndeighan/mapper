@@ -1,6 +1,6 @@
 # contents.test.coffee
 
-import {say, undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {log, undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {getFileContents} from '@jdeighan/string-input/convert'
 import {UnitTester} from '@jdeighan/coffee-utils/test'

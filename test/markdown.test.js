@@ -3,7 +3,7 @@
 var MarkdownTester, root, simple, tester;
 
 import {
-  say,
+  log,
   undef,
   setUnitTesting
 } from '@jdeighan/coffee-utils';

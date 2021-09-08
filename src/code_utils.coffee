@@ -4,9 +4,10 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	say, undef, pass, croak, isEmpty, nonEmpty, isComment, isString,
-	unitTesting, escapeStr, firstLine, isHash, arrayToString,
+	log, undef, pass, croak, isEmpty, nonEmpty, isComment, isString,
+	unitTesting, escapeStr, firstLine, isHash, arrayToString, deepCopy,
 	} from '@jdeighan/coffee-utils'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {slurp, barf, mydir, pathTo} from '@jdeighan/coffee-utils/fs'
 import {splitLine} from '@jdeighan/coffee-utils/indent'
 import {
@@ -19,29 +20,74 @@ import {tamlStringify} from '@jdeighan/string-input/convert'
 
 # ---------------------------------------------------------------------------
 
+export prependImports = (text, lImports) ->
+
+	if not unitTesting
+		lImports = for stmt in lImports
+			"#{stmt};"
+	return joinBlocks(lImports..., text)
+
+# ---------------------------------------------------------------------------
+
+export mergeNeededSymbols = (hAllNeeded, hNeeded) ->
+  #  both are: { <lib>: [ <symbol>, ...], ...}
+
+	for lib in Object.keys(hNeeded)
+		if hAllNeeded[lib]?
+			for sym in hNeeded[lib]
+				if sym not in hAllNeeded[lib]
+					hAllNeeded[lib].push sym
+		else
+			hAllNeeded[lib] = deepCopy(hNeeded[lib])
+	return
+
+# ---------------------------------------------------------------------------
+
+export getNeededSymbols = (code, hOptions={}) ->
+	# --- Valid options:
+	#        dumpfile: <filepath>   - where to dump ast
+	# --- returns { <lib>: [ <symbol>, ... ], ... }
+
+	debug "enter getNeededSymbols()"
+	hMissing = getMissingSymbols(code, hOptions)
+	if isEmpty(hMissing)
+		debug "return {} from getNeededSymbols() - no missing symbols"
+		return {}
+
+	hAvailSymbols = getAvailSymbols()
+	if isEmpty(hAvailSymbols)
+		debug "return {} from getNeededSymbols() - no avail symbols"
+		return {}
+
+	hNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
+	for sym in Object.keys(hMissing)
+		if lib = hAvailSymbols[sym]
+			if hNeeded[lib]
+				hNeeded[lib].push(sym)
+			else
+				hNeeded[lib] = [sym]
+
+	return hNeeded
+
+# ---------------------------------------------------------------------------
+
+export buildImportList = (hNeeded) ->
+
+	lImports = []
+	for lib in Object.keys(hNeeded)
+		symbols = hNeeded[lib].join(',')
+		lImports.push "import {#{symbols}} from '#{lib}'"
+	return lImports
+
+# ---------------------------------------------------------------------------
+
 export getNeededImports = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
 	# --- returns lImports
 
 	debug "enter getNeededImports()"
-	hMissing = getMissingSymbols(code, hOptions)
-	if isEmpty(hMissing)
-		debug "return from getNeededImports() with []"
-		return []
-
-	hSymbols = getAvailSymbols()
-	if isEmpty(hSymbols)
-		debug "return from getNeededImports() with []"
-		return []
-
-	hNeeded = {}    # { <lib>: [<symbol>, ...], ...}
-	for sym in Object.keys(hMissing)
-		if lib = hSymbols[sym]
-			if hNeeded[lib]
-				hNeeded[lib].push(sym)
-			else
-				hNeeded[lib] = [sym]
+	hNeeded = getNeededSymbols(code, hOptions)
 
 	lImports = []
 	for lib in Object.keys(hNeeded)
@@ -51,14 +97,12 @@ export getNeededImports = (code, hOptions={}) ->
 	return lImports
 
 # ---------------------------------------------------------------------------
-# export to allow unit testing
 
 export getMissingSymbols = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
 
 	debug "enter getMissingSymbols()"
-
 	try
 		debug code, "COMPILE CODE:"
 		ast = CoffeeScript.compile code, {ast: true}
@@ -79,7 +123,7 @@ export getMissingSymbols = (code, hOptions={}) ->
 export getAvailSymbols = () ->
 
 	debug "enter getAvailSymbols()"
-	searchFromDir = mydir(`import.meta.url`)
+	searchFromDir = process.env.DIR_SYMBOLS || mydir(`import.meta.url`)
 	debug "search for .symbols from '#{searchFromDir}'"
 	filepath = pathTo('.symbols', searchFromDir, 'up')
 	if not filepath?

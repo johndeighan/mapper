@@ -168,14 +168,14 @@ export var getMissingSymbols = function(code, hOptions = {}) {
   //        dumpfile: <filepath>   - where to dump ast
   debug("enter getMissingSymbols()");
   try {
-    debug(code, "COMPILE CODE:");
+    debug(code, "COMPILE CODE (in getMissingSymbols):");
     ast = CoffeeScript.compile(code, {
       ast: true
     });
     assert(ast != null, "getMissingSymbols(): ast is empty");
   } catch (error) {
     err = error;
-    croak(err, code, 'CODE');
+    croak(err, code, 'CODE (in getMissingSymbols)');
   }
   walker = new ASTWalker(ast);
   hMissingSymbols = walker.getMissingSymbols();

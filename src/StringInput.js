@@ -689,7 +689,7 @@ export var PLLParser = class PLLParser extends SmartInput {
     debug(`lLines = ${oneline(lLines)}`);
     assert(lLines != null, "lLines is undef");
     assert(isArray(lLines), "getTree(): lLines is not an array");
-    tree = treeify(lLines);
+    tree = treeify(lLines, isString);
     debug("return from getTree()", tree);
     return tree;
   }
@@ -698,19 +698,21 @@ export var PLLParser = class PLLParser extends SmartInput {
 
 // ---------------------------------------------------------------------------
 // Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
-export var treeify = function(lItems, atLevel = 0) {
-  var body, h, item, lNodes, len, level, lineNum, node;
+// If a predicate is supplied, it must return true for any <node>
+export var treeify = function(lItems, atLevel = 0, predicate = undef) {
+  var body, err, h, item, lNodes, len, level, lineNum, node;
   // --- stop when an item of lower level is found, or at end of array
   debug("enter treeify()");
-  debug("lItems", lItems);
-  checkTree(lItems);
-  assert(isArray(lItems), "treeify(): lItems is not an array");
+  try {
+    checkTree(lItems, predicate);
+  } catch (error) {
+    err = error;
+    croak(err, 'lItems', lItems);
+  }
   lNodes = [];
   while ((lItems.length > 0) && (lItems[0][0] >= atLevel)) {
     item = lItems.shift();
-    assert(isArray(item), "treeify(): item is not an array");
     len = item.length;
-    assert(len === 3, `treeify(): item has length ${len}`);
     [level, lineNum, node] = item;
     assert(level === atLevel, `treeify(): item at level ${level}, should be ${atLevel}`);
     h = {node, lineNum};
@@ -721,21 +723,21 @@ export var treeify = function(lItems, atLevel = 0) {
     lNodes.push(h);
   }
   if (lNodes.length === 0) {
-    debug("return undef from treeify");
+    debug("return undef from treeify()");
     return undef;
   } else {
-    debug(`return ${lNodes.length} nodes from treeify`);
+    debug(`return ${lNodes.length} nodes from treeify()`, lNodes);
     return lNodes;
   }
 };
 
 // ---------------------------------------------------------------------------
-export var checkTree = function(lItems) {
+export var checkTree = function(lItems, predicate) {
   var i, item, j, len, len1, level, lineNum, node;
   // --- Each item should be a sub-array with 3 items:
   //        1. an integer - level
   //        2. an integer - a line number
-  //        3. a string, without indentation
+  //        3. anything, but if predicate is defined, it must return true
   assert(isArray(lItems), "treeify(): lItems is not an array");
   for (i = j = 0, len1 = lItems.length; j < len1; i = ++j) {
     item = lItems[i];
@@ -745,6 +747,9 @@ export var checkTree = function(lItems) {
     [level, lineNum, node] = item;
     assert(isInteger(level), "checkTree(): level not an integer");
     assert(isInteger(lineNum), "checkTree(): lineNum not an integer");
+    if (predicate != null) {
+      assert(predicte(node), "checkTree(): node fails predicate");
+    }
   }
 };
 

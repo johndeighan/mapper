@@ -675,26 +675,26 @@ export class PLLParser extends SmartInput
 		debug "lLines = #{oneline(lLines)}"
 		assert lLines?, "lLines is undef"
 		assert isArray(lLines), "getTree(): lLines is not an array"
-		tree = treeify(lLines)
+		tree = treeify(lLines, isString)
 		debug "return from getTree()", tree
 		return tree
 
 # ---------------------------------------------------------------------------
 # Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
+# If a predicate is supplied, it must return true for any <node>
 
-export treeify = (lItems, atLevel=0) ->
+export treeify = (lItems, atLevel=0, predicate=undef) ->
 	# --- stop when an item of lower level is found, or at end of array
 
 	debug "enter treeify()"
-	debug "lItems", lItems
-	checkTree(lItems)
-	assert isArray(lItems), "treeify(): lItems is not an array"
+	try
+		checkTree(lItems, predicate)
+	catch err
+		croak err, 'lItems', lItems
 	lNodes = []
 	while (lItems.length > 0) && (lItems[0][0] >= atLevel)
 		item = lItems.shift()
-		assert isArray(item), "treeify(): item is not an array"
 		len = item.length
-		assert len == 3, "treeify(): item has length #{len}"
 		[level, lineNum, node] = item
 		assert level==atLevel,
 			"treeify(): item at level #{level}, should be #{atLevel}"
@@ -704,20 +704,21 @@ export treeify = (lItems, atLevel=0) ->
 			h.body = body
 		lNodes.push(h)
 	if lNodes.length==0
-		debug "return undef from treeify"
+		debug "return undef from treeify()"
 		return undef
 	else
-		debug "return #{lNodes.length} nodes from treeify"
+		debug "return #{lNodes.length} nodes from treeify()", lNodes
 		return lNodes
 
 # ---------------------------------------------------------------------------
 
-export checkTree = (lItems) ->
+export checkTree = (lItems, predicate) ->
 
 	# --- Each item should be a sub-array with 3 items:
 	#        1. an integer - level
 	#        2. an integer - a line number
-	#        3. a string, without indentation
+	#        3. anything, but if predicate is defined, it must return true
+
 	assert isArray(lItems), "treeify(): lItems is not an array"
 	for item,i in lItems
 		assert isArray(item), "treeify(): lItems[#{i}] is not an array"
@@ -726,6 +727,8 @@ export checkTree = (lItems) ->
 		[level, lineNum, node] = item
 		assert isInteger(level), "checkTree(): level not an integer"
 		assert isInteger(lineNum), "checkTree(): lineNum not an integer"
+		if predicate?
+			assert predicte(node), "checkTree(): node fails predicate"
 	return
 
 # ---------------------------------------------------------------------------

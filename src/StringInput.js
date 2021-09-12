@@ -26,6 +26,7 @@ import {
   isComment,
   isArray,
   isHash,
+  isInteger,
   deepCopy,
   stringToArray,
   arrayToString,
@@ -671,14 +672,19 @@ export var FileInput = class FileInput extends SmartInput {
 // ---------------------------------------------------------------------------
 // --- To derive a class from this:
 //        1. Extend this class
-//        2. Override mapString(), which gets the line with
+//        2. Override mapNode(), which gets the line with
 //           any continuation lines appended, plus any
-//           HEREDOC sections
+//           HEREDOC sections expanded
 //        3. If desired, override handleHereDoc, which patches
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends SmartInput {
   mapString(line, level) {
-    return [level, this.lineNum, line];
+    return [level, this.lineNum, this.mapNode(line)];
+  }
+
+  // ..........................................................
+  mapNode(line) {
+    return line;
   }
 
   // ..........................................................
@@ -689,7 +695,7 @@ export var PLLParser = class PLLParser extends SmartInput {
     debug(`lLines = ${oneline(lLines)}`);
     assert(lLines != null, "lLines is undef");
     assert(isArray(lLines), "getTree(): lLines is not an array");
-    tree = treeify(lLines, isString);
+    tree = treeify(lLines);
     debug("return from getTree()", tree);
     return tree;
   }
@@ -702,9 +708,11 @@ export var PLLParser = class PLLParser extends SmartInput {
 export var treeify = function(lItems, atLevel = 0, predicate = undef) {
   var body, err, h, item, lNodes, len, level, lineNum, node;
   // --- stop when an item of lower level is found, or at end of array
-  debug("enter treeify()");
+  debug(`enter treeify(${atLevel})`);
+  debug('lItems', lItems);
   try {
     checkTree(lItems, predicate);
+    debug("check OK");
   } catch (error) {
     err = error;
     croak(err, 'lItems', lItems);
@@ -748,7 +756,7 @@ export var checkTree = function(lItems, predicate) {
     assert(isInteger(level), "checkTree(): level not an integer");
     assert(isInteger(lineNum), "checkTree(): lineNum not an integer");
     if (predicate != null) {
-      assert(predicte(node), "checkTree(): node fails predicate");
+      assert(predicate(node), "checkTree(): node fails predicate");
     }
   }
 };

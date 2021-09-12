@@ -7,7 +7,7 @@ import {dirname, resolve, parse as parse_fname} from 'path';
 
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty,
-	isComment, isArray, isHash, deepCopy,
+	isComment, isArray, isHash, isInteger, deepCopy,
 	stringToArray, arrayToString, unitTesting, oneline,
 	} from '@jdeighan/coffee-utils'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
@@ -654,9 +654,9 @@ export class FileInput extends SmartInput
 # ---------------------------------------------------------------------------
 # --- To derive a class from this:
 #        1. Extend this class
-#        2. Override mapString(), which gets the line with
+#        2. Override mapNode(), which gets the line with
 #           any continuation lines appended, plus any
-#           HEREDOC sections
+#           HEREDOC sections expanded
 #        3. If desired, override handleHereDoc, which patches
 #           HEREDOC lines into the original string
 
@@ -664,7 +664,13 @@ export class PLLParser extends SmartInput
 
 	mapString: (line, level) ->
 
-		return [level, @lineNum, line]
+		return [level, @lineNum, @mapNode(line)]
+
+	# ..........................................................
+
+	mapNode: (line) ->
+
+		return line
 
 	# ..........................................................
 
@@ -675,7 +681,7 @@ export class PLLParser extends SmartInput
 		debug "lLines = #{oneline(lLines)}"
 		assert lLines?, "lLines is undef"
 		assert isArray(lLines), "getTree(): lLines is not an array"
-		tree = treeify(lLines, isString)
+		tree = treeify(lLines)
 		debug "return from getTree()", tree
 		return tree
 
@@ -686,9 +692,11 @@ export class PLLParser extends SmartInput
 export treeify = (lItems, atLevel=0, predicate=undef) ->
 	# --- stop when an item of lower level is found, or at end of array
 
-	debug "enter treeify()"
+	debug "enter treeify(#{atLevel})"
+	debug 'lItems', lItems
 	try
 		checkTree(lItems, predicate)
+		debug "check OK"
 	catch err
 		croak err, 'lItems', lItems
 	lNodes = []
@@ -728,7 +736,7 @@ export checkTree = (lItems, predicate) ->
 		assert isInteger(level), "checkTree(): level not an integer"
 		assert isInteger(lineNum), "checkTree(): lineNum not an integer"
 		if predicate?
-			assert predicte(node), "checkTree(): node fails predicate"
+			assert predicate(node), "checkTree(): node fails predicate"
 	return
 
 # ---------------------------------------------------------------------------

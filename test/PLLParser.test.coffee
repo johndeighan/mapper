@@ -3,8 +3,10 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, error, warn,
+	undef, error, warn, croak,
 	} from '@jdeighan/coffee-utils'
+import {log} from '@jdeighan/coffee-utils/log'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {PLLParser} from '@jdeighan/string-input'
 
@@ -47,3 +49,45 @@ tester.equal 30, new PLLParser("""
 		[1, 2, 'line 2']
 		[2, 3, 'line 3']
 		]
+
+# ---------------------------------------------------------------------------
+# Test extending PLLParser
+
+(() ->
+	class EnvParser extends PLLParser
+
+		mapNode: (line) ->
+
+			if (lMatches = line.match(///^
+					\s*
+					([A-Za-z]+)
+					\s*
+					=
+					\s*
+					([A-Za-z0-9]+)
+					\s*
+					$///))
+				[_, left, right] = lMatches
+				return [left, right]
+			else
+				croak "Bad line in EnvParser"
+
+	parser = new EnvParser("""
+			name = John
+				last = Deighan
+			age = 68
+			town = Blacksburg
+			""")
+
+	tree = parser.getTree()
+
+#	log "TREE", tree
+	simple.equal 79, tree, [
+		{ lineNum: 1, node: ['name','John'], body: [
+			{ lineNum: 2, node: ['last','Deighan'] }
+			]}
+		{ lineNum: 3, node: ['age','68'] },
+		{ lineNum: 4, node: ['town','Blacksburg'] },
+		]
+
+	)()

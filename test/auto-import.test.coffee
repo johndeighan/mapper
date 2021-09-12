@@ -1,17 +1,17 @@
-# utils.test.coffee
+# auto-import.test.coffee
 
 import {strict as assert} from 'assert'
 
 import {
-	undef, log, setUnitTesting, words,
+	undef, setUnitTesting, words,
 	} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {startDebugging, endDebugging} from '@jdeighan/coffee-utils/debug'
+import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
 	mergeNeededSymbols, getNeededSymbols, buildImportList, getNeededImports,
-	getMissingSymbols, getAvailSymbols, prependImports,
-	} from '@jdeighan/string-input/code'
+	getMissingSymbols, getAvailSymbols, addImports,
+	} from '@jdeighan/string-input/coffee'
 
 testDir = mydir(`import.meta.url`)
 process.env.DIR_SYMBOLS = testDir
@@ -23,9 +23,9 @@ setUnitTesting true
 # --- make sure it's using the testing .symbols file
 
 hSymbols = getAvailSymbols()
-simple.equal 25, hSymbols, {
+simple.equal 26, hSymbols, {
 		barf:   '@jdeighan/coffee-utils/fs',
-		log:    '@jdeighan/coffee-utils',
+		log:    '@jdeighan/coffee-utils/log',
 		mkpath: '@jdeighan/coffee-utils/fs',
 		mydir:  '@jdeighan/coffee-utils/fs',
 		say:    '@jdeighan/coffee-utils',
@@ -46,7 +46,7 @@ simple.equal 25, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	simple.equal 38, prependImports(text, lImports), """
+	simple.equal 49, addImports(text, lImports), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42
@@ -59,12 +59,14 @@ simple.equal 25, hSymbols, {
 (() ->
 	hAllNeeded = {}
 	hNeeded = {
-		'@jdeighan/coffee-utils': ['say', 'log', 'undef']
+		'@jdeighan/coffee-utils': ['say', 'undef'],
+		'@jdeighan/coffee-utils/log': ['log'],
 		}
 	mergeNeededSymbols(hAllNeeded, hNeeded)
-	simple.equal 29, hAllNeeded, {
-			'@jdeighan/coffee-utils': ['say', 'log', 'undef']
-			}
+	simple.equal 65, hAllNeeded, {
+		'@jdeighan/coffee-utils': ['say', 'undef']
+		'@jdeighan/coffee-utils/log': ['log']
+		}
 	)()
 
 # ----------------------------------------------------------------------------
@@ -75,12 +77,14 @@ simple.equal 25, hSymbols, {
 		'@jdeighan/coffee-utils/fs': ['slurp'],
 		}
 	hNeeded = {
-		'@jdeighan/coffee-utils': ['log', 'undef', 'say'],
+		'@jdeighan/coffee-utils': ['undef', 'say'],
+		'@jdeighan/coffee-utils/log': ['log'],
 		'@jdeighan/coffee-utils/fs': ['barf'],
 		}
 	mergeNeededSymbols(hAllNeeded, hNeeded)
-	simple.equal 29, hAllNeeded, {
-		'@jdeighan/coffee-utils': ['say', 'log', 'undef'],
+	simple.equal 82, hAllNeeded, {
+		'@jdeighan/coffee-utils': ['say', 'undef'],
+		'@jdeighan/coffee-utils/log': ['log'],
 		'@jdeighan/coffee-utils/fs': ['slurp', 'barf'],
 		}
 	)()
@@ -89,12 +93,14 @@ simple.equal 25, hSymbols, {
 
 (() ->
 	hAllNeeded = {
-		'@jdeighan/coffee-utils': ['say', 'log', 'undef'],
+		'@jdeighan/coffee-utils': ['say', 'undef'],
+		'@jdeighan/coffee-utils/log': ['log'],
 		'@jdeighan/coffee-utils/fs': ['slurp', 'barf'],
 		}
-	simple.equal 68, buildImportList(hAllNeeded), [
-		"import {say,log,undef} from '@jdeighan/coffee-utils'",
+	simple.equal 95, buildImportList(hAllNeeded), [
+		"import {say,undef} from '@jdeighan/coffee-utils'",
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'",
+		"import {log} from '@jdeighan/coffee-utils/log'",
 		]
 	)()
 
@@ -107,10 +113,10 @@ simple.equal 25, hSymbols, {
 				barf "myfile.txt", list
 			"""
 	lImports = getNeededImports(code)
-	simple.equal 88, lImports, [
-			"import {say} from '@jdeighan/coffee-utils'",
-			"import {barf} from '@jdeighan/coffee-utils/fs'",
-			]
+	simple.equal 110, lImports, [
+		"import {say} from '@jdeighan/coffee-utils'",
+		"import {barf} from '@jdeighan/coffee-utils/fs'",
+		]
 	)()
 
 # ----------------------------------------------------------------------------
@@ -122,9 +128,9 @@ simple.equal 25, hSymbols, {
 				barf "myfile.txt", list
 			"""
 	hMissingSymbols = getMissingSymbols(code)
-	simple.equal 88, hMissingSymbols, {
-			say: {}
-			lLists: {}
-			barf: {}
-			}
+	simple.equal 125, hMissingSymbols, {
+		say: {}
+		lLists: {}
+		barf: {}
+		}
 	)()

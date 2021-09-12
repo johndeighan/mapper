@@ -3,7 +3,6 @@
 var root, simple;
 
 import {
-  log,
   undef,
   setUnitTesting
 } from '@jdeighan/coffee-utils';
@@ -15,7 +14,7 @@ import {
 
 import {
   getFileContents
-} from '@jdeighan/string-input/convert';
+} from '@jdeighan/string-input';
 
 import {
   UnitTester

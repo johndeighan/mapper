@@ -3,10 +3,9 @@
 var TreeTester, simple, tester;
 
 import {
-  log,
   undef,
   setUnitTesting,
-  escapeStr
+  oneline
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -19,7 +18,7 @@ import {
 
 import {
   taml
-} from '@jdeighan/string-input/convert';
+} from '@jdeighan/string-input/taml';
 
 import {
   TreeWalker,
@@ -38,7 +37,7 @@ TreeTester = class TreeTester extends UnitTester {
     debug(tree, "TREE:");
     stringifier = new TreeStringifier(tree);
     str = stringifier.get();
-    debug(`return '${escapeStr(str)}' from tansformValue()`);
+    debug(`return ${oneline(str)} from tansformValue()`);
     return str;
   }
 

@@ -1,26 +1,101 @@
-# code_utils.coffee
+# coffee.coffee
 
 import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	log, undef, pass, croak, isEmpty, nonEmpty, isComment, isString,
-	unitTesting, escapeStr, firstLine, isHash, arrayToString, deepCopy,
+	unitTesting, croak, arrayToString, oneline,
+	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
+import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {slurp, barf, mydir, pathTo} from '@jdeighan/coffee-utils/fs'
-import {splitLine} from '@jdeighan/coffee-utils/indent'
+import {debug} from '@jdeighan/coffee-utils/debug'
+import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
+import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {
-	debug, debugging, startDebugging, endDebugging,
-	} from '@jdeighan/coffee-utils/debug'
-
-import {PLLParser} from '@jdeighan/string-input'
+	CoffeeMapper, CoffeePostMapper, SmartInput,
+	} from '@jdeighan/string-input'
 import {ASTWalker} from '@jdeighan/string-input/tree'
-import {tamlStringify} from '@jdeighan/string-input/convert'
+import {tamlStringify} from '@jdeighan/string-input/taml'
 
 # ---------------------------------------------------------------------------
 
-export prependImports = (text, lImports) ->
+export brewExpr = (expr, force=false) ->
+
+	assert (indentLevel(expr)==0), "brewCoffee(): has indentation"
+
+	if unitTesting && not force
+		return expr
+	try
+		newexpr = CoffeeScript.compile(expr, {bare: true}).trim()
+
+		# --- Remove any trailing semicolon
+		pos = newexpr.length - 1
+		if newexpr.substr(pos, 1) == ';'
+			newexpr = newexpr.substr(0, pos)
+
+	catch err
+		croak err, "brewExpr", expr
+	return newexpr
+
+# ---------------------------------------------------------------------------
+
+export brewCoffee = (lBlocks...) ->
+
+	debug "enter brewCoffee()"
+
+	lResult = []
+	hAllNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
+	for blk,i in lBlocks
+		debug "BLOCK #{i}", blk
+		newblk = preProcessCoffee(blk)
+		debug "NEW BLOCK", newblk
+
+		# --- returns {<lib>: [<symbol>,... ],... }
+		hNeeded = getNeededSymbols(newblk)
+		mergeNeededSymbols(hAllNeeded, hNeeded)
+
+		if unitTesting
+			lResult.push newblk
+		else
+			try
+				script = CoffeeScript.compile(newblk, {bare: true})
+				debug "BREWED SCRIPT", script
+				lResult.push postProcessCoffee(script)
+			catch err
+				log "Mapped Text:", newblk
+				croak err, "Original Text", blk
+
+	lResult.push buildImportList(hAllNeeded)
+	return lResult
+
+# ---------------------------------------------------------------------------
+
+export preProcessCoffee = (code) ->
+	# --- Removes blank lines and comments
+	#     inteprets <== as svelte reactive statement or block
+
+	assert (indentLevel(code)==0), "preProcessCoffee(): has indentation"
+
+	oInput = new CoffeeMapper(code)
+	newcode = oInput.getAllText()
+	debug 'newcode', newcode
+	return newcode
+
+# ---------------------------------------------------------------------------
+
+export postProcessCoffee = (code) ->
+	# --- variable declaration immediately following one of:
+	#        $:{
+	#        $:
+	#     should be moved above this line
+
+	oInput = new CoffeePostMapper(code)
+	return oInput.getAllText()
+
+# ---------------------------------------------------------------------------
+
+export addImports = (text, lImports) ->
 
 	if not unitTesting
 		lImports = for stmt in lImports
@@ -74,7 +149,7 @@ export getNeededSymbols = (code, hOptions={}) ->
 export buildImportList = (hNeeded) ->
 
 	lImports = []
-	for lib in Object.keys(hNeeded)
+	for lib in Object.keys(hNeeded).sort()
 		symbols = hNeeded[lib].join(',')
 		lImports.push "import {#{symbols}} from '#{lib}'"
 	return lImports
@@ -104,11 +179,11 @@ export getMissingSymbols = (code, hOptions={}) ->
 
 	debug "enter getMissingSymbols()"
 	try
-		debug code, "COMPILE CODE (in getMissingSymbols):"
+		debug "COMPILE CODE", code
 		ast = CoffeeScript.compile code, {ast: true}
 		assert ast?, "getMissingSymbols(): ast is empty"
 	catch err
-		croak err, code, 'CODE (in getMissingSymbols)'
+		croak err, 'CODE (in getMissingSymbols)', code
 
 	walker = new ASTWalker(ast)
 	hMissingSymbols = walker.getMissingSymbols()
@@ -127,28 +202,42 @@ export getAvailSymbols = () ->
 	debug "search for .symbols from '#{searchFromDir}'"
 	filepath = pathTo('.symbols', searchFromDir, 'up')
 	if not filepath?
+		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
 
 	debug ".symbols file found at '#{filepath}'"
-	contents = slurp(filepath)
 
-	class SymbolParser extends PLLParser
+	class SymbolParser extends SmartInput
+		# --- We want to allow blank lines and comments
+		#     We want to allow continuation lines
+
+		constructor: (content) ->
+
+			super content
+			@curLib = undef
+			@hSymbols = {}
 
 		mapString: (line, level) ->
+
 			if level==0
-				return line
+				@curLib = line
 			else if level==1
-				return line.split(/\s+/).filter((s) -> nonEmpty(s))
+				assert @curLib?, "SymbolFileParser: curLib not defined"
+				for symbol in words(line)
+					assert not @hSymbols[symbol]?
+					@hSymbols[symbol] = @curLib
 			else
 				croak "Bad .symbols file - level = #{level}"
+			return undef   # doesn't matter what we return
 
-	tree = new SymbolParser(contents).getTree()
+		getSymbols: () ->
 
-	hSymbols = {}     # { <symbol>: <lib>, ... }
-	for {node: lib, body} in tree
-		for hItem in body
-			for sym in hItem.node
-				assert not hSymbols[sym]?, "dup symbol: '#{sym}'"
-				hSymbols[sym] = lib
-	debug "return from getAvailSymbols()"
+			@skipAll()
+			return @hSymbols
+
+	contents = slurp(filepath)
+	debug 'Contents of .symbols', contents
+	parser = new SymbolParser(contents)
+	hSymbols = parser.getSymbols()
+	debug "return #{oneline(hSymbols)} from getAvailSymbols()"
 	return hSymbols

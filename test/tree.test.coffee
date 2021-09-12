@@ -1,9 +1,9 @@
 # tree.test.coffee
 
-import {log, undef, setUnitTesting, escapeStr} from '@jdeighan/coffee-utils'
+import {undef, setUnitTesting, oneline} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {taml} from '@jdeighan/string-input/convert'
+import {taml} from '@jdeighan/string-input/taml'
 import {TreeWalker, TreeStringifier} from '@jdeighan/string-input/tree'
 
 setUnitTesting(true)
@@ -18,7 +18,7 @@ class TreeTester extends UnitTester
 		debug tree, "TREE:"
 		stringifier = new TreeStringifier(tree)
 		str = stringifier.get()
-		debug "return '#{escapeStr(str)}' from tansformValue()"
+		debug "return #{oneline(str)} from tansformValue()"
 		return str
 
 	normalize: (str) -> return str   # disable normalize()

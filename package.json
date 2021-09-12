@@ -11,8 +11,10 @@
 		".": "./src/StringInput.js",
 		"./tree": "./src/TreeWalker.js",
 		"./get": "./src/Getter.js",
-		"./convert": "./src/convert_utils.js",
-		"./code": "./src/code_utils.js"
+		"./taml": "./src/taml.js",
+		"./sass": "./src/sass.js",
+		"./markdown": "./src/markdown.js",
+		"./coffee": "./src/coffee.js"
 	},
 	"scripts": {
 		"build": "cls && coffee -c .",
@@ -39,10 +41,10 @@
 		"coffeescript": "^2.5.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^1.2.22",
+		"@jdeighan/coffee-utils": "^2.1.1",
 		"cross-env": "^7.0.3",
-		"marked": "^3.0.2",
-		"sass": "^1.39.0",
+		"marked": "^3.0.3",
+		"sass": "^1.39.2",
 		"yargs": "^17.1.1"
 	}
 }

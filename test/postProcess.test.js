@@ -3,7 +3,6 @@
 var PostProcessTester, simple, tester;
 
 import {
-  log,
   undef,
   setUnitTesting,
   arrayToString,
@@ -19,12 +18,9 @@ import {
 } from '@jdeighan/string-input';
 
 import {
-  postProcessCoffee
-} from '@jdeighan/string-input/convert';
-
-import {
+  postProcessCoffee,
   getNeededImports
-} from '@jdeighan/string-input/code';
+} from '@jdeighan/string-input/coffee';
 
 setUnitTesting(true);
 
@@ -46,7 +42,7 @@ PostProcessTester = class PostProcessTester extends UnitTester {
 tester = new PostProcessTester();
 
 // ---------------------------------------------------------------------------
-tester.equal(31, `$:{
+tester.equal(30, `$:{;
 var x, y;
 x = a + 1000;
 y = a + 100;
@@ -54,10 +50,10 @@ y = a + 100;
 $:{
 x = a + 1000;
 y = a + 100;
-};`);
+}`);
 
 // ---------------------------------------------------------------------------
-tester.equal(31, `$:
+tester.equal(46, `$:;
 var x;
 x = a + 1000;`, `var x;
 $:

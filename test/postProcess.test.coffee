@@ -1,12 +1,13 @@
 # postProcess.test.coffee
 
 import {
-	log, undef, setUnitTesting, arrayToString, isEmpty,
+	undef, setUnitTesting, arrayToString, isEmpty,
 	} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
-import {postProcessCoffee} from '@jdeighan/string-input/convert'
-import {getNeededImports} from '@jdeighan/string-input/code'
+import {
+	postProcessCoffee, getNeededImports,
+	} from '@jdeighan/string-input/coffee'
 
 setUnitTesting true
 simple = new UnitTester()
@@ -26,8 +27,8 @@ tester = new PostProcessTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 31, """
-		$:{
+tester.equal 30, """
+		$:{;
 		var x, y;
 		x = a + 1000;
 		y = a + 100;
@@ -37,13 +38,13 @@ tester.equal 31, """
 		$:{
 		x = a + 1000;
 		y = a + 100;
-		};
+		}
 		"""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 31, """
-		$:
+tester.equal 46, """
+		$:;
 		var x;
 		x = a + 1000;
 		""", """

@@ -19,6 +19,17 @@ for item in lItems
 	item = 42
 -------------------------------
 ==============================================
+while (x > 0)
+	x += 0
+-------------------------------
+==============================================
+try
+	x = y
+catch err
+	say err.message
+-------------------------------
+import {say} from '@jdeighan/coffee-utils'
+==============================================
 g = (key=undef) ->
 	y = key
 -------------------------------
@@ -29,16 +40,5 @@ ages = for child,age of yearsOld
 	say age
 	age
 most = ages.max()
--------------------------------
-import {say} from '@jdeighan/coffee-utils'
-==============================================
-while (x > 0)
-	x += 0
--------------------------------
-==============================================
-try
-	x = y
-catch err
-	say err.message
 -------------------------------
 import {say} from '@jdeighan/coffee-utils'

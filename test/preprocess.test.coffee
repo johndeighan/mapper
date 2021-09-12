@@ -1,11 +1,14 @@
 # preProcess.test.coffee
 
 import {
-	log, undef, setUnitTesting, arrayToString, isEmpty,
+	undef, setUnitTesting, arrayToString, isEmpty,
 	} from '@jdeighan/coffee-utils'
+import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {preProcessCoffee} from '@jdeighan/string-input/convert'
-import {getNeededImports} from '@jdeighan/string-input/code'
+import {
+	preProcessCoffee, getNeededImports,
+	} from '@jdeighan/string-input/coffee'
+
 
 setUnitTesting true
 simple = new UnitTester()
@@ -15,16 +18,51 @@ simple = new UnitTester()
 class PreprocessTester extends UnitTester
 
 	transformValue: (text) ->
-		newtext = preProcessCoffee(text)
-		lImports = getNeededImports(newtext)
-		if isEmpty(lImports)
-			return newtext
-		else
-			return arrayToString(lImports) + "\n" + newtext
+		return preProcessCoffee(text)
 
 	normalize: (str) -> return str   # disable normalize()
 
 tester = new PreprocessTester()
+
+###
+	preProcessCoffee() should handle:
+		remove empty lines
+		remove comments
+		continuation lines
+		HEREDOCs
+		<var> <== <expr>
+		<==
+			<block>
+###
+# ---------------------------------------------------------------------------
+
+tester.equal 39, """
+
+		# comment
+		count
+				= 0
+
+		meaning = 42
+		""", """
+		count = 0
+		meaning = 42
+		"""
+
+# ---------------------------------------------------------------------------
+
+tester.equal 53, """
+
+		# comment
+		hData = <<<
+			---
+			a: 1
+			b:
+				- abc
+				- def
+
+		""", """
+		hData = {"a":1,"b":["abc","def"]}
+		"""
 
 # ---------------------------------------------------------------------------
 
@@ -36,10 +74,6 @@ tester.equal 31, """
 		`$:`
 		doubled = 2 * count
 		"""
-
-# ---------------------------------------------------------------------------
-
-setUnitTesting false
 
 # ---------------------------------------------------------------------------
 
@@ -70,6 +104,5 @@ tester.equal 57, """
 tester.equal 71, """
 		log "count is 0"
 		""", """
-		import {log} from '@jdeighan/coffee-utils'
 		log "count is 0"
 		"""

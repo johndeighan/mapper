@@ -3,7 +3,6 @@
 var SassTester, root, simple, tester;
 
 import {
-  log,
   undef,
   setUnitTesting
 } from '@jdeighan/coffee-utils';
@@ -18,7 +17,7 @@ import {
 
 import {
   sassify
-} from '@jdeighan/string-input/convert';
+} from '@jdeighan/string-input/sass';
 
 root = process.env.dir_root = mydir(import.meta.url);
 

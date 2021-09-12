@@ -6,7 +6,6 @@ import {
 
 import {
   undef,
-  log,
   pass,
   croak,
   isArray,
@@ -41,7 +40,7 @@ export var TreeWalker = class TreeWalker {
       debug("walking array");
       this.walkNodes(this.root, 0);
     } else {
-      croak("TreeWalker: Invalid root", this.root, 'ROOT');
+      croak("TreeWalker: Invalid root", 'ROOT', this.root);
     }
     debug("return from TreeWalker.walk");
   }
@@ -57,7 +56,7 @@ export var TreeWalker = class TreeWalker {
         } else if (isHash(subtree)) {
           this.walkNode(subtree, level);
         } else {
-          croak("Invalid subtree", subtree, 'SUBTREE');
+          croak("Invalid subtree", 'SUBTREE', subtree);
         }
       }
     }

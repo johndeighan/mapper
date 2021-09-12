@@ -3,9 +3,9 @@
 import {strict as assert} from 'assert'
 
 import {
-	log, undef, error, warn, rtrim,
+	undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
-import {isTAML, taml} from '@jdeighan/string-input/convert'
+import {isTAML, taml} from '@jdeighan/string-input/taml'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {Getter} from '@jdeighan/string-input/get'
 

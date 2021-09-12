@@ -1,11 +1,10 @@
 # StringInput.test.coffee
 
 import {strict as assert} from 'assert'
-import {resolve} from 'path'
 
 import {
-	log, undef, pass, isEmpty,
-	setUnitTesting, unitTesting, escapeStr,
+	undef, pass, isEmpty,
+	setUnitTesting, unitTesting,
 	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel, undented, splitLine, indented,
@@ -18,13 +17,21 @@ import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
-root = resolve(dir, '..')
-process.env.DIR_MARKDOWN = mkpath(root, 'src', 'markdown')
+process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
 
 simple = new UnitTester()
-setUnitTesting(true)
+setUnitTesting true
+
+###
+	class StringInput should handle the following:
+		- #include <file> statements, when DIR_* env vars are set
+		- get(), peek(), unget(), skip()
+		- overriding of mapLine() to return alternate strings or objects
+		- fetch() and fetchBlock() inside mapLine()
+###
 
 # ---------------------------------------------------------------------------
+# --- test get(), peek(), unget(), skip()
 
 (() ->
 	input = new StringInput("""
@@ -34,20 +41,19 @@ setUnitTesting(true)
 			""")
 
 	item = input.peek()
-	simple.equal 40, item, 'abc'
-	item = input.peek()
-	simple.equal 42, item, 'abc'
-	item = input.get()
 	simple.equal 44, item, 'abc'
+	item = input.peek()
+	simple.equal 46, item, 'abc'
 	item = input.get()
-	simple.equal 46, item, 'def'
+	simple.equal 48, item, 'abc'
+	item = input.get()
+	simple.equal 50, item, 'def'
 	input.unget(item)
 	item = input.get()
-	simple.equal 49, item, 'def'
+	simple.equal 53, item, 'def'
 	input.skip()
 	item = input.get()
-	simple.equal 52, item, undef
-
+	simple.equal 56, item, undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -65,7 +71,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 70, new StringInput("""
+tester.equal 74, new StringInput("""
 		abc
 		def
 		"""), [
@@ -73,7 +79,7 @@ tester.equal 70, new StringInput("""
 		'def',
 		]
 
-tester.equal 78, new StringInput("""
+tester.equal 82, new StringInput("""
 		abc
 
 		def
@@ -92,7 +98,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 97, new TestInput("""
+	tester.equal 101, new TestInput("""
 			abc
 
 			def
@@ -114,7 +120,7 @@ tester.equal 78, new StringInput("""
 			else
 				return 'x'
 
-	tester.equal 119, new TestInput("""
+	tester.equal 123, new TestInput("""
 			abc
 
 			def
@@ -139,7 +145,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 144, new TestInput("""
+	tester.equal 148, new TestInput("""
 			abc
 
 			def
@@ -172,7 +178,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 177, new TestInput("""
+	tester.equal 181, new TestInput("""
 			abc
 			#if x==y
 				def
@@ -185,6 +191,41 @@ tester.equal 78, new StringInput("""
 			{ cmd: 'else', argstr: '' },
 			'\tghi'
 			]
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test implementing continuation lines
+
+(()->
+
+	class TestInput extends StringInput
+
+		mapLine: (line) ->
+			if line == '' || line.match(/^\s*#\s/)
+				return undef     # skip comments and blank lines
+
+			n = indentLevel(line)    # current line indent
+			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
+				next = @lBuffer.shift()
+				line += ' ' + undented(next)
+			return line
+
+	tester.equal 213, new TestInput("""
+			str = compare(
+					"abcde",
+					expected
+					)
+
+			call func
+					with multiple
+					long parameters
+
+			# --- DONE ---
+			"""), [
+			'str = compare( "abcde", expected )',
+			'call func with multiple long parameters',
+			]
+
 	)()
 
 # ---------------------------------------------------------------------------
@@ -204,42 +245,7 @@ tester.equal 78, new StringInput("""
 				line += ' ' + undented(next)
 			return line
 
-	tester.equal 209, new TestInput("""
-			str = compare(
-					"abcde",
-					expected
-					)
-
-			call func
-					with multiple
-					long parameters
-
-			# --- DONE ---
-			"""), [
-			'str = compare( "abcde", expected )',
-			'call func with multiple long parameters',
-			]
-
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test continuation lines AND HEREDOCs
-
-(()->
-
-	class TestInput extends StringInput
-
-		mapLine: (line) ->
-			if line == '' || line.match(/^\s*#\s/)
-				return undef     # skip comments and blank lines
-
-			n = indentLevel(line)    # current line indent
-			while (@lBuffer.length > 0) && (indentLevel(@lBuffer[0]) >= n+2)
-				next = @lBuffer.shift()
-				line += ' ' + undented(next)
-			return line
-
-	tester.equal 244, new TestInput("""
+	tester.equal 248, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -275,7 +281,7 @@ tester.equal 78, new StringInput("""
 			else
 				return line
 
-	tester.equal 280, new TestInput("""
+	tester.equal 284, new TestInput("""
 			abc
 
 			def
@@ -289,7 +295,7 @@ tester.equal 78, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 294, new StringInput("""
+tester.equal 298, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -302,8 +308,8 @@ tester.equal 294, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include with unit testing off
 
-setUnitTesting(false)
-tester.equal 308, new StringInput("""
+setUnitTesting false
+tester.equal 312, new StringInput("""
 		abc
 			#include title.md
 		def
@@ -313,7 +319,7 @@ tester.equal 308, new StringInput("""
 		'\t=====',
 		'def',
 		]
-setUnitTesting(true)
+setUnitTesting true
 
 # ---------------------------------------------------------------------------
 # --- Test advanced use of mapping function
@@ -339,7 +345,7 @@ setUnitTesting(true)
 				result = orgLine
 			return result
 
-	tester.equal 344, new TestInput("""
+	tester.equal 348, new TestInput("""
 			\tabc
 			\t	myvar <== 2 * 3
 
@@ -371,10 +377,10 @@ setUnitTesting(true)
 
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 376, line, 'p a paragraph'
+	simple.equal 380, line, 'p a paragraph'
 	line = oInput.get()
-	simple.equal 378, line, 'div:markdown'
-	simple.equal 379, block, 'Contents of title.md'
+	simple.equal 382, line, 'div:markdown'
+	simple.equal 383, block, 'Contents of title.md'
 	)()
 
 # ---------------------------------------------------------------------------
@@ -399,10 +405,10 @@ setUnitTesting(true)
 
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 404, line, 'p a paragraph'
+	simple.equal 408, line, 'p a paragraph'
 	line = oInput.get()
-	simple.equal 406, line, 'div:markdown'
-	simple.equal 407, block, """
+	simple.equal 410, line, 'div:markdown'
+	simple.equal 411, block, """
 			line 1
 
 			line 3
@@ -425,17 +431,17 @@ setUnitTesting(true)
 				block = @fetchBlock(1)
 			return line
 
-	setUnitTesting(false)
+	setUnitTesting false
 	oInput = new TestParser(text)
 	line = oInput.get()
-	simple.equal 433, line, 'p a paragraph'
+	simple.equal 437, line, 'p a paragraph'
 
 	line = oInput.get()
-	simple.equal 436, line, 'div:markdown'
+	simple.equal 440, line, 'div:markdown'
 
-	simple.equal 438, block, '\ttitle\n\t====='
+	simple.equal 442, block, '\ttitle\n\t====='
 
-	setUnitTesting(true)
+	setUnitTesting true
 	)()
 
 # ---------------------------------------------------------------------------
@@ -448,24 +454,23 @@ setUnitTesting(true)
 			"""
 
 	### Contents of files used:
+		```header.md
+		header
+		======
 
-	```header.md
-	header
-	======
+			#include para.md
+		```
 
-		#include para.md
-	```
-
-	```para.md
-	para
-	----
-	```
+		```para.md
+		para
+		----
+		```
 	###
 
 	oInput = new StringInput(text)
 
-	setUnitTesting(false)
-	tester.equal 470, oInput, [
+	setUnitTesting false
+	tester.equal 473, oInput, [
 		"p a paragraph"
 		"div:markdown"
 		"\theader"
@@ -474,13 +479,13 @@ setUnitTesting(true)
 		"\t\tpara"
 		"\t\t----"
 		]
-	setUnitTesting(true)
+	setUnitTesting true
 	)()
 
 # ---------------------------------------------------------------------------
 # --- Test comment
 
-tester.equal 294, new StringInput("""
+tester.equal 488, new StringInput("""
 		abc
 
 		# --- this is a comment

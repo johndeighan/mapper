@@ -1,8 +1,8 @@
 # contents.test.coffee
 
-import {log, undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {getFileContents} from '@jdeighan/string-input/convert'
+import {getFileContents} from '@jdeighan/string-input'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 
 root = process.env.dir_root = mydir(`import.meta.url`)

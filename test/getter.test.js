@@ -7,7 +7,6 @@ import {
 } from 'assert';
 
 import {
-  log,
   undef,
   error,
   warn,
@@ -17,7 +16,7 @@ import {
 import {
   isTAML,
   taml
-} from '@jdeighan/string-input/convert';
+} from '@jdeighan/string-input/taml';
 
 import {
   UnitTester

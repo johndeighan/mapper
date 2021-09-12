@@ -1,9 +1,9 @@
 # markdown.test.coffee
 
-import {log, undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {undef, setUnitTesting} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {markdownify} from '@jdeighan/string-input/convert'
+import {markdownify} from '@jdeighan/string-input/markdown'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
 process.env.dir_data = "#{root}/data

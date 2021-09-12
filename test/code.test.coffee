@@ -3,17 +3,18 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, log, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
-	arrayToString, stringToArray, escapeStr, sep_dash, sep_eq,
+	undef, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
+	arrayToString, stringToArray, sep_dash, sep_eq,
 	} from '@jdeighan/coffee-utils'
+import {log} from '@jdeighan/coffee-utils/log'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {startDebugging} from '@jdeighan/coffee-utils/debug'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
 	forEachLine, forEachBlock, forEachSetOfBlocks,
 	} from '@jdeighan/coffee-utils/block'
-import {getNeededImports} from '@jdeighan/string-input/code'
+import {getNeededImports} from '@jdeighan/string-input/coffee'
 
 testDir = mydir(`import.meta.url`)
 filepath = mkpath(testDir, 'code.test.txt')
@@ -48,20 +49,19 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 	for [lineNum, src, expImports] in lTests
 		hOptions = {}
 		if (lineNum < 0)
-			log "NEGATIVE lineNum"
 			hOptions.dumpfile = dumpfile
 
 		lImports = getNeededImports(src, hOptions)
 		simple.equal lineNum, lImports, stringToArray(expImports)
 
-		# --- embed the code in an IIFE
-		src = """
-			(() ->
-			#{indented(src, 1)}
-				)()
-			"""
-		lImports2 = getNeededImports(src)
-		simple.equal lineNum, lImports2, stringToArray(expImports)
+#		# --- embed the code in an IIFE
+#		src = """
+#			(() ->
+#			#{indented(src, 1)}
+#				)()
+#			"""
+#		lImports2 = getNeededImports(src)
+#		simple.equal lineNum, lImports2, stringToArray(expImports)
 
 	)()
 

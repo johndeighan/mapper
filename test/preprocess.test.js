@@ -3,7 +3,6 @@
 var PreprocessTester, simple, tester;
 
 import {
-  log,
   undef,
   setUnitTesting,
   arrayToString,
@@ -11,16 +10,18 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  debug,
+  setDebugging
+} from '@jdeighan/coffee-utils/debug';
+
+import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  preProcessCoffee
-} from '@jdeighan/string-input/convert';
-
-import {
+  preProcessCoffee,
   getNeededImports
-} from '@jdeighan/string-input/code';
+} from '@jdeighan/string-input/coffee';
 
 setUnitTesting(true);
 
@@ -29,14 +30,7 @@ simple = new UnitTester();
 // ---------------------------------------------------------------------------
 PreprocessTester = class PreprocessTester extends UnitTester {
   transformValue(text) {
-    var lImports, newtext;
-    newtext = preProcessCoffee(text);
-    lImports = getNeededImports(newtext);
-    if (isEmpty(lImports)) {
-      return newtext;
-    } else {
-      return arrayToString(lImports) + "\n" + newtext;
-    }
+    return preProcessCoffee(text);
   }
 
   normalize(str) {
@@ -47,14 +41,41 @@ PreprocessTester = class PreprocessTester extends UnitTester {
 
 tester = new PreprocessTester();
 
+/*
+	preProcessCoffee() should handle:
+		remove empty lines
+		remove comments
+		continuation lines
+		HEREDOCs
+		<var> <== <expr>
+		<==
+			<block>
+*/
+// ---------------------------------------------------------------------------
+tester.equal(39, `
+# comment
+count
+		= 0
+
+meaning = 42`, `count = 0
+meaning = 42`);
+
+// ---------------------------------------------------------------------------
+tester.equal(53, `
+# comment
+hData = <<<
+	---
+	a: 1
+	b:
+		- abc
+		- def
+`, `hData = {"a":1,"b":["abc","def"]}`);
+
 // ---------------------------------------------------------------------------
 tester.equal(31, `count = 0
 doubled <== 2 * count`, `count = 0
 \`$:\`
 doubled = 2 * count`);
-
-// ---------------------------------------------------------------------------
-setUnitTesting(false);
 
 // ---------------------------------------------------------------------------
 tester.equal(46, `count = 0
@@ -71,5 +92,4 @@ console.log 2 * count
 \`}\``);
 
 // ---------------------------------------------------------------------------
-tester.equal(71, `log "count is 0"`, `import {log} from '@jdeighan/coffee-utils'
-log "count is 0"`);
+tester.equal(71, `log "count is 0"`, `log "count is 0"`);

@@ -8,7 +8,6 @@ import {
 
 import {
   undef,
-  log,
   isString,
   isHash,
   isEmpty,
@@ -16,10 +15,13 @@ import {
   setUnitTesting,
   arrayToString,
   stringToArray,
-  escapeStr,
   sep_dash,
   sep_eq
 } from '@jdeighan/coffee-utils';
+
+import {
+  log
+} from '@jdeighan/coffee-utils/log';
 
 import {
   indented
@@ -35,7 +37,7 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  startDebugging
+  setDebugging
 } from '@jdeighan/coffee-utils/debug';
 
 import {
@@ -46,7 +48,7 @@ import {
 
 import {
   getNeededImports
-} from '@jdeighan/string-input/code';
+} from '@jdeighan/string-input/coffee';
 
 testDir = mydir(import.meta.url);
 
@@ -58,7 +60,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
 // ----------------------------------------------------------------------------
 (async function() {
-  var callback, expImports, hOptions, i, lImports, lImports2, lTests, len, lineNum, results, src;
+  var callback, expImports, hOptions, i, lImports, lTests, len, lineNum, results, src;
   lTests = [];
   callback = function(lBlocks, lineNum) {
     var doDebug, expImports, lMatches, src;
@@ -85,19 +87,20 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
     [lineNum, src, expImports] = lTests[i];
     hOptions = {};
     if (lineNum < 0) {
-      log("NEGATIVE lineNum");
       hOptions.dumpfile = dumpfile;
     }
     lImports = getNeededImports(src, hOptions);
-    simple.equal(lineNum, lImports, stringToArray(expImports));
-    // --- embed the code in an IIFE
-    src = `(() ->
-${indented(src, 1)}
-	)()`;
-    lImports2 = getNeededImports(src);
-    results.push(simple.equal(lineNum, lImports2, stringToArray(expImports)));
+    results.push(simple.equal(lineNum, lImports, stringToArray(expImports)));
   }
   return results;
 })();
 
 // ----------------------------------------------------------------------------
+//		# --- embed the code in an IIFE
+//		src = """
+//			(() ->
+//			#{indented(src, 1)}
+//				)()
+//			"""
+//		lImports2 = getNeededImports(src)
+//		simple.equal lineNum, lImports2, stringToArray(expImports)

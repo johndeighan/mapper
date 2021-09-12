@@ -1,13 +1,15 @@
 # coffee.test.coffee
 
 import {
-	log, undef, isEmpty, nonEmpty, setUnitTesting,
+	undef, isEmpty, nonEmpty, setUnitTesting,
 	} from '@jdeighan/coffee-utils'
-import {startDebugging, endDebugging} from '@jdeighan/coffee-utils/debug'
+import {log} from '@jdeighan/coffee-utils/log'
+import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {brewCoffee, brewExpr} from '@jdeighan/string-input/convert'
-import {prependImports} from '@jdeighan/string-input/code'
+import {
+	brewCoffee, brewExpr, addImports,
+	} from '@jdeighan/string-input/coffee'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
 process.env.dir_data = "#{root}/data
@@ -24,21 +26,21 @@ class CoffeeTester extends UnitTester
 		if isEmpty(lImports)
 			return result
 		else
-			return prependImports(result, lImports)
+			return addImports(result, lImports)
 
 tester = new CoffeeTester()
 
 # ---------------------------------------------------------------------------
 # NOTE: When not unit testing, there will be a semicolon after 1000
 
-tester.equal 34, """
+tester.equal 35, """
 		x <== a + 1000
 		""", """
 		`$:`
 		x = a + 1000
 		"""
 
-tester.equal 41, """
+tester.equal 42, """
 		# --- a comment line
 
 		x <== a + 1000
@@ -48,9 +50,21 @@ tester.equal 41, """
 		"""
 
 # ---------------------------------------------------------------------------
+# --- test continuation lines
+
+tester.equal 54, """
+		x = 23
+		y = x
+				+ 5
+		""", """
+		x = 23
+		y = x + 5
+		"""
+
+# ---------------------------------------------------------------------------
 # --- test auto-import of symbols from file '.symbols'
 
-tester.equal 53, """
+tester.equal 66, """
 		x = 23
 		log x
 		""", """
@@ -59,7 +73,7 @@ tester.equal 53, """
 		log x
 		"""
 
-tester.equal 62, """
+tester.equal 75, """
 		# --- a comment
 
 		x <== a + 1000
@@ -73,14 +87,14 @@ tester.equal 62, """
 
 setUnitTesting false
 
-tester.equal 76, """
+tester.equal 89, """
 		x = 23
 		""", """
 		var x;
 		x = 23;
 		"""
 
-tester.equal 83, """
+tester.equal 96, """
 		# --- a comment
 
 		<==
@@ -91,10 +105,10 @@ tester.equal 83, """
 		$:{
 		x = a + 1000;
 		y = a + 100;
-		};
+		}
 		"""
 
-tester.equal 93, """
+tester.equal 110, """
 		# --- a comment
 
 		x <== a + 1000

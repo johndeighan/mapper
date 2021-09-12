@@ -3,7 +3,6 @@
 var CoffeeTester, root, simple, tester;
 
 import {
-  log,
   undef,
   isEmpty,
   nonEmpty,
@@ -11,8 +10,12 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  startDebugging,
-  endDebugging
+  log
+} from '@jdeighan/coffee-utils/log';
+
+import {
+  debug,
+  setDebugging
 } from '@jdeighan/coffee-utils/debug';
 
 import {
@@ -26,12 +29,9 @@ import {
 
 import {
   brewCoffee,
-  brewExpr
-} from '@jdeighan/string-input/convert';
-
-import {
-  prependImports
-} from '@jdeighan/string-input/code';
+  brewExpr,
+  addImports
+} from '@jdeighan/string-input/coffee';
 
 root = process.env.dir_root = mydir(import.meta.url);
 
@@ -49,7 +49,7 @@ CoffeeTester = class CoffeeTester extends UnitTester {
     if (isEmpty(lImports)) {
       return result;
     } else {
-      return prependImports(result, lImports);
+      return addImports(result, lImports);
     }
   }
 
@@ -59,22 +59,29 @@ tester = new CoffeeTester();
 
 // ---------------------------------------------------------------------------
 // NOTE: When not unit testing, there will be a semicolon after 1000
-tester.equal(34, `x <== a + 1000`, `\`$:\`
+tester.equal(35, `x <== a + 1000`, `\`$:\`
 x = a + 1000`);
 
-tester.equal(41, `# --- a comment line
+tester.equal(42, `# --- a comment line
 
 x <== a + 1000`, `\`$:\`
 x = a + 1000`);
 
 // ---------------------------------------------------------------------------
+// --- test continuation lines
+tester.equal(54, `x = 23
+y = x
+		+ 5`, `x = 23
+y = x + 5`);
+
+// ---------------------------------------------------------------------------
 // --- test auto-import of symbols from file '.symbols'
-tester.equal(53, `x = 23
+tester.equal(66, `x = 23
 log x`, `import {log} from '@jdeighan/coffee-utils'
 x = 23
 log x`);
 
-tester.equal(62, `# --- a comment
+tester.equal(75, `# --- a comment
 
 x <== a + 1000`, `\`$:\`
 x = a + 1000`);
@@ -83,10 +90,10 @@ x = a + 1000`);
 // --- test full translation to JavaScript
 setUnitTesting(false);
 
-tester.equal(76, `x = 23`, `var x;
+tester.equal(89, `x = 23`, `var x;
 x = 23;`);
 
-tester.equal(83, `# --- a comment
+tester.equal(96, `# --- a comment
 
 <==
 	x = a + 1000
@@ -94,9 +101,9 @@ tester.equal(83, `# --- a comment
 $:{
 x = a + 1000;
 y = a + 100;
-};`);
+}`);
 
-tester.equal(93, `# --- a comment
+tester.equal(110, `# --- a comment
 
 x <== a + 1000`, `var x;
 $:

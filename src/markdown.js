@@ -28,7 +28,7 @@ export var markdownify = function(text) {
   var html, result;
   debug(`enter markdownify(${oneline(text)})`);
   if (unitTesting) {
-    debug("return original text - in unit test");
+    debug("return original text from markdownify() - in unit test");
     return text;
   }
   html = marked(undented(text), {
@@ -37,6 +37,6 @@ export var markdownify = function(text) {
   });
   debug(`marked returned ${oneline(html)}`);
   result = svelteHtmlEsc(html);
-  debug(`return ${oneline(result)}`);
+  debug(`return ${oneline(result)} from markdownify()`);
   return result;
 };

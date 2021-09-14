@@ -37,7 +37,7 @@ export var isTAML = function(text) {
 export var taml = function(text) {
   debug(`enter taml(${oneline(text)})`);
   if (text == null) {
-    debug("return undef - text is not defined");
+    debug("return undef from taml() - text is not defined");
     return undef;
   }
   assert(isTAML(text), `taml(): string ${oneline(text)} isn't TAML`);

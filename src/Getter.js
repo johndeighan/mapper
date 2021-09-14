@@ -32,7 +32,7 @@ export var Getter = class Getter {
     if (this.lookahead != null) {
       saved = this.lookahead;
       this.lookahead = undef;
-      debug(saved, "return with lookahead token:");
+      debug("return from get() with lookahead token:", saved);
       return saved;
     }
     if (this.pos === this.len) {
@@ -40,7 +40,7 @@ export var Getter = class Getter {
     }
     item = this.lItems[this.pos];
     this.pos += 1;
-    debug(item, "return from get() with:");
+    debug("return from get() with:", item);
     return item;
   }
 
@@ -58,7 +58,7 @@ export var Getter = class Getter {
     var item;
     debug('enter peek():');
     if (this.lookahead != null) {
-      debug("return lookahead token");
+      debug("return lookahead token from peek()", this.lookahead);
       return this.lookahead;
     }
     item = this.get();
@@ -66,7 +66,7 @@ export var Getter = class Getter {
       return undef;
     }
     this.unget(item);
-    debug(item, 'return with:');
+    debug('return from peek() with:', item);
     return item;
   }
 
@@ -75,7 +75,7 @@ export var Getter = class Getter {
     debug('enter skip():');
     if (this.lookahead != null) {
       this.lookahead = undef;
-      debug("return: clear lookahead token");
+      debug("return from skip(): clear lookahead token");
       return;
     }
     item = this.get();
@@ -86,7 +86,7 @@ export var Getter = class Getter {
     var atEnd;
     debug("enter eof()");
     atEnd = (this.pos === this.len) && (this.lookahead == null);
-    debug(`return ${atEnd}`);
+    debug(`return ${atEnd} from eof()`);
     return atEnd;
   }
 

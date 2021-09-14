@@ -23,13 +23,13 @@ export class Getter
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug saved, "return with lookahead token:"
+			debug "return from get() with lookahead token:", saved
 			return saved
 		if (@pos == @len)
 			return undef
 		item = @lItems[@pos]
 		@pos += 1
-		debug item, "return from get() with:"
+		debug "return from get() with:", item
 		return item
 
 	unget: (item) ->
@@ -46,13 +46,13 @@ export class Getter
 
 		debug 'enter peek():'
 		if @lookahead?
-			debug "return lookahead token"
+			debug "return lookahead token from peek()", @lookahead
 			return @lookahead
 		item = @get()
 		if not item?
 			return undef
 		@unget(item)
-		debug item, 'return with:'
+		debug 'return from peek() with:', item
 		return item
 
 	skip: () ->
@@ -60,7 +60,7 @@ export class Getter
 		debug 'enter skip():'
 		if @lookahead?
 			@lookahead = undef
-			debug "return: clear lookahead token"
+			debug "return from skip(): clear lookahead token"
 			return
 		item = @get()
 		debug 'return from skip()'
@@ -70,5 +70,5 @@ export class Getter
 
 		debug "enter eof()"
 		atEnd = (@pos == @len) && not @lookahead?
-		debug "return #{atEnd}"
+		debug "return #{atEnd} from eof()"
 		return atEnd

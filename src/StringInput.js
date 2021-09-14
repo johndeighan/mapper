@@ -679,7 +679,9 @@ export var FileInput = class FileInput extends SmartInput {
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends SmartInput {
   mapString(line, level) {
-    return [level, this.lineNum, this.mapNode(line)];
+    var result;
+    result = this.mapNode(line);
+    return [level, this.lineNum, result];
   }
 
   // ..........................................................

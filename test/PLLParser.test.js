@@ -77,7 +77,6 @@ tester.equal(30, new PLLParser(`line 1
 age = 68
 town = Blacksburg`);
   tree = parser.getTree();
-  //	log "TREE", tree
   return simple.equal(79, tree, [
     {
       lineNum: 1,
@@ -100,6 +99,52 @@ town = Blacksburg`);
       lineNum: 4,
       node: ['town',
     'Blacksburg']
+    }
+  ]);
+})();
+
+// ---------------------------------------------------------------------------
+// Test extending PLLParser when mapNode() sometimes returns undef
+(function() {
+  var EnvParser, parser, tree;
+  EnvParser = class EnvParser extends PLLParser {
+    mapNode(line) {
+      var _, lMatches, left, right;
+      if ((lMatches = line.match(/^\s*([A-Za-z]+)\s*=\s*([A-Za-z0-9]+)\s*$/))) {
+        [_, left, right] = lMatches;
+        if (left === 'name') {
+          return undef;
+        }
+        return right;
+      } else {
+        return croak("Bad line in EnvParser");
+      }
+    }
+
+  };
+  parser = new EnvParser(`name = John
+	last = Deighan
+age = 68
+town = Blacksburg`);
+  tree = parser.getTree();
+  return simple.equal(125, tree, [
+    {
+      lineNum: 1,
+      node: undef,
+      body: [
+        {
+          lineNum: 2,
+          node: 'Deighan'
+        }
+      ]
+    },
+    {
+      lineNum: 3,
+      node: '68'
+    },
+    {
+      lineNum: 4,
+      node: 'Blacksburg'
     }
   ]);
 })();

@@ -384,3 +384,62 @@ def`), `abc
 # --- this is a comment
 
 def`);
+
+// ---------------------------------------------------------------------------
+// --- Test using getAll(), i.e. retrieving non-text
+(function() {
+  var GatherTester2, TestInput2, cmdRE, tester2;
+  GatherTester2 = class GatherTester2 extends UnitTester {
+    transformValue(oInput) {
+      assert(oInput instanceof StringInput, "oInput should be a StringInput object");
+      return oInput.getAll();
+    }
+
+  };
+  tester2 = new GatherTester2();
+  cmdRE = /^\s*\#([a-z][a-z_]*)\s*(.*)$/; // skip leading whitespace
+  // command name
+  // skipwhitespace following command
+  // command arguments
+  TestInput2 = class TestInput2 extends StringInput {
+    mapLine(line, level) {
+      var lMatches;
+      lMatches = line.match(cmdRE);
+      if (lMatches != null) {
+        return {
+          cmd: lMatches[1],
+          argstr: lMatches[2]
+        };
+      } else {
+        return line;
+      }
+    }
+
+  };
+  return tester2.equal(460, new TestInput2(`abc
+#if x==y
+	def
+#else
+	ghi`), [
+    ['abc',
+    0],
+    [
+      {
+        cmd: 'if',
+        argstr: 'x==y'
+      },
+      0
+    ],
+    ['def',
+    1],
+    [
+      {
+        cmd: 'else',
+        argstr: ''
+      },
+      0
+    ],
+    ['ghi',
+    1]
+  ]);
+})();

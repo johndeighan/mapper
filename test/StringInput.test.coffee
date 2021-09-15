@@ -425,3 +425,49 @@ tester.equal 415, new StringInput("""
 
 		def
 		"""
+
+# ---------------------------------------------------------------------------
+# --- Test using getAll(), i.e. retrieving non-text
+
+(()->
+
+	class GatherTester2 extends UnitTester
+
+		transformValue: (oInput) ->
+
+			assert oInput instanceof StringInput,
+				"oInput should be a StringInput object"
+			return oInput.getAll()
+
+	tester2 = new GatherTester2()
+
+	cmdRE = ///^
+			\s*                # skip leading whitespace
+			\# ([a-z][a-z_]*)  # command name
+			\s*                # skipwhitespace following command
+			(.*)               # command arguments
+			$///
+
+	class TestInput2 extends StringInput
+
+		mapLine: (line, level) ->
+			lMatches = line.match(cmdRE)
+			if lMatches?
+				return { cmd: lMatches[1], argstr: lMatches[2] }
+			else
+				return line
+
+	tester2.equal 460, new TestInput2("""
+			abc
+			#if x==y
+				def
+			#else
+				ghi
+			"""), [
+			['abc', 0],
+			[{ cmd: 'if', argstr: 'x==y' }, 0],
+			['def', 1],
+			[{ cmd: 'else', argstr: '' }, 0],
+			['ghi', 1],
+			]
+	)()

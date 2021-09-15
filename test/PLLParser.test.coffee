@@ -125,9 +125,6 @@ tester.equal 43, new PLLParser("""
 	tree = parser.getTree()
 
 	simple.equal 127, tree, [
-		{ lineNum: 1, node: undef, body: [
-			{ lineNum: 2, node: 'Deighan' }
-			]}
 		{ lineNum: 3, node: '68' },
 		{ lineNum: 4, node: 'Blacksburg' },
 		]

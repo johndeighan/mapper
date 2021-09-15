@@ -580,6 +580,9 @@ export var PLLParser = class PLLParser extends SmartInput {
     if (result != null) {
       return [level, this.lineNum, result];
     } else {
+      // --- We need to skip over all following nodes
+      //     at a higher level than this one
+      this.fetchBlock(level + 1);
       return undef;
     }
   }

@@ -129,16 +129,6 @@ town = Blacksburg`);
   tree = parser.getTree();
   return simple.equal(127, tree, [
     {
-      lineNum: 1,
-      node: undef,
-      body: [
-        {
-          lineNum: 2,
-          node: 'Deighan'
-        }
-      ]
-    },
-    {
       lineNum: 3,
       node: '68'
     },

@@ -539,6 +539,9 @@ export class PLLParser extends SmartInput
 		if result?
 			return [level, @lineNum, result]
 		else
+			# --- We need to skip over all following nodes
+			#     at a higher level than this one
+			@fetchBlock(level+1)
 			return undef
 
 	# ..........................................................

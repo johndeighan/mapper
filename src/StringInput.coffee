@@ -535,7 +535,7 @@ export class PLLParser extends SmartInput
 
 	mapString: (line, level) ->
 
-		result = @mapNode(line)
+		result = @mapNode(line, level)
 		if result?
 			return [level, @lineNum, result]
 		else
@@ -546,7 +546,7 @@ export class PLLParser extends SmartInput
 
 	# ..........................................................
 
-	mapNode: (line) ->
+	mapNode: (line, level) ->
 
 		return line
 

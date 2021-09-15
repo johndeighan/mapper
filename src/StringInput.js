@@ -576,7 +576,7 @@ export var PLLParser = class PLLParser extends SmartInput {
 
   mapString(line, level) {
     var result;
-    result = this.mapNode(line);
+    result = this.mapNode(line, level);
     if (result != null) {
       return [level, this.lineNum, result];
     } else {
@@ -588,7 +588,7 @@ export var PLLParser = class PLLParser extends SmartInput {
   }
 
   // ..........................................................
-  mapNode(line) {
+  mapNode(line, level) {
     return line;
   }
 

@@ -4,7 +4,6 @@ var TreeTester, simple, tester;
 
 import {
   undef,
-  setUnitTesting,
   oneline
 } from '@jdeighan/coffee-utils';
 
@@ -24,8 +23,6 @@ import {
   TreeWalker,
   TreeStringifier
 } from '@jdeighan/string-input/tree';
-
-setUnitTesting(true);
 
 simple = new UnitTester();
 

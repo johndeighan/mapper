@@ -3,8 +3,7 @@
 var root, simple;
 
 import {
-  undef,
-  setUnitTesting
+  undef
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -28,22 +27,16 @@ process.env.dir_markdown = `${root}/markdown`;
 
 simple = new UnitTester();
 
-setUnitTesting(true);
-
 // ---------------------------------------------------------------------------
 // --- test getFileContents without conversion
-simple.equal(20, getFileContents('file.md'), "Contents of file.md");
-
-setUnitTesting(false);
-
-simple.equal(24, getFileContents('file.md'), `title
+simple.equal(16, getFileContents('file.md'), `title
 =====
 
 subtitle
 --------
 `);
 
-simple.equal(33, getFileContents('file.taml'), `---
+simple.equal(25, getFileContents('file.taml'), `---
 -
 	first: 1
 	second: 2
@@ -52,16 +45,16 @@ simple.equal(33, getFileContents('file.taml'), `---
 	cmd: include
 `);
 
-simple.equal(44, getFileContents('file.txt'), `abc
+simple.equal(36, getFileContents('file.txt'), `abc
 def
 `);
 
 // ---------------------------------------------------------------------------
 // --- test getFileContents with conversion
-simple.equal(53, getFileContents('file.md', true), `<h1>title</h1>
+simple.equal(45, getFileContents('file.md', true), `<h1>title</h1>
 <h2>subtitle</h2>`);
 
-simple.equal(58, getFileContents('file.taml', true), [
+simple.equal(50, getFileContents('file.taml', true), [
   {
     first: 1,
     second: 2
@@ -72,7 +65,5 @@ simple.equal(58, getFileContents('file.taml', true), [
   }
 ]);
 
-simple.equal(63, getFileContents('file.txt', true), `abc
+simple.equal(55, getFileContents('file.txt', true), `abc
 def`);
-
-setUnitTesting(true);

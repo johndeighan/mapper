@@ -1,7 +1,7 @@
 # preProcess.test.coffee
 
 import {
-	undef, setUnitTesting, arrayToString, isEmpty,
+	undef, arrayToString, isEmpty,
 	} from '@jdeighan/coffee-utils'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
@@ -10,7 +10,6 @@ import {
 	} from '@jdeighan/string-input/coffee'
 
 
-setUnitTesting true
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------

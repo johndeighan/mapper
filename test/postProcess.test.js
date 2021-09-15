@@ -4,7 +4,6 @@ var PostProcessTester, simple, tester;
 
 import {
   undef,
-  setUnitTesting,
   arrayToString,
   isEmpty
 } from '@jdeighan/coffee-utils';
@@ -21,8 +20,6 @@ import {
   postProcessCoffee,
   getNeededImports
 } from '@jdeighan/string-input/coffee';
-
-setUnitTesting(true);
 
 simple = new UnitTester();
 

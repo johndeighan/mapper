@@ -3,8 +3,7 @@
 var MarkdownTester, root, simple, tester;
 
 import {
-  undef,
-  setUnitTesting
+  undef
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -24,8 +23,6 @@ root = process.env.dir_root = mydir(import.meta.url);
 process.env.dir_data = `${root}/data process.env.dir_markdown = `;
 
 simple = new UnitTester();
-
-setUnitTesting(false);
 
 // ---------------------------------------------------------------------------
 MarkdownTester = class MarkdownTester extends UnitTester {

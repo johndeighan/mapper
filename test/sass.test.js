@@ -3,8 +3,7 @@
 var SassTester, root, simple, tester;
 
 import {
-  undef,
-  setUnitTesting
+  undef
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -12,11 +11,17 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
+  debug,
+  setDebugging
+} from '@jdeighan/coffee-utils/debug';
+
+import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  sassify
+  sassify,
+  convertSASS
 } from '@jdeighan/string-input/sass';
 
 root = process.env.dir_root = mydir(import.meta.url);
@@ -25,7 +30,7 @@ process.env.dir_data = `${root}/data process.env.dir_markdown = `;
 
 simple = new UnitTester();
 
-setUnitTesting(true);
+convertSASS(false);
 
 // ---------------------------------------------------------------------------
 SassTester = class SassTester extends UnitTester {
@@ -39,7 +44,7 @@ tester = new SassTester();
 
 // ---------------------------------------------------------------------------
 (function() {
-  return tester.equal(30, `# --- This is a red paragraph (this should be removed)
+  return tester.equal(28, `# --- This is a red paragraph (this should be removed)
 p
 	margin: 0
 	span
@@ -51,10 +56,10 @@ p
 })();
 
 // ---------------------------------------------------------------------------
-setUnitTesting(false);
+convertSASS(true);
 
 (function() {
-  return tester.equal(51, `# --- here, we should use the real sass processor
+  return tester.equal(50, `# --- here, we should use the real sass processor
 p
 	margin: 0
 	span

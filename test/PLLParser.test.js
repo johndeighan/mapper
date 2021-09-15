@@ -47,12 +47,12 @@ GatherTester = class GatherTester extends UnitTester {
 tester = new GatherTester();
 
 // ---------------------------------------------------------------------------
-tester.equal(30, new PLLParser(`line 1
+tester.equal(31, new PLLParser(`line 1
 line 2
 	line 3`), [[0, 1, 'line 1'], [0, 2, 'line 2'], [1, 3, 'line 3']]);
 
 // ---------------------------------------------------------------------------
-tester.equal(30, new PLLParser(`line 1
+tester.equal(43, new PLLParser(`line 1
 	line 2
 		line 3`), [[0, 1, 'line 1'], [1, 2, 'line 2'], [2, 3, 'line 3']]);
 
@@ -77,7 +77,7 @@ tester.equal(30, new PLLParser(`line 1
 age = 68
 town = Blacksburg`);
   tree = parser.getTree();
-  return simple.equal(79, tree, [
+  return simple.equal(84, tree, [
     {
       lineNum: 1,
       node: ['name',
@@ -127,7 +127,7 @@ town = Blacksburg`);
 age = 68
 town = Blacksburg`);
   tree = parser.getTree();
-  return simple.equal(125, tree, [
+  return simple.equal(127, tree, [
     {
       lineNum: 1,
       node: undef,

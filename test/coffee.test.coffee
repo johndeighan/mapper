@@ -1,22 +1,21 @@
 # coffee.test.coffee
 
-import {
-	undef, isEmpty, nonEmpty, setUnitTesting,
-	} from '@jdeighan/coffee-utils'
+import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {
-	brewCoffee, brewExpr, addImports,
+	brewCoffee, brewExpr, addImports, convertCoffee,
 	} from '@jdeighan/string-input/coffee'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
-process.env.dir_data = "#{root}/data
-process.env.dir_markdown = "#{root}/markdown
+process.env.DIR_DATA = "#{root}/data
+process.env.DIR_MARKDOWN = "#{root}/markdown
 process.env.DIR_SYMBOLS = root
 simple = new UnitTester()
-setUnitTesting(true)
+
+convertCoffee false
 
 # ---------------------------------------------------------------------------
 
@@ -86,7 +85,7 @@ tester.equal 76, """
 # ---------------------------------------------------------------------------
 # --- test full translation to JavaScript
 
-setUnitTesting false
+convertCoffee true
 
 tester.equal 90, """
 		x = 23
@@ -118,4 +117,3 @@ tester.equal 111, """
 		$:
 		x = a + 1000;
 		"""
-setUnitTesting true

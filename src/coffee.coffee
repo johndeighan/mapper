@@ -4,19 +4,26 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	unitTesting, croak, arrayToString, oneline,
+	croak, arrayToString, oneline,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
-import {indentLevel} from '@jdeighan/coffee-utils/indent'
-import {
-	CoffeeMapper, CoffeePostMapper, SmartInput,
-	} from '@jdeighan/string-input'
+import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
+import {StringInput, SmartInput} from '@jdeighan/string-input'
 import {ASTWalker} from '@jdeighan/string-input/tree'
 import {tamlStringify} from '@jdeighan/string-input/taml'
+
+convert = true
+
+# ---------------------------------------------------------------------------
+
+export convertCoffee = (flag) ->
+
+	convert = flag
+	return
 
 # ---------------------------------------------------------------------------
 
@@ -24,7 +31,7 @@ export brewExpr = (expr, force=false) ->
 
 	assert (indentLevel(expr)==0), "brewCoffee(): has indentation"
 
-	if unitTesting && not force
+	if not convert && not force
 		return expr
 	try
 		newexpr = CoffeeScript.compile(expr, {bare: true}).trim()
@@ -55,7 +62,7 @@ export brewCoffee = (lBlocks...) ->
 		hNeeded = getNeededSymbols(newblk)
 		mergeNeededSymbols(hAllNeeded, hNeeded)
 
-		if unitTesting
+		if not convert
 			lResult.push newblk
 		else
 			try
@@ -71,16 +78,149 @@ export brewCoffee = (lBlocks...) ->
 
 # ---------------------------------------------------------------------------
 
+###
+
+- converts
+		<varname> <== <expr>
+
+	to:
+		`$:`
+		<varname> = <expr>
+
+	coffeescript to:
+		var <varname>;
+		$:;
+		<varname> = <js expr>;
+
+	brewCoffee() to:
+		var <varname>;
+		$:
+		<varname> = <js expr>;
+
+- converts
+		<==
+			<code>
+
+	to:
+		`$:{`
+		<code>
+		`}`
+
+	coffeescript to:
+		$:{;
+		<js code>
+		};
+
+	brewCoffee() to:
+		$:{
+		<js code>
+		}
+
+###
+
+# ===========================================================================
+
+export class CoffeePreMapper extends SmartInput
+
+	mapString: (line, level) ->
+
+		debug "enter mapString(#{oneline(line)})"
+		if (line == '<==')
+			# --- Generate a reactive block
+			code = @fetchBlock(level+1)    # might be empty
+			if isEmpty(code)
+				debug "return undef from mapString() - empty code block"
+				return undef
+			else
+				result = """
+						`$:{`
+						#{code}
+						`}`
+						"""
+
+		else if lMatches = line.match(///^
+				([A-Za-z][A-Za-z0-9_]*)   # variable name
+				\s*
+				\< \= \=
+				\s*
+				(.*)
+				$///)
+			[_, varname, expr] = lMatches
+			code = @fetchBlock(level+1)    # must be empty
+			assert isEmpty(code),
+					"mapString(): indented code not allowed after '#{line}'"
+			assert not isEmpty(expr),
+					"mapString(): empty expression in '#{line}'"
+			result = """
+					`$:`
+					#{varname} = #{expr}
+					"""
+		else
+			debug "return from mapString() - no match"
+			return line
+
+		debug "return from mapString()", result
+		return result
+
+# ---------------------------------------------------------------------------
+
 export preProcessCoffee = (code) ->
 	# --- Removes blank lines and comments
 	#     inteprets <== as svelte reactive statement or block
 
 	assert (indentLevel(code)==0), "preProcessCoffee(): has indentation"
 
-	oInput = new CoffeeMapper(code)
+	oInput = new CoffeePreMapper(code)
 	newcode = oInput.getAllText()
 	debug 'newcode', newcode
 	return newcode
+
+# ---------------------------------------------------------------------------
+
+export class CoffeePostMapper extends StringInput
+	# --- variable declaration immediately following one of:
+	#        $:{;
+	#        $:;
+	#     should be moved above this line
+
+	mapLine: (line, level) ->
+
+		# --- new properties, initially undef:
+		#        @savedLevel
+		#        @savedLine
+
+		if @savedLine
+			if line.match(///^ \s* var \s ///)
+				result = "#{line}\n#{@savedLine}"
+			else
+				result = "#{@savedLine}\n#{line}"
+			@savedLine = undef
+			return result
+
+		if (lMatches = line.match(///^
+				\$ \:
+				(\{)?       # optional {
+				\;
+				(.*)        # any remaining text
+				$///))
+			[_, brace, rest] = lMatches
+			assert not rest, "CoffeePostMapper: extra text after $:"
+			@savedLevel = level
+			if brace
+				@savedLine = "$:{"
+			else
+				@savedLine = "$:"
+			return undef
+		else if (lMatches = line.match(///^
+				\}
+				\;
+				(.*)
+				$///))
+			[_, rest] = lMatches
+			assert not rest, "CoffeePostMapper: extra text after $:"
+			return indented("\}", level)
+		else
+			return indented(line, level)
 
 # ---------------------------------------------------------------------------
 
@@ -97,9 +237,8 @@ export postProcessCoffee = (code) ->
 
 export addImports = (text, lImports) ->
 
-	if not unitTesting
-		lImports = for stmt in lImports
-			"#{stmt};"
+#	lImports = for stmt in lImports
+#		"#{stmt};"
 	return joinBlocks(lImports..., text)
 
 # ---------------------------------------------------------------------------
@@ -232,7 +371,7 @@ export getAvailSymbols = () ->
 
 		getSymbols: () ->
 
-			@skipAll()
+			@getAll()
 			return @hSymbols
 
 	contents = slurp(filepath)

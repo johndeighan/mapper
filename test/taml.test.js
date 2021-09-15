@@ -3,8 +3,7 @@
 var simple;
 
 import {
-  undef,
-  setUnitTesting
+  undef
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -16,8 +15,6 @@ import {
   taml,
   tamlStringify
 } from '@jdeighan/string-input/taml';
-
-setUnitTesting(true);
 
 simple = new UnitTester();
 

@@ -1,10 +1,9 @@
 # taml.test.coffee
 
-import {undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {undef} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {isTAML, taml, tamlStringify} from '@jdeighan/string-input/taml'
 
-setUnitTesting(true)
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,6 @@ import {
 
 import {
   undef,
-  setUnitTesting,
   words
 } from '@jdeighan/coffee-utils';
 
@@ -18,13 +17,13 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
-
-import {
   debug,
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  UnitTester
+} from '@jdeighan/coffee-utils/test';
 
 import {
   mergeNeededSymbols,
@@ -44,13 +43,11 @@ simple = new UnitTester();
 
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
-setUnitTesting(true);
-
 // ----------------------------------------------------------------------------
 // --- make sure it's using the testing .symbols file
 hSymbols = getAvailSymbols();
 
-simple.equal(26, hSymbols, {
+simple.equal(23, hSymbols, {
   barf: '@jdeighan/coffee-utils/fs',
   log: '@jdeighan/coffee-utils/log',
   mkpath: '@jdeighan/coffee-utils/fs',
@@ -66,7 +63,7 @@ simple.equal(26, hSymbols, {
   text = `x = 42
 say "Answer is 42"`;
   lImports = ["import {say} from '@jdeighan/coffee-utils'", "import {slurp} from '#jdeighan/coffee-utils/fs'"];
-  return simple.equal(49, addImports(text, lImports), `import {say} from '@jdeighan/coffee-utils'
+  return simple.equal(46, addImports(text, lImports), `import {say} from '@jdeighan/coffee-utils'
 import {slurp} from '#jdeighan/coffee-utils/fs'
 x = 42
 say "Answer is 42"`);
@@ -81,7 +78,7 @@ say "Answer is 42"`);
     '@jdeighan/coffee-utils/log': ['log']
   };
   mergeNeededSymbols(hAllNeeded, hNeeded);
-  return simple.equal(65, hAllNeeded, {
+  return simple.equal(63, hAllNeeded, {
     '@jdeighan/coffee-utils': ['say', 'undef'],
     '@jdeighan/coffee-utils/log': ['log']
   });
@@ -115,7 +112,7 @@ say "Answer is 42"`);
     '@jdeighan/coffee-utils/log': ['log'],
     '@jdeighan/coffee-utils/fs': ['slurp', 'barf']
   };
-  return simple.equal(95, buildImportList(hAllNeeded), ["import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log} from '@jdeighan/coffee-utils/log'"]);
+  return simple.equal(97, buildImportList(hAllNeeded), ["import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log} from '@jdeighan/coffee-utils/log'"]);
 })();
 
 // ----------------------------------------------------------------------------
@@ -125,7 +122,7 @@ say "Answer is 42"`);
 for list in lLists
 	barf "myfile.txt", list`;
   lImports = getNeededImports(code);
-  return simple.equal(110, lImports, ["import {say} from '@jdeighan/coffee-utils'", "import {barf} from '@jdeighan/coffee-utils/fs'"]);
+  return simple.equal(113, lImports, ["import {say} from '@jdeighan/coffee-utils'", "import {barf} from '@jdeighan/coffee-utils/fs'"]);
 })();
 
 // ----------------------------------------------------------------------------
@@ -135,7 +132,7 @@ for list in lLists
 for list in lLists
 	barf "myfile.txt", list`;
   hMissingSymbols = getMissingSymbols(code);
-  return simple.equal(125, hMissingSymbols, {
+  return simple.equal(128, hMissingSymbols, {
     say: {},
     lLists: {},
     barf: {}

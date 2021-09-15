@@ -8,8 +8,9 @@ import {dirname, resolve, parse as parse_fname} from 'path';
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty,
 	isComment, isArray, isHash, isInteger, deepCopy,
-	stringToArray, arrayToString, unitTesting, oneline,
+	stringToArray, arrayToString, oneline, escapeStr,
 	} from '@jdeighan/coffee-utils'
+import {log} from '@jdeighan/coffee-utils/log'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {splitLine, indented, undented} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -18,16 +19,14 @@ import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 # ---------------------------------------------------------------------------
-#   class StringInput - stream in lines from a string or array
+#   class StringFetcher - stream in lines from a string
+#                         handles #include
 
-export class StringInput
-	# --- handles #include statements
+export class StringFetcher
 
 	constructor: (content, @hOptions={}) ->
 		# --- Valid options:
 		#        filename
-
-		{filename} = @hOptions
 
 		if isEmpty(content)
 			@lBuffer = []
@@ -37,12 +36,13 @@ export class StringInput
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
 		else
-			croak "StringInput(): content must be array or string",
+			croak "StringFetcher(): content must be array or string",
 					"CONTENT", content
+		debug "in constructor: BUFFER", @lBuffer
+
 		@lineNum = 0
 
-		debug "BUFFER", @lBuffer
-
+		{filename} = @hOptions
 		if filename
 			try
 				# --- We only want the bare filename
@@ -53,18 +53,129 @@ export class StringInput
 		else
 			@filename = 'unit test'
 
-		@lookahead = undef     # lookahead token, placed by unget
+		# --- for handling #include
 		@altInput = undef
-		@altLevel = undef      # controls prefix prepended to lines
+		@altPrefix = undef    # prefix prepended to lines from alt
 
 	# ..........................................................
 
-	unget: (item) ->
+	fetch: () ->
 
-		# --- item has already been mapped
-		debug 'enter unget() with', item
-		assert not @lookahead?
-		@lookahead = item
+		debug "enter fetch()"
+		if @altInput
+			assert @altPrefix?, "fetch(): alt intput without alt prefix"
+			line = @altInput.fetch()
+			if line?
+				result = "#{@altPrefix}#{line}"
+				debug "return '#{escapeStr(result)}' from fetch() - alt"
+				return result
+			else
+				@altInput = undef    # it's exhausted
+
+		if (@lBuffer.length == 0)
+			debug "return undef from fetch() - empty buffer"
+			return undef
+
+		# --- @lBuffer is not empty here
+		line = @lBuffer.shift()
+		@lineNum += 1
+
+		if lMatches = line.match(///^
+				(\s*)
+				\# include
+				\s+
+				(\S.*)
+				$///)
+			[_, prefix, fname] = lMatches
+			debug "#include #{fname} with prefix '#{escapeStr(prefix)}'"
+			assert not @altInput, "fetch(): altInput already set"
+			contents = getFileContents(fname)
+			@altInput = new StringFetcher(contents)
+			@altPrefix = prefix
+			debug "alt input created with prefix '#{escapeStr(prefix)}'"
+			line = @altInput.fetch()
+			if line?
+				return "#{@altPrefix}#{line}"
+			else
+				return @fetch()    # recursive call
+		else
+			debug "return #{oneline(line)} from fetch()"
+			return line
+
+	# ..........................................................
+	# --- Put a line back into lBuffer, to be fetched later
+
+	unfetch: (line) ->
+
+		debug "enter unfetch('#{escapeStr(line)}')"
+		@lBuffer.unshift(line)
+		@lineNum -= 1
+		debug 'return from unfetch()'
+		return
+
+	# ..........................................................
+
+	nextLine: () ->
+
+		line = @fetch()
+		@unfetch(line)
+		return line
+
+	# ..........................................................
+
+	getPositionInfo: () ->
+
+		if @altInput
+			return @altInput.getPositionInfo()
+		else
+			return {
+				file: @filename,
+				lineNum: @lineNum,
+				}
+
+	# ..........................................................
+
+	fetchAll: () ->
+
+		lLines = []
+		while (line = @fetch())?
+			lLines.push line
+		return lLines
+
+	# ..........................................................
+
+	fetchAllBlock: () ->
+
+		lLines = @fetchAll()
+		return arrayToString(lLines)
+
+# ===========================================================================
+#   class StringInput
+#      - keep track of indentation
+#      - allow mapping of lines, including skipping lines
+#      - implement look ahead via peek()
+
+export class StringInput extends StringFetcher
+
+	constructor: (content, hOptions={}) ->
+		# --- Valid options:
+		#        filename
+
+		super content, hOptions
+		@lookahead = undef   # --- lookahead token, placed by unget
+
+		# --- cache in case getAll() is called multiple times
+		@lAllPairs = undef
+
+	# ..........................................................
+
+	unget: (pair) ->
+		# --- pair will always be [<item>, <level>]
+		#     <item> can be anything - i.e. it's been mapped
+
+		debug 'enter unget() with', pair
+		assert not @lookahead?, "unget(): there's already a lookahead"
+		@lookahead = pair
 		debug 'return from unget()'
 		return
 
@@ -74,15 +185,15 @@ export class StringInput
 
 		debug 'enter peek():'
 		if @lookahead?
-			debug "return lookahead token from peek"
+			debug "return lookahead from peek"
 			return @lookahead
-		item = @get()
-		if not item?
+		pair = @get()
+		if not pair?
 			debug "return from peek() - undef"
 			return undef
-		@unget(item)
-		debug "return #{oneline(item)} from peek"
-		return item
+		@unget(pair)
+		debug "return #{oneline(pair)} from peek"
+		return pair
 
 	# ..........................................................
 
@@ -91,59 +202,20 @@ export class StringInput
 		debug 'enter skip():'
 		if @lookahead?
 			@lookahead = undef
-			debug "return from skip: clear lookahead token"
+			debug "return from skip: clear lookahead"
 			return
 		@get()
 		debug 'return from skip()'
 		return
 
 	# ..........................................................
-	# --- Returns undef if either:
-	#        1. there's no alt input
-	#        2. get from alt input returns undef (then closes alt input)
-
-	getFromAlt: () ->
-
-		debug "enter getFromAlt()"
-		if not @altInput
-			croak "getFromAlt(): There is no alt input"
-		result = @altInput.get()
-		if result?
-			debug "return #{oneline(result)} from getFromAlt"
-			return indented(result, @altLevel)
-		else
-			@altInput = undef
-			@altLevel = undef
-			debug "return from getFromAlt: alt returned undef, alt input removed"
-			return undef
-
-	# ..........................................................
-	# --- Returns undef if either:
-	#        1. there's no alt input
-	#        2. get from alt input returns undef (then closes alt input)
-
-	fetchFromAlt: () ->
-
-		debug "enter fetchFromAlt()"
-		if not @altInput
-			croak "fetchFromAlt(): There is no alt input"
-		result = @altInput.fetch()
-		if result?
-			"return #{oneline(result)} from getFromAlt()"
-			return indented(result, @altLevel)
-		else
-			debug "return from fetchFromAlt: alt returned undef, alt input removed"
-			@altInput = undef
-			@altLevel = undef
-			return undef
-
-	# ..........................................................
 	# --- designed to override with a mapping method
-	#     NOTE: line includes the indentation
+	#     which can map to any valid JavaScript value
 
-	mapLine: (line) ->
+	mapLine: (line, level) ->
 
-		debug "in default mapLine(#{oneline(line)})"
+		assert line? && isString(line), "mapLine(): not a string"
+		debug "in default mapLine('#{escapeStr(line)}', #{level})"
 		return line
 
 	# ..........................................................
@@ -154,90 +226,34 @@ export class StringInput
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug "return lookahead token from get() - src #{@filename}"
+			debug "return lookahead pair from get()"
 			return saved
-
-		if @altInput && (line = @getFromAlt())?
-			debug "return from get() with #{oneline(line)} - from alt #{@filename}"
-			return line
 
 		line = @fetch()    # will handle #include
 		debug "LINE", line
 
 		if not line?
-			debug "return from get() with undef at EOF - src #{@filename}"
+			debug "return from get() with undef at EOF"
 			return undef
 
-		result = @mapLine(line)
-		debug "MAP: '#{line}' => #{oneline(result)}"
+		[level, newline] = splitLine(line)
+		result = @mapLine(newline, level)
+		debug "MAP: '#{newline}' => #{oneline(result)}"
 
 		# --- if mapLine() returns undef, we skip that line
 
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
-			result = @mapLine(line)
-			debug "'#{line}' mapped to '#{result}'"
+			[level, newline] = splitLine(line)
+			result = @mapLine(newline, level)
+			debug "MAP: '#{newline}' => #{oneline(result)}"
 
-		debug "return #{oneline(result)} from get() - src #{@filename}"
-		return result
-
-	# ..........................................................
-	# --- This should be used to fetch from @lBuffer
-	#     to maintain proper @lineNum for error messages
-	#     MUST handle #include
-
-	fetch: () ->
-
-		debug "enter fetch()"
-		if @altInput && (result = @fetchFromAlt())?
-			debug "return alt #{oneline(result)} from fetch()"
-			return result
-
-		if @lBuffer.length == 0
-			debug "return from fetch() - empty buffer, return undef"
+		if result?
+			debug "return #{oneline(result)}, #{level} from get()"
+			return [result, level]
+		else
+			debug "return undef from get()"
 			return undef
-
-		@lineNum += 1
-		line = @lBuffer.shift()
-		[level, str] = splitLine(line)
-
-		if lMatches = str.match(///^
-				\# include
-				\s+
-				(\S.*)
-				$///)
-			[_, fname] = lMatches
-			assert not @altInput, "fetch(): altInput already set"
-			if unitTesting
-				debug "return from fetch() 'Contents of #{fname}' - unit testing"
-				return indented("Contents of #{fname}", level)
-			contents = getFileContents(fname)
-			@altInput = new StringInput(contents)
-			@altLevel = level
-			debug "alt input created at level #{level}"
-
-			# --- We just created an alt input
-			#     we need to get its first line
-			altLine = @getFromAlt()
-			if altLine?
-				debug "fetch(): getFromAlt returned '#{altLine}'"
-				line = altLine
-			else
-				debug "fetch(): alt was undef, retain line '#{line}'"
-
-		debug "return from fetch() #{oneline(line)} from buffer:"
-		return line
-
-	# ..........................................................
-	# --- Put one or more lines back into lBuffer, to be fetched later
-
-	unfetch: (str) ->
-
-		debug "enter unfetch()", str
-		@lBuffer.unshift(str)
-		@lineNum -= 1
-		debug 'return from unfetch()'
-		return
 
 	# ..........................................................
 	# --- Fetch a block of text at level or greater than 'level'
@@ -281,37 +297,44 @@ export class StringInput
 	getAll: () ->
 
 		debug "enter getAll()"
-		lLines = []
-		line = @get()
-		while line?
-			lLines.push(line)
-			line = @get()
-		debug "return #{lLines.length} lines from getAll()"
-		return lLines
-
-	# ..........................................................
-
-	skipAll: () ->
-		# --- Useful if you don't need the final output, but, e.g.
-		#     mapString() builds something that you will fetch
-
-		line = @get()
-		while line?
-			line = @get()
-		return
+		if @lAllPairs?
+			debug "return cached lAllPairs from getAll()"
+			return @lAllPairs
+		lPairs = []
+		while (pair = @get())?
+			lPairs.push(pair)
+		@lAllPairs = lPairs
+		debug "return #{lPairs.length} pairs from getAll()"
+		return lPairs
 
 	# ..........................................................
 
 	getAllText: () ->
 
-		return arrayToString(@getAll())
+		lLines = for [line, level] in @getAll()
+			indented(line, level)
+		return arrayToString(lLines)
 
 # ===========================================================================
 
 export class SmartInput extends StringInput
-	# - removes blank lines and comments
+	# - removes blank lines and comments (but can be overridden)
 	# - joins continuation lines
 	# - handles HEREDOCs
+
+	constructor: (content, hOptions={}) ->
+		# --- Valid options:
+		#        filename
+
+		super content, hOptions
+
+		# --- This should only be used in mapLine(), where
+		#     it keeps track of the level we're at, to be passed
+		#     to handleEmptyLine() since the empty line itself
+		#     is always at level 0
+		@curLevel = 0
+
+	# ..........................................................
 
 	getContLines: (curlevel) ->
 
@@ -336,14 +359,14 @@ export class SmartInput extends StringInput
 
 	# ..........................................................
 
-	handleEmptyLine: () ->
+	handleEmptyLine: (level) ->
 
 		debug "in default handleEmptyLine()"
 		return undef      # skip blank lines by default
 
 	# ..........................................................
 
-	handleComment: () ->
+	handleComment: (line, level) ->
 
 		debug "in default handleComment()"
 		return undef      # skip comments by default
@@ -352,21 +375,22 @@ export class SmartInput extends StringInput
 	# --- designed to override with a mapping method
 	#     NOTE: line includes the indentation
 
-	mapLine: (orgLine) ->
+	mapLine: (line, level) ->
 
-		debug "enter mapLine(#{oneline(orgLine)})"
+		debug "enter mapLine('#{escapeStr(line)}', #{level})"
 
-		assert orgLine?, "mapLine(): orgLine is undef"
-		if isEmpty(orgLine)
+		assert line?, "mapLine(): line is undef"
+		assert isString(line), "mapLine(): #{oneline(line)} not a string"
+		if isEmpty(line)
 			debug "return undef from mapLine() - empty"
-			return @handleEmptyLine()
+			return @handleEmptyLine(@curLevel)
 
-		if isComment(orgLine)
+		if isComment(line)
 			debug "return undef from mapLine() - comment"
-			return @handleComment()
+			return @handleComment(line, level)
 
-		[level, line] = splitLine(orgLine)
 		orgLineNum = @lineNum
+		@curLevel = level
 
 		# --- Merge in any continuation lines
 		debug "check for continuation lines"
@@ -489,168 +513,6 @@ export class SmartInput extends StringInput
 		return lLines
 
 # ---------------------------------------------------------------------------
-
-###
-
-WHEN NOT UNIT TESTING
-
-- converts
-		<varname> <== <expr>
-
-	to:
-		`$:`
-		<varname> = <expr>
-
-	coffeescript to:
-		var <varname>;
-		$:;
-		<varname> = <js expr>;
-
-	brewCoffee() to:
-		var <varname>;
-		$:
-		<varname> = <js expr>;
-
-- converts
-		<==
-			<code>
-
-	to:
-		`$:{`
-		<code>
-		`}`
-
-	coffeescript to:
-		$:{;
-		<js code>
-		};
-
-	brewCoffee() to:
-		$:{
-		<js code>
-		}
-
-###
-
-# ===========================================================================
-
-export class CoffeeMapper extends SmartInput
-
-	mapString: (line, level) ->
-
-		debug "enter mapString(#{oneline(line)})"
-		if (line == '<==')
-			# --- Generate a reactive block
-			code = @fetchBlock(level+1)    # might be empty
-			if isEmpty(code)
-				debug "return undef from mapString() - empty code block"
-				return undef
-			else
-				result = """
-						`$:{`
-						#{code}
-						`}`
-						"""
-
-		else if lMatches = line.match(///^
-				([A-Za-z][A-Za-z0-9_]*)   # variable name
-				\s*
-				\< \= \=
-				\s*
-				(.*)
-				$///)
-			[_, varname, expr] = lMatches
-			code = @fetchBlock(level+1)    # must be empty
-			assert isEmpty(code),
-					"mapLine(): indented code not allowed after '#{line}'"
-			assert not isEmpty(expr),
-					"mapLine(): empty expression in '#{line}'"
-			result = """
-					`$:`
-					#{varname} = #{expr}
-					"""
-		else
-			debug "return from mapLine() - no match"
-			return indented(line, level)
-
-		debug "return from mapLine()", result
-		return indented(result, level)
-
-# ---------------------------------------------------------------------------
-
-export class CoffeePostMapper extends StringInput
-	# --- variable declaration immediately following one of:
-	#        $:{;
-	#        $:;
-	#     should be moved above this line
-
-	mapLine: (line) ->
-
-		if @savedLine
-			if line.match(///^ \s* var \s ///)
-				result = "#{line}\n#{@savedLine}"
-			else
-				result = "#{@savedLine}\n#{line}"
-			@savedLine = undef
-			return result
-
-		if (lMatches = line.match(///^
-				(\s*)       # possible leading whitespace
-				\$ \:
-				(\{)?       # optional {
-				\;
-				(.*)        # any remaining text
-				$///))
-			[_, ws, brace, rest] = lMatches
-			assert not rest, "CoffeePostMapper: extra text after $:"
-			if brace
-				@savedLine = "#{ws}$:{"
-			else
-				@savedLine = "#{ws}$:"
-			return undef
-		else if (lMatches = line.match(///^
-				(\s*)        # possible leading whitespace
-				\}
-				\;
-				(.*)
-				$///))
-			[_, ws, rest] = lMatches
-			assert not rest, "CoffeePostMapper: extra text after $:"
-			return "#{ws}\}"
-		else
-			return line
-
-# ---------------------------------------------------------------------------
-
-export class SassMapper extends StringInput
-	# --- only removes comments
-
-	mapLine: (line) ->
-
-		if isComment(line)
-			return undef
-		return line
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-#   class FileInput - contents from a file
-
-export class FileInput extends SmartInput
-
-	constructor: (filename, hOptions={}) ->
-
-		{root, dir, base, ext} = pathlib.parse(filename.trim())
-		hOptions.filename = base
-		if unitTesting
-			content = "Contents of #{base}"
-		else
-			if not fs.existsSync(filename)
-				croak "FileInput(): file '#{filename}' does not exist"
-			content = slurp(filename)
-
-		super content, hOptions
-
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # --- To derive a class from this:
 #        1. Extend this class
@@ -661,6 +523,15 @@ export class FileInput extends SmartInput
 #           HEREDOC lines into the original string
 
 export class PLLParser extends SmartInput
+
+	constructor: (content, hOptions={}) ->
+		# --- Valid options:
+		#        filename
+
+		super content, hOptions
+
+		# --- Cached tree, in case getTree() is called multiple times
+		@tree = undef
 
 	mapString: (line, level) ->
 
@@ -675,14 +546,38 @@ export class PLLParser extends SmartInput
 
 	# ..........................................................
 
+	getAll: () ->
+
+		# --- This returns a list of pairs, but
+		#     we don't need the level anymore since it's
+		#     also stored in the node
+
+		lPairs = super()
+		debug "lPairs", lPairs
+
+		lItems = for pair in lPairs
+			pair[0]
+		debug "lItems", lItems
+		return lItems
+
+	# ..........................................................
+
 	getTree: () ->
 
 		debug "enter getTree()"
-		lLines = @getAll()
-		debug "lLines = #{oneline(lLines)}"
-		assert lLines?, "lLines is undef"
-		assert isArray(lLines), "getTree(): lLines is not an array"
-		tree = treeify(lLines)
+		if @tree?
+			debug "return cached tree from getTree()"
+			return @tree
+
+		lItems = @getAll()
+
+		assert lItems?, "lItems is undef"
+		assert isArray(lItems), "getTree(): lItems is not an array"
+
+		tree = treeify(lItems)
+		debug "TREE", tree
+
+		@tree = tree
 		debug "return from getTree()", tree
 		return tree
 
@@ -753,9 +648,6 @@ hExtToEnvVar = {
 export getFileContents = (fname, convert=false) ->
 
 	debug "enter getFileContents('#{fname}')"
-	if unitTesting
-		debug "return from getFileContents() - unit testing"
-		return "Contents of #{fname}"
 
 	{root, dir, base, ext} = parse_fname(fname.trim())
 	assert not root && not dir, "getFileContents():" \

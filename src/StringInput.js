@@ -30,9 +30,13 @@ import {
   deepCopy,
   stringToArray,
   arrayToString,
-  unitTesting,
-  oneline
+  oneline,
+  escapeStr
 } from '@jdeighan/coffee-utils';
+
+import {
+  log
+} from '@jdeighan/coffee-utils/log';
 
 import {
   slurp,
@@ -64,15 +68,14 @@ import {
 } from '@jdeighan/string-input/taml';
 
 // ---------------------------------------------------------------------------
-//   class StringInput - stream in lines from a string or array
-export var StringInput = class StringInput {
-  // --- handles #include statements
+//   class StringFetcher - stream in lines from a string
+//                         handles #include
+export var StringFetcher = class StringFetcher {
   constructor(content, hOptions1 = {}) {
     var base, filename;
     this.hOptions = hOptions1;
     // --- Valid options:
     //        filename
-    ({filename} = this.hOptions);
     if (isEmpty(content)) {
       this.lBuffer = [];
     } else if (isString(content)) {
@@ -81,10 +84,11 @@ export var StringInput = class StringInput {
       // -- make a deep copy
       this.lBuffer = deepCopy(content);
     } else {
-      croak("StringInput(): content must be array or string", "CONTENT", content);
+      croak("StringFetcher(): content must be array or string", "CONTENT", content);
     }
+    debug("in constructor: BUFFER", this.lBuffer);
     this.lineNum = 0;
-    debug("BUFFER", this.lBuffer);
+    ({filename} = this.hOptions);
     if (filename) {
       try {
         // --- We only want the bare filename
@@ -96,37 +100,144 @@ export var StringInput = class StringInput {
     } else {
       this.filename = 'unit test';
     }
-    this.lookahead = undef; // lookahead token, placed by unget
+    // --- for handling #include
     this.altInput = undef;
-    this.altLevel = undef; // controls prefix prepended to lines
+    this.altPrefix = undef; // prefix prepended to lines from alt
   }
 
   
     // ..........................................................
-  unget(item) {
-    // --- item has already been mapped
-    debug('enter unget() with', item);
-    assert(this.lookahead == null);
-    this.lookahead = item;
+  fetch() {
+    var _, contents, fname, lMatches, line, prefix, result;
+    debug("enter fetch()");
+    if (this.altInput) {
+      assert(this.altPrefix != null, "fetch(): alt intput without alt prefix");
+      line = this.altInput.fetch();
+      if (line != null) {
+        result = `${this.altPrefix}${line}`;
+        debug(`return '${escapeStr(result)}' from fetch() - alt`);
+        return result;
+      } else {
+        this.altInput = undef; // it's exhausted
+      }
+    }
+    if (this.lBuffer.length === 0) {
+      debug("return undef from fetch() - empty buffer");
+      return undef;
+    }
+    // --- @lBuffer is not empty here
+    line = this.lBuffer.shift();
+    this.lineNum += 1;
+    if (lMatches = line.match(/^(\s*)\#include\s+(\S.*)$/)) {
+      [_, prefix, fname] = lMatches;
+      debug(`#include ${fname} with prefix '${escapeStr(prefix)}'`);
+      assert(!this.altInput, "fetch(): altInput already set");
+      contents = getFileContents(fname);
+      this.altInput = new StringFetcher(contents);
+      this.altPrefix = prefix;
+      debug(`alt input created with prefix '${escapeStr(prefix)}'`);
+      line = this.altInput.fetch();
+      if (line != null) {
+        return `${this.altPrefix}${line}`;
+      } else {
+        return this.fetch(); // recursive call
+      }
+    } else {
+      debug(`return ${oneline(line)} from fetch()`);
+      return line;
+    }
+  }
+
+  // ..........................................................
+  // --- Put a line back into lBuffer, to be fetched later
+  unfetch(line) {
+    debug(`enter unfetch('${escapeStr(line)}')`);
+    this.lBuffer.unshift(line);
+    this.lineNum -= 1;
+    debug('return from unfetch()');
+  }
+
+  // ..........................................................
+  nextLine() {
+    var line;
+    line = this.fetch();
+    this.unfetch(line);
+    return line;
+  }
+
+  // ..........................................................
+  getPositionInfo() {
+    if (this.altInput) {
+      return this.altInput.getPositionInfo();
+    } else {
+      return {
+        file: this.filename,
+        lineNum: this.lineNum
+      };
+    }
+  }
+
+  // ..........................................................
+  fetchAll() {
+    var lLines, line;
+    lLines = [];
+    while ((line = this.fetch()) != null) {
+      lLines.push(line);
+    }
+    return lLines;
+  }
+
+  // ..........................................................
+  fetchAllBlock() {
+    var lLines;
+    lLines = this.fetchAll();
+    return arrayToString(lLines);
+  }
+
+};
+
+// ===========================================================================
+//   class StringInput
+//      - keep track of indentation
+//      - allow mapping of lines, including skipping lines
+//      - implement look ahead via peek()
+export var StringInput = class StringInput extends StringFetcher {
+  constructor(content, hOptions = {}) {
+    // --- Valid options:
+    //        filename
+    super(content, hOptions);
+    this.lookahead = undef; // --- lookahead token, placed by unget
+    
+    // --- cache in case getAll() is called multiple times
+    this.lAllPairs = undef;
+  }
+
+  // ..........................................................
+  unget(pair) {
+    // --- pair will always be [<item>, <level>]
+    //     <item> can be anything - i.e. it's been mapped
+    debug('enter unget() with', pair);
+    assert(this.lookahead == null, "unget(): there's already a lookahead");
+    this.lookahead = pair;
     debug('return from unget()');
   }
 
   // ..........................................................
   peek() {
-    var item;
+    var pair;
     debug('enter peek():');
     if (this.lookahead != null) {
-      debug("return lookahead token from peek");
+      debug("return lookahead from peek");
       return this.lookahead;
     }
-    item = this.get();
-    if (item == null) {
+    pair = this.get();
+    if (pair == null) {
       debug("return from peek() - undef");
       return undef;
     }
-    this.unget(item);
-    debug(`return ${oneline(item)} from peek`);
-    return item;
+    this.unget(pair);
+    debug(`return ${oneline(pair)} from peek`);
+    return pair;
   }
 
   // ..........................................................
@@ -134,7 +245,7 @@ export var StringInput = class StringInput {
     debug('enter skip():');
     if (this.lookahead != null) {
       this.lookahead = undef;
-      debug("return from skip: clear lookahead token");
+      debug("return from skip: clear lookahead");
       return;
     }
     this.get();
@@ -142,139 +253,47 @@ export var StringInput = class StringInput {
   }
 
   // ..........................................................
-  // --- Returns undef if either:
-  //        1. there's no alt input
-  //        2. get from alt input returns undef (then closes alt input)
-  getFromAlt() {
-    var result;
-    debug("enter getFromAlt()");
-    if (!this.altInput) {
-      croak("getFromAlt(): There is no alt input");
-    }
-    result = this.altInput.get();
-    if (result != null) {
-      debug(`return ${oneline(result)} from getFromAlt`);
-      return indented(result, this.altLevel);
-    } else {
-      this.altInput = undef;
-      this.altLevel = undef;
-      debug("return from getFromAlt: alt returned undef, alt input removed");
-      return undef;
-    }
-  }
-
-  // ..........................................................
-  // --- Returns undef if either:
-  //        1. there's no alt input
-  //        2. get from alt input returns undef (then closes alt input)
-  fetchFromAlt() {
-    var result;
-    debug("enter fetchFromAlt()");
-    if (!this.altInput) {
-      croak("fetchFromAlt(): There is no alt input");
-    }
-    result = this.altInput.fetch();
-    if (result != null) {
-      `return ${oneline(result)} from getFromAlt()`;
-      return indented(result, this.altLevel);
-    } else {
-      debug("return from fetchFromAlt: alt returned undef, alt input removed");
-      this.altInput = undef;
-      this.altLevel = undef;
-      return undef;
-    }
-  }
-
-  // ..........................................................
   // --- designed to override with a mapping method
-  //     NOTE: line includes the indentation
-  mapLine(line) {
-    debug(`in default mapLine(${oneline(line)})`);
+  //     which can map to any valid JavaScript value
+  mapLine(line, level) {
+    assert((line != null) && isString(line), "mapLine(): not a string");
+    debug(`in default mapLine('${escapeStr(line)}', ${level})`);
     return line;
   }
 
   // ..........................................................
   get() {
-    var line, result, saved;
+    var level, line, newline, result, saved;
     debug(`enter get() - src ${this.filename}`);
     if (this.lookahead != null) {
       saved = this.lookahead;
       this.lookahead = undef;
-      debug(`return lookahead token from get() - src ${this.filename}`);
+      debug("return lookahead pair from get()");
       return saved;
-    }
-    if (this.altInput && ((line = this.getFromAlt()) != null)) {
-      debug(`return from get() with ${oneline(line)} - from alt ${this.filename}`);
-      return line;
     }
     line = this.fetch(); // will handle #include
     debug("LINE", line);
     if (line == null) {
-      debug(`return from get() with undef at EOF - src ${this.filename}`);
+      debug("return from get() with undef at EOF");
       return undef;
     }
-    result = this.mapLine(line);
-    debug(`MAP: '${line}' => ${oneline(result)}`);
+    [level, newline] = splitLine(line);
+    result = this.mapLine(newline, level);
+    debug(`MAP: '${newline}' => ${oneline(result)}`);
     // --- if mapLine() returns undef, we skip that line
     while ((result == null) && (this.lBuffer.length > 0)) {
       line = this.fetch();
-      result = this.mapLine(line);
-      debug(`'${line}' mapped to '${result}'`);
+      [level, newline] = splitLine(line);
+      result = this.mapLine(newline, level);
+      debug(`MAP: '${newline}' => ${oneline(result)}`);
     }
-    debug(`return ${oneline(result)} from get() - src ${this.filename}`);
-    return result;
-  }
-
-  // ..........................................................
-  // --- This should be used to fetch from @lBuffer
-  //     to maintain proper @lineNum for error messages
-  //     MUST handle #include
-  fetch() {
-    var _, altLine, contents, fname, lMatches, level, line, result, str;
-    debug("enter fetch()");
-    if (this.altInput && ((result = this.fetchFromAlt()) != null)) {
-      debug(`return alt ${oneline(result)} from fetch()`);
-      return result;
-    }
-    if (this.lBuffer.length === 0) {
-      debug("return from fetch() - empty buffer, return undef");
+    if (result != null) {
+      debug(`return ${oneline(result)}, ${level} from get()`);
+      return [result, level];
+    } else {
+      debug("return undef from get()");
       return undef;
     }
-    this.lineNum += 1;
-    line = this.lBuffer.shift();
-    [level, str] = splitLine(line);
-    if (lMatches = str.match(/^\#include\s+(\S.*)$/)) {
-      [_, fname] = lMatches;
-      assert(!this.altInput, "fetch(): altInput already set");
-      if (unitTesting) {
-        debug(`return from fetch() 'Contents of ${fname}' - unit testing`);
-        return indented(`Contents of ${fname}`, level);
-      }
-      contents = getFileContents(fname);
-      this.altInput = new StringInput(contents);
-      this.altLevel = level;
-      debug(`alt input created at level ${level}`);
-      // --- We just created an alt input
-      //     we need to get its first line
-      altLine = this.getFromAlt();
-      if (altLine != null) {
-        debug(`fetch(): getFromAlt returned '${altLine}'`);
-        line = altLine;
-      } else {
-        debug(`fetch(): alt was undef, retain line '${line}'`);
-      }
-    }
-    debug(`return from fetch() ${oneline(line)} from buffer:`);
-    return line;
-  }
-
-  // ..........................................................
-  // --- Put one or more lines back into lBuffer, to be fetched later
-  unfetch(str) {
-    debug("enter unfetch()", str);
-    this.lBuffer.unshift(str);
-    this.lineNum -= 1;
-    debug('return from unfetch()');
   }
 
   // ..........................................................
@@ -315,41 +334,56 @@ export var StringInput = class StringInput {
 
   // ..........................................................
   getAll() {
-    var lLines, line;
+    var lPairs, pair;
     debug("enter getAll()");
-    lLines = [];
-    line = this.get();
-    while (line != null) {
-      lLines.push(line);
-      line = this.get();
+    if (this.lAllPairs != null) {
+      debug("return cached lAllPairs from getAll()");
+      return this.lAllPairs;
     }
-    debug(`return ${lLines.length} lines from getAll()`);
-    return lLines;
-  }
-
-  // ..........................................................
-  skipAll() {
-    var line;
-    // --- Useful if you don't need the final output, but, e.g.
-    //     mapString() builds something that you will fetch
-    line = this.get();
-    while (line != null) {
-      line = this.get();
+    lPairs = [];
+    while ((pair = this.get()) != null) {
+      lPairs.push(pair);
     }
+    this.lAllPairs = lPairs;
+    debug(`return ${lPairs.length} pairs from getAll()`);
+    return lPairs;
   }
 
   // ..........................................................
   getAllText() {
-    return arrayToString(this.getAll());
+    var lLines, level, line;
+    lLines = (function() {
+      var j, len1, ref, results;
+      ref = this.getAll();
+      results = [];
+      for (j = 0, len1 = ref.length; j < len1; j++) {
+        [line, level] = ref[j];
+        results.push(indented(line, level));
+      }
+      return results;
+    }).call(this);
+    return arrayToString(lLines);
   }
 
 };
 
 // ===========================================================================
 export var SmartInput = class SmartInput extends StringInput {
-  // - removes blank lines and comments
+  // - removes blank lines and comments (but can be overridden)
   // - joins continuation lines
   // - handles HEREDOCs
+  constructor(content, hOptions = {}) {
+    // --- Valid options:
+    //        filename
+    super(content, hOptions);
+    // --- This should only be used in mapLine(), where
+    //     it keeps track of the level we're at, to be passed
+    //     to handleEmptyLine() since the empty line itself
+    //     is always at level 0
+    this.curLevel = 0;
+  }
+
+  // ..........................................................
   getContLines(curlevel) {
     var lLines, nextLevel, nextLine, nextStr;
     lLines = [];
@@ -372,14 +406,14 @@ export var SmartInput = class SmartInput extends StringInput {
   }
 
   // ..........................................................
-  handleEmptyLine() {
+  handleEmptyLine(level) {
     debug("in default handleEmptyLine()");
     return undef; // skip blank lines by default
   }
 
   
     // ..........................................................
-  handleComment() {
+  handleComment(line, level) {
     debug("in default handleComment()");
     return undef; // skip comments by default
   }
@@ -388,20 +422,21 @@ export var SmartInput = class SmartInput extends StringInput {
     // ..........................................................
   // --- designed to override with a mapping method
   //     NOTE: line includes the indentation
-  mapLine(orgLine) {
-    var lContLines, level, line, orgLineNum, result;
-    debug(`enter mapLine(${oneline(orgLine)})`);
-    assert(orgLine != null, "mapLine(): orgLine is undef");
-    if (isEmpty(orgLine)) {
+  mapLine(line, level) {
+    var lContLines, orgLineNum, result;
+    debug(`enter mapLine('${escapeStr(line)}', ${level})`);
+    assert(line != null, "mapLine(): line is undef");
+    assert(isString(line), `mapLine(): ${oneline(line)} not a string`);
+    if (isEmpty(line)) {
       debug("return undef from mapLine() - empty");
-      return this.handleEmptyLine();
+      return this.handleEmptyLine(this.curLevel);
     }
-    if (isComment(orgLine)) {
+    if (isComment(line)) {
       debug("return undef from mapLine() - comment");
-      return this.handleComment();
+      return this.handleComment(line, level);
     }
-    [level, line] = splitLine(orgLine);
     orgLineNum = this.lineNum;
+    this.curLevel = level;
     // --- Merge in any continuation lines
     debug("check for continuation lines");
     lContLines = this.getContLines(level);
@@ -522,153 +557,6 @@ export var SmartInput = class SmartInput extends StringInput {
 };
 
 // ---------------------------------------------------------------------------
-/*
-
-WHEN NOT UNIT TESTING
-
-- converts
-		<varname> <== <expr>
-
-	to:
-		`$:`
-		<varname> = <expr>
-
-	coffeescript to:
-		var <varname>;
-		$:;
-		<varname> = <js expr>;
-
-	brewCoffee() to:
-		var <varname>;
-		$:
-		<varname> = <js expr>;
-
-- converts
-		<==
-			<code>
-
-	to:
-		`$:{`
-		<code>
-		`}`
-
-	coffeescript to:
-		$:{;
-		<js code>
-		};
-
-	brewCoffee() to:
-		$:{
-		<js code>
-		}
-
-*/
-// ===========================================================================
-export var CoffeeMapper = class CoffeeMapper extends SmartInput {
-  mapString(line, level) {
-    var _, code, expr, lMatches, result, varname;
-    debug(`enter mapString(${oneline(line)})`);
-    if (line === '<==') {
-      // --- Generate a reactive block
-      code = this.fetchBlock(level + 1); // might be empty
-      if (isEmpty(code)) {
-        debug("return undef from mapString() - empty code block");
-        return undef;
-      } else {
-        result = `\`$:{\`
-${code}
-\`}\``;
-      }
-    } else if (lMatches = line.match(/^([A-Za-z][A-Za-z0-9_]*)\s*\<\=\=\s*(.*)$/)) { // variable name
-      [_, varname, expr] = lMatches;
-      code = this.fetchBlock(level + 1); // must be empty
-      assert(isEmpty(code), `mapLine(): indented code not allowed after '${line}'`);
-      assert(!isEmpty(expr), `mapLine(): empty expression in '${line}'`);
-      result = `\`$:\`
-${varname} = ${expr}`;
-    } else {
-      debug("return from mapLine() - no match");
-      return indented(line, level);
-    }
-    debug("return from mapLine()", result);
-    return indented(result, level);
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-export var CoffeePostMapper = class CoffeePostMapper extends StringInput {
-  // --- variable declaration immediately following one of:
-  //        $:{;
-  //        $:;
-  //     should be moved above this line
-  mapLine(line) {
-    var _, brace, lMatches, rest, result, ws;
-    if (this.savedLine) {
-      if (line.match(/^\s*var\s/)) {
-        result = `${line}\n${this.savedLine}`;
-      } else {
-        result = `${this.savedLine}\n${line}`;
-      }
-      this.savedLine = undef;
-      return result;
-    }
-    if ((lMatches = line.match(/^(\s*)\$\:(\{)?\;(.*)$/))) { // possible leading whitespace
-      // optional {
-      // any remaining text
-      [_, ws, brace, rest] = lMatches;
-      assert(!rest, "CoffeePostMapper: extra text after $:");
-      if (brace) {
-        this.savedLine = `${ws}$:{`;
-      } else {
-        this.savedLine = `${ws}$:`;
-      }
-      return undef;
-    } else if ((lMatches = line.match(/^(\s*)\}\;(.*)$/))) { // possible leading whitespace
-      [_, ws, rest] = lMatches;
-      assert(!rest, "CoffeePostMapper: extra text after $:");
-      return `${ws}\}`;
-    } else {
-      return line;
-    }
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-export var SassMapper = class SassMapper extends StringInput {
-  // --- only removes comments
-  mapLine(line) {
-    if (isComment(line)) {
-      return undef;
-    }
-    return line;
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-//   class FileInput - contents from a file
-export var FileInput = class FileInput extends SmartInput {
-  constructor(filename, hOptions = {}) {
-    var base, content, dir, ext, root;
-    ({root, dir, base, ext} = pathlib.parse(filename.trim()));
-    hOptions.filename = base;
-    if (unitTesting) {
-      content = `Contents of ${base}`;
-    } else {
-      if (!fs.existsSync(filename)) {
-        croak(`FileInput(): file '${filename}' does not exist`);
-      }
-      content = slurp(filename);
-    }
-    super(content, hOptions);
-  }
-
-};
-
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // --- To derive a class from this:
 //        1. Extend this class
@@ -678,6 +566,14 @@ export var FileInput = class FileInput extends SmartInput {
 //        3. If desired, override handleHereDoc, which patches
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends SmartInput {
+  constructor(content, hOptions = {}) {
+    // --- Valid options:
+    //        filename
+    super(content, hOptions);
+    // --- Cached tree, in case getTree() is called multiple times
+    this.tree = undef;
+  }
+
   mapString(line, level) {
     var result;
     result = this.mapNode(line);
@@ -690,14 +586,40 @@ export var PLLParser = class PLLParser extends SmartInput {
   }
 
   // ..........................................................
+  getAll() {
+    var lItems, lPairs, pair;
+    // --- This returns a list of pairs, but
+    //     we don't need the level anymore since it's
+    //     also stored in the node
+    lPairs = super.getAll();
+    debug("lPairs", lPairs);
+    lItems = (function() {
+      var j, len1, results;
+      results = [];
+      for (j = 0, len1 = lPairs.length; j < len1; j++) {
+        pair = lPairs[j];
+        results.push(pair[0]);
+      }
+      return results;
+    })();
+    debug("lItems", lItems);
+    return lItems;
+  }
+
+  // ..........................................................
   getTree() {
-    var lLines, tree;
+    var lItems, tree;
     debug("enter getTree()");
-    lLines = this.getAll();
-    debug(`lLines = ${oneline(lLines)}`);
-    assert(lLines != null, "lLines is undef");
-    assert(isArray(lLines), "getTree(): lLines is not an array");
-    tree = treeify(lLines);
+    if (this.tree != null) {
+      debug("return cached tree from getTree()");
+      return this.tree;
+    }
+    lItems = this.getAll();
+    assert(lItems != null, "lItems is undef");
+    assert(isArray(lItems), "getTree(): lItems is not an array");
+    tree = treeify(lItems);
+    debug("TREE", tree);
+    this.tree = tree;
     debug("return from getTree()", tree);
     return tree;
   }
@@ -774,10 +696,6 @@ hExtToEnvVar = {
 export var getFileContents = function(fname, convert = false) {
   var base, contents, dir, envvar, ext, fullpath, root;
   debug(`enter getFileContents('${fname}')`);
-  if (unitTesting) {
-    debug("return from getFileContents() - unit testing");
-    return `Contents of ${fname}`;
-  }
   ({root, dir, base, ext} = parse_fname(fname.trim()));
   assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
   envvar = hExtToEnvVar[ext];

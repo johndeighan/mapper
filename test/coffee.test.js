@@ -5,8 +5,7 @@ var CoffeeTester, root, simple, tester;
 import {
   undef,
   isEmpty,
-  nonEmpty,
-  setUnitTesting
+  nonEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -30,18 +29,19 @@ import {
 import {
   brewCoffee,
   brewExpr,
-  addImports
+  addImports,
+  convertCoffee
 } from '@jdeighan/string-input/coffee';
 
 root = process.env.dir_root = mydir(import.meta.url);
 
-process.env.dir_data = `${root}/data process.env.dir_markdown = `;
+process.env.DIR_DATA = `${root}/data process.env.DIR_MARKDOWN = `;
 
 process.env.DIR_SYMBOLS = root;
 
 simple = new UnitTester();
 
-setUnitTesting(true);
+convertCoffee(false);
 
 // ---------------------------------------------------------------------------
 CoffeeTester = class CoffeeTester extends UnitTester {
@@ -90,7 +90,7 @@ x = a + 1000`);
 
 // ---------------------------------------------------------------------------
 // --- test full translation to JavaScript
-setUnitTesting(false);
+convertCoffee(true);
 
 tester.equal(90, `x = 23`, `var x;
 x = 23;`);
@@ -110,5 +110,3 @@ tester.equal(111, `# --- a comment
 x <== a + 1000`, `var x;
 $:
 x = a + 1000;`);
-
-setUnitTesting(true);

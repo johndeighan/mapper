@@ -12,7 +12,6 @@ import {
   isHash,
   isEmpty,
   nonEmpty,
-  setUnitTesting,
   arrayToString,
   stringToArray,
   sep_dash,

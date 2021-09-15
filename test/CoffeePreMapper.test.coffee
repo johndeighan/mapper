@@ -1,39 +1,38 @@
-# CoffeeMapper.test.coffee
+# CoffeePreMapper.test.coffee
 
 import {strict as assert} from 'assert'
-import {undef, setUnitTesting} from '@jdeighan/coffee-utils'
+import {undef} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {CoffeeMapper} from '@jdeighan/string-input'
+import {CoffeePreMapper} from '@jdeighan/string-input/coffee'
+import {convertCoffee} from '@jdeighan/string-input/coffee'
 
-# NOTE: In unit tests, CoffeeScript is NOT converted
-#       to JavaScript
-
-setUnitTesting(true)
+convertCoffee false
 
 # ---------------------------------------------------------------------------
 
 class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
-		assert oInput instanceof CoffeeMapper,
-			"oInput should be a CoffeeMapper object"
+		assert oInput instanceof CoffeePreMapper,
+			"oInput should be a CoffeePreMapper object"
 		return oInput.getAllText()
 
+	# --- disable normalizing so we can check for proper indentation
 	normalize: (str) ->
 		return str
 
 tester = new GatherTester()
 
 # ===========================================================================
-# Repeat all SmartInput tests using CoffeeMapper
+# Repeat all SmartInput tests using CoffeePreMapper
 # They should all pass
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 35, new CoffeeMapper("""
+tester.equal 35, new CoffeePreMapper("""
 		abc
 
 		# --- a comment
@@ -46,7 +45,7 @@ tester.equal 35, new CoffeeMapper("""
 # ---------------------------------------------------------------------------
 # --- test overriding handling of comments and empty lines
 
-class CustomInput extends CoffeeMapper
+class CustomInput extends CoffeePreMapper
 
 	handleEmptyLine: () ->
 
@@ -73,7 +72,7 @@ tester.equal 60, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 75, new CoffeeMapper("""
+tester.equal 75, new CoffeePreMapper("""
 		h1 color=blue
 				This is
 				a title
@@ -88,7 +87,7 @@ tester.equal 75, new CoffeeMapper("""
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 90, new CoffeeMapper("""
+tester.equal 90, new CoffeePreMapper("""
 		h1 color="<<<"
 			magenta
 
@@ -102,7 +101,7 @@ tester.equal 90, new CoffeeMapper("""
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 104, new CoffeeMapper("""
+tester.equal 104, new CoffeePreMapper("""
 		h1 color="<<<"
 				This is a title
 			magenta
@@ -117,7 +116,7 @@ tester.equal 104, new CoffeeMapper("""
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 119, new CoffeeMapper("""
+tester.equal 119, new CoffeePreMapper("""
 		h1 color="<<<"
 			color
 			.
@@ -131,28 +130,26 @@ tester.equal 119, new CoffeeMapper("""
 		"""
 
 # ===========================================================================
-# CoffeeMapper specific tests
+# CoffeePreMapper specific tests
 # ===========================================================================
-
-setUnitTesting(false)
 
 # ---------------------------------------------------------------------------
 # --- Test basic mapping
 
-tester.equal 139, new CoffeeMapper("""
+tester.equal 139, new CoffeePreMapper("""
 		x = 23
 		if x > 10
 			console.log "OK"
 		"""), """
 		x = 23
 		if x > 10
-		\tconsole.log "OK"
+			console.log "OK"
 		"""
 
 # ---------------------------------------------------------------------------
 # --- Test live assignment
 
-tester.equal 152, new CoffeeMapper("""
+tester.equal 152, new CoffeePreMapper("""
 		x <== 2 * y
 		if x > 10
 			console.log "OK"
@@ -160,7 +157,7 @@ tester.equal 152, new CoffeeMapper("""
 		`$:`
 		x = 2 * y
 		if x > 10
-		\tconsole.log "OK"
+			console.log "OK"
 		"""
 
 # ---------------------------------------------------------------------------
@@ -168,7 +165,7 @@ tester.equal 152, new CoffeeMapper("""
 
 (() ->
 	count = undef
-	tester.equal 168, new CoffeeMapper("""
+	tester.equal 168, new CoffeePreMapper("""
 			<==
 				console.log "Count is \#{count}"
 			"""), """
@@ -183,7 +180,7 @@ tester.equal 152, new CoffeeMapper("""
 
 (() ->
 	count = undef
-	tester.equal 183, new CoffeeMapper("""
+	tester.equal 183, new CoffeePreMapper("""
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"
@@ -200,7 +197,7 @@ tester.equal 152, new CoffeeMapper("""
 
 (() ->
 	count = undef
-	tester.equal 201, new CoffeeMapper("""
+	tester.equal 200, new CoffeePreMapper("""
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"

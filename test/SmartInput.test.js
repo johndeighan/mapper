@@ -9,9 +9,7 @@ import {
 import {
   undef,
   pass,
-  isEmpty,
-  setUnitTesting,
-  unitTesting
+  isEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -43,9 +41,9 @@ dir = mydir(import.meta.url);
 
 process.env.DIR_MARKDOWN = mkpath(dir, 'markdown');
 
-simple = new UnitTester();
+process.env.DIR_DATA = mkpath(dir, 'data');
 
-setUnitTesting(true);
+simple = new UnitTester();
 
 /*
 	class SmartInput should handle the following:
@@ -58,7 +56,7 @@ setUnitTesting(true);
 GatherTester = class GatherTester extends UnitTester {
   transformValue(oInput) {
     assert(oInput instanceof SmartInput, "oInput should be a SmartInput object");
-    return oInput.getAll();
+    return oInput.getAllText();
   }
 
 };
@@ -67,10 +65,11 @@ tester = new GatherTester();
 
 // ---------------------------------------------------------------------------
 // --- test removing comments and empty lines
-tester.equal(48, new SmartInput(`abc
+tester.equal(44, new SmartInput(`abc
 
 # --- a comment
-def`), ['abc', 'def']);
+def`), `abc
+def`);
 
 // ---------------------------------------------------------------------------
 // --- test overriding handling of comments and empty lines
@@ -87,43 +86,50 @@ CustomInput = class CustomInput extends SmartInput {
 
 };
 
-tester.equal(73, new CustomInput(`abc
+tester.equal(69, new CustomInput(`abc
 
 # --- a comment
-def`), ['abc', 'line 2 is empty', 'line 3 is a comment', 'def']);
+def`), `abc
+line 2 is empty
+line 3 is a comment
+def`);
 
 // ---------------------------------------------------------------------------
 // --- test continuation lines
-tester.equal(88, new SmartInput(`h1 color=blue
+tester.equal(84, new SmartInput(`h1 color=blue
 		This is
 		a title
 
 # --- a comment
-p the end`), ['h1 color=blue This is a title', 'p the end']);
+p the end`), `h1 color=blue This is a title
+p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC
-tester.equal(103, new SmartInput(`h1 color="<<<"
+tester.equal(99, new SmartInput(`h1 color="<<<"
 	magenta
 
 # --- a comment
-p the end`), ['h1 color="magenta"', 'p the end']);
+p the end`), `h1 color="magenta"
+p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC with continuation lines
-tester.equal(103, new SmartInput(`h1 color="<<<"
+tester.equal(113, new SmartInput(`h1 color="<<<"
 		This is a title
 	magenta
 
 # --- a comment
-p the end`), ['h1 color="magenta" This is a title', 'p the end']);
+p the end`), `h1 color="magenta" This is a title
+p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test using '.' in a HEREDOC
-tester.equal(103, new SmartInput(`h1 color="<<<"
+tester.equal(128, new SmartInput(`h1 color="<<<"
 	color
 	.
 	magenta
 
 # --- a comment
-p the end`), ['h1 color="color  magenta"', 'p the end']);
+p the end`), `h1 color="color  magenta"
+p the end`);

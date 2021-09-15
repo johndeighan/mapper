@@ -1,12 +1,11 @@
 # tree.test.coffee
 
-import {undef, setUnitTesting, oneline} from '@jdeighan/coffee-utils'
+import {undef, oneline} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {taml} from '@jdeighan/string-input/taml'
 import {TreeWalker, TreeStringifier} from '@jdeighan/string-input/tree'
 
-setUnitTesting(true)
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------

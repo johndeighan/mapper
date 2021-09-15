@@ -28,7 +28,7 @@ tester = new GatherTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 30, new PLLParser("""
+tester.equal 31, new PLLParser("""
 		line 1
 		line 2
 			line 3
@@ -40,7 +40,7 @@ tester.equal 30, new PLLParser("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 30, new PLLParser("""
+tester.equal 43, new PLLParser("""
 		line 1
 			line 2
 				line 3
@@ -81,7 +81,7 @@ tester.equal 30, new PLLParser("""
 
 	tree = parser.getTree()
 
-	simple.equal 79, tree, [
+	simple.equal 84, tree, [
 		{ lineNum: 1, node: ['name','John'], body: [
 			{ lineNum: 2, node: ['last','Deighan'] }
 			]}
@@ -124,7 +124,7 @@ tester.equal 30, new PLLParser("""
 
 	tree = parser.getTree()
 
-	simple.equal 125, tree, [
+	simple.equal 127, tree, [
 		{ lineNum: 1, node: undef, body: [
 			{ lineNum: 2, node: 'Deighan' }
 			]}

@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, isString, isHash, isEmpty, nonEmpty, setUnitTesting,
+	undef, isString, isHash, isEmpty, nonEmpty,
 	arrayToString, stringToArray, sep_dash, sep_eq,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'

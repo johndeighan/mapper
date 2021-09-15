@@ -4,7 +4,6 @@ var PreprocessTester, simple, tester;
 
 import {
   undef,
-  setUnitTesting,
   arrayToString,
   isEmpty
 } from '@jdeighan/coffee-utils';
@@ -22,8 +21,6 @@ import {
   preProcessCoffee,
   getNeededImports
 } from '@jdeighan/string-input/coffee';
-
-setUnitTesting(true);
 
 simple = new UnitTester();
 

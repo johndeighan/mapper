@@ -577,7 +577,11 @@ export var PLLParser = class PLLParser extends SmartInput {
   mapString(line, level) {
     var result;
     result = this.mapNode(line);
-    return [level, this.lineNum, result];
+    if (result != null) {
+      return [level, this.lineNum, result];
+    } else {
+      return undef;
+    }
   }
 
   // ..........................................................
@@ -617,7 +621,9 @@ export var PLLParser = class PLLParser extends SmartInput {
     lItems = this.getAll();
     assert(lItems != null, "lItems is undef");
     assert(isArray(lItems), "getTree(): lItems is not an array");
-    tree = treeify(lItems);
+    // --- treeify will consume its input, so we'll first
+    //     make a deep copy
+    tree = treeify(deepCopy(lItems));
     debug("TREE", tree);
     this.tree = tree;
     debug("return from getTree()", tree);
@@ -630,7 +636,7 @@ export var PLLParser = class PLLParser extends SmartInput {
 // Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 // If a predicate is supplied, it must return true for any <node>
 export var treeify = function(lItems, atLevel = 0, predicate = undef) {
-  var body, err, h, item, lNodes, len, level, lineNum, node;
+  var body, err, h, item, lNodes, level, lineNum, node;
   // --- stop when an item of lower level is found, or at end of array
   debug(`enter treeify(${atLevel})`);
   debug('lItems', lItems);
@@ -644,9 +650,10 @@ export var treeify = function(lItems, atLevel = 0, predicate = undef) {
   lNodes = [];
   while ((lItems.length > 0) && (lItems[0][0] >= atLevel)) {
     item = lItems.shift();
-    len = item.length;
     [level, lineNum, node] = item;
-    assert(level === atLevel, `treeify(): item at level ${level}, should be ${atLevel}`);
+    if (level !== atLevel) {
+      croak(`treeify(): item at level ${level}, should be ${atLevel}`, "TREE", lItems);
+    }
     h = {node, lineNum};
     body = treeify(lItems, atLevel + 1);
     if (body != null) {

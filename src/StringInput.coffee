@@ -536,7 +536,10 @@ export class PLLParser extends SmartInput
 	mapString: (line, level) ->
 
 		result = @mapNode(line)
-		return [level, @lineNum, result]
+		if result?
+			return [level, @lineNum, result]
+		else
+			return undef
 
 	# ..........................................................
 
@@ -574,7 +577,9 @@ export class PLLParser extends SmartInput
 		assert lItems?, "lItems is undef"
 		assert isArray(lItems), "getTree(): lItems is not an array"
 
-		tree = treeify(lItems)
+		# --- treeify will consume its input, so we'll first
+		#     make a deep copy
+		tree = treeify(deepCopy(lItems))
 		debug "TREE", tree
 
 		@tree = tree
@@ -598,10 +603,12 @@ export treeify = (lItems, atLevel=0, predicate=undef) ->
 	lNodes = []
 	while (lItems.length > 0) && (lItems[0][0] >= atLevel)
 		item = lItems.shift()
-		len = item.length
 		[level, lineNum, node] = item
-		assert level==atLevel,
-			"treeify(): item at level #{level}, should be #{atLevel}"
+
+		if (level != atLevel)
+			croak "treeify(): item at level #{level}, should be #{atLevel}",
+					"TREE", lItems
+
 		h = {node, lineNum}
 		body = treeify(lItems, atLevel+1)
 		if body?

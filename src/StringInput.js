@@ -466,8 +466,18 @@ export var SmartInput = class SmartInput extends StringInput {
   }
 
   // ..........................................................
+  heredocStr(block) {
+    // --- return replacement string for '<<<', given a block
+    if (isTAML(block)) {
+      return JSON.stringify(taml(block));
+    } else {
+      return block.replace(/\n/sg, ' ');
+    }
+  }
+
+  // ..........................................................
   handleHereDoc(line, level) {
-    var blk, lLines, lParts, newstr, part, pos, result, start;
+    var block, lLines, lParts, newstr, part, pos, result, start;
     // --- Indentation is removed from line
     // --- Find each '<<<' and replace with result of heredocStr()
     assert(isString(line), "handleHereDoc(): not a string");
@@ -482,13 +492,8 @@ export var SmartInput = class SmartInput extends StringInput {
       assert(isArray(lLines), "handleHereDoc(): lLines not an array");
       debug(`HEREDOC lines: ${oneline(lLines)}`);
       if (lLines.length > 0) {
-        blk = arrayToString(undented(lLines));
-        if (isTAML(blk)) {
-          result = taml(blk);
-          newstr = JSON.stringify(result);
-        } else {
-          newstr = this.heredocStr(blk);
-        }
+        block = arrayToString(undented(lLines));
+        newstr = this.heredocStr(block);
         assert(isString(newstr), "handleHereDoc(): newstr not a string");
         debug(`PUSH ${oneline(newstr)}`);
         lParts.push(newstr);
@@ -516,12 +521,6 @@ export var SmartInput = class SmartInput extends StringInput {
     } else {
       lLines.push(line);
     }
-  }
-
-  // ..........................................................
-  heredocStr(str) {
-    // --- return replacement string for '<<<'
-    return str.replace(/\n/sg, ' ');
   }
 
   // ..........................................................
@@ -574,6 +573,7 @@ export var PLLParser = class PLLParser extends SmartInput {
     this.tree = undef;
   }
 
+  // ..........................................................
   mapString(line, level) {
     var result;
     result = this.mapNode(line, level);

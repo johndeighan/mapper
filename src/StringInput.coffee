@@ -423,6 +423,16 @@ export class SmartInput extends StringInput
 
 	# ..........................................................
 
+	heredocStr: (block) ->
+		# --- return replacement string for '<<<', given a block
+
+		if isTAML(block)
+			return JSON.stringify(taml(block))
+		else
+			return block.replace(/\n/sg, ' ')
+
+	# ..........................................................
+
 	handleHereDoc: (line, level) ->
 		# --- Indentation is removed from line
 		# --- Find each '<<<' and replace with result of heredocStr()
@@ -439,12 +449,8 @@ export class SmartInput extends StringInput
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
 			debug "HEREDOC lines: #{oneline(lLines)}"
 			if (lLines.length > 0)
-				blk = arrayToString(undented(lLines))
-				if isTAML(blk)
-					result = taml(blk)
-					newstr = JSON.stringify(result)
-				else
-					newstr = @heredocStr(blk)
+				block = arrayToString(undented(lLines))
+				newstr = @heredocStr(block)
 				assert isString(newstr), "handleHereDoc(): newstr not a string"
 				debug "PUSH #{oneline(newstr)}"
 				lParts.push newstr
@@ -474,13 +480,6 @@ export class SmartInput extends StringInput
 		else
 			lLines.push line
 		return
-
-	# ..........................................................
-
-	heredocStr: (str) ->
-		# --- return replacement string for '<<<'
-
-		return str.replace(/\n/sg, ' ')
 
 	# ..........................................................
 
@@ -532,6 +531,8 @@ export class PLLParser extends SmartInput
 
 		# --- Cached tree, in case getTree() is called multiple times
 		@tree = undef
+
+	# ..........................................................
 
 	mapString: (line, level) ->
 

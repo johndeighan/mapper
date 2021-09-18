@@ -19,14 +19,27 @@ import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 # ---------------------------------------------------------------------------
+
+patch = (str, substr, value) ->
+
+	# --- Replace substr with value throughout str
+	return str.replace(substr, value)
+
+# ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
 #                         handles #include
 
 export class StringFetcher
 
-	constructor: (content, @hOptions={}) ->
-		# --- Valid options:
-		#        filename
+	constructor: (content, @filename) ->
+
+		if @filename?
+			try
+				# --- We only want the bare filename
+				{base} = pathlib.parse(@filename)
+				@filename = base
+		else
+			@filename = 'unit test'
 
 		if isEmpty(content)
 			@lBuffer = []
@@ -38,20 +51,13 @@ export class StringFetcher
 		else
 			croak "StringFetcher(): content must be array or string",
 					"CONTENT", content
+
+		# --- patch {{FILE}} and {{LINE}}
+		@lBuffer = for line,i in @lBuffer
+			patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
 		debug "in constructor: BUFFER", @lBuffer
 
 		@lineNum = 0
-
-		{filename} = @hOptions
-		if filename
-			try
-				# --- We only want the bare filename
-				{base} = pathlib.parse(filename)
-				@filename = base
-			catch
-				@filename = filename
-		else
-			@filename = 'unit test'
 
 		# --- for handling #include
 		@altInput = undef
@@ -90,7 +96,7 @@ export class StringFetcher
 			debug "#include #{fname} with prefix '#{escapeStr(prefix)}'"
 			assert not @altInput, "fetch(): altInput already set"
 			contents = getFileContents(fname)
-			@altInput = new StringFetcher(contents)
+			@altInput = new StringFetcher(contents, fname)
 			@altPrefix = prefix
 			debug "alt input created with prefix '#{escapeStr(prefix)}'"
 			line = @altInput.fetch()
@@ -112,14 +118,6 @@ export class StringFetcher
 		@lineNum -= 1
 		debug 'return from unfetch()'
 		return
-
-	# ..........................................................
-
-	nextLine: () ->
-
-		line = @fetch()
-		@unfetch(line)
-		return line
 
 	# ..........................................................
 
@@ -161,7 +159,7 @@ export class StringInput extends StringFetcher
 		# --- Valid options:
 		#        filename
 
-		super content, hOptions
+		super content, hOptions.filename
 		@lookahead = undef   # --- lookahead token, placed by unget
 
 		# --- cache in case getAll() is called multiple times

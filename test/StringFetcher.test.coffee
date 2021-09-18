@@ -19,6 +19,8 @@ simple = new UnitTester()
 ###
 	class StringFetcher should handle the following:
 		- #include <file> statements, when DIR_* env vars are set
+		- patch {{FILE}} with the name of the input file
+		- patch {{LINE}} with the line number
 ###
 
 # ---------------------------------------------------------------------------
@@ -32,26 +34,26 @@ simple = new UnitTester()
 			""")
 
 	line = input.fetch()
-	simple.equal 35, line, 'abc'
+	simple.equal 37, line, 'abc'
 
 	hInfo = input.getPositionInfo()
-	simple.equal 38, hInfo, {
+	simple.equal 40, hInfo, {
 			file: 'unit test',
 			lineNum: 1,
 			}
 
 	line = input.fetch()
-	simple.equal 44, line, '\tdef'
+	simple.equal 46, line, '\tdef'
 	input.unfetch(line)            # make available again
 
 	line = input.fetch()
-	simple.equal 48, line, '\tdef'
+	simple.equal 50, line, '\tdef'
 
 	line = input.fetch()
-	simple.equal 51, line, '\t\tghi'
+	simple.equal 53, line, '\t\tghi'
 
 	line = input.fetch()
-	simple.equal 54, line, undef
+	simple.equal 56, line, undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -70,7 +72,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 73, new StringFetcher("""
+tester.equal 75, new StringFetcher("""
 		abc
 		def
 		"""), """
@@ -78,7 +80,7 @@ tester.equal 73, new StringFetcher("""
 		def
 		"""
 
-tester.equal 81, new StringFetcher("""
+tester.equal 83, new StringFetcher("""
 		abc
 
 		def
@@ -98,7 +100,7 @@ tester.equal 81, new StringFetcher("""
 	def
 ###
 
-tester.equal 101, new StringFetcher("""
+tester.equal 103, new StringFetcher("""
 		first line
 
 			#include file.txt
@@ -109,4 +111,31 @@ tester.equal 101, new StringFetcher("""
 			abc
 			def
 		last line
+		"""
+
+# ---------------------------------------------------------------------------
+# --- Test patching file name
+
+tester.equal 119, new StringFetcher("""
+		in file {{FILE}}
+		ok
+		exiting file {{FILE}}
+		"""), """
+		in file unit test
+		ok
+		exiting file unit test
+		"""
+
+
+# ---------------------------------------------------------------------------
+# --- Test patching line number
+
+tester.equal 133, new StringFetcher("""
+		on line {{LINE}}
+		ok
+		on line {{LINE}}
+		"""), """
+		on line 1
+		ok
+		on line 3
 		"""

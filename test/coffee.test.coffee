@@ -6,7 +6,7 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {
-	brewCoffee, brewExpr, addImports, convertCoffee,
+	brewStarbucks, brewExpr, addImports, convertCoffee,
 	} from '@jdeighan/string-input/coffee'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
@@ -22,7 +22,7 @@ convertCoffee false
 class CoffeeTester extends UnitTester
 
 	transformValue: (text) ->
-		[result, lImports] = brewCoffee(text)
+		[result, lImports] = brewStarbucks(text)
 		if isEmpty(lImports)
 			return result
 		else

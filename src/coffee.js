@@ -67,7 +67,7 @@ export var convertCoffee = function(flag) {
 // ---------------------------------------------------------------------------
 export var brewExpr = function(expr, force = false) {
   var err, newexpr, pos;
-  assert(indentLevel(expr) === 0, "brewCoffee(): has indentation");
+  assert(indentLevel(expr) === 0, "brewExpr(): has indentation");
   if (!convert && !force) {
     return expr;
   }
@@ -88,10 +88,10 @@ export var brewExpr = function(expr, force = false) {
 };
 
 // ---------------------------------------------------------------------------
-export var brewCoffee = function(...lBlocks) {
-  var blk, err, hAllNeeded, hNeeded, i, j, lResult, len, newblk, script;
-  debug("enter brewCoffee()");
-  lResult = [];
+export var brewStarbucks = function(...lBlocks) {
+  var blk, err, hAllNeeded, hNeeded, i, j, lFinalBlocks, len, newblk, script;
+  debug("enter brewStarbucks()");
+  lFinalBlocks = [];
   hAllNeeded = {}; // { <lib>: [ <symbol>, ...], ...}
   for (i = j = 0, len = lBlocks.length; j < len; i = ++j) {
     blk = lBlocks[i];
@@ -102,14 +102,14 @@ export var brewCoffee = function(...lBlocks) {
     hNeeded = getNeededSymbols(newblk);
     mergeNeededSymbols(hAllNeeded, hNeeded);
     if (!convert) {
-      lResult.push(newblk);
+      lFinalBlocks.push(newblk);
     } else {
       try {
         script = CoffeeScript.compile(newblk, {
           bare: true
         });
         debug("BREWED SCRIPT", script);
-        lResult.push(postProcessCoffee(script));
+        lFinalBlocks.push(postProcessCoffee(script));
       } catch (error) {
         err = error;
         log("Mapped Text:", newblk);
@@ -117,8 +117,8 @@ export var brewCoffee = function(...lBlocks) {
       }
     }
   }
-  lResult.push(buildImportList(hAllNeeded));
-  return lResult;
+  lFinalBlocks.push(buildImportList(hAllNeeded));
+  return lFinalBlocks;
 };
 
 // ---------------------------------------------------------------------------
@@ -131,12 +131,12 @@ export var brewCoffee = function(...lBlocks) {
 		`$:`
 		<varname> = <expr>
 
-	coffeescript to:
+	then to to:
 		var <varname>;
 		$:;
 		<varname> = <js expr>;
 
-	brewCoffee() to:
+	then to:
 		var <varname>;
 		$:
 		<varname> = <js expr>;
@@ -150,19 +150,19 @@ export var brewCoffee = function(...lBlocks) {
 		<code>
 		`}`
 
-	coffeescript to:
+	then to:
 		$:{;
 		<js code>
 		};
 
-	brewCoffee() to:
+	then to:
 		$:{
 		<js code>
 		}
 
 */
 // ===========================================================================
-export var CoffeePreMapper = class CoffeePreMapper extends SmartInput {
+export var StarbucksPreMapper = class StarbucksPreMapper extends SmartInput {
   mapString(line, level) {
     var _, code, expr, lMatches, result, varname;
     debug(`enter mapString(${oneline(line)})`);
@@ -200,14 +200,14 @@ export var preProcessCoffee = function(code) {
   // --- Removes blank lines and comments
   //     inteprets <== as svelte reactive statement or block
   assert(indentLevel(code) === 0, "preProcessCoffee(): has indentation");
-  oInput = new CoffeePreMapper(code);
+  oInput = new StarbucksPreMapper(code);
   newcode = oInput.getAllText();
   debug('newcode', newcode);
   return newcode;
 };
 
 // ---------------------------------------------------------------------------
-export var CoffeePostMapper = class CoffeePostMapper extends StringInput {
+export var StarbucksPostMapper = class StarbucksPostMapper extends StringInput {
   // --- variable declaration immediately following one of:
   //        $:{;
   //        $:;
@@ -229,7 +229,7 @@ export var CoffeePostMapper = class CoffeePostMapper extends StringInput {
     if ((lMatches = line.match(/^\$\:(\{)?\;(.*)$/))) { // optional {
       // any remaining text
       [_, brace, rest] = lMatches;
-      assert(!rest, "CoffeePostMapper: extra text after $:");
+      assert(!rest, "StarbucksPostMapper: extra text after $:");
       this.savedLevel = level;
       if (brace) {
         this.savedLine = "$:{";
@@ -239,7 +239,7 @@ export var CoffeePostMapper = class CoffeePostMapper extends StringInput {
       return undef;
     } else if ((lMatches = line.match(/^\}\;(.*)$/))) {
       [_, rest] = lMatches;
-      assert(!rest, "CoffeePostMapper: extra text after $:");
+      assert(!rest, "StarbucksPostMapper: extra text after $:");
       return indented("\}", level);
     } else {
       return indented(line, level);
@@ -255,7 +255,7 @@ export var postProcessCoffee = function(code) {
   //        $:{
   //        $:
   //     should be moved above this line
-  oInput = new CoffeePostMapper(code);
+  oInput = new StarbucksPostMapper(code);
   return oInput.getAllText();
 };
 

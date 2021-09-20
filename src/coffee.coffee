@@ -29,7 +29,7 @@ export convertCoffee = (flag) ->
 
 export brewExpr = (expr, force=false) ->
 
-	assert (indentLevel(expr)==0), "brewCoffee(): has indentation"
+	assert (indentLevel(expr)==0), "brewExpr(): has indentation"
 
 	if not convert && not force
 		return expr
@@ -47,11 +47,11 @@ export brewExpr = (expr, force=false) ->
 
 # ---------------------------------------------------------------------------
 
-export brewCoffee = (lBlocks...) ->
+export brewStarbucks = (lBlocks...) ->
 
-	debug "enter brewCoffee()"
+	debug "enter brewStarbucks()"
 
-	lResult = []
+	lFinalBlocks = []
 	hAllNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
 	for blk,i in lBlocks
 		debug "BLOCK #{i}", blk
@@ -63,18 +63,18 @@ export brewCoffee = (lBlocks...) ->
 		mergeNeededSymbols(hAllNeeded, hNeeded)
 
 		if not convert
-			lResult.push newblk
+			lFinalBlocks.push newblk
 		else
 			try
 				script = CoffeeScript.compile(newblk, {bare: true})
 				debug "BREWED SCRIPT", script
-				lResult.push postProcessCoffee(script)
+				lFinalBlocks.push postProcessCoffee(script)
 			catch err
 				log "Mapped Text:", newblk
 				croak err, "Original Text", blk
 
-	lResult.push buildImportList(hAllNeeded)
-	return lResult
+	lFinalBlocks.push buildImportList(hAllNeeded)
+	return lFinalBlocks
 
 # ---------------------------------------------------------------------------
 
@@ -87,12 +87,12 @@ export brewCoffee = (lBlocks...) ->
 		`$:`
 		<varname> = <expr>
 
-	coffeescript to:
+	then to to:
 		var <varname>;
 		$:;
 		<varname> = <js expr>;
 
-	brewCoffee() to:
+	then to:
 		var <varname>;
 		$:
 		<varname> = <js expr>;
@@ -106,12 +106,12 @@ export brewCoffee = (lBlocks...) ->
 		<code>
 		`}`
 
-	coffeescript to:
+	then to:
 		$:{;
 		<js code>
 		};
 
-	brewCoffee() to:
+	then to:
 		$:{
 		<js code>
 		}
@@ -120,7 +120,7 @@ export brewCoffee = (lBlocks...) ->
 
 # ===========================================================================
 
-export class CoffeePreMapper extends SmartInput
+export class StarbucksPreMapper extends SmartInput
 
 	mapString: (line, level) ->
 
@@ -170,14 +170,14 @@ export preProcessCoffee = (code) ->
 
 	assert (indentLevel(code)==0), "preProcessCoffee(): has indentation"
 
-	oInput = new CoffeePreMapper(code)
+	oInput = new StarbucksPreMapper(code)
 	newcode = oInput.getAllText()
 	debug 'newcode', newcode
 	return newcode
 
 # ---------------------------------------------------------------------------
 
-export class CoffeePostMapper extends StringInput
+export class StarbucksPostMapper extends StringInput
 	# --- variable declaration immediately following one of:
 	#        $:{;
 	#        $:;
@@ -204,7 +204,7 @@ export class CoffeePostMapper extends StringInput
 				(.*)        # any remaining text
 				$///))
 			[_, brace, rest] = lMatches
-			assert not rest, "CoffeePostMapper: extra text after $:"
+			assert not rest, "StarbucksPostMapper: extra text after $:"
 			@savedLevel = level
 			if brace
 				@savedLine = "$:{"
@@ -217,7 +217,7 @@ export class CoffeePostMapper extends StringInput
 				(.*)
 				$///))
 			[_, rest] = lMatches
-			assert not rest, "CoffeePostMapper: extra text after $:"
+			assert not rest, "StarbucksPostMapper: extra text after $:"
 			return indented("\}", level)
 		else
 			return indented(line, level)
@@ -230,7 +230,7 @@ export postProcessCoffee = (code) ->
 	#        $:
 	#     should be moved above this line
 
-	oInput = new CoffeePostMapper(code)
+	oInput = new StarbucksPostMapper(code)
 	return oInput.getAllText()
 
 # ---------------------------------------------------------------------------

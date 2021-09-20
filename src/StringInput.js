@@ -213,6 +213,7 @@ export var StringInput = class StringInput extends StringFetcher {
     this.lookahead = undef; // --- lookahead token, placed by unget
     
     // --- cache in case getAll() is called multiple times
+    //     each pair is [mapped str, level]
     this.lAllPairs = undef;
   }
 
@@ -267,7 +268,7 @@ export var StringInput = class StringInput extends StringFetcher {
 
   // ..........................................................
   get() {
-    var level, line, newline, result, saved;
+    var level, line, result, saved, str;
     debug(`enter get() - src ${this.filename}`);
     if (this.lookahead != null) {
       saved = this.lookahead;
@@ -281,15 +282,15 @@ export var StringInput = class StringInput extends StringFetcher {
       debug("return from get() with undef at EOF");
       return undef;
     }
-    [level, newline] = splitLine(line);
-    result = this.mapLine(newline, level);
-    debug(`MAP: '${newline}' => ${oneline(result)}`);
+    [level, str] = splitLine(line);
+    result = this.mapLine(str, level);
+    debug(`MAP: '${str}' => ${oneline(result)}`);
     // --- if mapLine() returns undef, we skip that line
     while ((result == null) && (this.lBuffer.length > 0)) {
       line = this.fetch();
-      [level, newline] = splitLine(line);
-      result = this.mapLine(newline, level);
-      debug(`MAP: '${newline}' => ${oneline(result)}`);
+      [level, str] = splitLine(line);
+      result = this.mapLine(str, level);
+      debug(`MAP: '${str}' => ${oneline(result)}`);
     }
     if (result != null) {
       debug(`return ${oneline(result)}, ${level} from get()`);

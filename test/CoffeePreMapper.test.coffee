@@ -1,10 +1,10 @@
-# CoffeePreMapper.test.coffee
+# StarbucksPreMapper.test.coffee
 
 import {strict as assert} from 'assert'
 import {undef} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {CoffeePreMapper} from '@jdeighan/string-input/coffee'
+import {StarbucksPreMapper} from '@jdeighan/string-input/coffee'
 import {convertCoffee} from '@jdeighan/string-input/coffee'
 
 convertCoffee false
@@ -14,8 +14,8 @@ convertCoffee false
 class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
-		assert oInput instanceof CoffeePreMapper,
-			"oInput should be a CoffeePreMapper object"
+		assert oInput instanceof StarbucksPreMapper,
+			"oInput should be a StarbucksPreMapper object"
 		return oInput.getAllText()
 
 	# --- disable normalizing so we can check for proper indentation
@@ -25,14 +25,14 @@ class GatherTester extends UnitTester
 tester = new GatherTester()
 
 # ===========================================================================
-# Repeat all SmartInput tests using CoffeePreMapper
+# Repeat all SmartInput tests using StarbucksPreMapper
 # They should all pass
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 35, new CoffeePreMapper("""
+tester.equal 35, new StarbucksPreMapper("""
 		abc
 
 		# --- a comment
@@ -45,7 +45,7 @@ tester.equal 35, new CoffeePreMapper("""
 # ---------------------------------------------------------------------------
 # --- test overriding handling of comments and empty lines
 
-class CustomInput extends CoffeePreMapper
+class CustomInput extends StarbucksPreMapper
 
 	handleEmptyLine: () ->
 
@@ -72,7 +72,7 @@ tester.equal 60, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 75, new CoffeePreMapper("""
+tester.equal 75, new StarbucksPreMapper("""
 		h1 color=blue
 				This is
 				a title
@@ -87,7 +87,7 @@ tester.equal 75, new CoffeePreMapper("""
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 90, new CoffeePreMapper("""
+tester.equal 90, new StarbucksPreMapper("""
 		h1 color="<<<"
 			magenta
 
@@ -101,7 +101,7 @@ tester.equal 90, new CoffeePreMapper("""
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 104, new CoffeePreMapper("""
+tester.equal 104, new StarbucksPreMapper("""
 		h1 color="<<<"
 				This is a title
 			magenta
@@ -116,7 +116,7 @@ tester.equal 104, new CoffeePreMapper("""
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 119, new CoffeePreMapper("""
+tester.equal 119, new StarbucksPreMapper("""
 		h1 color="<<<"
 			color
 			.
@@ -130,13 +130,13 @@ tester.equal 119, new CoffeePreMapper("""
 		"""
 
 # ===========================================================================
-# CoffeePreMapper specific tests
+# StarbucksPreMapper specific tests
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
 # --- Test basic mapping
 
-tester.equal 139, new CoffeePreMapper("""
+tester.equal 139, new StarbucksPreMapper("""
 		x = 23
 		if x > 10
 			console.log "OK"
@@ -149,7 +149,7 @@ tester.equal 139, new CoffeePreMapper("""
 # ---------------------------------------------------------------------------
 # --- Test live assignment
 
-tester.equal 152, new CoffeePreMapper("""
+tester.equal 152, new StarbucksPreMapper("""
 		x <== 2 * y
 		if x > 10
 			console.log "OK"
@@ -165,7 +165,7 @@ tester.equal 152, new CoffeePreMapper("""
 
 (() ->
 	count = undef
-	tester.equal 168, new CoffeePreMapper("""
+	tester.equal 168, new StarbucksPreMapper("""
 			<==
 				console.log "Count is \#{count}"
 			"""), """
@@ -180,7 +180,7 @@ tester.equal 152, new CoffeePreMapper("""
 
 (() ->
 	count = undef
-	tester.equal 183, new CoffeePreMapper("""
+	tester.equal 183, new StarbucksPreMapper("""
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"
@@ -197,7 +197,7 @@ tester.equal 152, new CoffeePreMapper("""
 
 (() ->
 	count = undef
-	tester.equal 200, new CoffeePreMapper("""
+	tester.equal 200, new StarbucksPreMapper("""
 			<==
 				double = 2 * count
 				console.log "Count is \#{count}"

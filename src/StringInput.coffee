@@ -163,6 +163,7 @@ export class StringInput extends StringFetcher
 		@lookahead = undef   # --- lookahead token, placed by unget
 
 		# --- cache in case getAll() is called multiple times
+		#     each pair is [mapped str, level]
 		@lAllPairs = undef
 
 	# ..........................................................
@@ -234,17 +235,17 @@ export class StringInput extends StringFetcher
 			debug "return from get() with undef at EOF"
 			return undef
 
-		[level, newline] = splitLine(line)
-		result = @mapLine(newline, level)
-		debug "MAP: '#{newline}' => #{oneline(result)}"
+		[level, str] = splitLine(line)
+		result = @mapLine(str, level)
+		debug "MAP: '#{str}' => #{oneline(result)}"
 
 		# --- if mapLine() returns undef, we skip that line
 
 		while not result? && (@lBuffer.length > 0)
 			line = @fetch()
-			[level, newline] = splitLine(line)
-			result = @mapLine(newline, level)
-			debug "MAP: '#{newline}' => #{oneline(result)}"
+			[level, str] = splitLine(line)
+			result = @mapLine(str, level)
+			debug "MAP: '#{str}' => #{oneline(result)}"
 
 		if result?
 			debug "return #{oneline(result)}, #{level} from get()"

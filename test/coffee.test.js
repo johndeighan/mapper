@@ -27,7 +27,7 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  brewCoffee,
+  brewStarbucks,
   brewExpr,
   addImports,
   convertCoffee
@@ -47,7 +47,7 @@ convertCoffee(false);
 CoffeeTester = class CoffeeTester extends UnitTester {
   transformValue(text) {
     var lImports, result;
-    [result, lImports] = brewCoffee(text);
+    [result, lImports] = brewStarbucks(text);
     if (isEmpty(lImports)) {
       return result;
     } else {

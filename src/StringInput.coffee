@@ -6,13 +6,15 @@ import pathlib from 'path'
 import {dirname, resolve, parse as parse_fname} from 'path';
 
 import {
-	undef, pass, croak, isString, isEmpty, nonEmpty,
+	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
 	isComment, isArray, isHash, isInteger, deepCopy,
-	stringToArray, arrayToString, oneline, escapeStr,
+	stringToArray, arrayToString, OL,  # --- synonum for oneline
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
-import {splitLine, indented, undented} from '@jdeighan/coffee-utils/indent'
+import {
+	splitLine, indented, undented, indentLevel,
+	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {markdownify} from '@jdeighan/string-input/markdown'
@@ -61,19 +63,28 @@ export class StringFetcher
 
 		# --- for handling #include
 		@altInput = undef
-		@altPrefix = undef    # prefix prepended to lines from alt
+		@altLevel = undef    # indentation added to lines from alt
 
 	# ..........................................................
 
-	fetch: () ->
+	debugBuffer: () ->
 
-		debug "enter fetch()"
+		debug 'BUFFER', @lBuffer
+		return
+
+	# ..........................................................
+
+	fetch: (literal=false) ->
+		# --- literal = true means don't handle #include,
+		#               just return it as is
+
+		debug "enter fetch(literal=#{literal}) from #{@filename}"
 		if @altInput
-			assert @altPrefix?, "fetch(): alt intput without alt prefix"
-			line = @altInput.fetch()
+			assert @altLevel?, "fetch(): alt input without alt level"
+			line = @altInput.fetch(literal)
 			if line?
-				result = "#{@altPrefix}#{line}"
-				debug "return '#{escapeStr(result)}' from fetch() - alt"
+				result = indented(line, @altLevel)
+				debug "return #{OL(result)} from fetch() - alt"
 				return result
 			else
 				@altInput = undef    # it's exhausted
@@ -86,26 +97,32 @@ export class StringFetcher
 		line = @lBuffer.shift()
 		@lineNum += 1
 
-		if lMatches = line.match(///^
+		if not literal && lMatches = line.match(///^
 				(\s*)
 				\# include
 				\s+
 				(\S.*)
 				$///)
 			[_, prefix, fname] = lMatches
-			debug "#include #{fname} with prefix '#{escapeStr(prefix)}'"
+			debug "#include #{fname} with prefix #{OL(prefix)}"
 			assert not @altInput, "fetch(): altInput already set"
 			contents = getFileContents(fname)
 			@altInput = new StringFetcher(contents, fname)
-			@altPrefix = prefix
-			debug "alt input created with prefix '#{escapeStr(prefix)}'"
+			@altLevel = indentLevel(prefix)
+			debug "alt input created with prefix #{OL(prefix)}"
 			line = @altInput.fetch()
+
+			debug "first #include line found = '#{escapeStr(line)}'"
+			@altInput.debugBuffer()
+
 			if line?
-				return "#{@altPrefix}#{line}"
+				result = indented(line, @altLevel)
 			else
-				return @fetch()    # recursive call
+				result = @fetch()    # recursive call
+			debug "return #{OL(result)} from fetch()"
+			return result
 		else
-			debug "return #{oneline(line)} from fetch()"
+			debug "return #{OL(line)} from fetch()"
 			return line
 
 	# ..........................................................
@@ -113,9 +130,12 @@ export class StringFetcher
 
 	unfetch: (line) ->
 
-		debug "enter unfetch('#{escapeStr(line)}')"
-		@lBuffer.unshift(line)
-		@lineNum -= 1
+		debug "enter unfetch(#{OL(line)})"
+		if @altInput
+			@altInput.unfetch undented(line, @altLevel)
+		else
+			@lBuffer.unshift line
+			@lineNum -= 1
 		debug 'return from unfetch()'
 		return
 
@@ -188,10 +208,10 @@ export class StringInput extends StringFetcher
 			return @lookahead
 		pair = @get()
 		if not pair?
-			debug "return from peek() - undef"
+			debug "return undef from peek()"
 			return undef
 		@unget(pair)
-		debug "return #{oneline(pair)} from peek"
+		debug "return #{OL(pair)} from peek"
 		return pair
 
 	# ..........................................................
@@ -213,31 +233,32 @@ export class StringInput extends StringFetcher
 
 	mapLine: (line, level) ->
 
-		assert line? && isString(line), "mapLine(): not a string"
-		debug "in default mapLine('#{escapeStr(line)}', #{level})"
+		debug "enter StringInput.mapLine()"
+		assert line? && isString(line), "StringInput.mapLine(): not a string"
+		debug "return #{OL(line)}, #{level} from StringInput.mapLine()"
 		return line
 
 	# ..........................................................
 
 	get: () ->
 
-		debug "enter get() - src #{@filename}"
+		debug "enter StringInput.get() - from #{@filename}"
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug "return lookahead pair from get()"
+			debug "return lookahead pair from StringInput.get()"
 			return saved
 
 		line = @fetch()    # will handle #include
 		debug "LINE", line
 
 		if not line?
-			debug "return from get() with undef at EOF"
+			debug "return undef from StringInput.get() at EOF"
 			return undef
 
 		[level, str] = splitLine(line)
 		result = @mapLine(str, level)
-		debug "MAP: '#{str}' => #{oneline(result)}"
+		debug "MAP: '#{str}' => #{OL(result)}"
 
 		# --- if mapLine() returns undef, we skip that line
 
@@ -245,13 +266,13 @@ export class StringInput extends StringFetcher
 			line = @fetch()
 			[level, str] = splitLine(line)
 			result = @mapLine(str, level)
-			debug "MAP: '#{str}' => #{oneline(result)}"
+			debug "MAP: '#{str}' => #{OL(result)}"
 
 		if result?
-			debug "return #{oneline(result)}, #{level} from get()"
+			debug "return [#{OL(result)}, #{level}] from StringInput.get()"
 			return [result, level]
 		else
-			debug "return undef from get()"
+			debug "return undef from StringInput.get()"
 			return undef
 
 	# ..........................................................
@@ -270,7 +291,7 @@ export class StringInput extends StringFetcher
 
 		line = undef
 		while (line = @fetch())?
-			debug "LINE IS #{oneline(line)}"
+			debug "LINE IS #{OL(line)}"
 			assert isString(line),
 				"StringInput.fetchBlock(#{atLevel}) - not a string: #{line}"
 			if isEmpty(line)
@@ -278,7 +299,7 @@ export class StringInput extends StringFetcher
 				lLines.push ''
 				continue
 			[level, str] = splitLine(line)
-			debug "LOOP: level = #{level}, str = #{oneline(str)}"
+			debug "LOOP: level = #{level}, str = #{OL(str)}"
 			if (level < atLevel)
 				@unfetch(line)
 				debug "RESULT: unfetch the line"
@@ -295,15 +316,16 @@ export class StringInput extends StringFetcher
 
 	getAll: () ->
 
-		debug "enter getAll()"
+		debug "enter StringInput.getAll()"
 		if @lAllPairs?
-			debug "return cached lAllPairs from getAll()"
+			debug "return cached lAllPairs from StringInput.getAll()"
 			return @lAllPairs
 		lPairs = []
 		while (pair = @get())?
 			lPairs.push(pair)
 		@lAllPairs = lPairs
-		debug "return #{lPairs.length} pairs from getAll()"
+		debug "lAllPairs", @lAllPairs
+		debug "return #{lPairs.length} pairs from StringInput.getAll()"
 		return lPairs
 
 	# ..........................................................
@@ -338,7 +360,7 @@ export class SmartInput extends StringInput
 	getContLines: (curlevel) ->
 
 		lLines = []
-		while (nextLine = @fetch())? \
+		while (nextLine = @fetch(true))? \
 				&& (nonEmpty(nextLine)) \
 				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
 				&& (nextLevel >= curlevel+2)
@@ -360,14 +382,14 @@ export class SmartInput extends StringInput
 
 	handleEmptyLine: (level) ->
 
-		debug "in default handleEmptyLine()"
+		debug "in SmartInput.handleEmptyLine()"
 		return undef      # skip blank lines by default
 
 	# ..........................................................
 
 	handleComment: (line, level) ->
 
-		debug "in default handleComment()"
+		debug "in SmartInput.handleComment()"
 		return undef      # skip comments by default
 
 	# ..........................................................
@@ -376,16 +398,16 @@ export class SmartInput extends StringInput
 
 	mapLine: (line, level) ->
 
-		debug "enter mapLine('#{escapeStr(line)}', #{level})"
+		debug "enter SmartInput.mapLine(#{OL(line)}, #{level})"
 
 		assert line?, "mapLine(): line is undef"
-		assert isString(line), "mapLine(): #{oneline(line)} not a string"
+		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
-			debug "return undef from mapLine() - empty"
+			debug "return undef from SmartInput.mapLine() - empty"
 			return @handleEmptyLine(@curLevel)
 
 		if isComment(line)
-			debug "return undef from mapLine() - comment"
+			debug "return undef from SmartInput.mapLine() - comment"
 			return @handleComment(line, level)
 
 		orgLineNum = @lineNum
@@ -394,19 +416,22 @@ export class SmartInput extends StringInput
 		# --- Merge in any continuation lines
 		debug "check for continuation lines"
 		lContLines = @getContLines(level)
-		if nonEmpty(lContLines)
+		if isEmpty(lContLines)
+			debug "no continuation lines found"
+		else
+			debug "#{lContLines.length} continuation lines found"
 			line = @joinContLines(line, lContLines)
-			debug "line becomes #{oneline(line)}"
+			debug "line becomes #{OL(line)}"
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
 		if (line.indexOf('<<<') != -1)
 			line = @handleHereDoc(line, level)
-			debug "line becomes #{oneline(line)}"
+			debug "line becomes #{OL(line)}"
 
 		debug "mapping string"
 		result = @mapString(line, level)
-		debug "return #{oneline(result)} from mapLine()"
+		debug "return #{OL(result)} from SmartInput.mapLine()"
 		return result
 
 	# ..........................................................
@@ -417,8 +442,8 @@ export class SmartInput extends StringInput
 		#     return undef to generate nothing
 
 		assert isString(line),
-				"default mapString(): #{oneline(line)} is not a string"
-		return indented(line, level)
+				"default mapString(): #{OL(line)} is not a string"
+		return line
 
 	# ..........................................................
 
@@ -437,21 +462,21 @@ export class SmartInput extends StringInput
 		# --- Find each '<<<' and replace with result of heredocStr()
 
 		assert isString(line), "handleHereDoc(): not a string"
-		debug "enter handleHereDoc(#{oneline(line)})"
+		debug "enter handleHereDoc(#{OL(line)})"
 		lParts = []     # joined at the end
 		pos = 0
 		while ((start = line.indexOf('<<<', pos)) != -1)
 			part = line.substring(pos, start)
-			debug "PUSH #{oneline(part)}"
+			debug "PUSH #{OL(part)}"
 			lParts.push part
 			lLines = @getHereDocLines(level)
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
-			debug "HEREDOC lines: #{oneline(lLines)}"
+			debug "HEREDOC lines: #{OL(lLines)}"
 			if (lLines.length > 0)
 				block = arrayToString(undented(lLines))
 				newstr = @heredocStr(block)
 				assert isString(newstr), "handleHereDoc(): newstr not a string"
-				debug "PUSH #{oneline(newstr)}"
+				debug "PUSH #{OL(newstr)}"
 				lParts.push newstr
 			pos = start + 3
 
@@ -464,7 +489,7 @@ export class SmartInput extends StringInput
 			"handleHereDoc(): Not all HEREDOC markers were replaced" \
 				+ "in '#{line}'"
 		part = line.substring(pos, line.length)
-		debug "PUSH #{oneline(part)}"
+		debug "PUSH #{OL(part)}"
 		lParts.push part
 		result = lParts.join('')
 		debug "return from handleHereDoc", result

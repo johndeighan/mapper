@@ -229,7 +229,6 @@ export class ASTWalker extends TreeWalker
 			when 'FunctionExpression','For', 'CatchClause'
 				@lLocalSymbols.pop()
 
-		debug "untree"
 		return
 
 	# ..........................................................

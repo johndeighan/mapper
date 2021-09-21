@@ -14,7 +14,7 @@ class TreeTester extends UnitTester
 
 	transformValue: (tree) ->
 		debug "enter transformValue()"
-		debug tree, "TREE:"
+		debug "TREE", tree
 		stringifier = new TreeStringifier(tree)
 		str = stringifier.get()
 		debug "return #{oneline(str)} from tansformValue()"

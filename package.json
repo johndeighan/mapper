@@ -38,13 +38,13 @@
 	"homepage": "https://github.com/johndeighan/string-input#readme",
 	"devDependencies": {
 		"ava": "^3.15.0",
-		"coffeescript": "^2.5.1"
+		"coffeescript": "^2.6.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^2.1.6",
+		"@jdeighan/coffee-utils": "^2.1.14",
 		"cross-env": "^7.0.3",
 		"marked": "^3.0.4",
-		"sass": "^1.41.1",
+		"sass": "^1.42.0",
 		"yargs": "^17.1.1"
 	}
 }

@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	croak, arrayToString, oneline,
+	croak, arrayToString, OL,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
@@ -17,6 +17,44 @@ import {ASTWalker} from '@jdeighan/string-input/tree'
 import {tamlStringify} from '@jdeighan/string-input/taml'
 
 convert = true
+
+# ---------------------------------------------------------------------------
+# --- Features:
+#        1. handle continuation lines
+#        2. handle HEREDOC
+#        3. replace {{FILE}} and {{LINE}}
+#        4. add auto-imports
+#     NOTE: do NOT remove comments and blank lines
+
+export brewCielo = (code) ->
+
+	debug "enter brewCielo()"
+	assert (indentLevel(code)==0), "brewCielo(): code has indentation"
+
+	oInput = new CieloMapper(code)
+	newcode = oInput.getAllText()
+	debug 'newcode', newcode
+
+	# --- returns {<lib>: [<symbol>,... ],... }
+	hNeeded = getNeededSymbols(newcode)
+
+	if isEmpty(hNeeded)
+		debug "return from brewCielo() - no needed symbols"
+		return newcode
+	else
+		lImports = buildImportList(hNeeded)
+		debug "return from brewCielo() - #{lImports.length} needed symbols"
+		return joinBlocks(lImports..., newcode)
+
+# ---------------------------------------------------------------------------
+
+export class CieloMapper extends SmartInput
+
+	handleEmptyLine: (level) ->
+		return ''
+
+	handleComment: (line, level) ->
+		return line
 
 # ---------------------------------------------------------------------------
 
@@ -124,7 +162,7 @@ export class StarbucksPreMapper extends SmartInput
 
 	mapString: (line, level) ->
 
-		debug "enter mapString(#{oneline(line)})"
+		debug "enter mapString(#{OL(line)})"
 		if (line == '<==')
 			# --- Generate a reactive block
 			code = @fetchBlock(level+1)    # might be empty
@@ -378,5 +416,6 @@ export getAvailSymbols = () ->
 	debug 'Contents of .symbols', contents
 	parser = new SymbolParser(contents)
 	hSymbols = parser.getSymbols()
-	debug "return #{oneline(hSymbols)} from getAvailSymbols()"
+	debug "hSymbols", hSymbols
+	debug "return from getAvailSymbols()"
 	return hSymbols

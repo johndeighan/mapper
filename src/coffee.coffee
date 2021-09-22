@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	croak, arrayToString, OL,
+	croak, OL,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
@@ -49,6 +49,7 @@ export brewCielo = (code) ->
 # ---------------------------------------------------------------------------
 
 export class CieloMapper extends SmartInput
+	# --- retain empty lines & comments
 
 	handleEmptyLine: (level) ->
 		return ''
@@ -56,6 +57,7 @@ export class CieloMapper extends SmartInput
 	handleComment: (line, level) ->
 		return line
 
+# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 export convertCoffee = (flag) ->
@@ -85,13 +87,12 @@ export brewExpr = (expr, force=false) ->
 
 # ---------------------------------------------------------------------------
 
-export brewStarbucks = (lBlocks...) ->
+export preBrewCoffee = (lBlocks...) ->
 
-	debug "enter brewStarbucks()"
+	debug "enter preBrewCoffee()"
 
-	lFinalBlocks = []
 	hAllNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
-	for blk,i in lBlocks
+	lNewBlocks = for blk,i in lBlocks
 		debug "BLOCK #{i}", blk
 		newblk = preProcessCoffee(blk)
 		debug "NEW BLOCK", newblk
@@ -101,18 +102,26 @@ export brewStarbucks = (lBlocks...) ->
 		mergeNeededSymbols(hAllNeeded, hNeeded)
 
 		if not convert
-			lFinalBlocks.push newblk
+			newblk
 		else
 			try
 				script = CoffeeScript.compile(newblk, {bare: true})
 				debug "BREWED SCRIPT", script
-				lFinalBlocks.push postProcessCoffee(script)
+				postProcessCoffee(script)
 			catch err
 				log "Mapped Text:", newblk
 				croak err, "Original Text", blk
 
-	lFinalBlocks.push buildImportList(hAllNeeded)
-	return lFinalBlocks
+	# --- return converted blocks, PLUS the list of needed imports
+	return [lNewBlocks..., buildImportList(hAllNeeded)]
+
+# ---------------------------------------------------------------------------
+
+export brewCoffee = (code) ->
+
+	[newcode, lImports] = preBrewCoffee(code)
+	return joinBlocks(lImports..., newcode)
+	return
 
 # ---------------------------------------------------------------------------
 
@@ -270,14 +279,6 @@ export postProcessCoffee = (code) ->
 
 	oInput = new StarbucksPostMapper(code)
 	return oInput.getAllText()
-
-# ---------------------------------------------------------------------------
-
-export addImports = (text, lImports) ->
-
-#	lImports = for stmt in lImports
-#		"#{stmt};"
-	return joinBlocks(lImports..., text)
 
 # ---------------------------------------------------------------------------
 

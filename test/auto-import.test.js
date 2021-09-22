@@ -26,13 +26,16 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
+  joinBlocks
+} from '@jdeighan/coffee-utils/block';
+
+import {
   mergeNeededSymbols,
   getNeededSymbols,
   buildImportList,
   getNeededImports,
   getMissingSymbols,
-  getAvailSymbols,
-  addImports
+  getAvailSymbols
 } from '@jdeighan/string-input/coffee';
 
 testDir = mydir(import.meta.url);
@@ -63,7 +66,7 @@ simple.equal(23, hSymbols, {
   text = `x = 42
 say "Answer is 42"`;
   lImports = ["import {say} from '@jdeighan/coffee-utils'", "import {slurp} from '#jdeighan/coffee-utils/fs'"];
-  return simple.equal(46, addImports(text, lImports), `import {say} from '@jdeighan/coffee-utils'
+  return simple.equal(46, joinBlocks(...lImports, text), `import {say} from '@jdeighan/coffee-utils'
 import {slurp} from '#jdeighan/coffee-utils/fs'
 x = 42
 say "Answer is 42"`);

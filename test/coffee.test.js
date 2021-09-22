@@ -27,9 +27,12 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  brewStarbucks,
+  joinBlocks
+} from '@jdeighan/coffee-utils/block';
+
+import {
+  brewCoffee,
   brewExpr,
-  addImports,
   convertCoffee
 } from '@jdeighan/string-input/coffee';
 
@@ -45,14 +48,10 @@ convertCoffee(false);
 
 // ---------------------------------------------------------------------------
 CoffeeTester = class CoffeeTester extends UnitTester {
-  transformValue(text) {
-    var lImports, result;
-    [result, lImports] = brewStarbucks(text);
-    if (isEmpty(lImports)) {
-      return result;
-    } else {
-      return addImports(result, lImports);
-    }
+  transformValue(code) {
+    var newcode;
+    newcode = brewCoffee(code);
+    return newcode;
   }
 
 };

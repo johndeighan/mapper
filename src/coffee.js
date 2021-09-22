@@ -11,7 +11,6 @@ import CoffeeScript from 'coffeescript';
 
 import {
   croak,
-  arrayToString,
   OL,
   isEmpty,
   nonEmpty,
@@ -87,6 +86,7 @@ export var brewCielo = function(code) {
 
 // ---------------------------------------------------------------------------
 export var CieloMapper = class CieloMapper extends SmartInput {
+  // --- retain empty lines & comments
   handleEmptyLine(level) {
     return '';
   }
@@ -97,6 +97,7 @@ export var CieloMapper = class CieloMapper extends SmartInput {
 
 };
 
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 export var convertCoffee = function(flag) {
   convert = flag;
@@ -126,37 +127,48 @@ export var brewExpr = function(expr, force = false) {
 };
 
 // ---------------------------------------------------------------------------
-export var brewStarbucks = function(...lBlocks) {
-  var blk, err, hAllNeeded, hNeeded, i, j, lFinalBlocks, len, newblk, script;
-  debug("enter brewStarbucks()");
-  lFinalBlocks = [];
+export var preBrewCoffee = function(...lBlocks) {
+  var blk, err, hAllNeeded, hNeeded, i, lNewBlocks, newblk, script;
+  debug("enter preBrewCoffee()");
   hAllNeeded = {}; // { <lib>: [ <symbol>, ...], ...}
-  for (i = j = 0, len = lBlocks.length; j < len; i = ++j) {
-    blk = lBlocks[i];
-    debug(`BLOCK ${i}`, blk);
-    newblk = preProcessCoffee(blk);
-    debug("NEW BLOCK", newblk);
-    // --- returns {<lib>: [<symbol>,... ],... }
-    hNeeded = getNeededSymbols(newblk);
-    mergeNeededSymbols(hAllNeeded, hNeeded);
-    if (!convert) {
-      lFinalBlocks.push(newblk);
-    } else {
-      try {
-        script = CoffeeScript.compile(newblk, {
-          bare: true
-        });
-        debug("BREWED SCRIPT", script);
-        lFinalBlocks.push(postProcessCoffee(script));
-      } catch (error) {
-        err = error;
-        log("Mapped Text:", newblk);
-        croak(err, "Original Text", blk);
+  lNewBlocks = (function() {
+    var j, len, results;
+    results = [];
+    for (i = j = 0, len = lBlocks.length; j < len; i = ++j) {
+      blk = lBlocks[i];
+      debug(`BLOCK ${i}`, blk);
+      newblk = preProcessCoffee(blk);
+      debug("NEW BLOCK", newblk);
+      // --- returns {<lib>: [<symbol>,... ],... }
+      hNeeded = getNeededSymbols(newblk);
+      mergeNeededSymbols(hAllNeeded, hNeeded);
+      if (!convert) {
+        results.push(newblk);
+      } else {
+        try {
+          script = CoffeeScript.compile(newblk, {
+            bare: true
+          });
+          debug("BREWED SCRIPT", script);
+          results.push(postProcessCoffee(script));
+        } catch (error) {
+          err = error;
+          log("Mapped Text:", newblk);
+          results.push(croak(err, "Original Text", blk));
+        }
       }
     }
-  }
-  lFinalBlocks.push(buildImportList(hAllNeeded));
-  return lFinalBlocks;
+    return results;
+  })();
+  // --- return converted blocks, PLUS the list of needed imports
+  return [...lNewBlocks, buildImportList(hAllNeeded)];
+};
+
+// ---------------------------------------------------------------------------
+export var brewCoffee = function(code) {
+  var lImports, newcode;
+  [newcode, lImports] = preBrewCoffee(code);
+  return joinBlocks(...lImports, newcode);
 };
 
 // ---------------------------------------------------------------------------
@@ -295,13 +307,6 @@ export var postProcessCoffee = function(code) {
   //     should be moved above this line
   oInput = new StarbucksPostMapper(code);
   return oInput.getAllText();
-};
-
-// ---------------------------------------------------------------------------
-export var addImports = function(text, lImports) {
-  //	lImports = for stmt in lImports
-  //		"#{stmt};"
-  return joinBlocks(...lImports, text);
 };
 
 // ---------------------------------------------------------------------------

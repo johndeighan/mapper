@@ -4,8 +4,9 @@ import {strict as assert} from 'assert'
 
 import {
 	undef, isString, isHash, isEmpty, nonEmpty,
-	arrayToString, stringToArray, sep_dash, sep_eq,
+	sep_dash, sep_eq,
 	} from '@jdeighan/coffee-utils'
+import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
@@ -52,7 +53,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 			hOptions.dumpfile = dumpfile
 
 		lImports = getNeededImports(src, hOptions)
-		simple.equal lineNum, lImports, stringToArray(expImports)
+		simple.equal lineNum, lImports, blockToArray(expImports)
 
 #		# --- embed the code in an IIFE
 #		src = """
@@ -61,7 +62,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 #				)()
 #			"""
 #		lImports2 = getNeededImports(src)
-#		simple.equal lineNum, lImports2, stringToArray(expImports)
+#		simple.equal lineNum, lImports2, blockToArray(expImports)
 
 	)()
 

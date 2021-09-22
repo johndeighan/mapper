@@ -5,8 +5,9 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	brewStarbucks, brewExpr, addImports, convertCoffee,
+	brewCoffee, brewExpr, convertCoffee,
 	} from '@jdeighan/string-input/coffee'
 
 root = process.env.dir_root = mydir(`import.meta.url`)
@@ -21,12 +22,9 @@ convertCoffee false
 
 class CoffeeTester extends UnitTester
 
-	transformValue: (text) ->
-		[result, lImports] = brewStarbucks(text)
-		if isEmpty(lImports)
-			return result
-		else
-			return addImports(result, lImports)
+	transformValue: (code) ->
+		newcode = brewCoffee(code)
+		return newcode
 
 tester = new CoffeeTester()
 

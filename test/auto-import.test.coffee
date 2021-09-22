@@ -6,9 +6,10 @@ import {undef, words} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	mergeNeededSymbols, getNeededSymbols, buildImportList, getNeededImports,
-	getMissingSymbols, getAvailSymbols, addImports,
+	getMissingSymbols, getAvailSymbols,
 	} from '@jdeighan/string-input/coffee'
 
 testDir = mydir(`import.meta.url`)
@@ -43,7 +44,7 @@ simple.equal 23, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	simple.equal 46, addImports(text, lImports), """
+	simple.equal 46, joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42

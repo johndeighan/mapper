@@ -12,11 +12,13 @@ import {
   isHash,
   isEmpty,
   nonEmpty,
-  arrayToString,
-  stringToArray,
   sep_dash,
   sep_eq
 } from '@jdeighan/coffee-utils';
+
+import {
+  blockToArray
+} from '@jdeighan/coffee-utils/block';
 
 import {
   log
@@ -89,7 +91,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
       hOptions.dumpfile = dumpfile;
     }
     lImports = getNeededImports(src, hOptions);
-    results.push(simple.equal(lineNum, lImports, stringToArray(expImports)));
+    results.push(simple.equal(lineNum, lImports, blockToArray(expImports)));
   }
   return results;
 })();
@@ -102,4 +104,4 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 //				)()
 //			"""
 //		lImports2 = getNeededImports(src)
-//		simple.equal lineNum, lImports2, stringToArray(expImports)
+//		simple.equal lineNum, lImports2, blockToArray(expImports)

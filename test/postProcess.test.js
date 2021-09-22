@@ -4,7 +4,6 @@ var PostProcessTester, simple, tester;
 
 import {
   undef,
-  arrayToString,
   isEmpty
 } from '@jdeighan/coffee-utils';
 

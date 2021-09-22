@@ -4,7 +4,6 @@ var PreprocessTester, simple, tester;
 
 import {
   undef,
-  arrayToString,
   isEmpty
 } from '@jdeighan/coffee-utils';
 

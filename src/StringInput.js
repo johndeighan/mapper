@@ -29,10 +29,13 @@ import {
   isHash,
   isInteger,
   deepCopy,
-  stringToArray,
-  arrayToString,
-  OL // --- synonum for oneline
+  OL
 } from '@jdeighan/coffee-utils';
+
+import {
+  blockToArray,
+  arrayToBlock
+} from '@jdeighan/coffee-utils/block';
 
 import {
   log
@@ -93,7 +96,7 @@ export var StringFetcher = class StringFetcher {
     if (isEmpty(content)) {
       this.lBuffer = [];
     } else if (isString(content)) {
-      this.lBuffer = stringToArray(content);
+      this.lBuffer = blockToArray(content);
     } else if (isArray(content)) {
       // -- make a deep copy
       this.lBuffer = deepCopy(content);
@@ -211,7 +214,7 @@ export var StringFetcher = class StringFetcher {
   fetchAllBlock() {
     var lLines;
     lLines = this.fetchAll();
-    return arrayToString(lLines);
+    return arrayToBlock(lLines);
   }
 
 };
@@ -385,7 +388,7 @@ export var StringInput = class StringInput extends StringFetcher {
       }
       return results;
     }).call(this);
-    return arrayToString(lLines);
+    return arrayToBlock(lLines);
   }
 
 };
@@ -518,7 +521,7 @@ export var SmartInput = class SmartInput extends StringInput {
       assert(isArray(lLines), "handleHereDoc(): lLines not an array");
       debug(`HEREDOC lines: ${OL(lLines)}`);
       if (lLines.length > 0) {
-        block = arrayToString(undented(lLines));
+        block = arrayToBlock(undented(lLines));
         newstr = this.heredocStr(block);
         assert(isString(newstr), "handleHereDoc(): newstr not a string");
         debug(`PUSH ${OL(newstr)}`);

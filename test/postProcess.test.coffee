@@ -1,7 +1,7 @@
 # postProcess.test.coffee
 
 import {
-	undef, arrayToString, isEmpty,
+	undef, isEmpty,
 	} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'

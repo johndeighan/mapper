@@ -7,9 +7,9 @@ import {dirname, resolve, parse as parse_fname} from 'path';
 
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
-	isComment, isArray, isHash, isInteger, deepCopy,
-	stringToArray, arrayToString, OL,  # --- synonum for oneline
+	isComment, isArray, isHash, isInteger, deepCopy, OL,
 	} from '@jdeighan/coffee-utils'
+import {blockToArray, arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {
@@ -46,7 +46,7 @@ export class StringFetcher
 		if isEmpty(content)
 			@lBuffer = []
 		else if isString(content)
-			@lBuffer = stringToArray(content)
+			@lBuffer = blockToArray(content)
 		else if isArray(content)
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
@@ -165,7 +165,7 @@ export class StringFetcher
 	fetchAllBlock: () ->
 
 		lLines = @fetchAll()
-		return arrayToString(lLines)
+		return arrayToBlock(lLines)
 
 # ===========================================================================
 #   class StringInput
@@ -334,7 +334,7 @@ export class StringInput extends StringFetcher
 
 		lLines = for [line, level] in @getAll()
 			indented(line, level)
-		return arrayToString(lLines)
+		return arrayToBlock(lLines)
 
 # ===========================================================================
 
@@ -473,7 +473,7 @@ export class SmartInput extends StringInput
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
 			debug "HEREDOC lines: #{OL(lLines)}"
 			if (lLines.length > 0)
-				block = arrayToString(undented(lLines))
+				block = arrayToBlock(undented(lLines))
 				newstr = @heredocStr(block)
 				assert isString(newstr), "handleHereDoc(): newstr not a string"
 				debug "PUSH #{OL(newstr)}"

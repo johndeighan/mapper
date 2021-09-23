@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 
 import {
-	undef, pass, isEmpty,
+	undef, pass, isEmpty, isArray,
 	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel, undented, splitLine, indented,
@@ -127,6 +127,7 @@ tester.equal 113, new SmartInput("""
 
 tester.equal 128, new SmartInput("""
 		h1 color="<<<"
+			$$$
 			color
 			.
 			magenta
@@ -134,6 +135,138 @@ tester.equal 128, new SmartInput("""
 		# --- a comment
 		p the end
 		"""), """
-		h1 color="color  magenta"
+		h1 color="color magenta"
 		p the end
+		"""
+
+# ---------------------------------------------------------------------------
+#    Test various types of HEREDOC sections
+# ---------------------------------------------------------------------------
+# --- test empty HEREDOC section
+
+tester.equal 147, new SmartInput("""
+		h1 name="<<<"
+
+		# --- a comment
+		p the end
+		"""), """
+		h1 name=""
+		p the end
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test ending HEREDOC with EOF instead of a blank line
+
+tester.equal 160, new SmartInput("""
+		h1 name="<<<"
+		"""), """
+		h1 name=""
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test TAML
+
+tester.equal 169, new SmartInput("""
+		h1 lItems=<<<
+			---
+			- abc
+			- def
+
+		"""), """
+		h1 lItems=["abc","def"]
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test one liner
+
+tester.equal 169, new SmartInput("""
+		error message='<<<'
+			$$$
+			an error
+			occurred in
+			your program
+
+		"""), """
+		error message='an error occurred in your program'
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test forcing a literal block
+
+tester.equal 196, new SmartInput("""
+		TAML looks like: <<<
+			!!!
+			---
+			- abc
+			- def
+
+		"""), """
+		TAML looks like: ---
+- abc
+- def
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test anonymous functions
+
+tester.equal 212, new SmartInput("""
+		input on:click={<<<}
+			(event) ->
+				console.log('click')
+
+		"""), """
+		input on:click={(event) -> console.log('click')}
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test named functions
+
+tester.equal 224, new SmartInput("""
+		input on:click={<<<}
+			clickHandler = (event) ->
+				console.log('click')
+
+		"""), """
+		input on:click={clickHandler = (event) -> console.log('click')}
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test ordinary block
+
+tester.equal 236, new SmartInput("""
+		lRecords = db.fetch("<<<");
+			select ID,Name
+			from Users
+
+		console.dir(lRecords);
+		"""), """
+		lRecords = db.fetch("select ID,Name
+from Users");
+		console.dir(lRecords);
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test creating a custom HEREDOC section
+#
+#     e.g. with header line *** we'll create an upper-cased single line string
+
+class CustomInput extends SmartInput
+
+	mapHereDocUnknown: (lLines) ->
+
+		assert isArray(lLines), "mapHereDocUnknown(): lLines not an array"
+		if (lLines[0] == '***')
+			lLines.shift()
+			return @mapHereDocOneLiner(lLines).toUpperCase()
+		else
+			return undef    # unrecognized, pass to mapHereDocBlock()
+
+tester.equal 264, new CustomInput("""
+		str = "<<<"
+			***
+			select ID,Name
+			from Users
+
+		"""), """
+		str = "SELECT ID,NAME FROM USERS"
 		"""

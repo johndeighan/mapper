@@ -4,11 +4,12 @@ import {strict as assert} from 'assert'
 import yaml from 'js-yaml'
 
 import {
-	undef, firstLine, oneline, isString,
+	undef, oneline, isString,
 	} from '@jdeighan/coffee-utils'
 import {untabify, tabify} from '@jdeighan/coffee-utils/indent'
 import {slurp} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {firstLine} from '@jdeighan/coffee-utils/block'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?

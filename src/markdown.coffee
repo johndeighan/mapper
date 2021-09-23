@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 import marked from 'marked'
 
-import {oneline} from '@jdeighan/coffee-utils'
+import {OL} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
@@ -21,7 +21,8 @@ export convertMarkdown = (flag) ->
 
 export markdownify = (text) ->
 
-	debug "enter markdownify(#{oneline(text)})"
+	debug "enter markdownify(#{OL(text)})"
+	assert text?, "markdownify(): text is undef"
 	if not convert
 		debug "return original text from markdownify() - not converting"
 		return text
@@ -29,7 +30,7 @@ export markdownify = (text) ->
 			grm: true,
 			headerIds: false,
 			})
-	debug "marked returned #{oneline(html)}"
+	debug "marked returned #{OL(html)}"
 	result = svelteHtmlEsc(html)
-	debug "return #{oneline(result)} from markdownify()"
+	debug "return #{OL(result)} from markdownify()"
 	return result

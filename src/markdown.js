@@ -9,7 +9,7 @@ import {
 import marked from 'marked';
 
 import {
-  oneline
+  OL
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -34,7 +34,8 @@ export var convertMarkdown = function(flag) {
 // ---------------------------------------------------------------------------
 export var markdownify = function(text) {
   var html, result;
-  debug(`enter markdownify(${oneline(text)})`);
+  debug(`enter markdownify(${OL(text)})`);
+  assert(text != null, "markdownify(): text is undef");
   if (!convert) {
     debug("return original text from markdownify() - not converting");
     return text;
@@ -43,8 +44,8 @@ export var markdownify = function(text) {
     grm: true,
     headerIds: false
   });
-  debug(`marked returned ${oneline(html)}`);
+  debug(`marked returned ${OL(html)}`);
   result = svelteHtmlEsc(html);
-  debug(`return ${oneline(result)} from markdownify()`);
+  debug(`return ${OL(result)} from markdownify()`);
   return result;
 };

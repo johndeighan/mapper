@@ -12,6 +12,7 @@ import CoffeeScript from 'coffeescript';
 import {
   croak,
   OL,
+  escapeStr,
   isEmpty,
   nonEmpty,
   words,
@@ -60,18 +61,18 @@ convert = true;
 
 // ---------------------------------------------------------------------------
 // --- Features:
-//        1. handle continuation lines
-//        2. handle HEREDOC
+//        1. KEEP blank lines and comments
+//        2. #include <file>
 //        3. replace {{FILE}} and {{LINE}}
-//        4. add auto-imports
-//     NOTE: do NOT remove comments and blank lines
+//        4. handle continuation lines
+//        5. handle HEREDOC
+//        6. add auto-imports
 export var brewCielo = function(code) {
-  var hNeeded, lImports, newcode, oInput;
+  var hNeeded, lImports, newcode, oInput, result;
   debug("enter brewCielo()");
   assert(indentLevel(code) === 0, "brewCielo(): code has indentation");
   oInput = new CieloMapper(code);
   newcode = oInput.getAllText();
-  debug('newcode', newcode);
   // --- returns {<lib>: [<symbol>,... ],... }
   hNeeded = getNeededSymbols(newcode);
   if (isEmpty(hNeeded)) {
@@ -79,8 +80,9 @@ export var brewCielo = function(code) {
     return newcode;
   } else {
     lImports = buildImportList(hNeeded);
-    debug(`return from brewCielo() - ${lImports.length} needed symbols`);
-    return joinBlocks(...lImports, newcode);
+    result = joinBlocks(...lImports, newcode);
+    debug(`return ${OL(result)} from brewCielo()`);
+    return result;
   }
 };
 

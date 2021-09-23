@@ -46,7 +46,7 @@ simple = new UnitTester();
 		- patch {{FILE}} with the name of the input file
 		- patch {{LINE}} with the line number
 		- handle continuation lines
-		- handle HEREDOC
+		- handle HEREDOC - a single '.' on a line is a blank line
 		- add auto-imports
 */
 // ---------------------------------------------------------------------------
@@ -93,12 +93,63 @@ if (x==42)
 
 // ---------------------------------------------------------------------------
 // --- handle #include of *.txt files
-
-// setDebugging "get"
-tester.equal(90, `if (x==42)
+tester.equal(88, `if (x==42)
 	#include code.txt`, `if (x==42)
 	y = 5
 	if (y > 100)
 		console.log "y is big"`);
+
+// ---------------------------------------------------------------------------
+// --- patch {{LINE}} and {{FILE}}
+tester.equal(101, `if (x==42)
+	log "line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x==42)
+	log "line 2 in unit test"`);
+
+// ---------------------------------------------------------------------------
+// --- handle continuation lines
+tester.equal(113, `if
+			(x==42)
+	log
+			"line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x==42)
+	log "line 4 in unit test"`);
+
+// ---------------------------------------------------------------------------
+// --- handle HEREDOC
+tester.equal(127, `if (x=='<<<')
+	abc
+
+	log "line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x=='abc')
+	log "line 4 in unit test"`);
+
+// --- a '---' starting a HEREDOC means interpret as TAML,
+//             return as JSON.stringify()
+tester.equal(141, `if (x==<<<)
+	---
+	abc
+
+	log "line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x=="abc")
+	log "line 5 in unit test"`);
+
+// --- NOTE: the following 2 tests are really the same thing
+tester.equal(153, `if (x=="<<<")
+	abc
+	def
+
+	log "line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x=="abc\ndef")
+	log "line 5 in unit test"`);
+
+tester.equal(153, `if (x=="<<<")
+	abc
+	def
+
+	log "line {{LINE}} in {{FILE}}"`, `import {log} from '@jdeighan/coffee-utils/log'
+if (x=="abc
+def")
+	log "line 5 in unit test"`);
 
 // ---------------------------------------------------------------------------

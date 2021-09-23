@@ -8,7 +8,6 @@ import yaml from 'js-yaml';
 
 import {
   undef,
-  firstLine,
   oneline,
   isString
 } from '@jdeighan/coffee-utils';
@@ -25,6 +24,10 @@ import {
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  firstLine
+} from '@jdeighan/coffee-utils/block';
 
 // ---------------------------------------------------------------------------
 //   isTAML - is the string valid TAML?

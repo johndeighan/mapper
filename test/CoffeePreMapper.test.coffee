@@ -125,7 +125,24 @@ tester.equal 119, new StarbucksPreMapper("""
 		# --- a comment
 		p the end
 		"""), """
-		h1 color="color  magenta"
+		h1 color="color\n\nmagenta"
+		p the end
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test using '.' in a HEREDOC
+
+tester.equal 135, new StarbucksPreMapper("""
+		h1 color="<<<"
+			$$$
+			color
+			.
+			magenta
+
+		# --- a comment
+		p the end
+		"""), """
+		h1 color="color magenta"
 		p the end
 		"""
 

@@ -29,12 +29,15 @@ import {
   isHash,
   isInteger,
   deepCopy,
-  OL
+  OL,
+  CWS
 } from '@jdeighan/coffee-utils';
 
 import {
   blockToArray,
-  arrayToBlock
+  arrayToBlock,
+  firstLine,
+  remainingLines
 } from '@jdeighan/coffee-utils/block';
 
 import {
@@ -179,7 +182,9 @@ export var StringFetcher = class StringFetcher {
   // --- Put a line back into lBuffer, to be fetched later
   unfetch(line) {
     debug(`enter unfetch(${OL(line)})`);
+    assert(isString(line), "unfetch(): not a string");
     if (this.altInput) {
+      assert(line != null, "unfetch(): line is undef");
       this.altInput.unfetch(undented(line, this.altLevel));
     } else {
       this.lBuffer.unshift(line);
@@ -495,20 +500,10 @@ export var SmartInput = class SmartInput extends StringInput {
   }
 
   // ..........................................................
-  heredocStr(block) {
-    // --- return replacement string for '<<<', given a block
-    if (isTAML(block)) {
-      return JSON.stringify(taml(block));
-    } else {
-      return block.replace(/\n/sg, ' ');
-    }
-  }
-
-  // ..........................................................
   handleHereDoc(line, level) {
-    var block, lLines, lParts, newstr, part, pos, result, start;
+    var lLines, lParts, newstr, part, pos, result, start;
     // --- Indentation is removed from line
-    // --- Find each '<<<' and replace with result of heredocStr()
+    // --- Find each '<<<' and replace with result of mapHereDoc()
     assert(isString(line), "handleHereDoc(): not a string");
     debug(`enter handleHereDoc(${OL(line)})`);
     lParts = []; // joined at the end
@@ -517,16 +512,13 @@ export var SmartInput = class SmartInput extends StringInput {
       part = line.substring(pos, start);
       debug(`PUSH ${OL(part)}`);
       lParts.push(part);
-      lLines = this.getHereDocLines(level);
+      lLines = this.getHereDocLines(level + 1);
       assert(isArray(lLines), "handleHereDoc(): lLines not an array");
       debug(`HEREDOC lines: ${OL(lLines)}`);
-      if (lLines.length > 0) {
-        block = arrayToBlock(undented(lLines));
-        newstr = this.heredocStr(block);
-        assert(isString(newstr), "handleHereDoc(): newstr not a string");
-        debug(`PUSH ${OL(newstr)}`);
-        lParts.push(newstr);
-      }
+      newstr = this.mapHereDoc(lLines);
+      assert(isString(newstr), "handleHereDoc(): newstr not a string");
+      debug(`PUSH ${OL(newstr)}`);
+      lParts.push(newstr);
       pos = start + 3;
     }
     // --- If no '<<<' in string, just return original line
@@ -544,42 +536,104 @@ export var SmartInput = class SmartInput extends StringInput {
   }
 
   // ..........................................................
-  addHereDocLine(lLines, line) {
-    if (line.trim() === '.') {
-      lLines.push('');
+  getHereDocLines(atLevel) {
+    var lLines, line, newline;
+    // --- Get all lines until addHereDocLine() returns undef
+    //     atLevel will be one greater than the indent
+    //        of the line containing <<<
+
+    // --- NOTE: splitLine() removes trailing whitespace
+    debug("enter SmartInput.getHereDocLines()");
+    lLines = [];
+    while (((line = this.fetch()) != null) && ((newline = this.hereDocLine(undented(line, atLevel))) != null)) {
+      assert(indentLevel(line) >= atLevel, "invalid indentation in HEREDOC section");
+      lLines.push(newline);
+    }
+    assert(isArray(lLines), "getHereDocLines(): retval not an array");
+    debug("return from SmartInput.getHereDocLines()", lLines);
+    return lLines;
+  }
+
+  // ..........................................................
+  hereDocLine(line) {
+    if (isEmpty(line)) {
+      return undef; // end the HEREDOC section
+    } else if (line === '.') {
+      return ''; // interpret '.' as blank line
     } else {
-      lLines.push(line);
+      return line;
     }
   }
 
   // ..........................................................
-  getHereDocLines(level) {
-    var firstLineLevel, lLines, line, lineLevel, str;
-    // --- Get all lines until empty line is found
-    //     BUT treat line of a single period as empty line
-    //     1st line should be indented level+1, or be empty
-    lLines = [];
-    firstLineLevel = undef;
-    while ((this.lBuffer.length > 0) && !isEmpty(this.lBuffer[0])) {
-      line = this.fetch();
-      [lineLevel, str] = splitLine(line);
-      if (firstLineLevel != null) {
-        assert(lineLevel >= firstLineLevel, "invalid indentation in HEREDOC section");
-        str = indented(str, lineLevel - firstLineLevel);
+  mapHereDoc(lLines) {
+    var _, funcName, header, lMatches, result, strParms;
+    // --- return replacement string for '<<<', given a block
+    //     MUST return a string since it will replace '<<<'
+    if (lLines.length === 0) {
+      return '';
+    }
+    header = lLines[0];
+    if (header === '---') {
+      return this.mapHereDocTAML(lLines);
+    }
+    if (header === '$$$') {
+      lLines.shift(); // remove first line
+      return this.mapHereDocOneLiner(lLines);
+    }
+    if (header === "!!!") {
+      lLines.shift(); // remove first line
+      return this.mapHereDocBlock(lLines);
+    }
+    if ((lMatches = lLines[0].match(/^\s*(?:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*)?\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*$/))) { // optional function name
+      // optional parameters
+      [_, funcName, strParms] = lMatches;
+      lLines.shift(); // remove first line
+      return this.mapHereDocFunction(funcName, strParms, lLines);
+    }
+    if ((header.length === 3) && (header.substr(1, 1) === header.substr(0, 1)) && (header.substr(2, 1) === header.substr(0, 1))) {
+      result = this.mapHereDocUnknown(lLines);
+      if (result != null) {
+        return result;
       } else {
-        // --- This is the first line of the HEREDOC section
-        if (isEmpty(str)) {
-          return [];
-        }
-        assert(lineLevel === level + 1, `getHereDocLines(): 1st line indentation should be ${level + 1}`);
-        firstLineLevel = lineLevel;
+        return this.mapHereDocBlock(lLines);
       }
-      this.addHereDocLine(lLines, str);
     }
-    if (this.lBuffer.length > 0) {
-      this.fetch(); // empty line
+    return this.mapHereDocBlock(lLines);
+  }
+
+  // ..........................................................
+  mapHereDocFunction(funcName, strParms, lLines) {
+    assert(isArray(lLines), "mapHereDocFunction(): lLines not an array");
+    if (funcName) {
+      return `${funcName} = (${strParms}) -> ${arrayToBlock(lLines)}`;
+    } else {
+      return `(${strParms}) -> ${arrayToBlock(lLines)}`;
     }
-    return lLines;
+  }
+
+  // ..........................................................
+  mapHereDocBlock(lLines) {
+    assert(isArray(lLines), "mapHereDocBlock(): lLines not an array");
+    return arrayToBlock(lLines);
+  }
+
+  // ..........................................................
+  mapHereDocOneLiner(lLines) {
+    assert(isArray(lLines), "mapHereDocOneLiner(): lLines not an array");
+    return CWS(lLines.join(' '));
+  }
+
+  // ..........................................................
+  mapHereDocTAML(lLines) {
+    assert(isArray(lLines), "mapHereDocTAML(): lLines not an array");
+    return JSON.stringify(taml(arrayToBlock(lLines)));
+  }
+
+  // ..........................................................
+  mapHereDocUnknown(lLines) {
+    assert(isArray(lLines), "mapHereDocUnknown(): lLines not an array");
+    return croak(`Unknown header line: ${OL(lLines[0])}`);
   }
 
 };
@@ -735,6 +789,7 @@ hExtToEnvVar = {
 export var getFileContents = function(fname, convert = false) {
   var base, contents, dir, envvar, ext, fullpath, root;
   debug(`enter getFileContents('${fname}')`);
+  assert(isString(fname), "getFileContents(): fname not a string");
   ({root, dir, base, ext} = parse_fname(fname.trim()));
   assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
   envvar = hExtToEnvVar[ext];

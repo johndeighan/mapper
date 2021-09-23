@@ -7,9 +7,11 @@ import {dirname, resolve, parse as parse_fname} from 'path';
 
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
-	isComment, isArray, isHash, isInteger, deepCopy, OL,
+	isComment, isArray, isHash, isInteger, deepCopy, OL, CWS,
 	} from '@jdeighan/coffee-utils'
-import {blockToArray, arrayToBlock} from '@jdeighan/coffee-utils/block'
+import {
+	blockToArray, arrayToBlock, firstLine, remainingLines,
+	} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
 import {
@@ -131,7 +133,9 @@ export class StringFetcher
 	unfetch: (line) ->
 
 		debug "enter unfetch(#{OL(line)})"
+		assert isString(line), "unfetch(): not a string"
 		if @altInput
+			assert line?, "unfetch(): line is undef"
 			@altInput.unfetch undented(line, @altLevel)
 		else
 			@lBuffer.unshift line
@@ -447,19 +451,9 @@ export class SmartInput extends StringInput
 
 	# ..........................................................
 
-	heredocStr: (block) ->
-		# --- return replacement string for '<<<', given a block
-
-		if isTAML(block)
-			return JSON.stringify(taml(block))
-		else
-			return block.replace(/\n/sg, ' ')
-
-	# ..........................................................
-
 	handleHereDoc: (line, level) ->
 		# --- Indentation is removed from line
-		# --- Find each '<<<' and replace with result of heredocStr()
+		# --- Find each '<<<' and replace with result of mapHereDoc()
 
 		assert isString(line), "handleHereDoc(): not a string"
 		debug "enter handleHereDoc(#{OL(line)})"
@@ -469,15 +463,13 @@ export class SmartInput extends StringInput
 			part = line.substring(pos, start)
 			debug "PUSH #{OL(part)}"
 			lParts.push part
-			lLines = @getHereDocLines(level)
+			lLines = @getHereDocLines(level+1)
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
 			debug "HEREDOC lines: #{OL(lLines)}"
-			if (lLines.length > 0)
-				block = arrayToBlock(undented(lLines))
-				newstr = @heredocStr(block)
-				assert isString(newstr), "handleHereDoc(): newstr not a string"
-				debug "PUSH #{OL(newstr)}"
-				lParts.push newstr
+			newstr = @mapHereDoc(lLines)
+			assert isString(newstr), "handleHereDoc(): newstr not a string"
+			debug "PUSH #{OL(newstr)}"
+			lParts.push newstr
 			pos = start + 3
 
 		# --- If no '<<<' in string, just return original line
@@ -497,43 +489,132 @@ export class SmartInput extends StringInput
 
 	# ..........................................................
 
-	addHereDocLine: (lLines, line) ->
+	getHereDocLines: (atLevel) ->
+		# --- Get all lines until addHereDocLine() returns undef
+		#     atLevel will be one greater than the indent
+		#        of the line containing <<<
 
-		if (line.trim() == '.')
-			lLines.push ''
-		else
-			lLines.push line
-		return
+		# --- NOTE: splitLine() removes trailing whitespace
+		debug "enter SmartInput.getHereDocLines()"
+		lLines = []
+		while (line = @fetch())? \
+				&& (newline = @hereDocLine(undented(line, atLevel)))?
+			assert (indentLevel(line) >= atLevel),
+				"invalid indentation in HEREDOC section"
+			lLines.push newline
+		assert isArray(lLines), "getHereDocLines(): retval not an array"
+		debug "return from SmartInput.getHereDocLines()", lLines
+		return lLines
 
 	# ..........................................................
 
-	getHereDocLines: (level) ->
-		# --- Get all lines until empty line is found
-		#     BUT treat line of a single period as empty line
-		#     1st line should be indented level+1, or be empty
+	hereDocLine: (line) ->
 
-		lLines = []
-		firstLineLevel = undef
-		while (@lBuffer.length > 0) && not isEmpty(@lBuffer[0])
-			line = @fetch()
-			[lineLevel, str] = splitLine(line)
+		if isEmpty(line)
+			return undef        # end the HEREDOC section
+		else if (line == '.')
+			return ''           # interpret '.' as blank line
+		else
+			return line
 
-			if firstLineLevel?
-				assert (lineLevel >= firstLineLevel),
-					"invalid indentation in HEREDOC section"
-				str = indented(str, lineLevel - firstLineLevel)
+	# ..........................................................
+
+	mapHereDoc: (lLines) ->
+		# --- return replacement string for '<<<', given a block
+		#     MUST return a string since it will replace '<<<'
+
+		if (lLines.length == 0)
+			return ''
+
+		header = lLines[0]
+
+		if (header == '---')
+			return @mapHereDocTAML(lLines)
+
+		if (header == '$$$')
+			lLines.shift()   # remove first line
+			return @mapHereDocOneLiner(lLines)
+
+		if (header == "!!!")
+			lLines.shift()   # remove first line
+			return @mapHereDocBlock(lLines)
+
+		if (lMatches = lLines[0].match(///^
+				\s*
+				(?:
+					([A-Za-z_][A-Za-z0-9_]*)  # optional function name
+					\s*
+					=
+					\s*
+					)?
+				\(
+				\s*
+				(                            # optional parameters
+					[A-Za-z_][A-Za-z0-9_]*
+					(?:
+						,
+						\s*
+						[A-Za-z_][A-Za-z0-9_]*
+						)*
+					)?
+				\)
+				\s*
+				->
+				\s*
+				$///))
+			[_, funcName, strParms] = lMatches
+			lLines.shift()    # remove first line
+			return @mapHereDocFunction(funcName, strParms, lLines)
+
+		if (header.length == 3) \
+				&& (header.substr(1, 1) == header.substr(0, 1)) \
+				&& (header.substr(2, 1) == header.substr(0, 1))
+
+			result = @mapHereDocUnknown(lLines)
+			if result?
+				return result
 			else
-				# --- This is the first line of the HEREDOC section
-				if isEmpty(str)
-					return []
-				assert (lineLevel == level+1),
-					"getHereDocLines(): 1st line indentation should be #{level+1}"
-				firstLineLevel = lineLevel
-			@addHereDocLine lLines, str
+				return @mapHereDocBlock(lLines)
 
-		if (@lBuffer.length > 0)
-			@fetch()   # empty line
-		return lLines
+		return @mapHereDocBlock(lLines)
+
+	# ..........................................................
+
+	mapHereDocFunction: (funcName, strParms, lLines) ->
+
+		assert isArray(lLines), "mapHereDocFunction(): lLines not an array"
+		if funcName
+			return "#{funcName} = (#{strParms}) -> #{arrayToBlock(lLines)}"
+		else
+			return "(#{strParms}) -> #{arrayToBlock(lLines)}"
+
+	# ..........................................................
+
+	mapHereDocBlock: (lLines) ->
+
+		assert isArray(lLines), "mapHereDocBlock(): lLines not an array"
+		return arrayToBlock(lLines)
+
+	# ..........................................................
+
+	mapHereDocOneLiner: (lLines) ->
+
+		assert isArray(lLines), "mapHereDocOneLiner(): lLines not an array"
+		return CWS(lLines.join(' '))
+
+	# ..........................................................
+
+	mapHereDocTAML: (lLines) ->
+
+		assert isArray(lLines), "mapHereDocTAML(): lLines not an array"
+		return JSON.stringify(taml(arrayToBlock(lLines)))
+
+	# ..........................................................
+
+	mapHereDocUnknown: (lLines) ->
+
+		assert isArray(lLines), "mapHereDocUnknown(): lLines not an array"
+		croak "Unknown header line: #{OL(lLines[0])}"
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -684,6 +765,7 @@ export getFileContents = (fname, convert=false) ->
 
 	debug "enter getFileContents('#{fname}')"
 
+	assert isString(fname), "getFileContents(): fname not a string"
 	{root, dir, base, ext} = parse_fname(fname.trim())
 	assert not root && not dir, "getFileContents():" \
 		+ " root='#{root}', dir='#{dir}'" \

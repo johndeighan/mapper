@@ -94,6 +94,20 @@ def`), `abc
 def`);
 
 // ---------------------------------------------------------------------------
+// --- Test __END__
+tester.equal(96, new StringFetcher(`abc
+__END__
+def`), `abc`);
+
+tester.equal(104, new StringFetcher(`abc
+	def
+	__END__
+ghi`), `abc
+	def
+	__END__
+ghi`);
+
+// ---------------------------------------------------------------------------
 // --- Test #include
 /*
 	Contents of file test/data/file.txt:
@@ -101,7 +115,7 @@ def`);
 	abc
 	def
 */
-tester.equal(103, new StringFetcher(`first line
+tester.equal(127, new StringFetcher(`first line
 
 	#include file.txt
 last line`), `first line
@@ -111,8 +125,25 @@ last line`), `first line
 last line`);
 
 // ---------------------------------------------------------------------------
+// --- Test #include with __END__ in included file
+/*
+	Contents of file test/data/file2.txt:
+
+abc
+__END__
+def
+*/
+tester.equal(151, new StringFetcher(`first line
+
+	#include file2.txt
+last line`), `first line
+
+	abc
+last line`);
+
+// ---------------------------------------------------------------------------
 // --- Test patching file name
-tester.equal(119, new StringFetcher(`in file {{FILE}}
+tester.equal(166, new StringFetcher(`in file {{FILE}}
 ok
 exiting file {{FILE}}`), `in file unit test
 ok
@@ -120,7 +151,7 @@ exiting file unit test`);
 
 // ---------------------------------------------------------------------------
 // --- Test patching line number
-tester.equal(133, new StringFetcher(`on line {{LINE}}
+tester.equal(180, new StringFetcher(`on line {{LINE}}
 ok
 on line {{LINE}}`), `on line 1
 ok

@@ -97,6 +97,8 @@ export class StringFetcher
 
 		# --- @lBuffer is not empty here
 		line = @lBuffer.shift()
+		if line == '__END__'
+			return undef
 		@lineNum += 1
 
 		if not literal && lMatches = line.match(///^

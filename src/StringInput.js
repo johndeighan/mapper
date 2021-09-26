@@ -153,6 +153,9 @@ export var StringFetcher = class StringFetcher {
     }
     // --- @lBuffer is not empty here
     line = this.lBuffer.shift();
+    if (line === '__END__') {
+      return undef;
+    }
     this.lineNum += 1;
     if (!literal && (lMatches = line.match(/^(\s*)\#include\s+(\S.*)$/))) {
       [_, prefix, fname] = lMatches;

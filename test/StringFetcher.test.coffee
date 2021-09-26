@@ -91,6 +91,30 @@ tester.equal 83, new StringFetcher("""
 		"""
 
 # ---------------------------------------------------------------------------
+# --- Test __END__
+
+tester.equal 96, new StringFetcher("""
+		abc
+		__END__
+		def
+		"""), """
+		abc
+		"""
+
+tester.equal 104, new StringFetcher("""
+		abc
+			def
+			__END__
+		ghi
+		"""), """
+		abc
+			def
+			__END__
+		ghi
+		"""
+
+
+# ---------------------------------------------------------------------------
 # --- Test #include
 
 ###
@@ -100,7 +124,7 @@ tester.equal 83, new StringFetcher("""
 	def
 ###
 
-tester.equal 103, new StringFetcher("""
+tester.equal 127, new StringFetcher("""
 		first line
 
 			#include file.txt
@@ -114,9 +138,32 @@ tester.equal 103, new StringFetcher("""
 		"""
 
 # ---------------------------------------------------------------------------
+# --- Test #include with __END__ in included file
+
+###
+	Contents of file test/data/file2.txt:
+
+abc
+__END__
+def
+###
+
+tester.equal 151, new StringFetcher("""
+		first line
+
+			#include file2.txt
+		last line
+		"""), """
+		first line
+
+			abc
+		last line
+		"""
+
+# ---------------------------------------------------------------------------
 # --- Test patching file name
 
-tester.equal 119, new StringFetcher("""
+tester.equal 166, new StringFetcher("""
 		in file {{FILE}}
 		ok
 		exiting file {{FILE}}
@@ -130,7 +177,7 @@ tester.equal 119, new StringFetcher("""
 # ---------------------------------------------------------------------------
 # --- Test patching line number
 
-tester.equal 133, new StringFetcher("""
+tester.equal 180, new StringFetcher("""
 		on line {{LINE}}
 		ok
 		on line {{LINE}}

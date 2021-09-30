@@ -20,50 +20,6 @@ convert = true
 
 # ---------------------------------------------------------------------------
 
-export class CieloMapper extends SmartInput
-	# --- retain empty lines & comments
-
-	handleEmptyLine: (level) ->
-		# --- keep empty lines
-		return ''
-
-	handleComment: (line, level) ->
-		# --- keep comments
-		return line
-
-# ---------------------------------------------------------------------------
-# --- Features:
-#        1. KEEP blank lines and comments
-#        2. #include <file>
-#        3. replace {{FILE}} and {{LINE}}
-#        4. handle continuation lines
-#        5. handle HEREDOC
-#        6. add auto-imports
-#        7. stop on __END__
-
-export brewCielo = (code) ->
-
-	debug "enter brewCielo()"
-	assert (indentLevel(code)==0), "brewCielo(): code has indentation"
-
-	oInput = new CieloMapper(code)
-	newcode = oInput.getAllText()
-
-	# --- returns [<symbol>, ... ]
-	lNeeded = getNeededSymbols(newcode)
-
-	if isEmpty(lNeeded)
-		debug "return from brewCielo() - no needed symbols"
-		return newcode
-	else
-		lImports = buildImportList(lNeeded)
-		result = joinBlocks(lImports..., newcode)
-		debug "return #{OL(result)} from brewCielo()"
-		return result
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
 export convertCoffee = (flag) ->
 
 	convert = flag

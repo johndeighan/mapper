@@ -8,7 +8,7 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	buildImportList, getAvailSymbols, brewCielo,
+	buildImportList, getAvailSymbols,
 	} from '@jdeighan/string-input/coffee'
 
 testDir = mydir(`import.meta.url`)
@@ -63,32 +63,3 @@ simple.equal 23, hSymbols, {
 	)()
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-class CieloTester extends UnitTester
-
-	transformValue: (code) ->
-
-		return brewCielo(code)
-
-export cieloTester = new CieloTester()
-
-# ---------------------------------------------------------------------------
-
-cieloTester.equal 149, """
-		import {undef, pass} from '@jdeighan/coffee-utils'
-		import {slurp, barf} from '@jdeighan/coffee-utils/fs'
-
-		try
-			contents = slurp('myfile.txt')
-		if (contents == undef)
-			print "File does not exist"
-		""", """
-		import {undef, pass} from '@jdeighan/coffee-utils'
-		import {slurp, barf} from '@jdeighan/coffee-utils/fs'
-
-		try
-			contents = slurp('myfile.txt')
-		if (contents == undef)
-			print "File does not exist"
-		"""

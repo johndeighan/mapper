@@ -125,7 +125,6 @@ export brewCoffee = (code) ->
 
 	[newcode, lImportStmts] = preBrewCoffee(code)
 	return joinBlocks(lImportStmts..., newcode)
-	return
 
 # ---------------------------------------------------------------------------
 

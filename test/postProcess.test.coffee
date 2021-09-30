@@ -5,9 +5,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
-import {
-	postProcessCoffee, getNeededImports,
-	} from '@jdeighan/string-input/coffee'
+import {postProcessCoffee} from '@jdeighan/string-input/coffee'
 
 simple = new UnitTester()
 

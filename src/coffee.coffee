@@ -4,7 +4,7 @@ import {strict as assert} from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	croak, OL, escapeStr,
+	croak, OL, escapeStr, isArray,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
@@ -19,6 +19,19 @@ import {tamlStringify} from '@jdeighan/string-input/taml'
 convert = true
 
 # ---------------------------------------------------------------------------
+
+export class CieloMapper extends SmartInput
+	# --- retain empty lines & comments
+
+	handleEmptyLine: (level) ->
+		# --- keep empty lines
+		return ''
+
+	handleComment: (line, level) ->
+		# --- keep comments
+		return line
+
+# ---------------------------------------------------------------------------
 # --- Features:
 #        1. KEEP blank lines and comments
 #        2. #include <file>
@@ -26,6 +39,7 @@ convert = true
 #        4. handle continuation lines
 #        5. handle HEREDOC
 #        6. add auto-imports
+#        7. stop on __END__
 
 export brewCielo = (code) ->
 
@@ -35,28 +49,17 @@ export brewCielo = (code) ->
 	oInput = new CieloMapper(code)
 	newcode = oInput.getAllText()
 
-	# --- returns {<lib>: [<symbol>,... ],... }
-	hNeeded = getNeededSymbols(newcode)
+	# --- returns [<symbol>, ... ]
+	lNeeded = getNeededSymbols(newcode)
 
-	if isEmpty(hNeeded)
+	if isEmpty(lNeeded)
 		debug "return from brewCielo() - no needed symbols"
 		return newcode
 	else
-		lImports = buildImportList(hNeeded)
+		lImports = buildImportList(lNeeded)
 		result = joinBlocks(lImports..., newcode)
 		debug "return #{OL(result)} from brewCielo()"
 		return result
-
-# ---------------------------------------------------------------------------
-
-export class CieloMapper extends SmartInput
-	# --- retain empty lines & comments
-
-	handleEmptyLine: (level) ->
-		return ''
-
-	handleComment: (line, level) ->
-		return line
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -92,36 +95,36 @@ export preBrewCoffee = (lBlocks...) ->
 
 	debug "enter preBrewCoffee()"
 
-	hAllNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
-	lNewBlocks = for blk,i in lBlocks
+	lNeededSymbols = []
+	lNewBlocks = []
+	for blk,i in lBlocks
 		debug "BLOCK #{i}", blk
 		newblk = preProcessCoffee(blk)
 		debug "NEW BLOCK", newblk
 
-		# --- returns {<lib>: [<symbol>,... ],... }
-		hNeeded = getNeededSymbols(newblk)
-		mergeNeededSymbols(hAllNeeded, hNeeded)
-
-		if not convert
-			newblk
-		else
+		for symbol in getNeededSymbols(newblk)
+			if not lNeededSymbols.includes(symbol)
+				lNeededSymbols.push(symbol)
+		if convert
 			try
 				script = CoffeeScript.compile(newblk, {bare: true})
 				debug "BREWED SCRIPT", script
-				postProcessCoffee(script)
+				lNewBlocks.push(postProcessCoffee(script))
 			catch err
 				log "Mapped Text:", newblk
 				croak err, "Original Text", blk
+		else
+			lNewBlocks.push(newblk)
 
-	# --- return converted blocks, PLUS the list of needed imports
-	return [lNewBlocks..., buildImportList(hAllNeeded)]
+	# --- return converted blocks, PLUS the list of import statements
+	return [lNewBlocks..., buildImportList(lNeededSymbols)]
 
 # ---------------------------------------------------------------------------
 
 export brewCoffee = (code) ->
 
-	[newcode, lImports] = preBrewCoffee(code)
-	return joinBlocks(lImports..., newcode)
+	[newcode, lImportStmts] = preBrewCoffee(code)
+	return joinBlocks(lImportStmts..., newcode)
 	return
 
 # ---------------------------------------------------------------------------
@@ -283,98 +286,52 @@ export postProcessCoffee = (code) ->
 
 # ---------------------------------------------------------------------------
 
-export mergeNeededSymbols = (hAllNeeded, hNeeded) ->
-  #  both are: { <lib>: [ <symbol>, ...], ...}
+export buildImportList = (lNeededSymbols) ->
 
-	for lib in Object.keys(hNeeded)
-		if hAllNeeded[lib]?
-			for sym in hNeeded[lib]
-				if sym not in hAllNeeded[lib]
-					hAllNeeded[lib].push sym
-		else
-			hAllNeeded[lib] = deepCopy(hNeeded[lib])
-	return
+	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
+	hAvailSymbols = getAvailSymbols()   # { <sym>: <lib>, ... }
+	for symbol in lNeededSymbols
+		lib = hAvailSymbols[symbol]
+		if lib?
+			# --- symbol is available in lib
+			if hLibs[lib]?
+				assert isArray(hLibs[lib]), "buildImportList(): not an array"
+				hLibs[lib].push(symbol)
+			else
+				hLibs[lib] = [symbol]
+
+	lImports = []
+	for lib in Object.keys(hLibs).sort()
+		strSymbols = hLibs[lib].join(',')
+		lImports.push "import {#{strSymbols}} from '#{lib}'"
+	return lImports
 
 # ---------------------------------------------------------------------------
 
 export getNeededSymbols = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
-	# --- returns { <lib>: [ <symbol>, ... ], ... }
 
 	debug "enter getNeededSymbols()"
-	hMissing = getMissingSymbols(code, hOptions)
-	if isEmpty(hMissing)
-		debug "return {} from getNeededSymbols() - no missing symbols"
-		return {}
-
-	hAvailSymbols = getAvailSymbols()
-	if isEmpty(hAvailSymbols)
-		debug "return {} from getNeededSymbols() - no avail symbols"
-		return {}
-
-	hNeeded = {}    # { <lib>: [ <symbol>, ...], ...}
-	for sym in Object.keys(hMissing)
-		if lib = hAvailSymbols[sym]
-			if hNeeded[lib]
-				hNeeded[lib].push(sym)
-			else
-				hNeeded[lib] = [sym]
-
-	return hNeeded
-
-# ---------------------------------------------------------------------------
-
-export buildImportList = (hNeeded) ->
-
-	lImports = []
-	for lib in Object.keys(hNeeded).sort()
-		symbols = hNeeded[lib].join(',')
-		lImports.push "import {#{symbols}} from '#{lib}'"
-	return lImports
-
-# ---------------------------------------------------------------------------
-
-export getNeededImports = (code, hOptions={}) ->
-	# --- Valid options:
-	#        dumpfile: <filepath>   - where to dump ast
-	# --- returns lImports
-
-	debug "enter getNeededImports()"
-	hNeeded = getNeededSymbols(code, hOptions)
-
-	lImports = []
-	for lib in Object.keys(hNeeded)
-		symbols = hNeeded[lib].join(',')
-		lImports.push "import {#{symbols}} from '#{lib}'"
-	debug "return from getNeededImports()"
-	return lImports
-
-# ---------------------------------------------------------------------------
-
-export getMissingSymbols = (code, hOptions={}) ->
-	# --- Valid options:
-	#        dumpfile: <filepath>   - where to dump ast
-
-	debug "enter getMissingSymbols()"
 	try
 		debug "COMPILE CODE", code
 		ast = CoffeeScript.compile code, {ast: true}
-		assert ast?, "getMissingSymbols(): ast is empty"
+		assert ast?, "getNeededSymbols(): ast is empty"
 	catch err
-		croak err, 'CODE (in getMissingSymbols)', code
+		croak err, 'CODE (in getNeededSymbols)', code
 
 	walker = new ASTWalker(ast)
-	hMissingSymbols = walker.getMissingSymbols()
+	hSymbolInfo = walker.getSymbols()
 	if hOptions.dumpfile
-		barf hOptions.dumpfile, "AST:\n" + tamlStringify(walker.ast)
-	debug "return from getMissingSymbols()"
-	return hMissingSymbols
+		barf hOptions.dumpfile, "AST:\n" + tamlStringify(ast)
+	debug "return from getNeededSymbols()"
+	return hSymbolInfo.lNeeded
 
 # ---------------------------------------------------------------------------
 # export to allow unit testing
 
 export getAvailSymbols = () ->
+	# --- returns { <symbol> -> <lib>, ... }
 
 	debug "enter getAvailSymbols()"
 	searchFromDir = process.env.DIR_SYMBOLS || mydir(`import.meta.url`)

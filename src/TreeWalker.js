@@ -100,8 +100,8 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
   constructor(ast) {
     super(ast.program);
     this.ast = ast.program;
-    this.hImports = {};
-    this.hMissingSymbols = {};
+    this.lImportedSymbols = [];
+    this.lUsedSymbols = [];
     // --- subarrays start out as list of formal parameters
     //     to which are added locally assigned variables
     this.lLocalSymbols = [[]];
@@ -121,16 +121,20 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
   }
 
   // ..........................................................
-  addImport(name, value = {}) {
+  addImport(name, lib) {
     assert(name, "addImport: empty name");
-    this.hImports[name] = value;
+    if (this.lImportedSymbols.includes(name)) {
+      croak(`Duplicate import: ${name}`);
+    } else {
+      this.lImportedSymbols.push(name);
+    }
   }
 
   // ..........................................................
-  addMissingSymbol(name, value = {}) {
-    assert(name, "addMissingSymbol: empty name");
-    if (!this.isLocalSymbol(name)) {
-      this.hMissingSymbols[name] = value;
+  addUsedSymbol(name, value = {}) {
+    assert(name, "addUsedSymbol(): empty name");
+    if (!this.isLocalSymbol(name) && !this.lUsedSymbols.includes(name)) {
+      this.lUsedSymbols.push(name);
     }
   }
 
@@ -144,18 +148,30 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
 
   // ..........................................................
   visit(node, level) {
-    var add, i, lNames, lSubTrees, len, name, param, parm, ref;
-    // --- Identifiers that are not local vars or formal params
-    //     are symbols that should be imported
-    if (node.type === 'Identifier') {
-      name = node.name;
-      if (!this.isLocalSymbol(name)) {
-        this.addMissingSymbol(name);
-      }
-      return;
-    }
+    var add, hSpec, i, importKind, imported, j, lNames, lSubTrees, len, len1, lib, local, name, param, parm, ref, source, specifiers, type;
     // --- add to local vars & formal params, where appropriate
     switch (node.type) {
+      case 'Identifier':
+        // --- Identifiers that are not local vars or formal params
+        //     are symbols that should be imported
+        name = node.name;
+        if (!this.isLocalSymbol(name)) {
+          this.addUsedSymbol(name);
+        }
+        return;
+      case 'ImportDeclaration':
+        ({specifiers, source, importKind} = node);
+        if ((importKind === 'value') && (source.type === 'StringLiteral')) {
+          lib = source.value; // e.g. '@jdeighan/coffee-utils'
+          for (i = 0, len = specifiers.length; i < len; i++) {
+            hSpec = specifiers[i];
+            ({type, imported, local, importKind} = hSpec);
+            if ((type === 'ImportSpecifier') && (imported != null) && (imported.type === 'Identifier')) {
+              this.addImport(imported.name, lib);
+            }
+          }
+        }
+        return;
       case 'CatchClause':
         param = node.param;
         if ((param != null) && param.type === 'Identifier') {
@@ -165,8 +181,8 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
       case 'FunctionExpression':
         lNames = [];
         ref = node.params;
-        for (i = 0, len = ref.length; i < len; i++) {
-          parm = ref[i];
+        for (j = 0, len1 = ref.length; j < len1; j++) {
+          parm = ref[j];
           if (parm.type === 'Identifier') {
             lNames.push(parm.name);
           }
@@ -268,23 +284,28 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
   }
 
   // ..........................................................
-  getMissingSymbols() {
-    var i, key, len, ref;
-    debug("enter CodeWalker.getMissingSymbols()");
-    this.hImports = {};
-    this.hMissingSymbols = {};
+  getSymbols() {
+    var i, lNeededSymbols, len, name, ref;
+    debug("enter CodeWalker.getNeededSymbols()");
+    this.lImportedSymbols = []; // filled in during walking
+    this.lUsedSymbols = []; // filled in during walking
     debug("walking");
     this.walk();
     debug("done walking");
-    ref = Object.keys(this.hImports);
+    lNeededSymbols = [];
+    ref = this.lUsedSymbols;
     for (i = 0, len = ref.length; i < len; i++) {
-      key = ref[i];
-      if (this.hMissingSymbols[key] != null) {
-        delete this.hMissingSymbols[key];
+      name = ref[i];
+      if (!this.lImportedSymbols.includes(name)) {
+        lNeededSymbols.push(name);
       }
     }
-    debug("return from CodeWalker.getMissingSymbols()");
-    return this.hMissingSymbols;
+    debug("return from CodeWalker.getNeededSymbols()");
+    return {
+      lImported: this.lImportedSymbols,
+      lUsed: this.lUsedSymbols,
+      lNeeded: lNeededSymbols
+    };
   }
 
 };

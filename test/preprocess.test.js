@@ -17,8 +17,7 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  preProcessCoffee,
-  getNeededImports
+  preProcessCoffee
 } from '@jdeighan/string-input/coffee';
 
 simple = new UnitTester();

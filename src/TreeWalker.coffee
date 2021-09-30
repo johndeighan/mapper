@@ -88,8 +88,8 @@ export class ASTWalker extends TreeWalker
 
 		super ast.program
 		@ast = ast.program
-		@hImports = {}
-		@hMissingSymbols = {}
+		@lImportedSymbols = []
+		@lUsedSymbols = []
 
 		# --- subarrays start out as list of formal parameters
 		#     to which are added locally assigned variables
@@ -106,19 +106,22 @@ export class ASTWalker extends TreeWalker
 
 	# ..........................................................
 
-	addImport: (name, value={}) ->
+	addImport: (name, lib) ->
 
 		assert name, "addImport: empty name"
-		@hImports[name] = value
+		if @lImportedSymbols.includes(name)
+			croak "Duplicate import: #{name}"
+		else
+			@lImportedSymbols.push(name)
 		return
 
 	# ..........................................................
 
-	addMissingSymbol: (name, value={}) ->
+	addUsedSymbol: (name, value={}) ->
 
-		assert name, "addMissingSymbol: empty name"
-		if not @isLocalSymbol(name)
-			@hMissingSymbols[name] = value
+		assert name, "addUsedSymbol(): empty name"
+		if not @isLocalSymbol(name) && not @lUsedSymbols.includes(name)
+			@lUsedSymbols.push(name)
 		return
 
 	# ..........................................................
@@ -134,17 +137,31 @@ export class ASTWalker extends TreeWalker
 
 	visit: (node, level) ->
 
-		# --- Identifiers that are not local vars or formal params
-		#     are symbols that should be imported
-
-		if (node.type == 'Identifier')
-			name = node.name
-			if not @isLocalSymbol(name)
-				@addMissingSymbol name
-			return
 
 		# --- add to local vars & formal params, where appropriate
 		switch node.type
+
+			when 'Identifier'
+				# --- Identifiers that are not local vars or formal params
+				#     are symbols that should be imported
+
+				name = node.name
+				if not @isLocalSymbol(name)
+					@addUsedSymbol name
+				return
+
+			when 'ImportDeclaration'
+				{specifiers, source, importKind} = node
+				if (importKind == 'value') && (source.type == 'StringLiteral')
+					lib = source.value     # e.g. '@jdeighan/coffee-utils'
+
+					for hSpec in specifiers
+						{type, imported, local, importKind} = hSpec
+						if (type == 'ImportSpecifier') \
+								&& imported? \
+								&& (imported.type == 'Identifier')
+							@addImport imported.name, lib
+				return
 
 			when 'CatchClause'
 				param = node.param
@@ -233,19 +250,28 @@ export class ASTWalker extends TreeWalker
 
 	# ..........................................................
 
-	getMissingSymbols: () ->
+	getSymbols: () ->
 
-		debug "enter CodeWalker.getMissingSymbols()"
-		@hImports = {}
-		@hMissingSymbols = {}
+		debug "enter CodeWalker.getNeededSymbols()"
+
+		@lImportedSymbols = []  # filled in during walking
+		@lUsedSymbols = []      # filled in during walking
+
 		debug "walking"
 		@walk()
 		debug "done walking"
-		for key in Object.keys(@hImports)
-			if @hMissingSymbols[key]?
-				delete @hMissingSymbols[key]
-		debug "return from CodeWalker.getMissingSymbols()"
-		return @hMissingSymbols
+
+		lNeededSymbols = []
+		for name in @lUsedSymbols
+			if not @lImportedSymbols.includes(name)
+				lNeededSymbols.push(name)
+
+		debug "return from CodeWalker.getNeededSymbols()"
+		return {
+			lImported: @lImportedSymbols,
+			lUsed:     @lUsedSymbols,
+			lNeeded:   lNeededSymbols,
+			}
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

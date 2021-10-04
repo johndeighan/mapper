@@ -1,8 +1,9 @@
 # taml.test.coffee
 
 import {undef} from '@jdeighan/coffee-utils'
+import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {isTAML, taml, tamlStringify} from '@jdeighan/string-input/taml'
+import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 simple = new UnitTester()
 

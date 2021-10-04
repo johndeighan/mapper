@@ -7,14 +7,13 @@ import {
 	croak, OL, escapeStr, isArray,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
-import {log} from '@jdeighan/coffee-utils/log'
+import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
 import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
 import {StringInput, SmartInput} from '@jdeighan/string-input'
 import {ASTWalker} from '@jdeighan/string-input/tree'
-import {tamlStringify} from '@jdeighan/string-input/taml'
 
 convert = true
 

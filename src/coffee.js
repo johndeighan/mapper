@@ -21,7 +21,8 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  log
+  log,
+  tamlStringify
 } from '@jdeighan/coffee-utils/log';
 
 import {
@@ -52,10 +53,6 @@ import {
 import {
   ASTWalker
 } from '@jdeighan/string-input/tree';
-
-import {
-  tamlStringify
-} from '@jdeighan/string-input/taml';
 
 convert = true;
 

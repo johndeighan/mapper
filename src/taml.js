@@ -18,6 +18,11 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
+  log,
+  tamlStringify
+} from '@jdeighan/coffee-utils/log';
+
+import {
   slurp
 } from '@jdeighan/coffee-utils/fs';
 
@@ -45,22 +50,6 @@ export var taml = function(text) {
   }
   assert(isTAML(text), `taml(): string ${oneline(text)} isn't TAML`);
   return yaml.load(untabify(text, 1));
-};
-
-// ---------------------------------------------------------------------------
-//   tamlStringify - convert a data structure into a valid TAML string
-export var tamlStringify = function(obj) {
-  var str;
-  if (obj == null) {
-    return 'undef';
-  }
-  str = yaml.dump(obj, {
-    skipInvalid: true,
-    indent: 1,
-    sortKeys: false,
-    lineWidth: -1
-  });
-  return "---\n" + tabify(str);
 };
 
 // ---------------------------------------------------------------------------

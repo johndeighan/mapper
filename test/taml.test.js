@@ -7,13 +7,17 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  log,
+  tamlStringify
+} from '@jdeighan/coffee-utils/log';
+
+import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
 import {
   isTAML,
-  taml,
-  tamlStringify
+  taml
 } from '@jdeighan/string-input/taml';
 
 simple = new UnitTester();

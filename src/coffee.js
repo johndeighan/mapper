@@ -351,11 +351,11 @@ export var getAvailSymbols = function() {
       if (level === 0) {
         this.curLib = line;
       } else if (level === 1) {
-        assert(this.curLib != null, "SymbolFileParser: curLib not defined");
+        assert(this.curLib != null, "mapString(): curLib not defined");
         ref = words(line);
         for (j = 0, len = ref.length; j < len; j++) {
           symbol = ref[j];
-          assert(this.hSymbols[symbol] == null);
+          assert(this.hSymbols[symbol] == null, `mapString(): duplicate symbol ${symbol}`);
           this.hSymbols[symbol] = this.curLib;
         }
       } else {

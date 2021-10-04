@@ -313,9 +313,10 @@ export getAvailSymbols = () ->
 			if level==0
 				@curLib = line
 			else if level==1
-				assert @curLib?, "SymbolFileParser: curLib not defined"
+				assert @curLib?, "mapString(): curLib not defined"
 				for symbol in words(line)
-					assert not @hSymbols[symbol]?
+					assert not @hSymbols[symbol]?,
+						"mapString(): duplicate symbol #{symbol}"
 					@hSymbols[symbol] = @curLib
 			else
 				croak "Bad .symbols file - level = #{level}"

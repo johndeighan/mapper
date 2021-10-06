@@ -243,16 +243,24 @@ export postProcessCoffee = (code) ->
 export buildImportList = (lNeededSymbols) ->
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
-	hAvailSymbols = getAvailSymbols()   # { <sym>: <lib>, ... }
+	hAvailSymbols = getAvailSymbols()   # { <sym>: {lib: <lib>, src: <name> }}
 	for symbol in lNeededSymbols
-		lib = hAvailSymbols[symbol]
-		if lib?
+		hSymbol = hAvailSymbols[symbol]
+		if hSymbol?
 			# --- symbol is available in lib
+			{lib, src} = hSymbol
+
+			# --- build the needed string
+			if src?
+				str = "#{src} as #{symbol}"
+			else
+				str = symbol
+
 			if hLibs[lib]?
 				assert isArray(hLibs[lib]), "buildImportList(): not an array"
-				hLibs[lib].push(symbol)
+				hLibs[lib].push(str)
 			else
-				hLibs[lib] = [symbol]
+				hLibs[lib] = [str]
 
 	lImports = []
 	for lib in Object.keys(hLibs).sort()
@@ -285,7 +293,7 @@ export getNeededSymbols = (code, hOptions={}) ->
 # export to allow unit testing
 
 export getAvailSymbols = () ->
-	# --- returns { <symbol> -> <lib>, ... }
+	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
 
 	debug "enter getAvailSymbols()"
 	searchFromDir = process.env.DIR_SYMBOLS || mydir(`import.meta.url`)
@@ -295,41 +303,73 @@ export getAvailSymbols = () ->
 		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
 
-	debug ".symbols file found at '#{filepath}'"
+	hSymbols = getAvailSymbolsFrom(filepath)
+	debug "hSymbols", hSymbols
+	debug "return from getAvailSymbols()"
+	return hSymbols
 
-	class SymbolParser extends SmartInput
-		# --- We want to allow blank lines and comments
-		#     We want to allow continuation lines
+# ---------------------------------------------------------------------------
 
-		constructor: (content) ->
+class SymbolParser extends SmartInput
+	# --- We want to allow blank lines and comments
+	#     We want to allow continuation lines
 
-			super content
-			@curLib = undef
-			@hSymbols = {}
+	constructor: (content) ->
 
-		mapString: (line, level) ->
+		super content
+		@curLib = undef
+		@hSymbols = {}
 
-			if level==0
-				@curLib = line
-			else if level==1
-				assert @curLib?, "mapString(): curLib not defined"
-				for symbol in words(line)
+	mapString: (line, level) ->
+
+		if level==0
+			@curLib = line
+		else if level==1
+			assert @curLib?, "mapString(): curLib not defined"
+			lWords = words(line)
+			numWords = lWords.length
+
+			for word,i in lWords
+				# --- set variables symbol and possibly realName
+				symbol = realName = undef
+				if word.match(/^[A-Za-z_][A-Za-z0-9_]*$/)
+					# --- word is an identifier (skip words that contain special symbols)
+					symbol = word
+					if (i+2 < numWords)
+						nextWord = lWords[i+1]
+						if (nextWord == '(as')
+							lMatches = lWords[i+2].match(/^([A-Za-z_][A-Za-z0-9_]*)\)$/)
+							if lMatches
+								realName = symbol
+								symbol = lMatches[1]
+
+				if symbol?
 					assert not @hSymbols[symbol]?,
-						"mapString(): duplicate symbol #{symbol}"
-					@hSymbols[symbol] = @curLib
-			else
-				croak "Bad .symbols file - level = #{level}"
-			return undef   # doesn't matter what we return
+						"SymbolParser: duplicate symbol #{symbol}"
+					if realName?
+						@hSymbols[symbol] = {lib: @curLib, src: realName}
+					else
+						@hSymbols[symbol] = {lib: @curLib}
+		else
+			croak "Bad .symbols file - level = #{level}"
+		return undef   # doesn't matter what we return
 
-		getSymbols: () ->
+	getSymbols: () ->
 
-			@getAll()
-			return @hSymbols
+		@getAll()
+		return @hSymbols
+
+# ---------------------------------------------------------------------------
+
+getAvailSymbolsFrom = (filepath) ->
+	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
+
+	debug "enter getAvailSymbolsFrom('#{filepath}')"
 
 	contents = slurp(filepath)
 	debug 'Contents of .symbols', contents
 	parser = new SymbolParser(contents)
 	hSymbols = parser.getSymbols()
 	debug "hSymbols", hSymbols
-	debug "return from getAvailSymbols()"
+	debug "return from getAvailSymbolsFrom()"
 	return hSymbols

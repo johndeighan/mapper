@@ -48,13 +48,28 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 hSymbols = getAvailSymbols();
 
 simple.equal(23, hSymbols, {
-  barf: '@jdeighan/coffee-utils/fs',
-  log: '@jdeighan/coffee-utils/log',
-  mkpath: '@jdeighan/coffee-utils/fs',
-  mydir: '@jdeighan/coffee-utils/fs',
-  say: '@jdeighan/coffee-utils',
-  slurp: '@jdeighan/coffee-utils/fs',
-  undef: '@jdeighan/coffee-utils'
+  barf: {
+    lib: '@jdeighan/coffee-utils/fs'
+  },
+  logger: {
+    lib: '@jdeighan/coffee-utils/log',
+    src: 'log'
+  },
+  mkpath: {
+    lib: '@jdeighan/coffee-utils/fs'
+  },
+  mydir: {
+    lib: '@jdeighan/coffee-utils/fs'
+  },
+  say: {
+    lib: '@jdeighan/coffee-utils'
+  },
+  slurp: {
+    lib: '@jdeighan/coffee-utils/fs'
+  },
+  undef: {
+    lib: '@jdeighan/coffee-utils'
+  }
 });
 
 // ----------------------------------------------------------------------------
@@ -72,8 +87,8 @@ say "Answer is 42"`);
 // ----------------------------------------------------------------------------
 (function() {
   var lNeeded;
-  lNeeded = words('say undef log slurp barf');
-  return simple.equal(58, buildImportList(lNeeded), ["import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log} from '@jdeighan/coffee-utils/log'"]);
+  lNeeded = words('say undef logger slurp barf');
+  return simple.equal(58, buildImportList(lNeeded), ["import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
 })();
 
 // ---------------------------------------------------------------------------

@@ -64,11 +64,11 @@ tester.equal 55, """
 
 tester.equal 67, """
 		x = 23
-		log x
+		logger x
 		""", """
-		import {log} from '@jdeighan/coffee-utils/log'
+		import {log as logger} from '@jdeighan/coffee-utils/log'
 		x = 23
-		log x
+		logger x
 		"""
 
 tester.equal 76, """

@@ -1,6 +1,8 @@
 @jdeighan/coffee-utils
 	say undef
+
 @jdeighan/coffee-utils/fs
 	mydir mkpath slurp barf
+
 @jdeighan/coffee-utils/log
-	log
+	log (as logger)

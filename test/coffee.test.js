@@ -78,9 +78,9 @@ y = x + 5`);
 // ---------------------------------------------------------------------------
 // --- test auto-import of symbols from file '.symbols'
 tester.equal(67, `x = 23
-log x`, `import {log} from '@jdeighan/coffee-utils/log'
+logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log'
 x = 23
-log x`);
+logger x`);
 
 tester.equal(76, `# --- a comment
 

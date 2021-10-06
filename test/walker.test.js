@@ -24,6 +24,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  hEnv
+} from '@jdeighan/coffee-utils/envlib';
+
+import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
@@ -37,7 +41,7 @@ import {
 
 testDir = mydir(import.meta.url);
 
-process.env.DIR_SYMBOLS = testDir;
+hEnv.DIR_SYMBOLS = testDir;
 
 simple = new UnitTester();
 

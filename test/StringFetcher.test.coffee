@@ -7,12 +7,13 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+import {hEnv} from '@jdeighan/coffee-utils/envlib'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringFetcher} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
-process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
-process.env.DIR_DATA = mkpath(dir, 'data')
+hEnv.DIR_MARKDOWN = mkpath(dir, 'markdown')
+hEnv.DIR_DATA = mkpath(dir, 'data')
 
 simple = new UnitTester()
 

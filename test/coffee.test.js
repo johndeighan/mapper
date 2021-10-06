@@ -31,16 +31,20 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
+  hEnv
+} from '@jdeighan/coffee-utils/envlib';
+
+import {
   brewCoffee,
   brewExpr,
   convertCoffee
 } from '@jdeighan/string-input/coffee';
 
-root = process.env.dir_root = mydir(import.meta.url);
+root = hEnv.DIR_ROOT = mydir(import.meta.url);
 
-process.env.DIR_DATA = `${root}/data process.env.DIR_MARKDOWN = `;
+hEnv.DIR_DATA = `${root}/data hEnv.DIR_MARKDOWN = `;
 
-process.env.DIR_SYMBOLS = root;
+hEnv.DIR_SYMBOLS = root;
 
 simple = new UnitTester();
 

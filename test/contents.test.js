@@ -12,18 +12,22 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  getFileContents
-} from '@jdeighan/string-input';
-
-import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
-root = process.env.dir_root = mydir(import.meta.url);
+import {
+  hEnv
+} from '@jdeighan/coffee-utils/envlib';
 
-process.env.dir_data = `${root}/data`;
+import {
+  getFileContents
+} from '@jdeighan/string-input';
 
-process.env.dir_markdown = `${root}/markdown`;
+root = hEnv.DIR_ROOT = mydir(import.meta.url);
+
+hEnv.DIR_DATA = `${root}/data`;
+
+hEnv.DIR_MARKDOWN = `${root}/markdown`;
 
 simple = new UnitTester();
 

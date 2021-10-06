@@ -15,12 +15,16 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
+  hEnv
+} from '@jdeighan/coffee-utils/envlib';
+
+import {
   markdownify
 } from '@jdeighan/string-input/markdown';
 
-root = process.env.dir_root = mydir(import.meta.url);
+root = hEnv.DIR_ROOT = mydir(import.meta.url);
 
-process.env.dir_data = `${root}/data process.env.dir_markdown = `;
+hEnv.DIR_DATA = `${root}/data hEnv.DIR_MARKDOWN = `;
 
 simple = new UnitTester();
 

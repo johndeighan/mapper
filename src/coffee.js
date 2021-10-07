@@ -34,8 +34,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  hEnvLib
-} from '@jdeighan/coffee-utils/envlib';
+  hPrivEnv
+} from '@jdeighan/coffee-utils/privenv';
 
 import {
   mydir,
@@ -337,7 +337,7 @@ export var getAvailSymbols = function() {
   var filepath, hSymbols, searchFromDir;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
   debug("enter getAvailSymbols()");
-  searchFromDir = hEnvLib.DIR_SYMBOLS || mydir(import.meta.url);
+  searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(import.meta.url);
   debug(`search for .symbols from '${searchFromDir}'`);
   filepath = pathTo('.symbols', searchFromDir, 'up');
   if (filepath == null) {

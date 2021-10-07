@@ -66,8 +66,8 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  hEnvLib
-} from '@jdeighan/coffee-utils/envlib';
+  hPrivEnv
+} from '@jdeighan/coffee-utils/privenv';
 
 import {
   markdownify
@@ -802,7 +802,7 @@ export var getFileContents = function(fname, convert = false) {
   envvar = hExtToEnvVar[ext];
   debug(`envvar = '${envvar}'`);
   assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);
-  dir = hEnvLib[envvar];
+  dir = hPrivEnv[envvar];
   debug(`dir = '${dir}'`);
   assert(dir, `env var '${envvar}' not set for file extension '${ext}'`);
   fullpath = pathTo(base, dir); // guarantees that file exists

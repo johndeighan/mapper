@@ -20,17 +20,17 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  hEnvLib
-} from '@jdeighan/coffee-utils/envlib';
+  hPrivEnv
+} from '@jdeighan/coffee-utils/privenv';
 
 import {
   sassify,
   convertSASS
 } from '@jdeighan/string-input/sass';
 
-root = hEnvLib.DIR_ROOT = mydir(import.meta.url);
+root = hPrivEnv.DIR_ROOT = mydir(import.meta.url);
 
-hEnvLib.DIR_DATA = `${root}/data hEnvLib.DIR_MARKDOWN = `;
+hPrivEnv.DIR_DATA = `${root}/data hPrivEnv.DIR_MARKDOWN = `;
 
 simple = new UnitTester();
 

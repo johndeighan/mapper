@@ -31,8 +31,8 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  hEnvLib
-} from '@jdeighan/coffee-utils/envlib';
+  hPrivEnv
+} from '@jdeighan/coffee-utils/privenv';
 
 import {
   UnitTester
@@ -44,9 +44,9 @@ import {
 
 dir = mydir(import.meta.url);
 
-hEnvLib.DIR_MARKDOWN = mkpath(dir, 'markdown');
+hPrivEnv.DIR_MARKDOWN = mkpath(dir, 'markdown');
 
-hEnvLib.DIR_DATA = mkpath(dir, 'data');
+hPrivEnv.DIR_DATA = mkpath(dir, 'data');
 
 simple = new UnitTester();
 

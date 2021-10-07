@@ -31,8 +31,8 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  hEnvLib
-} from '@jdeighan/coffee-utils/envlib';
+  hPrivEnv
+} from '@jdeighan/coffee-utils/privenv';
 
 import {
   brewCoffee,
@@ -40,11 +40,11 @@ import {
   convertCoffee
 } from '@jdeighan/string-input/coffee';
 
-root = hEnvLib.DIR_ROOT = mydir(import.meta.url);
+root = hPrivEnv.DIR_ROOT = mydir(import.meta.url);
 
-hEnvLib.DIR_DATA = `${root}/data hEnvLib.DIR_MARKDOWN = `;
+hPrivEnv.DIR_DATA = `${root}/data hPrivEnv.DIR_MARKDOWN = `;
 
-hEnvLib.DIR_SYMBOLS = root;
+hPrivEnv.DIR_SYMBOLS = root;
 
 simple = new UnitTester();
 

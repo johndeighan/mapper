@@ -19,7 +19,7 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
+import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
@@ -776,7 +776,7 @@ export getFileContents = (fname, convert=false) ->
 	envvar = hExtToEnvVar[ext]
 	debug "envvar = '#{envvar}'"
 	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
-	dir = hEnvLib[envvar]
+	dir = hPrivEnv[envvar]
 	debug "dir = '#{dir}'"
 	assert dir, "env var '#{envvar}' not set for file extension '#{ext}'"
 	fullpath = pathTo(base, dir)   # guarantees that file exists

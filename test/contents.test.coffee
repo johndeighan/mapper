@@ -3,12 +3,12 @@
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {hEnv} from '@jdeighan/coffee-utils/envlib'
+import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
 import {getFileContents} from '@jdeighan/string-input'
 
-root = hEnv.DIR_ROOT = mydir(`import.meta.url`)
-hEnv.DIR_DATA = "#{root}/data"
-hEnv.DIR_MARKDOWN = "#{root}/markdown"
+root = hEnvLib.DIR_ROOT = mydir(`import.meta.url`)
+hEnvLib.DIR_DATA = "#{root}/data"
+hEnvLib.DIR_MARKDOWN = "#{root}/markdown"
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------

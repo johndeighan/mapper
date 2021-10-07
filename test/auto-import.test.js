@@ -31,7 +31,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  hEnv
+  hEnvLib
 } from '@jdeighan/coffee-utils/envlib';
 
 import {
@@ -41,7 +41,7 @@ import {
 
 testDir = mydir(import.meta.url);
 
-hEnv.DIR_SYMBOLS = testDir;
+hEnvLib.DIR_SYMBOLS = testDir;
 
 simple = new UnitTester();
 

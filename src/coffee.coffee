@@ -10,7 +10,7 @@ import {
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {hEnv} from '@jdeighan/coffee-utils/envlib'
+import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
 import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
 import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
 import {StringInput, SmartInput} from '@jdeighan/string-input'
@@ -297,7 +297,7 @@ export getAvailSymbols = () ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
 
 	debug "enter getAvailSymbols()"
-	searchFromDir = hEnv.DIR_SYMBOLS || mydir(`import.meta.url`)
+	searchFromDir = hEnvLib.DIR_SYMBOLS || mydir(`import.meta.url`)
 	debug "search for .symbols from '#{searchFromDir}'"
 	filepath = pathTo('.symbols', searchFromDir, 'up')
 	if not filepath?

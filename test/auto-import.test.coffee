@@ -7,13 +7,13 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {hEnv} from '@jdeighan/coffee-utils/envlib'
+import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
 import {
 	buildImportList, getAvailSymbols,
 	} from '@jdeighan/string-input/coffee'
 
 testDir = mydir(`import.meta.url`)
-hEnv.DIR_SYMBOLS = testDir
+hEnvLib.DIR_SYMBOLS = testDir
 simple = new UnitTester()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 

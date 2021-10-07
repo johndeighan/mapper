@@ -32,7 +32,7 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  hEnv
+  hEnvLib
 } from '@jdeighan/coffee-utils/envlib';
 
 import {
@@ -45,7 +45,7 @@ import {
 
 dir = mydir(import.meta.url);
 
-hEnv.DIR_MARKDOWN = mkpath(dir, 'markdown');
+hEnvLib.DIR_MARKDOWN = mkpath(dir, 'markdown');
 
 simple = new UnitTester();
 

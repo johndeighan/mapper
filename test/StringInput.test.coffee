@@ -12,12 +12,12 @@ import {
 	debug, debugging, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {hEnv} from '@jdeighan/coffee-utils/envlib'
+import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
-hEnv.DIR_MARKDOWN = mkpath(dir, 'markdown')
+hEnvLib.DIR_MARKDOWN = mkpath(dir, 'markdown')
 
 simple = new UnitTester()
 

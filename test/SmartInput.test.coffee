@@ -10,13 +10,13 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {hEnv} from '@jdeighan/coffee-utils/envlib'
+import {hEnvLib} from '@jdeighan/coffee-utils/envlib'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {SmartInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)
-hEnv.DIR_MARKDOWN = mkpath(dir, 'markdown')
-hEnv.DIR_DATA = mkpath(dir, 'data')
+hEnvLib.DIR_MARKDOWN = mkpath(dir, 'markdown')
+hEnvLib.DIR_DATA = mkpath(dir, 'data')
 
 simple = new UnitTester()
 

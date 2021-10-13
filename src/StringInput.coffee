@@ -3,7 +3,7 @@
 import {strict as assert} from 'assert'
 import fs from 'fs'
 import pathlib from 'path'
-import {dirname, resolve, parse as parse_fname} from 'path';
+import {dirname, resolve, parse as parse_fname} from 'path'
 
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
@@ -102,7 +102,7 @@ export class StringFetcher
 			return undef
 		@lineNum += 1
 
-		if not literal && lMatches = line.match(///^
+		if ! literal && lMatches = line.match(///^
 				(\s*)
 				\# include
 				\s+
@@ -110,7 +110,7 @@ export class StringFetcher
 				$///)
 			[_, prefix, fname] = lMatches
 			debug "#include #{fname} with prefix #{OL(prefix)}"
-			assert not @altInput, "fetch(): altInput already set"
+			assert ! @altInput, "fetch(): altInput already set"
 			contents = getFileContents(fname)
 			@altInput = new StringFetcher(contents, fname)
 			@altLevel = indentLevel(prefix)
@@ -200,7 +200,7 @@ export class StringInput extends StringFetcher
 		#     <item> can be anything - i.e. it's been mapped
 
 		debug 'enter unget() with', pair
-		assert not @lookahead?, "unget(): there's already a lookahead"
+		assert ! @lookahead?, "unget(): there's already a lookahead"
 		@lookahead = pair
 		debug 'return from unget()'
 		return
@@ -214,7 +214,7 @@ export class StringInput extends StringFetcher
 			debug "return lookahead from peek"
 			return @lookahead
 		pair = @get()
-		if not pair?
+		if ! pair?
 			debug "return undef from peek()"
 			return undef
 		@unget(pair)
@@ -259,7 +259,7 @@ export class StringInput extends StringFetcher
 		line = @fetch()    # will handle #include
 		debug "LINE", line
 
-		if not line?
+		if ! line?
 			debug "return undef from StringInput.get() at EOF"
 			return undef
 
@@ -269,7 +269,7 @@ export class StringInput extends StringFetcher
 
 		# --- if mapLine() returns undef, we skip that line
 
-		while not result? && (@lBuffer.length > 0)
+		while ! result? && (@lBuffer.length > 0)
 			line = @fetch()
 			[level, str] = splitLine(line)
 			result = @mapLine(str, level)
@@ -770,7 +770,7 @@ export getFileContents = (fname, convert=false) ->
 
 	assert isString(fname), "getFileContents(): fname not a string"
 	{root, dir, base, ext} = parse_fname(fname.trim())
-	assert not root && not dir, "getFileContents():" \
+	assert ! root && ! dir, "getFileContents():" \
 		+ " root='#{root}', dir='#{dir}'" \
 		+ " - full path not allowed"
 	envvar = hExtToEnvVar[ext]
@@ -778,13 +778,15 @@ export getFileContents = (fname, convert=false) ->
 	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
 	dir = hPrivEnv[envvar]
 	debug "dir = '#{dir}'"
-	assert dir, "env var '#{envvar}' not set for file extension '#{ext}'"
+	if ! dir?
+		croak "env var '#{envvar}' not set for file extension '#{ext}'",
+			'hPrivEnv', hPrivEnv
 	fullpath = pathTo(base, dir)   # guarantees that file exists
 	debug "fullpath = '#{fullpath}'"
 	assert fullpath, "getFileContents(): Can't find file #{fname}"
 
 	contents = slurp(fullpath)
-	if not convert
+	if ! convert
 		debug "return from getFileContents() - not converting"
 		return contents
 	switch ext

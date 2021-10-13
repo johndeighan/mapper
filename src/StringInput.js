@@ -317,7 +317,6 @@ export var StringInput = class StringInput extends StringFetcher {
     [level, str] = splitLine(line);
     result = this.mapLine(str, level);
     debug(`MAP: '${str}' => ${OL(result)}`);
-    // --- if mapLine() returns undef, we skip that line
     while ((result == null) && (this.lBuffer.length > 0)) {
       line = this.fetch();
       [level, str] = splitLine(line);
@@ -804,7 +803,9 @@ export var getFileContents = function(fname, convert = false) {
   assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);
   dir = hPrivEnv[envvar];
   debug(`dir = '${dir}'`);
-  assert(dir, `env var '${envvar}' not set for file extension '${ext}'`);
+  if (dir == null) {
+    croak(`env var '${envvar}' not set for file extension '${ext}'`, 'hPrivEnv', hPrivEnv);
+  }
   fullpath = pathTo(base, dir); // guarantees that file exists
   debug(`fullpath = '${fullpath}'`);
   assert(fullpath, `getFileContents(): Can't find file ${fname}`);

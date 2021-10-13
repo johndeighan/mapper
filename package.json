@@ -42,7 +42,6 @@
 	},
 	"dependencies": {
 		"@jdeighan/coffee-utils": "^4.0.4",
-		"@jdeighan/env": "^6.0.4",
 		"cross-env": "^7.0.3",
 		"marked": "^3.0.7",
 		"sass": "^1.42.1"

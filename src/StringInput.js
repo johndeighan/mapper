@@ -71,10 +71,6 @@ import {
 } from '@jdeighan/coffee-utils/privenv';
 
 import {
-  loadPrivEnvFrom
-} from '@jdeighan/env';
-
-import {
   markdownify
 } from '@jdeighan/string-input/markdown';
 
@@ -806,10 +802,6 @@ export var getFileContents = function(fname, convert = false) {
   envvar = hExtToEnvVar[ext];
   debug(`envvar = '${envvar}'`);
   assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);
-  if (isEmpty(hPrivEnv)) {
-    log("private env is empty - loading");
-    loadPrivEnvFrom(mydir(import.meta.url));
-  }
   dir = hPrivEnv[envvar];
   debug(`dir = '${dir}'`);
   if (dir == null) {

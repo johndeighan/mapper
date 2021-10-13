@@ -20,7 +20,6 @@ import {
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
-import {loadPrivEnvFrom} from '@jdeighan/env'
 import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
@@ -777,10 +776,6 @@ export getFileContents = (fname, convert=false) ->
 	envvar = hExtToEnvVar[ext]
 	debug "envvar = '#{envvar}'"
 	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
-
-	if isEmpty(hPrivEnv)
-		log "private env is empty - loading"
-		loadPrivEnvFrom(mydir(`import.meta.url`))
 
 	dir = hPrivEnv[envvar]
 	debug "dir = '#{dir}'"

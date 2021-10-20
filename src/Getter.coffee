@@ -1,6 +1,6 @@
 # Getter.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
 import {undef, pass, croak} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 

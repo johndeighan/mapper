@@ -1,6 +1,7 @@
 # StarbucksPreMapper.test.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
+
 import {undef} from '@jdeighan/coffee-utils'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'

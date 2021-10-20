@@ -1,6 +1,6 @@
 # sass.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
 import sass from 'sass'
 
 import {undef, isComment} from '@jdeighan/coffee-utils'

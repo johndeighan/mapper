@@ -1,6 +1,6 @@
 # TreeWalker.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
 
 import {
 	undef, pass, croak, isArray, isHash, isArrayOfHashes,

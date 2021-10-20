@@ -2,9 +2,7 @@
 // auto-import.test.coffee
 var ASTTester, dumpfile, simple, testDir;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
 import CoffeeScript from 'coffeescript';
 

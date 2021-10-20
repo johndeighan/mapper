@@ -2,9 +2,7 @@
 // StarbucksPreMapper.test.coffee
 var CustomInput, GatherTester, tester;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
 import {
   undef

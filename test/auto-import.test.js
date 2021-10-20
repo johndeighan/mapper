@@ -2,9 +2,7 @@
 // auto-import.test.coffee
 var dumpfile, hSymbols, simple, testDir;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
 import {
   undef,

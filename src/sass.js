@@ -2,9 +2,7 @@
 // sass.coffee
 var convert;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
 import sass from 'sass';
 

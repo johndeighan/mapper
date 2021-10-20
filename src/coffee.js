@@ -2,9 +2,7 @@
 // coffee.coffee
 var SymbolParser, convert, getAvailSymbolsFrom;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
 import CoffeeScript from 'coffeescript';
 

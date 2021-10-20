@@ -1,7 +1,7 @@
 # StringInput.coffee
 
-import {strict as assert} from 'assert'
-import {existsSync, statSync} from 'fs'
+import assert from 'assert'
+import fs from 'fs'
 import pathlib from 'path'
 import {dirname, resolve, parse as parsePath} from 'path'
 
@@ -779,7 +779,7 @@ export getFileContents = (fname, convert=false, dir=undef) ->
 
 	if dir
 		path = mkpath(dir, fname)
-		if existsSync(path)
+		if fs.existsSync(path)
 			return slurp(path)
 
 	envvar = hExtToEnvVar[ext]

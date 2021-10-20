@@ -1,6 +1,6 @@
 # auto-import.test.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
 
 import {undef, words, isArray} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'

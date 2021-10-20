@@ -2,14 +2,9 @@
 // StringInput.coffee
 var hExtToEnvVar, patch;
 
-import {
-  strict as assert
-} from 'assert';
+import assert from 'assert';
 
-import {
-  existsSync,
-  statSync
-} from 'fs';
+import fs from 'fs';
 
 import pathlib from 'path';
 
@@ -807,7 +802,7 @@ export var getFileContents = function(fname, convert = false, dir = undef) {
   assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
   if (dir) {
     path = mkpath(dir, fname);
-    if (existsSync(path)) {
+    if (fs.existsSync(path)) {
       return slurp(path);
     }
   }

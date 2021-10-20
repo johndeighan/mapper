@@ -1,6 +1,6 @@
 # markdown.coffee
 
-import {strict as assert} from 'assert'
+import assert from 'assert'
 import marked from 'marked'
 
 import {OL} from '@jdeighan/coffee-utils'

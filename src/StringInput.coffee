@@ -1,9 +1,9 @@
 # StringInput.coffee
 
 import {strict as assert} from 'assert'
-import fs from 'fs'
+import {existsSync, statSync} from 'fs'
 import pathlib from 'path'
-import {dirname, resolve, parse as parse_fname} from 'path'
+import {dirname, resolve, parse as parsePath} from 'path'
 
 import {
 	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
@@ -13,7 +13,9 @@ import {
 	blockToArray, arrayToBlock, firstLine, remainingLines,
 	} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
-import {slurp, pathTo, mydir} from '@jdeighan/coffee-utils/fs'
+import {
+	slurp, pathTo, mydir, parseSource,
+	} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine, indented, undented, indentLevel,
 	} from '@jdeighan/coffee-utils/indent'
@@ -36,17 +38,21 @@ patch = (str, substr, value) ->
 
 export class StringFetcher
 
-	constructor: (content, @filename) ->
+	constructor: (content, source='unit test') ->
 
-		if @filename?
-			try
-				# --- We only want the bare filename
-				{base} = pathlib.parse(@filename)
-				@filename = base
-		else
-			@filename = 'unit test'
+		hSourceInfo = parseSource(source)
+		filename = hSourceInfo.filename
+		assert filename, "StringFetcher: parseSource returned no filename"
+		@filename = filename
+		@hSourceInfo = hSourceInfo
 
-		if isEmpty(content)
+		if ! content?
+			if hSourceInfo.fullpath
+				content = slurp(hSourceInfo.fullpath)
+				@lBuffer = blockToArray(content)
+			else
+				croak "StringFetcher: no source or fullpath"
+		else if isEmpty(content)
 			@lBuffer = []
 		else if isString(content)
 			@lBuffer = blockToArray(content)
@@ -111,7 +117,12 @@ export class StringFetcher
 			[_, prefix, fname] = lMatches
 			debug "#include #{fname} with prefix #{OL(prefix)}"
 			assert ! @altInput, "fetch(): altInput already set"
-			contents = getFileContents(fname)
+
+			if @hFileInfo
+				dir = @hFileInfo.dir
+			else
+				dir = undef
+			contents = getFileContents(fname, false, dir)
 			@altInput = new StringFetcher(contents, fname)
 			@altLevel = indentLevel(prefix)
 			debug "alt input created with prefix #{OL(prefix)}"
@@ -182,11 +193,8 @@ export class StringFetcher
 
 export class StringInput extends StringFetcher
 
-	constructor: (content, hOptions={}) ->
-		# --- Valid options:
-		#        filename
-
-		super content, hOptions.filename
+	constructor: (content, source) ->
+		super content, source
 		@lookahead = undef   # --- lookahead token, placed by unget
 
 		# --- cache in case getAll() is called multiple times
@@ -350,11 +358,8 @@ export class SmartInput extends StringInput
 	# - joins continuation lines
 	# - handles HEREDOCs
 
-	constructor: (content, hOptions={}) ->
-		# --- Valid options:
-		#        filename
-
-		super content, hOptions
+	constructor: (content, source) ->
+		super content, source
 
 		# --- This should only be used in mapLine(), where
 		#     it keeps track of the level we're at, to be passed
@@ -631,11 +636,8 @@ export class SmartInput extends StringInput
 
 export class PLLParser extends SmartInput
 
-	constructor: (content, hOptions={}) ->
-		# --- Valid options:
-		#        filename
-
-		super content, hOptions
+	constructor: (content, source) ->
+		super content, source
 
 		# --- Cached tree, in case getTree() is called multiple times
 		@tree = undef
@@ -764,15 +766,22 @@ hExtToEnvVar = {
 
 # ---------------------------------------------------------------------------
 
-export getFileContents = (fname, convert=false) ->
+export getFileContents = (fname, convert=false, dir=undef) ->
 
+	fname = fname.trim()
 	debug "enter getFileContents('#{fname}')"
 
 	assert isString(fname), "getFileContents(): fname not a string"
-	{root, dir, base, ext} = parse_fname(fname.trim())
+	{root, dir, base, ext} = parsePath(fname)
 	assert ! root && ! dir, "getFileContents():" \
 		+ " root='#{root}', dir='#{dir}'" \
 		+ " - full path not allowed"
+
+	if dir
+		path = mkpath(dir, fname)
+		if existsSync(path)
+			return slurp(path)
+
 	envvar = hExtToEnvVar[ext]
 	debug "envvar = '#{envvar}'"
 	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"

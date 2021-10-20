@@ -6,14 +6,17 @@ import {
   strict as assert
 } from 'assert';
 
-import fs from 'fs';
+import {
+  existsSync,
+  statSync
+} from 'fs';
 
 import pathlib from 'path';
 
 import {
   dirname,
   resolve,
-  parse as parse_fname
+  parse as parsePath
 } from 'path';
 
 import {
@@ -47,7 +50,8 @@ import {
 import {
   slurp,
   pathTo,
-  mydir
+  mydir,
+  parseSource
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -89,19 +93,21 @@ patch = function(str, substr, value) {
 //   class StringFetcher - stream in lines from a string
 //                         handles #include
 export var StringFetcher = class StringFetcher {
-  constructor(content, filename) {
-    var base, i, line;
+  constructor(content, source = 'unit test') {
+    var filename, hSourceInfo, i, line;
+    hSourceInfo = parseSource(source);
+    filename = hSourceInfo.filename;
+    assert(filename, "StringFetcher: parseSource returned no filename");
     this.filename = filename;
-    if (this.filename != null) {
-      try {
-        // --- We only want the bare filename
-        ({base} = pathlib.parse(this.filename));
-        this.filename = base;
-      } catch (error) {}
-    } else {
-      this.filename = 'unit test';
-    }
-    if (isEmpty(content)) {
+    this.hSourceInfo = hSourceInfo;
+    if (content == null) {
+      if (hSourceInfo.fullpath) {
+        content = slurp(hSourceInfo.fullpath);
+        this.lBuffer = blockToArray(content);
+      } else {
+        croak("StringFetcher: no source or fullpath");
+      }
+    } else if (isEmpty(content)) {
       this.lBuffer = [];
     } else if (isString(content)) {
       this.lBuffer = blockToArray(content);
@@ -137,7 +143,7 @@ export var StringFetcher = class StringFetcher {
 
   // ..........................................................
   fetch(literal = false) {
-    var _, contents, fname, lMatches, line, prefix, result;
+    var _, contents, dir, fname, lMatches, line, prefix, result;
     // --- literal = true means don't handle #include,
     //               just return it as is
     debug(`enter fetch(literal=${literal}) from ${this.filename}`);
@@ -166,7 +172,12 @@ export var StringFetcher = class StringFetcher {
       [_, prefix, fname] = lMatches;
       debug(`#include ${fname} with prefix ${OL(prefix)}`);
       assert(!this.altInput, "fetch(): altInput already set");
-      contents = getFileContents(fname);
+      if (this.hFileInfo) {
+        dir = this.hFileInfo.dir;
+      } else {
+        dir = undef;
+      }
+      contents = getFileContents(fname, false, dir);
       this.altInput = new StringFetcher(contents, fname);
       this.altLevel = indentLevel(prefix);
       debug(`alt input created with prefix ${OL(prefix)}`);
@@ -238,10 +249,8 @@ export var StringFetcher = class StringFetcher {
 //      - allow mapping of lines, including skipping lines
 //      - implement look ahead via peek()
 export var StringInput = class StringInput extends StringFetcher {
-  constructor(content, hOptions = {}) {
-    // --- Valid options:
-    //        filename
-    super(content, hOptions.filename);
+  constructor(content, source) {
+    super(content, source);
     this.lookahead = undef; // --- lookahead token, placed by unget
     
     // --- cache in case getAll() is called multiple times
@@ -410,10 +419,8 @@ export var SmartInput = class SmartInput extends StringInput {
   // - removes blank lines and comments (but can be overridden)
   // - joins continuation lines
   // - handles HEREDOCs
-  constructor(content, hOptions = {}) {
-    // --- Valid options:
-    //        filename
-    super(content, hOptions);
+  constructor(content, source) {
+    super(content, source);
     // --- This should only be used in mapLine(), where
     //     it keeps track of the level we're at, to be passed
     //     to handleEmptyLine() since the empty line itself
@@ -655,10 +662,8 @@ export var SmartInput = class SmartInput extends StringInput {
 //        3. If desired, override handleHereDoc, which patches
 //           HEREDOC lines into the original string
 export var PLLParser = class PLLParser extends SmartInput {
-  constructor(content, hOptions = {}) {
-    // --- Valid options:
-    //        filename
-    super(content, hOptions);
+  constructor(content, source) {
+    super(content, source);
     // --- Cached tree, in case getTree() is called multiple times
     this.tree = undef;
   }
@@ -793,12 +798,19 @@ hExtToEnvVar = {
 };
 
 // ---------------------------------------------------------------------------
-export var getFileContents = function(fname, convert = false) {
-  var base, contents, dir, envvar, ext, fullpath, root;
+export var getFileContents = function(fname, convert = false, dir = undef) {
+  var base, contents, envvar, ext, fullpath, path, root;
+  fname = fname.trim();
   debug(`enter getFileContents('${fname}')`);
   assert(isString(fname), "getFileContents(): fname not a string");
-  ({root, dir, base, ext} = parse_fname(fname.trim()));
+  ({root, dir, base, ext} = parsePath(fname));
   assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
+  if (dir) {
+    path = mkpath(dir, fname);
+    if (existsSync(path)) {
+      return slurp(path);
+    }
+  }
   envvar = hExtToEnvVar[ext];
   debug(`envvar = '${envvar}'`);
   assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);

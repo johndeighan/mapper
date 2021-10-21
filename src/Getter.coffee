@@ -1,7 +1,6 @@
 # Getter.coffee
 
-import assert from 'assert'
-import {undef, pass, croak} from '@jdeighan/coffee-utils'
+import {assert, undef, pass, croak} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 # ---------------------------------------------------------------------------
@@ -49,7 +48,7 @@ export class Getter
 			debug "return lookahead token from peek()", @lookahead
 			return @lookahead
 		item = @get()
-		if not item?
+		if ! item?
 			return undef
 		@unget(item)
 		debug 'return from peek() with:', item
@@ -69,6 +68,6 @@ export class Getter
 	eof: () ->
 
 		debug "enter eof()"
-		atEnd = (@pos == @len) && not @lookahead?
+		atEnd = (@pos == @len) && ! @lookahead?
 		debug "return #{atEnd} from eof()"
 		return atEnd

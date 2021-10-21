@@ -1,10 +1,9 @@
 # taml.coffee
 
-import assert from 'assert'
 import yaml from 'js-yaml'
 
 import {
-	undef, oneline, isString,
+	assert, undef, oneline, isString,
 	} from '@jdeighan/coffee-utils'
 import {untabify, tabify} from '@jdeighan/coffee-utils/indent'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
@@ -25,7 +24,7 @@ export isTAML = (text) ->
 export taml = (text) ->
 
 	debug "enter taml(#{oneline(text)})"
-	if not text?
+	if ! text?
 		debug "return undef from taml() - text is not defined"
 		return undef
 	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"

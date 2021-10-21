@@ -1,9 +1,7 @@
 # TreeWalker.coffee
 
-import assert from 'assert'
-
 import {
-	undef, pass, croak, isArray, isHash, isArrayOfHashes,
+	assert, undef, pass, croak, isArray, isHash, isArrayOfHashes,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'
@@ -120,7 +118,7 @@ export class ASTWalker extends TreeWalker
 	addUsedSymbol: (name, value={}) ->
 
 		assert name, "addUsedSymbol(): empty name"
-		if not @isLocalSymbol(name) && not @lUsedSymbols.includes(name)
+		if ! @isLocalSymbol(name) && ! @lUsedSymbols.includes(name)
 			@lUsedSymbols.push(name)
 		return
 
@@ -146,7 +144,7 @@ export class ASTWalker extends TreeWalker
 				#     are symbols that should be imported
 
 				name = node.name
-				if not @isLocalSymbol(name)
+				if ! @isLocalSymbol(name)
 					@addUsedSymbol name
 				return
 
@@ -263,7 +261,7 @@ export class ASTWalker extends TreeWalker
 
 		lNeededSymbols = []
 		for name in @lUsedSymbols
-			if not @lImportedSymbols.includes(name)
+			if ! @lImportedSymbols.includes(name)
 				lNeededSymbols.push(name)
 
 		debug "return from CodeWalker.getNeededSymbols()"
@@ -321,6 +319,6 @@ export class TreeStringifier extends TreeWalker
 				"TreeStringifier.stringify(): node '#{node}' is not a hash"
 		newnode = {}
 		for key,value of node
-			if (not @excludeKey(key))
+			if (! @excludeKey(key))
 				newnode[key] = node[key]
 		return JSON.stringify(newnode)

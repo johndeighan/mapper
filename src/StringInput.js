@@ -2,19 +2,12 @@
 // StringInput.coffee
 var hExtToEnvVar, patch;
 
-import assert from 'assert';
-
 import fs from 'fs';
 
 import pathlib from 'path';
 
 import {
-  dirname,
-  resolve,
-  parse as parsePath
-} from 'path';
-
-import {
+  assert,
   undef,
   pass,
   croak,
@@ -798,7 +791,7 @@ export var getFileContents = function(fname, convert = false, dir = undef) {
   fname = fname.trim();
   debug(`enter getFileContents('${fname}')`);
   assert(isString(fname), "getFileContents(): fname not a string");
-  ({root, dir, base, ext} = parsePath(fname));
+  ({root, dir, base, ext} = pathlib.parse(fname));
   assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
   if (dir) {
     path = mkpath(dir, fname);

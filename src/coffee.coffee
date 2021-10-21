@@ -1,10 +1,9 @@
 # coffee.coffee
 
-import assert from 'assert'
 import CoffeeScript from 'coffeescript'
 
 import {
-	croak, OL, escapeStr, isArray,
+	assert, croak, OL, escapeStr, isArray,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
@@ -31,7 +30,7 @@ export brewExpr = (expr, force=false) ->
 
 	assert (indentLevel(expr)==0), "brewExpr(): has indentation"
 
-	if not convert && not force
+	if ! convert && ! force
 		return expr
 	try
 		newexpr = CoffeeScript.compile(expr, {bare: true}).trim()
@@ -59,7 +58,7 @@ export preBrewCoffee = (lBlocks...) ->
 		debug "NEW BLOCK", newblk
 
 		for symbol in getNeededSymbols(newblk)
-			if not lNeededSymbols.includes(symbol)
+			if ! lNeededSymbols.includes(symbol)
 				lNeededSymbols.push(symbol)
 		if convert
 			try
@@ -155,7 +154,7 @@ export class StarbucksPreMapper extends SmartInput
 			code = @fetchBlock(level+1)    # must be empty
 			assert isEmpty(code),
 					"mapString(): indented code not allowed after '#{line}'"
-			assert not isEmpty(expr),
+			assert ! isEmpty(expr),
 					"mapString(): empty expression in '#{line}'"
 			result = """
 					`$:`
@@ -210,7 +209,7 @@ export class StarbucksPostMapper extends StringInput
 				(.*)        # any remaining text
 				$///))
 			[_, brace, rest] = lMatches
-			assert not rest, "StarbucksPostMapper: extra text after $:"
+			assert ! rest, "StarbucksPostMapper: extra text after $:"
 			@savedLevel = level
 			if brace
 				@savedLine = "$:{"
@@ -223,7 +222,7 @@ export class StarbucksPostMapper extends StringInput
 				(.*)
 				$///))
 			[_, rest] = lMatches
-			assert not rest, "StarbucksPostMapper: extra text after $:"
+			assert ! rest, "StarbucksPostMapper: extra text after $:"
 			return indented("\}", level)
 		else
 			return indented(line, level)
@@ -300,7 +299,7 @@ export getAvailSymbols = () ->
 	searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(`import.meta.url`)
 	debug "search for .symbols from '#{searchFromDir}'"
 	filepath = pathTo('.symbols', searchFromDir, 'up')
-	if not filepath?
+	if ! filepath?
 		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
 
@@ -345,7 +344,7 @@ class SymbolParser extends SmartInput
 								symbol = lMatches[1]
 
 				if symbol?
-					assert not @hSymbols[symbol]?,
+					assert ! @hSymbols[symbol]?,
 						"SymbolParser: duplicate symbol #{symbol}"
 					if realName?
 						@hSymbols[symbol] = {lib: @curLib, src: realName}

@@ -1,9 +1,8 @@
 # sass.coffee
 
-import assert from 'assert'
 import sass from 'sass'
 
-import {undef, isComment} from '@jdeighan/coffee-utils'
+import {assert, undef, isComment} from '@jdeighan/coffee-utils'
 import {StringInput} from '@jdeighan/string-input'
 
 convert = true
@@ -33,11 +32,11 @@ export sassify = (text) ->
 
 	oInput = new SassMapper(text)
 	newtext = oInput.getAllText()
-	if not convert
+	if ! convert
 		return newtext
 	result = sass.renderSync({
-			data: newtext,
-			indentedSyntax: true,
-			indentType: "tab",
-			})
+		data: newtext,
+		indentedSyntax: true,
+		indentType: "tab",
+		})
 	return result.css.toString()

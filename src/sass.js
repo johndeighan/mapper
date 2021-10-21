@@ -2,11 +2,10 @@
 // sass.coffee
 var convert;
 
-import assert from 'assert';
-
 import sass from 'sass';
 
 import {
+  assert,
   undef,
   isComment
 } from '@jdeighan/coffee-utils';

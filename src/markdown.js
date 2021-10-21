@@ -2,11 +2,10 @@
 // markdown.coffee
 var convert;
 
-import assert from 'assert';
-
 import marked from 'marked';
 
 import {
+  assert,
   OL
 } from '@jdeighan/coffee-utils';
 

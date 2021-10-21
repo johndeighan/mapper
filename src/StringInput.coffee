@@ -1,12 +1,10 @@
 # StringInput.coffee
 
-import assert from 'assert'
 import fs from 'fs'
 import pathlib from 'path'
-import {dirname, resolve, parse as parsePath} from 'path'
 
 import {
-	undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
+	assert, undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
 	isComment, isArray, isHash, isInteger, deepCopy, OL, CWS,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -772,7 +770,7 @@ export getFileContents = (fname, convert=false, dir=undef) ->
 	debug "enter getFileContents('#{fname}')"
 
 	assert isString(fname), "getFileContents(): fname not a string"
-	{root, dir, base, ext} = parsePath(fname)
+	{root, dir, base, ext} = pathlib.parse(fname)
 	assert ! root && ! dir, "getFileContents():" \
 		+ " root='#{root}', dir='#{dir}'" \
 		+ " - full path not allowed"

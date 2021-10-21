@@ -2,11 +2,10 @@
 // coffee.coffee
 var SymbolParser, convert, getAvailSymbolsFrom;
 
-import assert from 'assert';
-
 import CoffeeScript from 'coffeescript';
 
 import {
+  assert,
   croak,
   OL,
   escapeStr,

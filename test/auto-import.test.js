@@ -50,6 +50,16 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 hSymbols = getAvailSymbols();
 
 simple.equal(23, hSymbols, {
+  fs: {
+    lib: 'fs',
+    isDefault: true
+  },
+  exists: {
+    lib: 'fs'
+  },
+  readFile: {
+    lib: 'fs'
+  },
   barf: {
     lib: '@jdeighan/coffee-utils/fs'
   },
@@ -89,8 +99,8 @@ say "Answer is 42"`);
 // ----------------------------------------------------------------------------
 (function() {
   var lNeeded;
-  lNeeded = words('say undef logger slurp barf');
-  return simple.equal(58, buildImportList(lNeeded), ["import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+  lNeeded = words('say undef logger slurp barf fs');
+  return simple.equal(58, buildImportList(lNeeded), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
 })();
 
 // ---------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+fs
+	*fs exists readFile
+
 @jdeighan/coffee-utils
 	say undef
 

@@ -243,26 +243,29 @@ export postProcessCoffee = (code) ->
 export buildImportList = (lNeededSymbols) ->
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
+	lImports = []
 	hAvailSymbols = getAvailSymbols()   # { <sym>: {lib: <lib>, src: <name> }}
 	for symbol in lNeededSymbols
 		hSymbol = hAvailSymbols[symbol]
 		if hSymbol?
 			# --- symbol is available in lib
-			{lib, src} = hSymbol
+			{lib, src, isDefault} = hSymbol
 
-			# --- build the needed string
-			if src?
-				str = "#{src} as #{symbol}"
+			if isDefault
+				lImports.push "import #{symbol} from '#{lib}'"
 			else
-				str = symbol
+				# --- build the needed string
+				if src?
+					str = "#{src} as #{symbol}"
+				else
+					str = symbol
 
-			if hLibs[lib]?
-				assert isArray(hLibs[lib]), "buildImportList(): not an array"
-				hLibs[lib].push(str)
-			else
-				hLibs[lib] = [str]
+				if hLibs[lib]?
+					assert isArray(hLibs[lib]), "buildImportList(): not an array"
+					hLibs[lib].push(str)
+				else
+					hLibs[lib] = [str]
 
-	lImports = []
 	for lib in Object.keys(hLibs).sort()
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
@@ -293,7 +296,7 @@ export getNeededSymbols = (code, hOptions={}) ->
 # export to allow unit testing
 
 export getAvailSymbols = () ->
-	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
+	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
 
 	debug "enter getAvailSymbols()"
 	searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(`import.meta.url`)
@@ -330,26 +333,29 @@ class SymbolParser extends SmartInput
 			numWords = lWords.length
 
 			for word,i in lWords
-				# --- set variables symbol and possibly realName
-				symbol = realName = undef
-				if word.match(/^[A-Za-z_][A-Za-z0-9_]*$/)
-					# --- word is an identifier (skip words that contain special symbols)
-					symbol = word
+				symbol = src = undef
+
+				# --- set variables symbol and possibly src
+				if lMatches = word.match(/^(\*?)([A-Za-z_][A-Za-z0-9_]*)$/)
+					[_, isDefault, symbol] = lMatches
+					# --- word is an identifier (skip words that contain '(' or ')')
 					if (i+2 < numWords)
 						nextWord = lWords[i+1]
 						if (nextWord == '(as')
 							lMatches = lWords[i+2].match(/^([A-Za-z_][A-Za-z0-9_]*)\)$/)
 							if lMatches
-								realName = symbol
+								src = symbol
 								symbol = lMatches[1]
 
 				if symbol?
 					assert ! @hSymbols[symbol]?,
 						"SymbolParser: duplicate symbol #{symbol}"
-					if realName?
-						@hSymbols[symbol] = {lib: @curLib, src: realName}
-					else
-						@hSymbols[symbol] = {lib: @curLib}
+					hDesc = {lib: @curLib}
+					if src?
+						hDesc.src = src
+					if isDefault
+						hDesc.isDefault = true
+					@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
 		return undef   # doesn't matter what we return

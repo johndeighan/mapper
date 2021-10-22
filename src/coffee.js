@@ -270,30 +270,34 @@ export var postProcessCoffee = function(code) {
 
 // ---------------------------------------------------------------------------
 export var buildImportList = function(lNeededSymbols) {
-  var hAvailSymbols, hLibs, hSymbol, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
+  var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
   hLibs = {}; // { <lib>: [<symbol>, ... ], ... }
+  lImports = [];
   hAvailSymbols = getAvailSymbols(); // { <sym>: {lib: <lib>, src: <name> }}
   for (j = 0, len = lNeededSymbols.length; j < len; j++) {
     symbol = lNeededSymbols[j];
     hSymbol = hAvailSymbols[symbol];
     if (hSymbol != null) {
       // --- symbol is available in lib
-      ({lib, src} = hSymbol);
-      // --- build the needed string
-      if (src != null) {
-        str = `${src} as ${symbol}`;
+      ({lib, src, isDefault} = hSymbol);
+      if (isDefault) {
+        lImports.push(`import ${symbol} from '${lib}'`);
       } else {
-        str = symbol;
-      }
-      if (hLibs[lib] != null) {
-        assert(isArray(hLibs[lib]), "buildImportList(): not an array");
-        hLibs[lib].push(str);
-      } else {
-        hLibs[lib] = [str];
+        // --- build the needed string
+        if (src != null) {
+          str = `${src} as ${symbol}`;
+        } else {
+          str = symbol;
+        }
+        if (hLibs[lib] != null) {
+          assert(isArray(hLibs[lib]), "buildImportList(): not an array");
+          hLibs[lib].push(str);
+        } else {
+          hLibs[lib] = [str];
+        }
       }
     }
   }
-  lImports = [];
   ref = Object.keys(hLibs).sort();
   for (k = 0, len1 = ref.length; k < len1; k++) {
     lib = ref[k];
@@ -332,7 +336,7 @@ export var getNeededSymbols = function(code, hOptions = {}) {
 // export to allow unit testing
 export var getAvailSymbols = function() {
   var filepath, hSymbols, searchFromDir;
-  // --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
+  // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
   debug("enter getAvailSymbols()");
   searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(import.meta.url);
   debug(`search for .symbols from '${searchFromDir}'`);
@@ -358,7 +362,7 @@ SymbolParser = class SymbolParser extends SmartInput {
   }
 
   mapString(line, level) {
-    var i, j, lMatches, lWords, len, nextWord, numWords, realName, symbol, word;
+    var _, hDesc, i, isDefault, j, lMatches, lWords, len, nextWord, numWords, src, symbol, word;
     if (level === 0) {
       this.curLib = line;
     } else if (level === 1) {
@@ -367,17 +371,17 @@ SymbolParser = class SymbolParser extends SmartInput {
       numWords = lWords.length;
       for (i = j = 0, len = lWords.length; j < len; i = ++j) {
         word = lWords[i];
-        // --- set variables symbol and possibly realName
-        symbol = realName = undef;
-        if (word.match(/^[A-Za-z_][A-Za-z0-9_]*$/)) {
-          // --- word is an identifier (skip words that contain special symbols)
-          symbol = word;
+        symbol = src = undef;
+        // --- set variables symbol and possibly src
+        if (lMatches = word.match(/^(\*?)([A-Za-z_][A-Za-z0-9_]*)$/)) {
+          [_, isDefault, symbol] = lMatches;
+          // --- word is an identifier (skip words that contain '(' or ')')
           if (i + 2 < numWords) {
             nextWord = lWords[i + 1];
             if (nextWord === '(as') {
               lMatches = lWords[i + 2].match(/^([A-Za-z_][A-Za-z0-9_]*)\)$/);
               if (lMatches) {
-                realName = symbol;
+                src = symbol;
                 symbol = lMatches[1];
               }
             }
@@ -385,16 +389,16 @@ SymbolParser = class SymbolParser extends SmartInput {
         }
         if (symbol != null) {
           assert(this.hSymbols[symbol] == null, `SymbolParser: duplicate symbol ${symbol}`);
-          if (realName != null) {
-            this.hSymbols[symbol] = {
-              lib: this.curLib,
-              src: realName
-            };
-          } else {
-            this.hSymbols[symbol] = {
-              lib: this.curLib
-            };
+          hDesc = {
+            lib: this.curLib
+          };
+          if (src != null) {
+            hDesc.src = src;
           }
+          if (isDefault) {
+            hDesc.isDefault = true;
+          }
+          this.hSymbols[symbol] = hDesc;
         }
       }
     } else {

@@ -22,6 +22,9 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 
 hSymbols = getAvailSymbols()
 simple.equal 23, hSymbols, {
+		fs:      {lib: 'fs', isDefault: true}
+		exists:  {lib: 'fs'}
+		readFile:{lib: 'fs'}
 		barf:    {lib: '@jdeighan/coffee-utils/fs'}
 		logger:  {lib: '@jdeighan/coffee-utils/log', src: 'log'}
 		mkpath:  {lib: '@jdeighan/coffee-utils/fs'}
@@ -55,11 +58,12 @@ simple.equal 23, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
-	lNeeded = words('say undef logger slurp barf')
+	lNeeded = words('say undef logger slurp barf fs')
 	simple.equal 58, buildImportList(lNeeded), [
-		"import {say,undef} from '@jdeighan/coffee-utils'",
-		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'",
-		"import {log as logger} from '@jdeighan/coffee-utils/log'",
+		"import fs from 'fs'"
+		"import {say,undef} from '@jdeighan/coffee-utils'"
+		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
+		"import {log as logger} from '@jdeighan/coffee-utils/log'"
 		]
 	)()
 

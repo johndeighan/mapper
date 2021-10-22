@@ -14,9 +14,16 @@ In addition:
 
 	- the line `#include <filename>` (which may include preceding
 		indentation) will result in the given file being read and
-		used for input until the file is exhausted, but only if:
+		used for input until the file is exhausted:
 
-		1. <filename> is a simple filename (no path allowed)
+		1. <filename> must be a simple filename (no path allowed)
+		2. File is searched for in this order:
+			a. the same directory as the file containing #include
+			b. these directories, if defined in hPrivEnv for these extensions:
+				'.md':   'DIR_MARKDOWN',
+				'.taml': 'DIR_DATA',
+				'.txt':  'DIR_DATA',
+
 		2. The option hIncludePaths was passed to the StringInput
 			constructor
 		3. The file extension of the <filename> was included as
@@ -32,22 +39,72 @@ DIR_MARKDOWN
 DIR_DATA
 DIR_TEXT
 
-class PLLParser
-===============
+Parsing a PLL (Python-like language)
+====================================
+
+1. Define a mapping function
+2. Use function treeFromBlock to get the tree
+
+Let's say that you want to create a language for
+creating "expression objects" that allows functions:
+
+	add - to add some numbers
+	subtract - to add some numbers
+	multiply - to add some numbers
+	divide - to add some numbers
+	sigma - to sum numbers over some index set
+
+For example, these are valid expressions:
+
+```text
+sum
+	13
+	49
+	53
+```
+
+```text
+multiply
+	sum
+		13
+		22
+		53
+	22
+```
+
+Numbers must be integers.
+We also want to allow identifiers, which must be single upper-case letters:
+
+```text
+multiply
+	sum
+		13
+		X
+	divide
+		Y
+		3
+```
+
+Here is a valid sigma expression:
+
+```text
+sigma
+	I in range(5)
+	multiply
+		I
+		22
+```
+
+i.e. sigma expects 2 parts:
+
+	1. <identifier> in range(<number> or <identifier>)
+	2. an expression
 
 SYNOPSIS:
 ---------
 
-tree = new PLLParser(content).getTree()
-
-But in this case, all nodes will simply be strings
-To get non-string nodes, you must create a new class
-and override mapString()
-
-class SymbolParser extends PLLParser
-	mapString: (line, level) ->
-		return line.split(' ')
-
-tree = new SymbolParser(content).getTree()
+```coffeescript
+mapper = (str) ->
+	if lMatches =
 
 

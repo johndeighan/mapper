@@ -39,7 +39,8 @@ import {
   slurp,
   pathTo,
   mydir,
-  parseSource
+  parseSource,
+  mkpath
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -72,9 +73,12 @@ import {
 } from '@jdeighan/string-input/taml';
 
 // ---------------------------------------------------------------------------
-patch = function(str, substr, value) {
-  // --- Replace substr with value throughout str
-  return str.replace(substr, value);
+
+// --- Default env vars for #include files
+hExtToEnvVar = {
+  '.md': 'DIR_MARKDOWN',
+  '.taml': 'DIR_DATA',
+  '.txt': 'DIR_DATA'
 };
 
 // ---------------------------------------------------------------------------
@@ -83,6 +87,7 @@ patch = function(str, substr, value) {
 export var StringFetcher = class StringFetcher {
   constructor(content, source = 'unit test') {
     var filename, hSourceInfo, i, line;
+    // --- Has keys: dir, filename, stub, ext
     hSourceInfo = parseSource(source);
     filename = hSourceInfo.filename;
     assert(filename, "StringFetcher: parseSource returned no filename");
@@ -125,13 +130,47 @@ export var StringFetcher = class StringFetcher {
 
   
     // ..........................................................
+  getIncludeFileDir(ext) {
+    var envvar;
+    // --- override to not use defaults
+    envvar = hExtToEnvVar[ext];
+    if (envvar != null) {
+      return hPrivEnv[envvar];
+    } else {
+      return undef;
+    }
+  }
+
+  // ..........................................................
+  getIncludeFileFullPath(filename) {
+    var base, dir, ext, incDir, path, root;
+    ({root, dir, base, ext} = pathlib.parse(filename));
+    assert(!dir, "getFileFullPath(): arg is not a simple file name");
+    if (this.hSourceInfo.dir != null) {
+      path = mkpath(this.hSourceInfo.dir, filename);
+      if (fs.existsSync(path)) {
+        return path;
+      }
+    }
+    incDir = this.getIncludeFileDir(ext);
+    if (incDir != null) {
+      assert(fs.existsSync(incDir), `dir ${incDir} does not exist`);
+    }
+    path = mkpath(incDir, filename);
+    if (fs.existsSync(path)) {
+      return path;
+    }
+    return undef;
+  }
+
+  // ..........................................................
   debugBuffer() {
     debug('BUFFER', this.lBuffer);
   }
 
   // ..........................................................
   fetch(literal = false) {
-    var _, contents, dir, fname, lMatches, line, prefix, result;
+    var _, contents, fname, includePath, lMatches, line, prefix, result;
     // --- literal = true means don't handle #include,
     //               just return it as is
     debug(`enter fetch(literal=${literal}) from ${this.filename}`);
@@ -158,14 +197,14 @@ export var StringFetcher = class StringFetcher {
     this.lineNum += 1;
     if (!literal && (lMatches = line.match(/^(\s*)\#include\s+(\S.*)$/))) {
       [_, prefix, fname] = lMatches;
+      fname = fname.trim();
       debug(`#include ${fname} with prefix ${OL(prefix)}`);
       assert(!this.altInput, "fetch(): altInput already set");
-      if (this.hFileInfo) {
-        dir = this.hFileInfo.dir;
-      } else {
-        dir = undef;
+      includePath = this.getIncludeFileFullPath(fname);
+      if (includePath == null) {
+        croak(`Can't find include file ${fname} anywhere`);
       }
-      contents = getFileContents(fname, false, dir);
+      contents = slurp(includePath);
       this.altInput = new StringFetcher(contents, fname);
       this.altLevel = indentLevel(prefix);
       debug(`alt input created with prefix ${OL(prefix)}`);
@@ -719,6 +758,22 @@ export var PLLParser = class PLLParser extends SmartInput {
 };
 
 // ---------------------------------------------------------------------------
+// Utility function to get a tree from text,
+//    given a function to map a string (to anything!)
+export var treeFromBlock = function(block, mapFunc) {
+  var MyPLLParser, parser;
+  MyPLLParser = class MyPLLParser extends PLLParser {
+    mapNode(line) {
+      assert(isString(line), "MyPLLParser.mapNode(): not a string");
+      return mapFunc(line);
+    }
+
+  };
+  parser = new MyPLLParser(block);
+  return parser.getTree();
+};
+
+// ---------------------------------------------------------------------------
 // Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 // If a predicate is supplied, it must return true for any <node>
 export var treeify = function(lItems, atLevel = 0, predicate = undef) {
@@ -779,10 +834,9 @@ export var checkTree = function(lItems, predicate) {
 };
 
 // ---------------------------------------------------------------------------
-hExtToEnvVar = {
-  '.md': 'DIR_MARKDOWN',
-  '.taml': 'DIR_DATA',
-  '.txt': 'DIR_DATA'
+patch = function(str, substr, value) {
+  // --- Replace substr with value throughout str
+  return str.replace(substr, value);
 };
 
 // ---------------------------------------------------------------------------

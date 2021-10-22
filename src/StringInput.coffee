@@ -12,7 +12,7 @@ import {
 	} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
-	slurp, pathTo, mydir, parseSource,
+	slurp, pathTo, mydir, parseSource, mkpath,
 	} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine, indented, undented, indentLevel,
@@ -25,10 +25,12 @@ import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 # ---------------------------------------------------------------------------
 
-patch = (str, substr, value) ->
-
-	# --- Replace substr with value throughout str
-	return str.replace(substr, value)
+# --- Default env vars for #include files
+hExtToEnvVar = {
+	'.md':   'DIR_MARKDOWN',
+	'.taml': 'DIR_DATA',
+	'.txt':  'DIR_DATA',
+	}
 
 # ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
@@ -38,7 +40,9 @@ export class StringFetcher
 
 	constructor: (content, source='unit test') ->
 
+		# --- Has keys: dir, filename, stub, ext
 		hSourceInfo = parseSource(source)
+
 		filename = hSourceInfo.filename
 		assert filename, "StringFetcher: parseSource returned no filename"
 		@filename = filename
@@ -71,6 +75,35 @@ export class StringFetcher
 		# --- for handling #include
 		@altInput = undef
 		@altLevel = undef    # indentation added to lines from alt
+
+	# ..........................................................
+
+	getIncludeFileDir: (ext) ->
+		# --- override to not use defaults
+
+		envvar = hExtToEnvVar[ext]
+		if envvar?
+			return hPrivEnv[envvar]
+		else
+			return undef
+
+	# ..........................................................
+
+	getIncludeFileFullPath: (filename) ->
+
+		{root, dir, base, ext} = pathlib.parse(filename)
+		assert ! dir, "getFileFullPath(): arg is not a simple file name"
+		if @hSourceInfo.dir?
+			path = mkpath(@hSourceInfo.dir, filename)
+			if fs.existsSync(path)
+				return path
+		incDir = @getIncludeFileDir ext
+		if incDir?
+			assert fs.existsSync(incDir), "dir #{incDir} does not exist"
+		path = mkpath(incDir, filename)
+		if fs.existsSync(path)
+			return path
+		return undef
 
 	# ..........................................................
 
@@ -113,14 +146,14 @@ export class StringFetcher
 				(\S.*)
 				$///)
 			[_, prefix, fname] = lMatches
+			fname = fname.trim()
 			debug "#include #{fname} with prefix #{OL(prefix)}"
 			assert ! @altInput, "fetch(): altInput already set"
+			includePath = @getIncludeFileFullPath(fname)
+			if ! includePath?
+				croak "Can't find include file #{fname} anywhere"
 
-			if @hFileInfo
-				dir = @hFileInfo.dir
-			else
-				dir = undef
-			contents = getFileContents(fname, false, dir)
+			contents = slurp(includePath)
 			@altInput = new StringFetcher(contents, fname)
 			@altLevel = indentLevel(prefix)
 			debug "alt input created with prefix #{OL(prefix)}"
@@ -699,6 +732,21 @@ export class PLLParser extends SmartInput
 		return tree
 
 # ---------------------------------------------------------------------------
+# Utility function to get a tree from text,
+#    given a function to map a string (to anything!)
+
+export treeFromBlock = (block, mapFunc) ->
+
+	class MyPLLParser extends PLLParser
+
+		mapNode: (line) ->
+			assert isString(line), "MyPLLParser.mapNode(): not a string"
+			return mapFunc(line)
+
+	parser = new MyPLLParser(block)
+	return parser.getTree()
+
+# ---------------------------------------------------------------------------
 # Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 # If a predicate is supplied, it must return true for any <node>
 
@@ -756,11 +804,10 @@ export checkTree = (lItems, predicate) ->
 
 # ---------------------------------------------------------------------------
 
-hExtToEnvVar = {
-	'.md':   'DIR_MARKDOWN',
-	'.taml': 'DIR_DATA',
-	'.txt':  'DIR_DATA',
-	}
+patch = (str, substr, value) ->
+
+	# --- Replace substr with value throughout str
+	return str.replace(substr, value)
 
 # ---------------------------------------------------------------------------
 

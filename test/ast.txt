@@ -1,17 +1,430 @@
 AST:
 ---
-type: Program
-body: []
-directives: []
+type: File
+program:
+   type: Program
+   body:
+      -
+         type: IfStatement
+         test:
+            type: CallExpression
+            callee:
+               type: MemberExpression
+               object:
+                  type: Identifier
+                  name: fs
+                  declaration: false
+                  loc:
+                     start:
+                        line: 2
+                        column: 3
+                     end:
+                        line: 2
+                        column: 5
+                  range:
+                     - 20
+                     - 22
+                  start: 20
+                  end: 22
+               property:
+                  type: Identifier
+                  name: existsSync
+                  declaration: false
+                  loc:
+                     start:
+                        line: 2
+                        column: 6
+                     end:
+                        line: 2
+                        column: 16
+                  range:
+                     - 23
+                     - 33
+                  start: 23
+                  end: 33
+               computed: false
+               optional: false
+               shorthand: false
+               loc:
+                  start:
+                     line: 2
+                     column: 3
+                  end:
+                     line: 2
+                     column: 16
+               range:
+                  - 20
+                  - 33
+               start: 20
+               end: 33
+            arguments:
+               -
+                  type: StringLiteral
+                  value: file.txt
+                  extra:
+                     raw: '''file.txt'''
+                  loc:
+                     start:
+                        line: 2
+                        column: 17
+                     end:
+                        line: 2
+                        column: 27
+                  range:
+                     - 34
+                     - 44
+                  start: 34
+                  end: 44
+            optional: false
+            implicit: false
+            loc:
+               start:
+                  line: 2
+                  column: 3
+               end:
+                  line: 2
+                  column: 28
+            range:
+               - 20
+               - 45
+            start: 20
+            end: 45
+         consequent:
+            type: BlockStatement
+            body:
+               -
+                  type: ExpressionStatement
+                  expression:
+                     type: CallExpression
+                     callee:
+                        type: Identifier
+                        name: logger
+                        declaration: false
+                        loc:
+                           start:
+                              line: 3
+                              column: 1
+                           end:
+                              line: 3
+                              column: 7
+                        range:
+                           - 47
+                           - 53
+                        start: 47
+                        end: 53
+                     arguments:
+                        -
+                           type: StringLiteral
+                           value: file exists
+                           extra:
+                              raw: '"file exists"'
+                           loc:
+                              start:
+                                 line: 3
+                                 column: 8
+                              end:
+                                 line: 3
+                                 column: 21
+                           range:
+                              - 54
+                              - 67
+                           start: 54
+                           end: 67
+                     optional: false
+                     implicit: true
+                     loc:
+                        start:
+                           line: 3
+                           column: 1
+                        end:
+                           line: 3
+                           column: 21
+                     range:
+                        - 47
+                        - 67
+                     start: 47
+                     end: 67
+                  loc:
+                     start:
+                        line: 3
+                        column: 1
+                     end:
+                        line: 3
+                        column: 21
+                  range:
+                     - 47
+                     - 67
+                  start: 47
+                  end: 67
+            directives: []
+            loc:
+               start:
+                  line: 3
+                  column: 0
+               end:
+                  line: 3
+                  column: 21
+            range:
+               - 46
+               - 67
+            start: 46
+            end: 67
+         alternate: null
+         postfix: false
+         inverted: false
+         loc:
+            start:
+               line: 2
+               column: 0
+            end:
+               line: 3
+               column: 21
+         range:
+            - 17
+            - 67
+         start: 17
+         end: 67
+   directives: []
+   loc:
+      start: &ref_0
+         line: 1
+         column: 0
+      end:
+         line: 3
+         column: 21
+   range: &ref_1
+      - 0
+      - 67
+   start: 0
+   end: 67
+comments:
+   -
+      type: CommentLine
+      value: ' --- temp.cielo'
+      loc:
+         start:
+            line: 1
+            column: 0
+         end:
+            line: 1
+            column: 16
+      range:
+         - 0
+         - 16
+      start: 0
+      end: 16
 loc:
-	start:
-		line: 1
-		column: 0
-	end:
-		line: 1
-		column: 0
-range:
-	- 0
-	- 0
+   start: *ref_0
+   end:
+      line: 3
+      column: 21
+range: *ref_1
 start: 0
-end: 0
+end: 67
+tokens:
+   -
+      - JS
+      - ''
+      -
+         range:
+            - 16
+            - 16
+         first_line: 0
+         first_column: 16
+         last_line: 0
+         last_column: 16
+         last_line_exclusive: 0
+         last_column_exclusive: 16
+   -
+      - TERMINATOR
+      - |+
+
+      -
+         range:
+            - 16
+            - 16
+         first_line: 0
+         first_column: 16
+         last_line: 0
+         last_column: 16
+         last_line_exclusive: 0
+         last_column_exclusive: 16
+   -
+      - IF
+      - if
+      -
+         range:
+            - 17
+            - 19
+         first_line: 1
+         first_column: 0
+         last_line: 1
+         last_column: 1
+         last_line_exclusive: 1
+         last_column_exclusive: 2
+   -
+      - IDENTIFIER
+      - fs
+      -
+         range:
+            - 20
+            - 22
+         first_line: 1
+         first_column: 3
+         last_line: 1
+         last_column: 4
+         last_line_exclusive: 1
+         last_column_exclusive: 5
+   -
+      - .
+      - .
+      -
+         range:
+            - 22
+            - 23
+         first_line: 1
+         first_column: 5
+         last_line: 1
+         last_column: 5
+         last_line_exclusive: 1
+         last_column_exclusive: 6
+   -
+      - PROPERTY
+      - existsSync
+      -
+         range:
+            - 23
+            - 33
+         first_line: 1
+         first_column: 6
+         last_line: 1
+         last_column: 15
+         last_line_exclusive: 1
+         last_column_exclusive: 16
+   -
+      - CALL_START
+      - (
+      -
+         range:
+            - 33
+            - 34
+         first_line: 1
+         first_column: 16
+         last_line: 1
+         last_column: 16
+         last_line_exclusive: 1
+         last_column_exclusive: 17
+   -
+      - STRING
+      - '"file.txt"'
+      -
+         range:
+            - 34
+            - 44
+         first_line: 1
+         first_column: 17
+         last_line: 1
+         last_column: 26
+         last_line_exclusive: 1
+         last_column_exclusive: 27
+   -
+      - CALL_END
+      - )
+      -
+         range:
+            - 44
+            - 45
+         first_line: 1
+         first_column: 27
+         last_line: 1
+         last_column: 27
+         last_line_exclusive: 1
+         last_column_exclusive: 28
+   -
+      - INDENT
+      - 1
+      -
+         range:
+            - 46
+            - 47
+         first_line: 2
+         first_column: 0
+         last_line: 2
+         last_column: 0
+         last_line_exclusive: 2
+         last_column_exclusive: 1
+   -
+      - IDENTIFIER
+      - logger
+      -
+         range:
+            - 47
+            - 53
+         first_line: 2
+         first_column: 1
+         last_line: 2
+         last_column: 6
+         last_line_exclusive: 2
+         last_column_exclusive: 7
+   -
+      - CALL_START
+      - (
+      -
+         first_line: 2
+         first_column: 7
+         last_line: 2
+         last_column: 7
+         last_line_exclusive: 2
+         last_column_exclusive: 7
+         range:
+            - 53
+            - 53
+   -
+      - STRING
+      - '"file exists"'
+      -
+         range: &ref_2
+            - 54
+            - 67
+         first_line: 2
+         first_column: 8
+         last_line: 2
+         last_column: 20
+         last_line_exclusive: 2
+         last_column_exclusive: 21
+   -
+      - CALL_END
+      - )
+      -
+         first_line: 2
+         first_column: 20
+         last_line: 2
+         last_column: 20
+         last_line_exclusive: 2
+         last_column_exclusive: 21
+         range: *ref_2
+   -
+      - OUTDENT
+      - 1
+      -
+         first_line: 2
+         first_column: 20
+         last_line: 2
+         last_column: 20
+         last_line_exclusive: 2
+         last_column_exclusive: 21
+         range: *ref_2
+   -
+      - TERMINATOR
+      - |+
+
+      -
+         range:
+            - 67
+            - 67
+         first_line: 2
+         first_column: 21
+         last_line: 2
+         last_column: 21
+         last_line_exclusive: 2
+         last_column_exclusive: 21

@@ -64,12 +64,12 @@ export preBrewCoffee = (lBlocks...) ->
 			try
 				script = CoffeeScript.compile(newblk, {bare: true})
 				debug "BREWED SCRIPT", script
-				lNewBlocks.push(postProcessCoffee(script))
+				lNewBlocks.push postProcessCoffee(script)
 			catch err
 				log "Mapped Text:", newblk
 				croak err, "Original Text", blk
 		else
-			lNewBlocks.push(newblk)
+			lNewBlocks.push newblk
 
 	# --- return converted blocks, PLUS the list of import statements
 	return [lNewBlocks..., buildImportList(lNeededSymbols)]
@@ -78,8 +78,16 @@ export preBrewCoffee = (lBlocks...) ->
 
 export brewCoffee = (code) ->
 
-	[newcode, lImportStmts] = preBrewCoffee(code)
-	return joinBlocks(lImportStmts..., newcode)
+	lCodeBlocks = preBrewCoffee(code)
+	lImportStmts = lCodeBlocks.pop()
+	newcode = joinBlocks(lImportStmts..., lCodeBlocks)
+
+	debug 'CODE', code
+	debug 'lImportStmts', lImportStmts
+	debug 'lCodeBlocks', lCodeBlocks
+	debug 'NEW CODE', newcode
+
+	return newcode
 
 # ---------------------------------------------------------------------------
 

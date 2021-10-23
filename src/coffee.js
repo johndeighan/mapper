@@ -125,9 +125,15 @@ export var preBrewCoffee = function(...lBlocks) {
 
 // ---------------------------------------------------------------------------
 export var brewCoffee = function(code) {
-  var lImportStmts, newcode;
-  [newcode, lImportStmts] = preBrewCoffee(code);
-  return joinBlocks(...lImportStmts, newcode);
+  var lCodeBlocks, lImportStmts, newcode;
+  lCodeBlocks = preBrewCoffee(code);
+  lImportStmts = lCodeBlocks.pop();
+  newcode = joinBlocks(...lImportStmts, lCodeBlocks);
+  debug('CODE', code);
+  debug('lImportStmts', lImportStmts);
+  debug('lCodeBlocks', lCodeBlocks);
+  debug('NEW CODE', newcode);
+  return newcode;
 };
 
 // ---------------------------------------------------------------------------

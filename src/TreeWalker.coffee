@@ -223,6 +223,8 @@ export class ASTWalker extends TreeWalker
 				add node.params, node.body
 			when 'IfStatement'
 				add node.test, node.consequent
+			when 'MemberExpression'
+				add node.object
 			when 'Program'
 				add node.body
 			when 'SwitchCase'

@@ -21,6 +21,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  log
+} from '@jdeighan/coffee-utils/log';
+
+import {
   UnitTester
 } from '@jdeighan/coffee-utils/test';
 
@@ -33,8 +37,10 @@ import {
 } from '@jdeighan/coffee-utils/privenv';
 
 import {
+  convertCoffee,
   buildImportList,
-  getAvailSymbols
+  getAvailSymbols,
+  brewCoffee
 } from '@jdeighan/string-input/coffee';
 
 testDir = mydir(import.meta.url);
@@ -42,6 +48,8 @@ testDir = mydir(import.meta.url);
 hPrivEnv.DIR_SYMBOLS = testDir;
 
 simple = new UnitTester();
+
+convertCoffee(false);
 
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
@@ -101,6 +109,19 @@ say "Answer is 42"`);
   var lNeeded;
   lNeeded = words('say undef logger slurp barf fs');
   return simple.equal(58, buildImportList(lNeeded), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+})();
+
+// ----------------------------------------------------------------------------
+(function() {
+  var code, newcode;
+  code = `# --- temp.cielo
+if fs.existsSync('file.txt')
+	logger "file exists"`;
+  newcode = brewCoffee(code);
+  return simple.equal(81, newcode, `import fs from 'fs'
+import {log as logger} from '@jdeighan/coffee-utils/log'
+if fs.existsSync('file.txt')
+	logger "file exists"`);
 })();
 
 // ---------------------------------------------------------------------------

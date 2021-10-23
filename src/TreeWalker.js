@@ -251,6 +251,9 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
       case 'IfStatement':
         add(node.test, node.consequent);
         break;
+      case 'MemberExpression':
+        add(node.object);
+        break;
       case 'Program':
         add(node.body);
         break;

@@ -68,31 +68,35 @@ export class TAMLHereDoc extends BaseHereDoc
 
 # ---------------------------------------------------------------------------
 
+export isFunctionHeader = (str) ->
+
+	return str.match(///^
+			(?:
+				([A-Za-z_][A-Za-z0-9_]*)  # optional function name
+				\s*
+				=
+				\s*
+				)?
+			\(
+			\s*
+			(                            # optional parameters
+				[A-Za-z_][A-Za-z0-9_]*
+				(?:
+					,
+					\s*
+					[A-Za-z_][A-Za-z0-9_]*
+					)*
+				)?
+			\)
+			\s*
+			->
+			\s*
+			$///)
+
 export class FuncHereDoc extends BaseHereDoc
 
 	isMyHereDoc: (block) ->
-		return firstLine(block).match(///^
-				(?:
-					([A-Za-z_][A-Za-z0-9_]*)  # optional function name
-					\s*
-					=
-					\s*
-					)?
-				\(
-				\s*
-				(                            # optional parameters
-					[A-Za-z_][A-Za-z0-9_]*
-					(?:
-						,
-						\s*
-						[A-Za-z_][A-Za-z0-9_]*
-						)*
-					)?
-				\)
-				\s*
-				->
-				\s*
-				$///)
+		return isFunctionHeader(firstLine(block))
 
 	map: (block, lMatches=undef) ->
 		# --- caller should pass return value from isMyHereDoc here

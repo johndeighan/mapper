@@ -91,10 +91,14 @@ export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
 };
 
 // ---------------------------------------------------------------------------
+export var isFunctionHeader = function(str) {
+  return str.match(/^(?:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*)?\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*$/); // optional function name
+// optional parameters
+};
+
 export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
   isMyHereDoc(block) {
-    return firstLine(block).match(/^(?:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*)?\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*$/); // optional function name
-// optional parameters
+    return isFunctionHeader(firstLine(block));
   }
 
   map(block, lMatches = undef) {

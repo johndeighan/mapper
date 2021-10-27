@@ -1,6 +1,6 @@
 # heredoc.test.coffee
 
-import {undef} from '@jdeighan/coffee-utils'
+import {undef, extractMatches} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
@@ -76,20 +76,6 @@ simple.equal  69, mapHereDoc("""
 		'func = (x, y) -> return true'
 
 # ---------------------------------------------------------------------------
-# function extractNumbers()
-
-extractNumbers = (line) ->
-
-	lStrings = [...line.matchAll(/\d+(?:\.\d*)?/g)]
-	lNumbers = for str in lStrings
-		parseInt(str)
-	return lNumbers
-
-simple.equal 87, extractNumbers("0 1 2"),     [0, 1, 2]
-simple.equal 88, extractNumbers("0, 1, 2"),   [0, 1, 2]
-simple.equal 89, extractNumbers("[0, 1, 2]"), [0, 1, 2]
-
-# ---------------------------------------------------------------------------
 # Test creating a new heredoc type
 
 class MatrixHereDoc extends BaseHereDoc
@@ -101,7 +87,7 @@ class MatrixHereDoc extends BaseHereDoc
 	map: (block) ->
 		lArray = []
 		for line in blockToArray(block)
-			lArray.push extractNumbers(line)
+			lArray.push extractMatches(line, /\d+/g, parseInt)
 		return JSON.stringify(lArray)
 
 addHereDocType(new MatrixHereDoc())

@@ -13,7 +13,7 @@ simple = new UnitTester()
 # ---------------------------------------------------------------------------
 # Default heredoc type is a block
 
-simple.equal  13, mapHereDoc("""
+simple.equal  16, mapHereDoc("""
 		this is a
 		block of text
 		"""),
@@ -22,7 +22,7 @@ simple.equal  13, mapHereDoc("""
 # ---------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-simple.equal  22, mapHereDoc("""
+simple.equal  25, mapHereDoc("""
 		$$$
 		this is a
 		block of text
@@ -32,7 +32,7 @@ simple.equal  22, mapHereDoc("""
 # ---------------------------------------------------------------------------
 # TAML block
 
-simple.equal  32, mapHereDoc("""
+simple.equal  35, mapHereDoc("""
 		---
 		- abc
 		- def
@@ -40,9 +40,23 @@ simple.equal  32, mapHereDoc("""
 		'["abc","def"]'
 
 # ---------------------------------------------------------------------------
+# TAML block 2
+
+simple.equal  45, mapHereDoc("""
+		---
+		-
+			label: Help
+			url: /help
+		-
+			label: Books
+			url: /books
+		"""),
+		'[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]'
+
+# ---------------------------------------------------------------------------
 # One Line block
 
-simple.equal  42, mapHereDoc("""
+simple.equal  59, mapHereDoc("""
 		...this is a
 		line of text
 		"""),
@@ -51,7 +65,7 @@ simple.equal  42, mapHereDoc("""
 # ---------------------------------------------------------------------------
 # Function block, with no name or parameters
 
-simple.equal  51, mapHereDoc("""
+simple.equal  68, mapHereDoc("""
 		() ->
 			return true
 		"""),
@@ -60,7 +74,7 @@ simple.equal  51, mapHereDoc("""
 # ---------------------------------------------------------------------------
 # Function block, with no name but with parameters
 
-simple.equal  60, mapHereDoc("""
+simple.equal  77, mapHereDoc("""
 		(x, y) ->
 			return true
 		"""),
@@ -69,7 +83,7 @@ simple.equal  60, mapHereDoc("""
 # ---------------------------------------------------------------------------
 # Function block, with name end parameters
 
-simple.equal  69, mapHereDoc("""
+simple.equal  86, mapHereDoc("""
 		func = (x, y) ->
 			return true
 		"""),
@@ -92,7 +106,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType(new MatrixHereDoc())
 
-simple.equal  106, mapHereDoc("""
+simple.equal  109, mapHereDoc("""
 		1 2 3
 		2 4 6
 		"""),

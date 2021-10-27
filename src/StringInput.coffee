@@ -491,6 +491,13 @@ export class SmartInput extends StringInput
 
 	# ..........................................................
 
+	mapHereDoc: (block) ->
+		# --- This can be overridden
+
+		mapHereDoc(block)
+
+	# ..........................................................
+
 	handleHereDoc: (line, level) ->
 		# --- Indentation is removed from line
 		# --- Find each '<<<' and replace with result of mapHereDoc()
@@ -506,7 +513,7 @@ export class SmartInput extends StringInput
 			lLines = @getHereDocLines(level+1)
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
 			debug "HEREDOC lines: #{OL(lLines)}"
-			newstr = mapHereDoc(arrayToBlock(lLines))
+			newstr = @mapHereDoc(arrayToBlock(lLines))
 			assert isString(newstr), "handleHereDoc(): newstr not a string"
 			debug "PUSH #{OL(newstr)}"
 			lParts.push newstr

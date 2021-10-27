@@ -545,6 +545,12 @@ export var SmartInput = class SmartInput extends StringInput {
   }
 
   // ..........................................................
+  mapHereDoc(block) {
+    // --- This can be overridden
+    return mapHereDoc(block);
+  }
+
+  // ..........................................................
   handleHereDoc(line, level) {
     var lLines, lParts, newstr, part, pos, result, start;
     // --- Indentation is removed from line
@@ -560,7 +566,7 @@ export var SmartInput = class SmartInput extends StringInput {
       lLines = this.getHereDocLines(level + 1);
       assert(isArray(lLines), "handleHereDoc(): lLines not an array");
       debug(`HEREDOC lines: ${OL(lLines)}`);
-      newstr = mapHereDoc(arrayToBlock(lLines));
+      newstr = this.mapHereDoc(arrayToBlock(lLines));
       assert(isString(newstr), "handleHereDoc(): newstr not a string");
       debug(`PUSH ${OL(newstr)}`);
       lParts.push(newstr);

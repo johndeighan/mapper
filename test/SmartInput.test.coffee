@@ -3,8 +3,9 @@
 import assert from 'assert'
 
 import {
-	undef, pass, isEmpty, isArray,
+	undef, pass, isEmpty, isArray, CWS,
 	} from '@jdeighan/coffee-utils'
+import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
@@ -13,6 +14,9 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {SmartInput} from '@jdeighan/string-input'
+import {
+	mapHereDoc, addHereDocType, BaseHereDoc,
+	} from '@jdeighan/string-input/heredoc'
 
 dir = mydir(`import.meta.url`)
 hPrivEnv.DIR_MARKDOWN = mkpath(dir, 'markdown')
@@ -98,7 +102,7 @@ tester.equal 84, new SmartInput("""
 # --- test HEREDOC
 
 tester.equal 99, new SmartInput("""
-		h1 color="<<<"
+		h1 color=<<<
 			magenta
 
 		# --- a comment
@@ -112,7 +116,7 @@ tester.equal 99, new SmartInput("""
 # --- test HEREDOC with continuation lines
 
 tester.equal 113, new SmartInput("""
-		h1 color="<<<"
+		h1 color=<<<
 				This is a title
 			magenta
 
@@ -127,9 +131,8 @@ tester.equal 113, new SmartInput("""
 # --- test using '.' in a HEREDOC
 
 tester.equal 128, new SmartInput("""
-		h1 color="<<<"
-			$$$
-			color
+		h1 color=<<<
+			...color
 			.
 			magenta
 
@@ -146,7 +149,7 @@ tester.equal 128, new SmartInput("""
 # --- test empty HEREDOC section
 
 tester.equal 147, new SmartInput("""
-		h1 name="<<<"
+		h1 name=<<<
 
 		# --- a comment
 		p the end
@@ -159,7 +162,7 @@ tester.equal 147, new SmartInput("""
 # --- test ending HEREDOC with EOF instead of a blank line
 
 tester.equal 160, new SmartInput("""
-		h1 name="<<<"
+		h1 name=<<<
 		"""), """
 		h1 name=""
 		"""
@@ -180,15 +183,14 @@ tester.equal 169, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 169, new SmartInput("""
-		error message='<<<'
-			$$$
-			an error
+tester.equal 182, new SmartInput("""
+		error message=<<<
+			...an error
 			occurred in
 			your program
 
 		"""), """
-		error message='an error occurred in your program'
+		error message="an error occurred in your program"
 		"""
 
 # ---------------------------------------------------------------------------
@@ -196,15 +198,13 @@ tester.equal 169, new SmartInput("""
 
 tester.equal 196, new SmartInput("""
 		TAML looks like: <<<
-			!!!
+			$$$
 			---
 			- abc
 			- def
 
 		"""), """
-		TAML looks like: ---
-- abc
-- def
+		TAML looks like: "---\\n- abc\\n- def"
 		"""
 
 # ---------------------------------------------------------------------------
@@ -235,14 +235,13 @@ tester.equal 224, new SmartInput("""
 # --- test ordinary block
 
 tester.equal 236, new SmartInput("""
-		lRecords = db.fetch("<<<");
+		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
 
 		console.dir(lRecords);
 		"""), """
-		lRecords = db.fetch("select ID,Name
-from Users");
+		lRecords = db.fetch("select ID,Name\\nfrom Users")
 		console.dir(lRecords);
 		"""
 
@@ -251,19 +250,16 @@ from Users");
 #
 #     e.g. with header line *** we'll create an upper-cased single line string
 
-class CustomInput extends SmartInput
+class UCHereDoc extends BaseHereDoc
 
-	mapHereDocUnknown: (lLines) ->
+	map: (block) ->
+		block = CWS(remainingLines(block).toUpperCase())
+		return super block
 
-		assert isArray(lLines), "mapHereDocUnknown(): lLines not an array"
-		if (lLines[0] == '***')
-			lLines.shift()
-			return @mapHereDocOneLiner(lLines).toUpperCase()
-		else
-			return undef    # unrecognized, pass to mapHereDocBlock()
+addHereDocType(new UCHereDoc())
 
-tester.equal 264, new CustomInput("""
-		str = "<<<"
+tester.equal 264, new SmartInput("""
+		str = <<<
 			***
 			select ID,Name
 			from Users

@@ -22,6 +22,7 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
+import {mapHereDoc} from '@jdeighan/string-input/heredoc'
 
 # ---------------------------------------------------------------------------
 
@@ -505,7 +506,7 @@ export class SmartInput extends StringInput
 			lLines = @getHereDocLines(level+1)
 			assert isArray(lLines), "handleHereDoc(): lLines not an array"
 			debug "HEREDOC lines: #{OL(lLines)}"
-			newstr = @mapHereDoc(lLines)
+			newstr = mapHereDoc(arrayToBlock(lLines))
 			assert isString(newstr), "handleHereDoc(): newstr not a string"
 			debug "PUSH #{OL(newstr)}"
 			lParts.push newstr
@@ -555,105 +556,6 @@ export class SmartInput extends StringInput
 			return ''           # interpret '.' as blank line
 		else
 			return line
-
-	# ..........................................................
-
-	mapHereDoc: (lLines) ->
-		# --- return replacement string for '<<<', given a block
-		#     MUST return a string since it will replace '<<<'
-
-		if (lLines.length == 0)
-			return ''
-
-		header = lLines[0]
-
-		if (header == '---')
-			return @mapHereDocTAML(lLines)
-
-		if (header == '$$$')
-			lLines.shift()   # remove first line
-			return @mapHereDocOneLiner(lLines)
-
-		if (header == "!!!")
-			lLines.shift()   # remove first line
-			return @mapHereDocBlock(lLines)
-
-		if (lMatches = lLines[0].match(///^
-				\s*
-				(?:
-					([A-Za-z_][A-Za-z0-9_]*)  # optional function name
-					\s*
-					=
-					\s*
-					)?
-				\(
-				\s*
-				(                            # optional parameters
-					[A-Za-z_][A-Za-z0-9_]*
-					(?:
-						,
-						\s*
-						[A-Za-z_][A-Za-z0-9_]*
-						)*
-					)?
-				\)
-				\s*
-				->
-				\s*
-				$///))
-			[_, funcName, strParms] = lMatches
-			lLines.shift()    # remove first line
-			return @mapHereDocFunction(funcName, strParms, lLines)
-
-		if (header.length == 3) \
-				&& (header.substr(1, 1) == header.substr(0, 1)) \
-				&& (header.substr(2, 1) == header.substr(0, 1))
-
-			result = @mapHereDocUnknown(lLines)
-			if result?
-				return result
-			else
-				return @mapHereDocBlock(lLines)
-
-		return @mapHereDocBlock(lLines)
-
-	# ..........................................................
-
-	mapHereDocFunction: (funcName, strParms, lLines) ->
-
-		assert isArray(lLines), "mapHereDocFunction(): lLines not an array"
-		if funcName
-			return "#{funcName} = (#{strParms}) -> #{arrayToBlock(lLines)}"
-		else
-			return "(#{strParms}) -> #{arrayToBlock(lLines)}"
-
-	# ..........................................................
-
-	mapHereDocBlock: (lLines) ->
-
-		assert isArray(lLines), "mapHereDocBlock(): lLines not an array"
-		return arrayToBlock(lLines)
-
-	# ..........................................................
-
-	mapHereDocOneLiner: (lLines) ->
-
-		assert isArray(lLines), "mapHereDocOneLiner(): lLines not an array"
-		return CWS(lLines.join(' '))
-
-	# ..........................................................
-
-	mapHereDocTAML: (lLines) ->
-
-		assert isArray(lLines), "mapHereDocTAML(): lLines not an array"
-		return JSON.stringify(taml(arrayToBlock(lLines)))
-
-	# ..........................................................
-
-	mapHereDocUnknown: (lLines) ->
-
-		assert isArray(lLines), "mapHereDocUnknown(): lLines not an array"
-		croak "Unknown header line: #{OL(lLines[0])}"
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

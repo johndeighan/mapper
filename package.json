@@ -12,6 +12,7 @@
 		"./tree": "./src/TreeWalker.js",
 		"./get": "./src/Getter.js",
 		"./taml": "./src/taml.js",
+		"./heredoc": "./src/heredoc.js",
 		"./sass": "./src/sass.js",
 		"./markdown": "./src/markdown.js",
 		"./coffee": "./src/coffee.js"
@@ -41,9 +42,9 @@
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^4.0.18",
+		"@jdeighan/coffee-utils": "^4.0.19",
 		"cross-env": "^7.0.3",
-		"marked": "^3.0.7",
-		"sass": "^1.43.3"
+		"marked": "^3.0.8",
+		"sass": "^1.43.4"
 	}
 }

@@ -91,7 +91,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC
-tester.equal(90, new StarbucksPreMapper(`h1 color="<<<"
+tester.equal(90, new StarbucksPreMapper(`h1 color=<<<
 	magenta
 
 # --- a comment
@@ -100,7 +100,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC with continuation lines
-tester.equal(104, new StarbucksPreMapper(`h1 color="<<<"
+tester.equal(104, new StarbucksPreMapper(`h1 color=<<<
 		This is a title
 	magenta
 
@@ -110,20 +110,19 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test using '.' in a HEREDOC
-tester.equal(119, new StarbucksPreMapper(`h1 color="<<<"
+tester.equal(119, new StarbucksPreMapper(`h1 color=<<<
 	color
 	.
 	magenta
 
 # --- a comment
-p the end`), `h1 color="color\n\nmagenta"
+p the end`), `h1 color="color\\n\\nmagenta"
 p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test using '.' in a HEREDOC
-tester.equal(135, new StarbucksPreMapper(`h1 color="<<<"
-	$$$
-	color
+tester.equal(135, new StarbucksPreMapper(`h1 color=<<<
+	...color
 	.
 	magenta
 

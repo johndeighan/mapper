@@ -89,7 +89,7 @@ tester.equal 75, new StarbucksPreMapper("""
 # --- test HEREDOC
 
 tester.equal 90, new StarbucksPreMapper("""
-		h1 color="<<<"
+		h1 color=<<<
 			magenta
 
 		# --- a comment
@@ -103,7 +103,7 @@ tester.equal 90, new StarbucksPreMapper("""
 # --- test HEREDOC with continuation lines
 
 tester.equal 104, new StarbucksPreMapper("""
-		h1 color="<<<"
+		h1 color=<<<
 				This is a title
 			magenta
 
@@ -118,7 +118,7 @@ tester.equal 104, new StarbucksPreMapper("""
 # --- test using '.' in a HEREDOC
 
 tester.equal 119, new StarbucksPreMapper("""
-		h1 color="<<<"
+		h1 color=<<<
 			color
 			.
 			magenta
@@ -126,7 +126,7 @@ tester.equal 119, new StarbucksPreMapper("""
 		# --- a comment
 		p the end
 		"""), """
-		h1 color="color\n\nmagenta"
+		h1 color="color\\n\\nmagenta"
 		p the end
 		"""
 
@@ -134,9 +134,8 @@ tester.equal 119, new StarbucksPreMapper("""
 # --- test using '.' in a HEREDOC
 
 tester.equal 135, new StarbucksPreMapper("""
-		h1 color="<<<"
-			$$$
-			color
+		h1 color=<<<
+			...color
 			.
 			magenta
 

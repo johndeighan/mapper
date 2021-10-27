@@ -72,6 +72,10 @@ import {
   taml
 } from '@jdeighan/string-input/taml';
 
+import {
+  mapHereDoc
+} from '@jdeighan/string-input/heredoc';
+
 // ---------------------------------------------------------------------------
 
 // --- Default env vars for #include files
@@ -556,7 +560,7 @@ export var SmartInput = class SmartInput extends StringInput {
       lLines = this.getHereDocLines(level + 1);
       assert(isArray(lLines), "handleHereDoc(): lLines not an array");
       debug(`HEREDOC lines: ${OL(lLines)}`);
-      newstr = this.mapHereDoc(lLines);
+      newstr = mapHereDoc(arrayToBlock(lLines));
       assert(isString(newstr), "handleHereDoc(): newstr not a string");
       debug(`PUSH ${OL(newstr)}`);
       lParts.push(newstr);
@@ -604,77 +608,6 @@ export var SmartInput = class SmartInput extends StringInput {
     } else {
       return line;
     }
-  }
-
-  // ..........................................................
-  mapHereDoc(lLines) {
-    var _, funcName, header, lMatches, result, strParms;
-    // --- return replacement string for '<<<', given a block
-    //     MUST return a string since it will replace '<<<'
-    if (lLines.length === 0) {
-      return '';
-    }
-    header = lLines[0];
-    if (header === '---') {
-      return this.mapHereDocTAML(lLines);
-    }
-    if (header === '$$$') {
-      lLines.shift(); // remove first line
-      return this.mapHereDocOneLiner(lLines);
-    }
-    if (header === "!!!") {
-      lLines.shift(); // remove first line
-      return this.mapHereDocBlock(lLines);
-    }
-    if ((lMatches = lLines[0].match(/^\s*(?:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*)?\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*$/))) { // optional function name
-      // optional parameters
-      [_, funcName, strParms] = lMatches;
-      lLines.shift(); // remove first line
-      return this.mapHereDocFunction(funcName, strParms, lLines);
-    }
-    if ((header.length === 3) && (header.substr(1, 1) === header.substr(0, 1)) && (header.substr(2, 1) === header.substr(0, 1))) {
-      result = this.mapHereDocUnknown(lLines);
-      if (result != null) {
-        return result;
-      } else {
-        return this.mapHereDocBlock(lLines);
-      }
-    }
-    return this.mapHereDocBlock(lLines);
-  }
-
-  // ..........................................................
-  mapHereDocFunction(funcName, strParms, lLines) {
-    assert(isArray(lLines), "mapHereDocFunction(): lLines not an array");
-    if (funcName) {
-      return `${funcName} = (${strParms}) -> ${arrayToBlock(lLines)}`;
-    } else {
-      return `(${strParms}) -> ${arrayToBlock(lLines)}`;
-    }
-  }
-
-  // ..........................................................
-  mapHereDocBlock(lLines) {
-    assert(isArray(lLines), "mapHereDocBlock(): lLines not an array");
-    return arrayToBlock(lLines);
-  }
-
-  // ..........................................................
-  mapHereDocOneLiner(lLines) {
-    assert(isArray(lLines), "mapHereDocOneLiner(): lLines not an array");
-    return CWS(lLines.join(' '));
-  }
-
-  // ..........................................................
-  mapHereDocTAML(lLines) {
-    assert(isArray(lLines), "mapHereDocTAML(): lLines not an array");
-    return JSON.stringify(taml(arrayToBlock(lLines)));
-  }
-
-  // ..........................................................
-  mapHereDocUnknown(lLines) {
-    assert(isArray(lLines), "mapHereDocUnknown(): lLines not an array");
-    return croak(`Unknown header line: ${OL(lLines[0])}`);
   }
 
 };

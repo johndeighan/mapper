@@ -64,29 +64,35 @@ tester = new CoffeeTester();
 
 // ---------------------------------------------------------------------------
 // NOTE: When not unit testing, there will be a semicolon after 1000
-tester.equal(36, `x <== a + 1000`, `\`$:\`
+tester.equal(35, `x <== a + 1000`, `\`$:\`
 x = a + 1000`);
 
-tester.equal(43, `# --- a comment line
+tester.equal(42, `# --- a comment line
 
 x <== a + 1000`, `\`$:\`
 x = a + 1000`);
 
 // ---------------------------------------------------------------------------
 // --- test continuation lines
-tester.equal(55, `x = 23
+tester.equal(54, `x = 23
 y = x
 		+ 5`, `x = 23
 y = x + 5`);
 
 // ---------------------------------------------------------------------------
+// --- test use of backslash continuation lines
+tester.equal(66, `x = 23
+y = x + 5`, `x = 23
+y = x + 5`);
+
+// ---------------------------------------------------------------------------
 // --- test auto-import of symbols from file '.symbols'
-tester.equal(67, `x = 23
+tester.equal(79, `x = 23
 logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log'
 x = 23
 logger x`);
 
-tester.equal(76, `# --- a comment
+tester.equal(88, `# --- a comment
 
 x <== a + 1000`, `\`$:\`
 x = a + 1000`);
@@ -95,10 +101,10 @@ x = a + 1000`);
 // --- test full translation to JavaScript
 convertCoffee(true);
 
-tester.equal(90, `x = 23`, `var x;
+tester.equal(102, `x = 23`, `var x;
 x = 23;`);
 
-tester.equal(97, `# --- a comment
+tester.equal(109, `# --- a comment
 
 <==
 	x = a + 1000
@@ -108,7 +114,7 @@ x = a + 1000;
 y = a + 100;
 }`);
 
-tester.equal(111, `# --- a comment
+tester.equal(123, `# --- a comment
 
 x <== a + 1000`, `var x;
 $:

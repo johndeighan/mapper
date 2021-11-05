@@ -2,7 +2,9 @@
 // markdown.coffee
 var convert;
 
-import marked from 'marked';
+import {
+  marked
+} from 'marked';
 
 import {
   assert,
@@ -37,7 +39,7 @@ export var markdownify = function(text) {
     debug("return original text from markdownify() - not converting");
     return text;
   }
-  html = marked(undented(text), {
+  html = marked.parse(undented(text), {
     grm: true,
     headerIds: false
   });

@@ -1,6 +1,6 @@
 # markdown.coffee
 
-import marked from 'marked'
+import {marked} from 'marked'
 
 import {assert, OL} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -25,7 +25,7 @@ export markdownify = (text) ->
 	if ! convert
 		debug "return original text from markdownify() - not converting"
 		return text
-	html = marked(undented(text), {
+	html = marked.parse(undented(text), {
 		grm: true,
 		headerIds: false,
 		})

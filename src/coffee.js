@@ -10,6 +10,7 @@ import {
   OL,
   escapeStr,
   isArray,
+  isString,
   isEmpty,
   nonEmpty,
   words,
@@ -318,6 +319,7 @@ export var getNeededSymbols = function(code, hOptions = {}) {
   var ast, err, hSymbolInfo, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
+  assert(isString(code), "getNeededSymbols(): code must be a string");
   debug("enter getNeededSymbols()");
   try {
     debug("COMPILE CODE", code);

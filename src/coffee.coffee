@@ -3,7 +3,7 @@
 import CoffeeScript from 'coffeescript'
 
 import {
-	assert, croak, OL, escapeStr, isArray,
+	assert, croak, OL, escapeStr, isArray, isString,
 	isEmpty, nonEmpty, words, undef, deepCopy,
 	} from '@jdeighan/coffee-utils'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
@@ -285,6 +285,7 @@ export getNeededSymbols = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
 
+	assert isString(code), "getNeededSymbols(): code must be a string"
 	debug "enter getNeededSymbols()"
 	try
 		debug "COMPILE CODE", code

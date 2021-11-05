@@ -475,10 +475,16 @@ export var SmartInput = class SmartInput extends StringInput {
 
   // ..........................................................
   joinContLines(line, lContLines) {
-    if (isEmpty(lContLines)) {
-      return line;
+    var contLine, j, lMatches, len1, n;
+    for (j = 0, len1 = lContLines.length; j < len1; j++) {
+      contLine = lContLines[j];
+      if (lMatches = line.match(/\s*\\$/)) {
+        n = lMatches[0].length;
+        line = line.substr(0, line.length - n);
+      }
+      line += ' ' + contLine;
     }
-    return line + ' ' + lContLines.join(' ');
+    return line;
   }
 
   // ..........................................................

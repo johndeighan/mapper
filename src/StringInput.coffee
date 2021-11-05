@@ -418,9 +418,12 @@ export class SmartInput extends StringInput
 
 	joinContLines: (line, lContLines) ->
 
-		if isEmpty(lContLines)
-			return line
-		return line + ' ' + lContLines.join(' ')
+		for contLine in lContLines
+			if lMatches = line.match(/\s*\\$/)
+				n = lMatches[0].length
+				line = line.substr(0, line.length - n)
+			line += ' ' + contLine
+		return line
 
 	# ..........................................................
 

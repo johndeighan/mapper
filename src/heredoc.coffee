@@ -1,6 +1,8 @@
 # heredoc.coffee
 
-import {undef, pass, croak, escapeStr} from '@jdeighan/coffee-utils'
+import {
+	undef, pass, croak, escapeStr, CWS,
+	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
@@ -108,9 +110,9 @@ export class FuncHereDoc extends BaseHereDoc
 		if ! strParms
 			strParms = ''
 		if funcName
-			return "#{funcName} = (#{strParms}) -> #{block}"
+			return CWS("#{funcName} = (#{strParms}) -> #{block}")
 		else
-			return "(#{strParms}) -> #{block}"
+			return CWS("(#{strParms}) -> #{block}")
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

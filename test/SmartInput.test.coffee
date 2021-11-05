@@ -3,7 +3,7 @@
 import assert from 'assert'
 
 import {
-	undef, pass, isEmpty, isArray, CWS,
+	undef, pass, isEmpty, isArray, isString, CWS,
 	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {
@@ -34,24 +34,30 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends UnitTester
+class SmartTester extends UnitTester
+
+	normalize: (str) ->
+		return str
 
 	transformValue: (oInput) ->
+		if isString(oInput)
+			str = oInput
+			oInput = new SmartInput(str)
 		assert oInput instanceof SmartInput,
 			"oInput should be a SmartInput object"
 		return oInput.getAllText()
 
-tester = new GatherTester()
+tester = new SmartTester()
 
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 44, new SmartInput("""
+tester.equal 55, """
 		abc
 
 		# --- a comment
 		def
-		"""), """
+		""", """
 		abc
 		def
 		"""
@@ -71,7 +77,7 @@ class CustomInput extends SmartInput
 		debug "in new handleComment()"
 		return "line #{@lineNum} is a comment"
 
-tester.equal 69, new CustomInput("""
+tester.equal 80, new CustomInput("""
 		abc
 
 		# --- a comment
@@ -86,28 +92,60 @@ tester.equal 69, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 84, new SmartInput("""
+tester.equal 95, """
 		h1 color=blue
 				This is
 				a title
 
 		# --- a comment
 		p the end
-		"""), """
+		""", """
 		h1 color=blue This is a title
+		p the end
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test trailing backslash
+
+tester.equal 110, """
+		h1 color=blue \\
+				This is \\
+				a title
+
+		# --- a comment
+		p the end
+		""", """
+		h1 color=blue This is a title
+		p the end
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test trailing backslash
+
+tester.equal 125, """
+		h1 color=blue \\
+			This is \\
+			a title
+
+		# --- a comment
+		p the end
+		""", """
+		h1 color=blue \\
+			This is \\
+			a title
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 99, new SmartInput("""
+tester.equal 142, """
 		h1 color=<<<
 			magenta
 
 		# --- a comment
 		p the end
-		"""), """
+		""", """
 		h1 color="magenta"
 		p the end
 		"""
@@ -115,14 +153,14 @@ tester.equal 99, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 113, new SmartInput("""
+tester.equal 156, """
 		h1 color=<<<
 				This is a title
 			magenta
 
 		# --- a comment
 		p the end
-		"""), """
+		""", """
 		h1 color="magenta" This is a title
 		p the end
 		"""
@@ -130,7 +168,7 @@ tester.equal 113, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 128, new SmartInput("""
+tester.equal 171, """
 		h1 color=<<<
 			...color
 			.
@@ -138,7 +176,7 @@ tester.equal 128, new SmartInput("""
 
 		# --- a comment
 		p the end
-		"""), """
+		""", """
 		h1 color="color magenta"
 		p the end
 		"""
@@ -148,12 +186,12 @@ tester.equal 128, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- test empty HEREDOC section
 
-tester.equal 147, new SmartInput("""
+tester.equal 189, """
 		h1 name=<<<
 
 		# --- a comment
 		p the end
-		"""), """
+		""", """
 		h1 name=""
 		p the end
 		"""
@@ -161,86 +199,86 @@ tester.equal 147, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- test ending HEREDOC with EOF instead of a blank line
 
-tester.equal 160, new SmartInput("""
+tester.equal 202, """
 		h1 name=<<<
-		"""), """
+		""", """
 		h1 name=""
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test TAML
 
-tester.equal 169, new SmartInput("""
+tester.equal 211, """
 		h1 lItems=<<<
 			---
 			- abc
 			- def
 
-		"""), """
+		""", """
 		h1 lItems=["abc","def"]
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 182, new SmartInput("""
+tester.equal 224, """
 		error message=<<<
 			...an error
 			occurred in
 			your program
 
-		"""), """
+		""", """
 		error message="an error occurred in your program"
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test forcing a literal block
 
-tester.equal 196, new SmartInput("""
+tester.equal 237, """
 		TAML looks like: <<<
 			$$$
 			---
 			- abc
 			- def
 
-		"""), """
+		""", """
 		TAML looks like: "---\\n- abc\\n- def"
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test anonymous functions
 
-tester.equal 212, new SmartInput("""
+tester.equal 251, """
 		input on:click={<<<}
 			(event) ->
 				console.log('click')
 
-		"""), """
+		""", """
 		input on:click={(event) -> console.log('click')}
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test named functions
 
-tester.equal 224, new SmartInput("""
+tester.equal 263, """
 		input on:click={<<<}
 			clickHandler = (event) ->
 				console.log('click')
 
-		"""), """
+		""", """
 		input on:click={clickHandler = (event) -> console.log('click')}
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test ordinary block
 
-tester.equal 236, new SmartInput("""
+tester.equal 275, """
 		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
 
 		console.dir(lRecords);
-		"""), """
+		""", """
 		lRecords = db.fetch("select ID,Name\\nfrom Users")
 		console.dir(lRecords);
 		"""
@@ -258,12 +296,12 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType(new UCHereDoc())
 
-tester.equal 264, new SmartInput("""
+tester.equal 299, """
 		str = <<<
 			***
 			select ID,Name
 			from Users
 
-		"""), """
+		""", """
 		str = "SELECT ID,NAME FROM USERS"
 		"""

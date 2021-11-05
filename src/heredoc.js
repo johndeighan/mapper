@@ -6,7 +6,8 @@ import {
   undef,
   pass,
   croak,
-  escapeStr
+  escapeStr,
+  CWS
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -112,9 +113,9 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
       strParms = '';
     }
     if (funcName) {
-      return `${funcName} = (${strParms}) -> ${block}`;
+      return CWS(`${funcName} = (${strParms}) -> ${block}`);
     } else {
-      return `(${strParms}) -> ${block}`;
+      return CWS(`(${strParms}) -> ${block}`);
     }
   }
 

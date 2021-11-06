@@ -5,6 +5,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'
+import {isBuiltin} from '@jdeighan/string-input/builtins'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -263,7 +264,7 @@ export class ASTWalker extends TreeWalker
 
 		lNeededSymbols = []
 		for name in @lUsedSymbols
-			if ! @lImportedSymbols.includes(name)
+			if ! @lImportedSymbols.includes(name) && ! isBuiltin(name)
 				lNeededSymbols.push(name)
 
 		debug "return from CodeWalker.getNeededSymbols()"

@@ -18,6 +18,10 @@ import {
   indented
 } from '@jdeighan/coffee-utils/indent';
 
+import {
+  isBuiltin
+} from '@jdeighan/string-input/builtins';
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 export var TreeWalker = class TreeWalker {
@@ -296,7 +300,7 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
     ref = this.lUsedSymbols;
     for (i = 0, len = ref.length; i < len; i++) {
       name = ref[i];
-      if (!this.lImportedSymbols.includes(name)) {
+      if (!this.lImportedSymbols.includes(name) && !isBuiltin(name)) {
         lNeededSymbols.push(name);
       }
     }

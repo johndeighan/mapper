@@ -3,6 +3,7 @@
 import {assert, say, isString, isArray} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	withExt, newerDestFileExists, slurp, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
@@ -80,7 +81,7 @@ export checkCieloHash = (hCielo, maxBlocks=1) ->
 	assert (hCielo.code.length <= maxBlocks), "checkCieloHash(): Too many blocks"
 	assert isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string"
 	if 'importStmts' in hCielo
-		assert isArray(hCielo.importStmts), "checkCieloHash(): 'importStmts' not an array"
+		assert isString(hCielo.importStmts), "checkCieloHash(): 'importStmts' not a string"
 	return
 
 # ---------------------------------------------------------------------------
@@ -88,12 +89,7 @@ export checkCieloHash = (hCielo, maxBlocks=1) ->
 export buildCieloBlock = (hCielo) ->
 
 	checkCieloHash(hCielo)
-	code = hCielo.code[0]
-	lImportStmts = hCielo.importStmts
-	if ('importStmts' in hCielo) && (hCielo.importStmts.length > 0)
-		return hCielo.importStmt.join("\n") + "\n" + code
-	else
-		return code
+	return joinBlocks(hCielo.importStmts, hCielo.code[0])
 
 # ---------------------------------------------------------------------------
 

@@ -19,6 +19,10 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
+  joinBlocks
+} from '@jdeighan/coffee-utils/block';
+
+import {
   withExt,
   newerDestFileExists,
   slurp,
@@ -101,21 +105,14 @@ export var checkCieloHash = function(hCielo, maxBlocks = 1) {
   assert(hCielo.code.length <= maxBlocks, "checkCieloHash(): Too many blocks");
   assert(isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string");
   if (indexOf.call(hCielo, 'importStmts') >= 0) {
-    assert(isArray(hCielo.importStmts), "checkCieloHash(): 'importStmts' not an array");
+    assert(isString(hCielo.importStmts), "checkCieloHash(): 'importStmts' not a string");
   }
 };
 
 // ---------------------------------------------------------------------------
 export var buildCieloBlock = function(hCielo) {
-  var code, lImportStmts;
   checkCieloHash(hCielo);
-  code = hCielo.code[0];
-  lImportStmts = hCielo.importStmts;
-  if ((indexOf.call(hCielo, 'importStmts') >= 0) && (hCielo.importStmts.length > 0)) {
-    return hCielo.importStmt.join("\n") + "\n" + code;
-  } else {
-    return code;
-  }
+  return joinBlocks(hCielo.importStmts, hCielo.code[0]);
 };
 
 // ---------------------------------------------------------------------------

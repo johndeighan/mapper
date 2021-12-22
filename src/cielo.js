@@ -6,7 +6,8 @@ import {
   assert,
   say,
   isString,
-  isArray
+  isArray,
+  isHash
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -105,6 +106,7 @@ export var brewCielo = function(...lBlocks) {
 // ---------------------------------------------------------------------------
 export var checkCieloHash = function(hCielo, maxBlocks = 1) {
   assert(hCielo != null, "checkCieloHash(): empty hCielo");
+  assert(isHash(hCielo), "checkCieloHash(): hCielo is not a hash");
   assert(hCielo.hasOwnProperty('code'), "checkCieloHash(): No key 'code'");
   assert(hCielo.code.length <= maxBlocks, "checkCieloHash(): Too many blocks");
   assert(isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string");

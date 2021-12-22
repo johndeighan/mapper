@@ -1,6 +1,6 @@
 # cielo.coffee
 
-import {assert, say, isString, isArray} from '@jdeighan/coffee-utils'
+import {assert, say, isString, isArray, isHash} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
@@ -78,6 +78,7 @@ export brewCielo = (lBlocks...) ->
 export checkCieloHash = (hCielo, maxBlocks=1) ->
 
 	assert hCielo?, "checkCieloHash(): empty hCielo"
+	assert isHash(hCielo), "checkCieloHash(): hCielo is not a hash"
 	assert hCielo.hasOwnProperty('code'), "checkCieloHash(): No key 'code'"
 	assert (hCielo.code.length <= maxBlocks), "checkCieloHash(): Too many blocks"
 	assert isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string"

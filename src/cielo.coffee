@@ -97,7 +97,7 @@ buildCieloBlock = (hCielo) ->
 
 # ---------------------------------------------------------------------------
 
-brewCieloStr = (str) ->
+export brewCieloStr = (str) ->
 	# --- cielo => coffee
 
 	hCielo = brewCielo(str)
@@ -117,7 +117,7 @@ export output = (code, srcPath, destPath, doLog=false) ->
 
 # ---------------------------------------------------------------------------
 
-brewCieloFile = (srcPath) ->
+export brewCieloFile = (srcPath) ->
 	# --- cielo => coffee
 
 	destPath = withExt(srcPath, '.coffee')
@@ -126,4 +126,3 @@ brewCieloFile = (srcPath) ->
 		code = brewCieloStr(str)
 		output code, srcPath, destPath, quiet
 	return
-

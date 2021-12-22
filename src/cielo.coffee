@@ -73,7 +73,7 @@ export brewCielo = (lBlocks...) ->
 
 # ---------------------------------------------------------------------------
 
-checkCieloHash = (hCielo, maxBlocks=1) ->
+export checkCieloHash = (hCielo, maxBlocks=1) ->
 
 	assert hCielo?, "checkCieloHash(): empty hCielo"
 	assert 'code' in hCielo, "checkCieloHash(): No key 'code'"
@@ -85,7 +85,7 @@ checkCieloHash = (hCielo, maxBlocks=1) ->
 
 # ---------------------------------------------------------------------------
 
-buildCieloBlock = (hCielo) ->
+export buildCieloBlock = (hCielo) ->
 
 	checkCieloHash(hCielo)
 	code = hCielo.code[0]

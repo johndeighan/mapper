@@ -15,7 +15,9 @@ import {
   nonEmpty,
   words,
   undef,
-  deepCopy
+  deepCopy,
+  uniq,
+  say
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -30,10 +32,6 @@ import {
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
-
-import {
-  hPrivEnv
-} from '@jdeighan/coffee-utils/privenv';
 
 import {
   mydir,
@@ -88,7 +86,7 @@ export var brewExpr = function(expr, force = false) {
 
 // ---------------------------------------------------------------------------
 export var preBrewCoffee = function(...lBlocks) {
-  var blk, err, i, j, k, lNeededSymbols, lNewBlocks, len, len1, newblk, ref, script, symbol;
+  var blk, err, i, j, lNeededSymbols, lNewBlocks, len, newblk, script;
   debug("enter preBrewCoffee()");
   lNeededSymbols = [];
   lNewBlocks = [];
@@ -97,13 +95,8 @@ export var preBrewCoffee = function(...lBlocks) {
     debug(`BLOCK ${i}`, blk);
     newblk = preProcessCoffee(blk);
     debug("NEW BLOCK", newblk);
-    ref = getNeededSymbols(newblk);
-    for (k = 0, len1 = ref.length; k < len1; k++) {
-      symbol = ref[k];
-      if (!lNeededSymbols.includes(symbol)) {
-        lNeededSymbols.push(symbol);
-      }
-    }
+    // --- will always be unique
+    lNeededSymbols = getNeededSymbols(newblk);
     if (convert) {
       try {
         script = CoffeeScript.compile(newblk, {
@@ -319,6 +312,7 @@ export var getNeededSymbols = function(code, hOptions = {}) {
   var ast, err, hSymbolInfo, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
+  //     NOTE: array returned will always be unique
   assert(isString(code), "getNeededSymbols(): code must be a string");
   debug("enter getNeededSymbols()");
   try {
@@ -337,18 +331,22 @@ export var getNeededSymbols = function(code, hOptions = {}) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(ast));
   }
   debug("return from getNeededSymbols()");
-  return hSymbolInfo.lNeeded;
+  return uniq(hSymbolInfo.lNeeded);
 };
 
 // ---------------------------------------------------------------------------
 // export to allow unit testing
 export var getAvailSymbols = function() {
-  var filepath, hSymbols, searchFromDir;
+  var dir, filepath, hSymbols;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
   debug("enter getAvailSymbols()");
-  searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(import.meta.url);
-  debug(`search for .symbols from '${searchFromDir}'`);
-  filepath = pathTo('.symbols', searchFromDir, 'up');
+  dir = process.env.DIR_ROOT;
+  if (!dir) {
+    debug("return from getAvailSymbols() - env var DIR_SYMBOLS not set");
+    return {};
+  }
+  debug(`search for .symbols from '${dir}'`);
+  filepath = pathTo('.symbols', dir, 'up');
   if (filepath == null) {
     debug("return from getAvailSymbols() - no .symbols file found");
     return {};

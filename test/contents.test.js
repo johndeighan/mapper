@@ -16,18 +16,14 @@ import {
 } from '@jdeighan/coffee-utils/test';
 
 import {
-  hPrivEnv
-} from '@jdeighan/coffee-utils/privenv';
-
-import {
   getFileContents
 } from '@jdeighan/string-input';
 
-root = hPrivEnv.DIR_ROOT = mydir(import.meta.url);
+root = process.env.DIR_ROOT = mydir(import.meta.url);
 
-hPrivEnv.DIR_DATA = `${root}/data`;
+process.env.DIR_DATA = `${root}/data`;
 
-hPrivEnv.DIR_MARKDOWN = `${root}/markdown`;
+process.env.DIR_MARKDOWN = `${root}/markdown`;
 
 simple = new UnitTester();
 

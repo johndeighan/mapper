@@ -16,7 +16,9 @@
 		"./sass": "./src/sass.js",
 		"./markdown": "./src/markdown.js",
 		"./coffee": "./src/coffee.js",
-		"./builtins": "./src/JavaScriptBuiltins.js"
+		"./cielo": "./src/cielo.js",
+		"./builtins": "./src/JavaScriptBuiltins.js",
+		"./package.json": "./package.json"
 	},
 	"scripts": {
 		"build": "cls && coffee -c .",
@@ -43,9 +45,9 @@
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^4.1.1",
+		"@jdeighan/coffee-utils": "^4.1.7",
 		"cross-env": "^7.0.3",
-		"marked": "^4.0.0",
-		"sass": "^1.43.4"
+		"marked": "^4.0.8",
+		"sass": "^1.45.1"
 	}
 }

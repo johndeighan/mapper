@@ -6,15 +6,13 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {
 	brewCoffee, brewExpr, convertCoffee,
 	} from '@jdeighan/string-input/coffee'
 
-root = hPrivEnv.DIR_ROOT = mydir(`import.meta.url`)
-hPrivEnv.DIR_DATA = "#{root}/data
-hPrivEnv.DIR_MARKDOWN = "#{root}/markdown
-hPrivEnv.DIR_SYMBOLS = root
+rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
+process.env.DIR_DATA = mkpath(rootDir, 'data')
+process.env.DIR_MARKDOWN = mkpath(rootDir, 'markdown')
 simple = new UnitTester()
 
 convertCoffee false

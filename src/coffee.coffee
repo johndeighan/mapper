@@ -4,12 +4,11 @@ import CoffeeScript from 'coffeescript'
 
 import {
 	assert, croak, OL, escapeStr, isArray, isString,
-	isEmpty, nonEmpty, words, undef, deepCopy,
+	isEmpty, nonEmpty, words, undef, deepCopy, uniq, say,
 	} from '@jdeighan/coffee-utils'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
 import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
 import {StringInput, SmartInput} from '@jdeighan/string-input'
@@ -57,9 +56,8 @@ export preBrewCoffee = (lBlocks...) ->
 		newblk = preProcessCoffee(blk)
 		debug "NEW BLOCK", newblk
 
-		for symbol in getNeededSymbols(newblk)
-			if ! lNeededSymbols.includes(symbol)
-				lNeededSymbols.push(symbol)
+		# --- will always be unique
+		lNeededSymbols = getNeededSymbols(newblk)
 		if convert
 			try
 				script = CoffeeScript.compile(newblk, {bare: true})
@@ -284,6 +282,7 @@ export buildImportList = (lNeededSymbols) ->
 export getNeededSymbols = (code, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
+	#     NOTE: array returned will always be unique
 
 	assert isString(code), "getNeededSymbols(): code must be a string"
 	debug "enter getNeededSymbols()"
@@ -299,7 +298,7 @@ export getNeededSymbols = (code, hOptions={}) ->
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(ast)
 	debug "return from getNeededSymbols()"
-	return hSymbolInfo.lNeeded
+	return uniq(hSymbolInfo.lNeeded)
 
 # ---------------------------------------------------------------------------
 # export to allow unit testing
@@ -308,9 +307,12 @@ export getAvailSymbols = () ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
 
 	debug "enter getAvailSymbols()"
-	searchFromDir = hPrivEnv.DIR_SYMBOLS || mydir(`import.meta.url`)
-	debug "search for .symbols from '#{searchFromDir}'"
-	filepath = pathTo('.symbols', searchFromDir, 'up')
+	dir = process.env.DIR_ROOT
+	if ! dir
+		debug "return from getAvailSymbols() - env var DIR_SYMBOLS not set"
+		return {}
+	debug "search for .symbols from '#{dir}'"
+	filepath = pathTo('.symbols', dir, 'up')
 	if ! filepath?
 		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
@@ -387,4 +389,5 @@ getAvailSymbolsFrom = (filepath) ->
 	hSymbols = parser.getSymbols()
 	debug "hSymbols", hSymbols
 	debug "return from getAvailSymbolsFrom()"
+
 	return hSymbols

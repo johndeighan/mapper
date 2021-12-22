@@ -19,7 +19,6 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 import {mapHereDoc} from '@jdeighan/string-input/heredoc'
@@ -42,6 +41,8 @@ export class StringFetcher
 	constructor: (content, source='unit test') ->
 
 		# --- Has keys: dir, filename, stub, ext
+		#     If source is 'unit test', just returns:
+		#     { filename: 'unit test', stub: 'unit test'}
 		hSourceInfo = parseSource(source)
 
 		filename = hSourceInfo.filename
@@ -84,7 +85,7 @@ export class StringFetcher
 
 		envvar = hExtToEnvVar[ext]
 		if envvar?
-			return hPrivEnv[envvar]
+			return process.env[envvar]
 		else
 			return undef
 
@@ -94,6 +95,13 @@ export class StringFetcher
 
 		{root, dir, base, ext} = pathlib.parse(filename)
 		assert ! dir, "getFileFullPath(): arg is not a simple file name"
+
+		if @hSourceInfo.filename == 'unit test'
+			if process.env.DIR_ROOT?
+				path = mkpath(process.env.DIR_ROOT, filename)
+				if fs.existsSync(path)
+					return path
+
 		if @hSourceInfo.dir?
 			path = mkpath(@hSourceInfo.dir, filename)
 			if fs.existsSync(path)
@@ -743,11 +751,11 @@ export getFileContents = (fname, convert=false, dir=undef) ->
 	debug "envvar = '#{envvar}'"
 	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
 
-	dir = hPrivEnv[envvar]
+	dir = process.env[envvar]
 	debug "dir = '#{dir}'"
 	if ! dir?
 		croak "env var '#{envvar}' not set for file extension '#{ext}'",
-			'hPrivEnv', hPrivEnv
+			'process.env', process.env
 	fullpath = pathTo(base, dir)   # guarantees that file exists
 	debug "fullpath = '#{fullpath}'"
 	assert fullpath, "getFileContents(): Can't find file #{fname}"

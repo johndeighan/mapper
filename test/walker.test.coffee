@@ -6,13 +6,12 @@ import CoffeeScript from 'coffeescript'
 import {undef, words} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {ASTWalker} from '@jdeighan/string-input/tree'
 
-testDir = mydir(`import.meta.url`)
-hPrivEnv.DIR_SYMBOLS = testDir
+process.env.DIR_ROOT = mydir(`import.meta.url`)
+
 simple = new UnitTester()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 

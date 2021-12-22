@@ -4,12 +4,11 @@ import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {sassify, convertSASS} from '@jdeighan/string-input/sass'
 
-root = hPrivEnv.DIR_ROOT = mydir(`import.meta.url`)
-hPrivEnv.DIR_DATA = "#{root}/data
-hPrivEnv.DIR_MARKDOWN = "#{root}/markdown
+root = process.env.DIR_ROOT = mydir(`import.meta.url`)
+process.env.DIR_DATA = "#{root}/data
+process.env.DIR_MARKDOWN = "#{root}/markdown
 simple = new UnitTester()
 
 convertSASS false

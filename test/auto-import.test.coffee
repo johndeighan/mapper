@@ -8,13 +8,12 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {hPrivEnv} from '@jdeighan/coffee-utils/privenv'
 import {
 	convertCoffee, buildImportList, getAvailSymbols, brewCoffee,
 	} from '@jdeighan/string-input/coffee'
 
-testDir = mydir(`import.meta.url`)
-hPrivEnv.DIR_SYMBOLS = testDir
+process.env.DIR_ROOT = mydir(`import.meta.url`)
+
 simple = new UnitTester()
 convertCoffee false
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"

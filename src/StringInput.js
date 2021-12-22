@@ -60,10 +60,6 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  hPrivEnv
-} from '@jdeighan/coffee-utils/privenv';
-
-import {
   markdownify
 } from '@jdeighan/string-input/markdown';
 
@@ -92,6 +88,8 @@ export var StringFetcher = class StringFetcher {
   constructor(content, source = 'unit test') {
     var filename, hSourceInfo, i, line;
     // --- Has keys: dir, filename, stub, ext
+    //     If source is 'unit test', just returns:
+    //     { filename: 'unit test', stub: 'unit test'}
     hSourceInfo = parseSource(source);
     filename = hSourceInfo.filename;
     assert(filename, "StringFetcher: parseSource returned no filename");
@@ -139,7 +137,7 @@ export var StringFetcher = class StringFetcher {
     // --- override to not use defaults
     envvar = hExtToEnvVar[ext];
     if (envvar != null) {
-      return hPrivEnv[envvar];
+      return process.env[envvar];
     } else {
       return undef;
     }
@@ -150,6 +148,14 @@ export var StringFetcher = class StringFetcher {
     var base, dir, ext, incDir, path, root;
     ({root, dir, base, ext} = pathlib.parse(filename));
     assert(!dir, "getFileFullPath(): arg is not a simple file name");
+    if (this.hSourceInfo.filename === 'unit test') {
+      if (process.env.DIR_ROOT != null) {
+        path = mkpath(process.env.DIR_ROOT, filename);
+        if (fs.existsSync(path)) {
+          return path;
+        }
+      }
+    }
     if (this.hSourceInfo.dir != null) {
       path = mkpath(this.hSourceInfo.dir, filename);
       if (fs.existsSync(path)) {
@@ -801,10 +807,10 @@ export var getFileContents = function(fname, convert = false, dir = undef) {
   envvar = hExtToEnvVar[ext];
   debug(`envvar = '${envvar}'`);
   assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);
-  dir = hPrivEnv[envvar];
+  dir = process.env[envvar];
   debug(`dir = '${dir}'`);
   if (dir == null) {
-    croak(`env var '${envvar}' not set for file extension '${ext}'`, 'hPrivEnv', hPrivEnv);
+    croak(`env var '${envvar}' not set for file extension '${ext}'`, 'process.env', process.env);
   }
   fullpath = pathTo(base, dir); // guarantees that file exists
   debug(`fullpath = '${fullpath}'`);

@@ -2,6 +2,7 @@
 
 import {assert, say, isString, isArray} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {log} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
@@ -103,10 +104,7 @@ export brewCieloStr = (str) ->
 
 export output = (code, srcPath, destPath, doLog=false) ->
 
-	try
-		barf destPath, code
-	catch err
-		log "output(): ERROR: #{err.message}"
+	barf destPath, code
 	if doLog
 		log "   => #{shortenPath(destPath)}"
 	return

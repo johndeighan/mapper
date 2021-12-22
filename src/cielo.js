@@ -14,6 +14,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  log
+} from '@jdeighan/coffee-utils/log';
+
+import {
   indentLevel
 } from '@jdeighan/coffee-utils/indent';
 
@@ -124,13 +128,7 @@ export var brewCieloStr = function(str) {
 
 // ---------------------------------------------------------------------------
 export var output = function(code, srcPath, destPath, doLog = false) {
-  var err;
-  try {
-    barf(destPath, code);
-  } catch (error) {
-    err = error;
-    log(`output(): ERROR: ${err.message}`);
-  }
+  barf(destPath, code);
   if (doLog) {
     log(`   => ${shortenPath(destPath)}`);
   }

@@ -120,5 +120,5 @@ export brewCieloFile = (srcPath) ->
 	if ! newerDestFileExists(srcPath, destPath)
 		str = slurp(srcPath)
 		code = brewCieloStr(str)
-		output code, srcPath, destPath, quiet
+		output code, srcPath, destPath
 	return

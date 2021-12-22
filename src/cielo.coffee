@@ -1,8 +1,11 @@
 # cielo.coffee
 
-import {assert, say} from '@jdeighan/coffee-utils'
+import {assert, say, isString, isArray} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
+import {
+	withExt, newerDestFileExists, slurp, shortenPath,
+	} from '@jdeighan/coffee-utils/fs'
 import {SmartInput} from '@jdeighan/string-input'
 import {
 	getNeededSymbols, buildImportList,
@@ -67,3 +70,60 @@ export brewCielo = (lBlocks...) ->
 		lAllNeededSymbols
 		importStmts
 		}
+
+# ---------------------------------------------------------------------------
+
+checkCieloHash = (hCielo, maxBlocks=1) ->
+
+	assert hCielo?, "checkCieloHash(): empty hCielo"
+	assert 'code' in hCielo, "checkCieloHash(): No key 'code'"
+	assert (hCielo.code.length <= maxBlocks), "checkCieloHash(): Too many blocks"
+	assert isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string"
+	if 'importStmts' in hCielo
+		assert isArray(hCielo.importStmts), "checkCieloHash(): 'importStmts' not an array"
+	return
+
+# ---------------------------------------------------------------------------
+
+buildCieloBlock = (hCielo) ->
+
+	checkCieloHash(hCielo)
+	code = hCielo.code[0]
+	lImportStmts = hCielo.importStmts
+	if ('importStmts' in hCielo) && (hCielo.importStmts.length > 0)
+		return hCielo.importStmt.join("\n") + "\n" + code
+	else
+		return code
+
+# ---------------------------------------------------------------------------
+
+brewCieloStr = (str) ->
+	# --- cielo => coffee
+
+	hCielo = brewCielo(str)
+	return buildCieloBlock(hCielo)
+
+# ---------------------------------------------------------------------------
+
+export output = (code, srcPath, destPath, doLog=false) ->
+
+	try
+		barf destPath, code
+	catch err
+		log "output(): ERROR: #{err.message}"
+	if doLog
+		log "   => #{shortenPath(destPath)}"
+	return
+
+# ---------------------------------------------------------------------------
+
+brewCieloFile = (srcPath) ->
+	# --- cielo => coffee
+
+	destPath = withExt(srcPath, '.coffee')
+	if ! newerDestFileExists(srcPath, destPath)
+		str = slurp(srcPath)
+		code = brewCieloStr(str)
+		output code, srcPath, destPath, quiet
+	return
+

@@ -77,10 +77,10 @@ export brewCielo = (lBlocks...) ->
 export checkCieloHash = (hCielo, maxBlocks=1) ->
 
 	assert hCielo?, "checkCieloHash(): empty hCielo"
-	assert 'code' in hCielo, "checkCieloHash(): No key 'code'"
+	assert hCielo.hasOwnProperty('code'), "checkCieloHash(): No key 'code'"
 	assert (hCielo.code.length <= maxBlocks), "checkCieloHash(): Too many blocks"
 	assert isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string"
-	if 'importStmts' in hCielo
+	if hCielo.hasOwnProperty('importStmts')
 		assert isString(hCielo.importStmts), "checkCieloHash(): 'importStmts' not a string"
 	return
 

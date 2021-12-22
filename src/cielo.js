@@ -29,6 +29,7 @@ import {
   withExt,
   newerDestFileExists,
   slurp,
+  barf,
   shortenPath
 } from '@jdeighan/coffee-utils/fs';
 

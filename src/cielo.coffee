@@ -6,7 +6,7 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	withExt, newerDestFileExists, slurp, shortenPath,
+	withExt, newerDestFileExists, slurp, barf, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 import {SmartInput} from '@jdeighan/string-input'
 import {

@@ -342,7 +342,7 @@ export var getAvailSymbols = function() {
   debug("enter getAvailSymbols()");
   dir = process.env.DIR_ROOT;
   if (!dir) {
-    debug("return from getAvailSymbols() - env var DIR_SYMBOLS not set");
+    debug("return from getAvailSymbols() - env var DIR_ROOT not set");
     return {};
   }
   debug(`search for .symbols from '${dir}'`);

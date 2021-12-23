@@ -72,9 +72,7 @@ preBrewCoffee = (lBlocks...) ->
 		else
 			lNewBlocks.push newblk
 
-	# --- return converted blocks, PLUS the list of import statements
-	return joinBlocks(buildImportBlock(lNeededSymbols), lNewBlocks...)
-#	return [lNewBlocks..., buildImportBlock(lNeededSymbols)]
+	return [buildImportBlock(lNeededSymbols), lNewBlocks...]
 
 # ---------------------------------------------------------------------------
 
@@ -82,7 +80,8 @@ export brewCoffeeStr = (code) ->
 	# --- coffee => js
 
 	assert isString(code), "brewCoffeeStr(): code is not a string"
-	newcode = preBrewCoffee(code)
+	lBlocks = preBrewCoffee(code)
+	newcode = joinBlocks(lBlocks...)
 
 	debug 'CODE', code
 	debug 'NEW CODE', newcode

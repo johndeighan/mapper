@@ -116,18 +116,16 @@ preBrewCoffee = function(...lBlocks) {
       lNewBlocks.push(newblk);
     }
   }
-  // --- return converted blocks, PLUS the list of import statements
-  return joinBlocks(buildImportBlock(lNeededSymbols), ...lNewBlocks);
+  return [buildImportBlock(lNeededSymbols), ...lNewBlocks];
 };
-
-//	return [lNewBlocks..., buildImportBlock(lNeededSymbols)]
 
 // ---------------------------------------------------------------------------
 export var brewCoffeeStr = function(code) {
-  var newcode;
+  var lBlocks, newcode;
   // --- coffee => js
   assert(isString(code), "brewCoffeeStr(): code is not a string");
-  newcode = preBrewCoffee(code);
+  lBlocks = preBrewCoffee(code);
+  newcode = joinBlocks(...lBlocks);
   debug('CODE', code);
   debug('NEW CODE', newcode);
   return newcode;

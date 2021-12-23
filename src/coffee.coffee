@@ -48,7 +48,7 @@ export brewExpr = (expr, force=false) ->
 
 # ---------------------------------------------------------------------------
 
-preBrewCoffee = (lBlocks...) ->
+export preBrewCoffee = (lBlocks...) ->
 
 	debug "enter preBrewCoffee()"
 

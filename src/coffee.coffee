@@ -9,7 +9,10 @@ import {
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {mydir, pathTo, slurp, barf} from '@jdeighan/coffee-utils/fs'
+import {
+	mydir, pathTo, withExt, slurp, barf, newerDestFileExists,
+	shortenPath,
+	} from '@jdeighan/coffee-utils/fs'
 import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
 import {StringInput, SmartInput} from '@jdeighan/string-input'
 import {ASTWalker} from '@jdeighan/string-input/tree'
@@ -45,7 +48,7 @@ export brewExpr = (expr, force=false) ->
 
 # ---------------------------------------------------------------------------
 
-export preBrewCoffee = (lBlocks...) ->
+preBrewCoffee = (lBlocks...) ->
 
 	debug "enter preBrewCoffee()"
 
@@ -70,22 +73,48 @@ export preBrewCoffee = (lBlocks...) ->
 			lNewBlocks.push newblk
 
 	# --- return converted blocks, PLUS the list of import statements
-	return [lNewBlocks..., buildImportList(lNeededSymbols)]
+	return joinBlocks(buildImportBlock(lNeededSymbols), lNewBlocks...)
+#	return [lNewBlocks..., buildImportBlock(lNeededSymbols)]
 
 # ---------------------------------------------------------------------------
 
-export brewCoffee = (code) ->
+export brewCoffeeStr = (code) ->
+	# --- coffee => js
 
-	lCodeBlocks = preBrewCoffee(code)
-	lImportStmts = lCodeBlocks.pop()
-	newcode = joinBlocks(lImportStmts..., lCodeBlocks)
+	assert isString(code), "brewCoffeeStr(): code is not a string"
+	newcode = preBrewCoffee(code)
 
 	debug 'CODE', code
-	debug 'lImportStmts', lImportStmts
-	debug 'lCodeBlocks', lCodeBlocks
 	debug 'NEW CODE', newcode
 
 	return newcode
+
+# ---------------------------------------------------------------------------
+
+brewCoffeeFile = (srcPath, destPath=undef, hOptions={}) ->
+	# --- coffee => js
+	#     Valid Options:
+	#        saveAST
+	#        force
+
+	if ! destPath?
+		destPath = withExt(srcPath, '.js', {removeLeadingUnderScore:true})
+	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
+		coffeeCode = slurp(srcPath)
+		if hOptions.saveAST
+			dumpfile = withExt(srcPath, '.ast')
+			lNeeded = getNeededSymbols(coffeeCode, {dumpfile})
+			if (lNeeded == undef) || (lNeeded.length == 0)
+				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
+			else
+				n = lNeeded.length
+				word = if (n==1) then'SYMBOL' else 'SYMBOLS'
+				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
+				for sym in lNeeded
+					debug "   - #{sym}"
+		jsCode = brewCoffeeStr(coffeeCode)
+		barf destPath, jsCode
+	return
 
 # ---------------------------------------------------------------------------
 
@@ -276,6 +305,12 @@ export buildImportList = (lNeededSymbols) ->
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
 	return lImports
+
+# ---------------------------------------------------------------------------
+
+export buildImportBlock = (lNeededSymbols) ->
+
+	return buildImportList(lNeededSymbols).join("\n")
 
 # ---------------------------------------------------------------------------
 

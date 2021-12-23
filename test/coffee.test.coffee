@@ -7,7 +7,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	brewCoffee, brewExpr, convertCoffee,
+	brewCoffeeStr, brewExpr, convertCoffee,
 	} from '@jdeighan/string-input/coffee'
 
 rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
@@ -22,7 +22,7 @@ convertCoffee false
 class CoffeeTester extends UnitTester
 
 	transformValue: (code) ->
-		newcode = brewCoffee(code)
+		newcode = brewCoffeeStr(code)
 		return newcode
 
 tester = new CoffeeTester()

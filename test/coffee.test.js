@@ -31,7 +31,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  brewCoffee,
+  brewCoffeeStr,
   brewExpr,
   convertCoffee
 } from '@jdeighan/string-input/coffee';
@@ -50,7 +50,7 @@ convertCoffee(false);
 CoffeeTester = class CoffeeTester extends UnitTester {
   transformValue(code) {
     var newcode;
-    newcode = brewCoffee(code);
+    newcode = brewCoffeeStr(code);
     return newcode;
   }
 

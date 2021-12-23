@@ -36,7 +36,7 @@ import {
   convertCoffee,
   buildImportList,
   getAvailSymbols,
-  brewCoffee
+  brewCoffeeStr
 } from '@jdeighan/string-input/coffee';
 
 process.env.DIR_ROOT = mydir(import.meta.url);
@@ -111,7 +111,7 @@ say "Answer is 42"`);
   code = `# --- temp.cielo
 if fs.existsSync('file.txt')
 	logger "file exists"`;
-  newcode = brewCoffee(code);
+  newcode = brewCoffeeStr(code);
   return simple.equal(81, newcode, `import fs from 'fs'
 import {log as logger} from '@jdeighan/coffee-utils/log'
 if fs.existsSync('file.txt')

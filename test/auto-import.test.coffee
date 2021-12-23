@@ -9,7 +9,7 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	convertCoffee, buildImportList, getAvailSymbols, brewCoffee,
+	convertCoffee, buildImportList, getAvailSymbols, brewCoffeeStr,
 	} from '@jdeighan/string-input/coffee'
 
 process.env.DIR_ROOT = mydir(`import.meta.url`)
@@ -77,7 +77,7 @@ simple.equal 23, hSymbols, {
 				logger "file exists"
 			"""
 
-	newcode = brewCoffee(code)
+	newcode = brewCoffeeStr(code)
 
 	simple.equal 81, newcode, """
 			import fs from 'fs'

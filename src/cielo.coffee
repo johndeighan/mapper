@@ -95,29 +95,23 @@ export buildCieloBlock = (hCielo) ->
 
 # ---------------------------------------------------------------------------
 
-export brewCieloStr = (str) ->
+export brewCieloStr = (code) ->
 	# --- cielo => coffee
 
-	hCielo = brewCielo(str)
+	hCielo = brewCielo(code)
 	return buildCieloBlock(hCielo)
 
 # ---------------------------------------------------------------------------
 
-export output = (code, srcPath, destPath, doLog=false) ->
-
-	barf destPath, code
-	if doLog
-		log "   => #{shortenPath(destPath)}"
-	return
-
-# ---------------------------------------------------------------------------
-
-export brewCieloFile = (srcPath) ->
+export brewCieloFile = (srcPath, destPath=undef, hOptions={}) ->
 	# --- cielo => coffee
+	#     Valid Options:
+	#        force
 
-	destPath = withExt(srcPath, '.coffee')
-	if ! newerDestFileExists(srcPath, destPath)
-		str = slurp(srcPath)
-		code = brewCieloStr(str)
-		output code, srcPath, destPath
+	if ! destPath?
+		destPath = withExt(srcPath, '.coffee')
+	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
+		cieloCode = slurp(srcPath)
+		coffeeCode = brewCieloStr(cieloCode)
+		barf destPath, coffeeCode
 	return

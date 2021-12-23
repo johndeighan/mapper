@@ -122,29 +122,22 @@ export var buildCieloBlock = function(hCielo) {
 };
 
 // ---------------------------------------------------------------------------
-export var brewCieloStr = function(str) {
+export var brewCieloStr = function(code) {
   var hCielo;
   // --- cielo => coffee
-  hCielo = brewCielo(str);
+  hCielo = brewCielo(code);
   return buildCieloBlock(hCielo);
 };
 
 // ---------------------------------------------------------------------------
-export var output = function(code, srcPath, destPath, doLog = false) {
-  barf(destPath, code);
-  if (doLog) {
-    log(`   => ${shortenPath(destPath)}`);
+export var brewCieloFile = function(srcPath, destPath = undef, hOptions = {}) {
+  var cieloCode, coffeeCode;
+  if (destPath == null) {
+    destPath = withExt(srcPath, '.coffee');
   }
-};
-
-// ---------------------------------------------------------------------------
-export var brewCieloFile = function(srcPath) {
-  var code, destPath, str;
-  // --- cielo => coffee
-  destPath = withExt(srcPath, '.coffee');
-  if (!newerDestFileExists(srcPath, destPath)) {
-    str = slurp(srcPath);
-    code = brewCieloStr(str);
-    output(code, srcPath, destPath);
+  if (hOptions.force || !newerDestFileExists(srcPath, destPath)) {
+    cieloCode = slurp(srcPath);
+    coffeeCode = brewCieloStr(cieloCode);
+    barf(destPath, coffeeCode);
   }
 };

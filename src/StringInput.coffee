@@ -69,19 +69,32 @@ export class StringFetcher
 
 		# --- patch {{FILE}} and {{LINE}}
 		dir = hSourceInfo.dir
-		@lBuffer = for line,i in @lBuffer
-			# patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
-			line = patch(line, '{{FILE}}', @filename)
-			line = patch(line, '{{LINE}}', i+1)
+		lPatchedBuffer = []
+		for line,i in @lBuffer
+			# --- patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
+			line = line.replace('{{FILE}}', @filename)
+			line = line.replace('{{LINE}}', i+1)
 			if dir
-				line = patch(line, '{{DIR}}', dir)
-		debug "in constructor: BUFFER", @lBuffer
+				line = line.replace('{{DIR}}', dir)
+			lPatchedBuffer.push(line)
+		@lBuffer = lPatchedBuffer
 
 		@lineNum = 0
 
 		# --- for handling #include
 		@altInput = undef
 		@altLevel = undef    # indentation added to lines from alt
+		@checkBuffer "StringFetcher constructor end"
+
+	# ..........................................................
+
+	checkBuffer: (where="unknown") ->
+
+		for str in @lBuffer
+			if str == undef
+				log "undef value in lBuffer in #{where}"
+				croak "A string in lBuffer is undef"
+		return
 
 	# ..........................................................
 
@@ -133,6 +146,7 @@ export class StringFetcher
 		#               just return it as is
 
 		debug "enter fetch(literal=#{literal}) from #{@filename}"
+		@checkBuffer "in fetch()"
 		if @altInput
 			assert @altLevel?, "fetch(): alt input without alt level"
 			line = @altInput.fetch(literal)
@@ -150,8 +164,13 @@ export class StringFetcher
 		# --- @lBuffer is not empty here
 		line = @lBuffer.shift()
 		if line == '__END__'
+			@lBuffer = []
 			return undef
 		@lineNum += 1
+
+		if line == undef
+			log "HERE IT IS: line is undef!!!"
+			process.exit(-42)
 
 		if ! literal && lMatches = line.match(///^
 				(\s*)
@@ -726,13 +745,6 @@ export checkTree = (lItems, predicate) ->
 		if predicate?
 			assert predicate(node), "checkTree(): node fails predicate"
 	return
-
-# ---------------------------------------------------------------------------
-
-patch = (str, substr, value) ->
-
-	# --- Replace substr with value throughout str
-	return str.replace(substr, value)
 
 # ---------------------------------------------------------------------------
 

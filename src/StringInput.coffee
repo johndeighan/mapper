@@ -68,8 +68,13 @@ export class StringFetcher
 					"CONTENT", content
 
 		# --- patch {{FILE}} and {{LINE}}
+		dir = hSourceInfo.dir
 		@lBuffer = for line,i in @lBuffer
-			patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
+			# patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
+			line = patch(line, '{{FILE}}', @filename)
+			line = patch(line, '{{LINE}}', i+1)
+			if dir
+				line = patch(line, '{{DIR}}', dir)
 		debug "in constructor: BUFFER", @lBuffer
 
 		@lineNum = 0

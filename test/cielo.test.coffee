@@ -4,10 +4,9 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {brewCielo} from '@jdeighan/string-input/cielo'
+import {brewCieloStr} from '@jdeighan/string-input/cielo'
 
 process.env.DIR_ROOT = mydir(`import.meta.url`)
-
 simple = new UnitTester('cielo.test')
 
 # ---------------------------------------------------------------------------
@@ -15,13 +14,22 @@ simple = new UnitTester('cielo.test')
 class CieloTester extends UnitTester
 
 	transformValue: (code) ->
-		hCielo = brewCielo(code)
-		return joinBlocks(hCielo.importStmts, hCielo.code[0])
+		return brewCieloStr(code)
 
-	normalize: (str) ->
+	normalize: (str) ->    # disable normalizing
 		return str
 
 tester = new CieloTester('cielo.test')
+
+# ---------------------------------------------------------------------------
+# --- Features to test:
+#        1. KEEP blank lines and comments
+#        2. #include <file>
+#        3. replace {{FILE}} and {{LINE}}
+#        4. handle continuation lines
+#        5. handle HEREDOC
+#        6. stop on __END__
+#        7. add auto-imports
 
 # ---------------------------------------------------------------------------
 # --- test keeping blank lines and comments
@@ -85,3 +93,4 @@ tester.equal 80, """
 		x = 23
 		logger x
 		"""
+

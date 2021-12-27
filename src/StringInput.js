@@ -86,7 +86,7 @@ hExtToEnvVar = {
 //                         handles #include
 export var StringFetcher = class StringFetcher {
   constructor(content, source = 'unit test') {
-    var filename, hSourceInfo, i, line;
+    var dir, filename, hSourceInfo, i, line;
     // --- Has keys: dir, filename, stub, ext
     //     If source is 'unit test', just returns:
     //     { filename: 'unit test', stub: 'unit test'}
@@ -113,13 +113,21 @@ export var StringFetcher = class StringFetcher {
       croak("StringFetcher(): content must be array or string", "CONTENT", content);
     }
     // --- patch {{FILE}} and {{LINE}}
+    dir = hSourceInfo.dir;
     this.lBuffer = (function() {
       var j, len1, ref, results;
       ref = this.lBuffer;
       results = [];
       for (i = j = 0, len1 = ref.length; j < len1; i = ++j) {
         line = ref[i];
-        results.push(patch(patch(line, '{{FILE}}', this.filename), '{{LINE}}', i + 1));
+        // patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
+        line = patch(line, '{{FILE}}', this.filename);
+        line = patch(line, '{{LINE}}', i + 1);
+        if (dir) {
+          results.push(line = patch(line, '{{DIR}}', dir));
+        } else {
+          results.push(void 0);
+        }
       }
       return results;
     }).call(this);

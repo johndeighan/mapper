@@ -1,6 +1,8 @@
 # cielo.coffee
 
-import {assert, say, isString, isArray, isHash} from '@jdeighan/coffee-utils'
+import {
+	assert, say, isString, isArray, isHash, undef,
+	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'

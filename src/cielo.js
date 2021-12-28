@@ -7,7 +7,8 @@ import {
   say,
   isString,
   isArray,
-  isHash
+  isHash,
+  undef
 } from '@jdeighan/coffee-utils';
 
 import {

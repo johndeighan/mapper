@@ -90,7 +90,7 @@ export brewCoffeeStr = (code) ->
 
 # ---------------------------------------------------------------------------
 
-brewCoffeeFile = (srcPath, destPath=undef, hOptions={}) ->
+export brewCoffeeFile = (srcPath, destPath=undef, hOptions={}) ->
 	# --- coffee => js
 	#     Valid Options:
 	#        saveAST

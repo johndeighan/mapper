@@ -25,8 +25,8 @@ class CieloMapper extends SmartInput
 		return ''
 
 	handleComment: (line, level) ->
-		# --- keep comments
-		return line
+		# --- keep comments, unless they start with '### '
+		return if line.match(/^\s*###\s/) then undef else line
 
 # ---------------------------------------------------------------------------
 # --- Features:

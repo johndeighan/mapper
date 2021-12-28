@@ -53,8 +53,12 @@ CieloMapper = class CieloMapper extends SmartInput {
   }
 
   handleComment(line, level) {
-    // --- keep comments
-    return line;
+    // --- keep comments, unless they start with '### '
+    if (line.match(/^\s*###\s/)) {
+      return undef;
+    } else {
+      return line;
+    }
   }
 
 };

@@ -60,6 +60,12 @@ y = x`, `# --- a comment
 y = x`);
 
 // ---------------------------------------------------------------------------
+// --- test removing cielo-specific comments
+tester.equal(29, `### --- a comment
+	### remove this
+y = x`, `y = x`);
+
+// ---------------------------------------------------------------------------
 // --- test include files
 tester.equal(42, `for x in [1,5]
 	#include include.txt`, `for x in [1,5]

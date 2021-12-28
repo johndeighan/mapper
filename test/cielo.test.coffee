@@ -45,6 +45,17 @@ tester.equal 29, """
 		"""
 
 # ---------------------------------------------------------------------------
+# --- test removing cielo-specific comments
+
+tester.equal 29, """
+		### --- a comment
+			### remove this
+		y = x
+		""", """
+		y = x
+		"""
+
+# ---------------------------------------------------------------------------
 # --- test include files
 
 tester.equal 42, """

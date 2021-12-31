@@ -25,6 +25,7 @@ export class Getter
 			debug "return from get() with lookahead token:", saved
 			return saved
 		if (@pos == @len)
+			debug "return undef from get() - pos == len", saved
 			return undef
 		item = @lItems[@pos]
 		@pos += 1
@@ -49,6 +50,7 @@ export class Getter
 			return @lookahead
 		item = @get()
 		if ! item?
+			debug "return undef from peek()"
 			return undef
 		@unget(item)
 		debug 'return from peek() with:', item

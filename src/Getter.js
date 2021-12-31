@@ -33,6 +33,7 @@ export var Getter = class Getter {
       return saved;
     }
     if (this.pos === this.len) {
+      debug("return undef from get() - pos == len", saved);
       return undef;
     }
     item = this.lItems[this.pos];
@@ -60,6 +61,7 @@ export var Getter = class Getter {
     }
     item = this.get();
     if (item == null) {
+      debug("return undef from peek()");
       return undef;
     }
     this.unget(item);

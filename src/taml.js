@@ -46,6 +46,7 @@ export var taml = function(text) {
     return undef;
   }
   assert(isTAML(text), `taml(): string ${oneline(text)} isn't TAML`);
+  debug("return from taml()");
   return yaml.load(untabify(text, 1));
 };
 

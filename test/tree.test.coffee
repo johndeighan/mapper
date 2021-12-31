@@ -17,7 +17,7 @@ class TreeTester extends UnitTester
 		debug "TREE", tree
 		stringifier = new TreeStringifier(tree)
 		str = stringifier.get()
-		debug "return #{oneline(str)} from tansformValue()"
+		debug "return #{oneline(str)} from transformValue()"
 		return str
 
 	normalize: (str) -> return str   # disable normalize()

@@ -28,6 +28,7 @@ export taml = (text) ->
 		debug "return undef from taml() - text is not defined"
 		return undef
 	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"
+	debug "return from taml()"
 	return yaml.load(untabify(text, 1))
 
 # ---------------------------------------------------------------------------

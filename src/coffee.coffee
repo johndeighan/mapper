@@ -71,7 +71,7 @@ export preBrewCoffee = (lBlocks...) ->
 				croak err, "Original Text", blk
 		else
 			lNewBlocks.push newblk
-
+	debug "return from preBrewCoffee()"
 	return [buildImportBlock(lNeededSymbols), lNewBlocks...]
 
 # ---------------------------------------------------------------------------

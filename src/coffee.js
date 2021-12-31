@@ -116,6 +116,7 @@ export var preBrewCoffee = function(...lBlocks) {
       lNewBlocks.push(newblk);
     }
   }
+  debug("return from preBrewCoffee()");
   return [buildImportBlock(lNeededSymbols), ...lNewBlocks];
 };
 

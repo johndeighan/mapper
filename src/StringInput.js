@@ -220,6 +220,7 @@ export var StringFetcher = class StringFetcher {
     line = this.lBuffer.shift();
     if (line === '__END__') {
       this.lBuffer = [];
+      debug("return from fetch() - __END__ seen");
       return undef;
     }
     this.lineNum += 1;

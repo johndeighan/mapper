@@ -165,6 +165,7 @@ export class StringFetcher
 		line = @lBuffer.shift()
 		if line == '__END__'
 			@lBuffer = []
+			debug "return from fetch() - __END__ seen"
 			return undef
 		@lineNum += 1
 

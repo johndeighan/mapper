@@ -41,13 +41,13 @@
 	},
 	"homepage": "https://github.com/johndeighan/string-input#readme",
 	"devDependencies": {
-		"ava": "^3.15.0",
+		"ava": "^4.0.0",
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^4.1.16",
+		"@jdeighan/coffee-utils": "^4.1.17",
 		"cross-env": "^7.0.3",
-		"marked": "^4.0.8",
-		"sass": "^1.45.2"
+		"marked": "^4.0.9",
+		"sass": "^1.46.0"
 	}
 }

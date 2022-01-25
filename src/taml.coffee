@@ -29,7 +29,7 @@ export taml = (text) ->
 		return undef
 	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"
 	debug "return from taml()"
-	return yaml.load(untabify(text, 1))
+	return yaml.load(untabify(text, 1), {skipInvalid: true})
 
 # ---------------------------------------------------------------------------
 #   slurpTAML - read TAML from a file

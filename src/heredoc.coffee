@@ -32,9 +32,12 @@ export class BaseHereDoc
 	isMyHereDoc: (block) ->
 		return true
 
+	mapToString: (block) ->
+		return block
+
 	# --- Return a string that JavaScript will interpret as a value
 	map: (block) ->
-		return '"' + qesc(block) + '"'
+		return '"' + qesc(@mapToString(block)) + '"'
 
 # ---------------------------------------------------------------------------
 
@@ -43,8 +46,8 @@ export class BlockHereDoc extends BaseHereDoc
 	isMyHereDoc: (block) ->
 		return firstLine(block) == '$$$'
 
-	map: (block) ->
-		return '"' + qesc(remainingLines(block)) + '"'
+	mapToString: (block) ->
+		return remainingLines(block)
 
 # ---------------------------------------------------------------------------
 
@@ -53,10 +56,10 @@ export class OneLineHereDoc extends BaseHereDoc
 	isMyHereDoc: (block) ->
 		return block.indexOf('...') == 0
 
-	map: (block) ->
+	mapToString: (block) ->
 		# --- replace all runs of whitespace with single space char
 		block = block.replace(/\s+/gs, ' ')
-		return '"' + qesc(block.substr(3)) + '"'
+		return block.substring(3).trim()
 
 # ---------------------------------------------------------------------------
 
@@ -121,6 +124,7 @@ qesc = (block) ->
 
 	hEsc = {
 		"\n": "\\n"
+		"\r": ""
 		"\t": "\\t"
 		"\"": "\\\""
 		}

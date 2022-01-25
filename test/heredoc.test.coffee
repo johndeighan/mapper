@@ -11,38 +11,61 @@ import {
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
+
+class HereDocTester extends UnitTester
+
+	transformValue: (block) ->
+		return mapHereDoc(block)
+
+	normalize: (str) ->    # disable normalizing
+		return str
+
+tester = new HereDocTester()
+
+# ---------------------------------------------------------------------------
 # Default heredoc type is a block
 
-simple.equal  16, mapHereDoc("""
+tester.equal  28, """
 		this is a
 		block of text
-		"""),
+		""",
 		'"this is a\\nblock of text"'
 
 # ---------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-simple.equal  25, mapHereDoc("""
+tester.equal  37, """
 		$$$
 		this is a
 		block of text
-		"""),
+		""",
 		'"this is a\\nblock of text"'
 
 # ---------------------------------------------------------------------------
 # TAML block
 
-simple.equal  35, mapHereDoc("""
+tester.equal  47, """
 		---
 		- abc
 		- def
-		"""),
+		""",
 		'["abc","def"]'
+
+# ---------------------------------------------------------------------------
+# TAML-like block, but actually a block
+
+tester.equal  57, """
+		$$$
+		---
+		- abc
+		- def
+		""",
+		'"---\\n- abc\\n- def"'
 
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-simple.equal  45, mapHereDoc("""
+tester.equal  68, """
 		---
 		-
 			label: Help
@@ -50,43 +73,53 @@ simple.equal  45, mapHereDoc("""
 		-
 			label: Books
 			url: /books
-		"""),
+		""",
 		'[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]'
 
 # ---------------------------------------------------------------------------
 # One Line block
 
-simple.equal  59, mapHereDoc("""
+tester.equal 82, """
 		...this is a
 		line of text
-		"""),
+		""",
+		'"this is a line of text"'
+
+# ---------------------------------------------------------------------------
+# One Line block
+
+tester.equal 91, """
+		...
+		this is a
+		line of text
+		""",
 		'"this is a line of text"'
 
 # ---------------------------------------------------------------------------
 # Function block, with no name or parameters
 
-simple.equal  68, mapHereDoc("""
+tester.equal  101, """
 		() ->
 			return true
-		"""),
+		""",
 		'() -> return true'
 
 # ---------------------------------------------------------------------------
 # Function block, with no name but with parameters
 
-simple.equal  77, mapHereDoc("""
+tester.equal  110, """
 		(x, y) ->
 			return true
-		"""),
+		""",
 		'(x, y) -> return true'
 
 # ---------------------------------------------------------------------------
 # Function block, with name end parameters
 
-simple.equal  86, mapHereDoc("""
+tester.equal  119, """
 		func = (x, y) ->
 			return true
-		"""),
+		""",
 		'func = (x, y) -> return true'
 
 # ---------------------------------------------------------------------------
@@ -106,8 +139,28 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType(new MatrixHereDoc())
 
-simple.equal  109, mapHereDoc("""
+tester.equal  142, """
 		1 2 3
 		2 4 6
-		"""),
+		""",
 		'[[1,2,3],[2,4,6]]'
+
+# ---------------------------------------------------------------------------
+# Test creating a new heredoc type by overriding mapToString
+
+class UCHereDoc extends BaseHereDoc
+
+	isMyHereDoc: (block) ->
+		return block.indexOf('^^^') == 0
+
+	mapToString: (block) ->
+		return block.substring(4).toUpperCase()
+
+addHereDocType(new UCHereDoc())
+
+tester.equal  161, """
+		^^^
+		This is a
+		block of text
+		""",
+		'"THIS IS A\\nBLOCK OF TEXT"'

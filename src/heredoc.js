@@ -46,9 +46,13 @@ export var BaseHereDoc = class BaseHereDoc {
     return true;
   }
 
+  mapToString(block) {
+    return block;
+  }
+
   // --- Return a string that JavaScript will interpret as a value
   map(block) {
-    return '"' + qesc(block) + '"';
+    return '"' + qesc(this.mapToString(block)) + '"';
   }
 
 };
@@ -59,8 +63,8 @@ export var BlockHereDoc = class BlockHereDoc extends BaseHereDoc {
     return firstLine(block) === '$$$';
   }
 
-  map(block) {
-    return '"' + qesc(remainingLines(block)) + '"';
+  mapToString(block) {
+    return remainingLines(block);
   }
 
 };
@@ -71,10 +75,10 @@ export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
     return block.indexOf('...') === 0;
   }
 
-  map(block) {
+  mapToString(block) {
     // --- replace all runs of whitespace with single space char
     block = block.replace(/\s+/gs, ' ');
-    return '"' + qesc(block.substr(3)) + '"';
+    return block.substring(3).trim();
   }
 
 };
@@ -127,6 +131,7 @@ qesc = function(block) {
   var hEsc;
   hEsc = {
     "\n": "\\n",
+    "\r": "",
     "\t": "\\t",
     "\"": "\\\""
   };

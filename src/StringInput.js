@@ -737,9 +737,9 @@ export var PLLParser = class PLLParser extends SmartInput {
 export var treeFromBlock = function(block, mapFunc) {
   var MyPLLParser, parser;
   MyPLLParser = class MyPLLParser extends PLLParser {
-    mapNode(line) {
-      assert(isString(line), "MyPLLParser.mapNode(): not a string");
-      return mapFunc(line);
+    mapNode(line, level) {
+      assert(isString(line), "StringInput.mapNode(): not a string");
+      return mapFunc(line, level);
     }
 
   };

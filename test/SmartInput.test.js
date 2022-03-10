@@ -44,7 +44,6 @@ import {
 } from '@jdeighan/string-input';
 
 import {
-  mapHereDoc,
   addHereDocType,
   BaseHereDoc
 } from '@jdeighan/string-input/heredoc';
@@ -210,7 +209,7 @@ tester.equal(224, `error message=<<<
 // ---------------------------------------------------------------------------
 // --- test forcing a literal block
 tester.equal(237, `TAML looks like: <<<
-	$$$
+	===
 	---
 	- abc
 	- def

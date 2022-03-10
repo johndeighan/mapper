@@ -3,7 +3,8 @@
 var HereDocTester, MatrixHereDoc, UCHereDoc, simple, tester;
 
 import {
-  UnitTester
+  UnitTester,
+  UnitTesterNoNorm
 } from '@jdeighan/unit-tester';
 
 import {
@@ -28,13 +29,9 @@ import {
 simple = new UnitTester();
 
 // ---------------------------------------------------------------------------
-HereDocTester = class HereDocTester extends UnitTester {
+HereDocTester = class HereDocTester extends UnitTesterNoNorm {
   transformValue(block) {
     return mapHereDoc(block);
-  }
-
-  normalize(str) { // disable normalizing
-    return str;
   }
 
 };
@@ -48,7 +45,7 @@ block of text`, '"this is a\\nblock of text"');
 
 // ---------------------------------------------------------------------------
 // Make explicit that the heredoc type is a block
-tester.equal(37, `$$$
+tester.equal(37, `===
 this is a
 block of text`, '"this is a\\nblock of text"');
 
@@ -60,7 +57,7 @@ tester.equal(47, `---
 
 // ---------------------------------------------------------------------------
 // TAML-like block, but actually a block
-tester.equal(57, `$$$
+tester.equal(57, `===
 ---
 - abc
 - def`, '"---\\n- abc\\n- def"');

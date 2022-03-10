@@ -1,6 +1,6 @@
 # heredoc.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {undef, extractMatches} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
@@ -12,13 +12,10 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class HereDocTester extends UnitTester
+class HereDocTester extends UnitTesterNoNorm
 
 	transformValue: (block) ->
 		return mapHereDoc(block)
-
-	normalize: (str) ->    # disable normalizing
-		return str
 
 tester = new HereDocTester()
 
@@ -35,7 +32,7 @@ tester.equal  28, """
 # Make explicit that the heredoc type is a block
 
 tester.equal  37, """
-		$$$
+		===
 		this is a
 		block of text
 		""",
@@ -55,7 +52,7 @@ tester.equal  47, """
 # TAML-like block, but actually a block
 
 tester.equal  57, """
-		$$$
+		===
 		---
 		- abc
 		- def

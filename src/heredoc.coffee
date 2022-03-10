@@ -7,21 +7,27 @@ import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 lAllHereDocs = []
+lAllHereDocNames = []
+export DEBUG = false
 
 # ---------------------------------------------------------------------------
 
 export mapHereDoc = (block) ->
 
-	for heredoc in lAllHereDocs
+	for heredoc,i in lAllHereDocs
 		if heredoc.isMyHereDoc(block)
+			if DEBUG
+				console.log "Found HEREDOC type #{lAllHereDocNames[i]}"
+				console.log block
 			return heredoc.map(block)
 	croak "No valid heredoc type found"
 
 # ---------------------------------------------------------------------------
 
-export addHereDocType = (obj) ->
+export addHereDocType = (obj, name='Unknown') ->
 
 	lAllHereDocs.unshift obj
+	lAllHereDocNames.unshift name
 	return
 
 # ---------------------------------------------------------------------------
@@ -32,10 +38,17 @@ export class BaseHereDoc
 	isMyHereDoc: (block) ->
 		return true
 
+	# --- If the returned string will represent a string, then
+	#     you can get away with just returning the represented string
+	#     here, which will be surrounded with quote marks and
+	#     have internal special characters escaped
+
 	mapToString: (block) ->
 		return block
 
-	# --- Return a string that JavaScript will interpret as a value
+	# --- map() MUST return a string
+	#     that string will replace '<<<' in your code
+
 	map: (block) ->
 		return '"' + qesc(@mapToString(block)) + '"'
 
@@ -44,7 +57,7 @@ export class BaseHereDoc
 export class BlockHereDoc extends BaseHereDoc
 
 	isMyHereDoc: (block) ->
-		return firstLine(block) == '$$$'
+		return firstLine(block) == '==='
 
 	mapToString: (block) ->
 		return remainingLines(block)
@@ -132,8 +145,9 @@ qesc = (block) ->
 
 # ---------------------------------------------------------------------------
 
-lAllHereDocs.push new BlockHereDoc()
-lAllHereDocs.push new TAMLHereDoc()
-lAllHereDocs.push new OneLineHereDoc()
-lAllHereDocs.push new FuncHereDoc()
-lAllHereDocs.push new BaseHereDoc()
+# --- last one is checked first
+addHereDocType new BaseHereDoc(),    'default block'
+addHereDocType new FuncHereDoc(),    'function'         #  (args) ->
+addHereDocType new OneLineHereDoc(), 'one line'         #  ...
+addHereDocType new TAMLHereDoc(),    'taml'             #  ---
+addHereDocType new BlockHereDoc(),   'explicit block'   #  ===

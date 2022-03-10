@@ -13,9 +13,7 @@ import {
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {SmartInput} from '@jdeighan/string-input'
-import {
-	mapHereDoc, addHereDocType, BaseHereDoc,
-	} from '@jdeighan/string-input/heredoc'
+import {addHereDocType, BaseHereDoc} from '@jdeighan/string-input/heredoc'
 
 dir = mydir(`import.meta.url`)
 process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
@@ -235,7 +233,7 @@ tester.equal 224, """
 
 tester.equal 237, """
 		TAML looks like: <<<
-			$$$
+			===
 			---
 			- abc
 			- def

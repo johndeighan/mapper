@@ -41,11 +41,11 @@
 	},
 	"homepage": "https://github.com/johndeighan/string-input#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^1.0.4",
+		"@jdeighan/unit-tester": "^1.0.5",
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^5.0.1",
+		"@jdeighan/coffee-utils": "^5.0.2",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.12",
 		"sass": "^1.49.9"

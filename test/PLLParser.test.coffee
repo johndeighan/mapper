@@ -2,12 +2,12 @@
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, error, warn, croak,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {PLLParser} from '@jdeighan/string-input'
 
 simple = new UnitTester()

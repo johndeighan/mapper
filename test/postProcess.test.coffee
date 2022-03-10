@@ -1,9 +1,9 @@
 # postProcess.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, isEmpty,
 	} from '@jdeighan/coffee-utils'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 import {postProcessCoffee} from '@jdeighan/string-input/coffee'
 

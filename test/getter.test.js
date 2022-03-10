@@ -5,6 +5,10 @@ var simple;
 import assert from 'assert';
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   error,
   warn,
@@ -15,10 +19,6 @@ import {
   isTAML,
   taml
 } from '@jdeighan/string-input/taml';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   Getter

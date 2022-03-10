@@ -2,11 +2,11 @@
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {Getter} from '@jdeighan/string-input/get'
 
 simple = new UnitTester()

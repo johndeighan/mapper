@@ -3,6 +3,10 @@
 var simple;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef
 } from '@jdeighan/coffee-utils';
 
@@ -10,10 +14,6 @@ import {
   log,
   tamlStringify
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   isTAML,

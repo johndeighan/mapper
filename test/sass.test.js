@@ -3,6 +3,10 @@
 var SassTester, root, simple, tester;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef
 } from '@jdeighan/coffee-utils';
 
@@ -14,10 +18,6 @@ import {
   debug,
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   sassify,

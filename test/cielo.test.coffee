@@ -1,7 +1,7 @@
 # cielo.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {brewCieloStr} from '@jdeighan/string-input/cielo'

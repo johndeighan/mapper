@@ -2,11 +2,11 @@
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, words, isArray} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	convertCoffee, buildImportList, getAvailSymbols, brewCoffeeStr,

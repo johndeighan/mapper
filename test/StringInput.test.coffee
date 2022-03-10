@@ -2,6 +2,7 @@
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isComment,
 	} from '@jdeighan/coffee-utils'
@@ -12,7 +13,6 @@ import {
 	debug, debugging, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {StringInput} from '@jdeighan/string-input'
 
 dir = mydir(`import.meta.url`)

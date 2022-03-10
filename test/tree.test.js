@@ -3,13 +3,13 @@
 var TreeTester, simple, tester;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   oneline
 } from '@jdeighan/coffee-utils';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   debug

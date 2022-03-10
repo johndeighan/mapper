@@ -5,6 +5,10 @@ var GatherTester, simple, tester;
 import assert from 'assert';
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   error,
   warn,
@@ -18,10 +22,6 @@ import {
 import {
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   PLLParser

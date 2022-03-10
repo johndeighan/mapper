@@ -3,6 +3,10 @@
 var HereDocTester, MatrixHereDoc, UCHereDoc, simple, tester;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   extractMatches
 } from '@jdeighan/coffee-utils';
@@ -14,10 +18,6 @@ import {
 import {
   log
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   mapHereDoc,

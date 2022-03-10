@@ -1,9 +1,9 @@
 # heredoc.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, extractMatches} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {
 	mapHereDoc, addHereDocType, BaseHereDoc,
 	} from '@jdeighan/string-input/heredoc'

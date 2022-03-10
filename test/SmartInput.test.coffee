@@ -2,6 +2,7 @@
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isArray, isString, CWS,
 	} from '@jdeighan/coffee-utils'
@@ -11,7 +12,6 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {SmartInput} from '@jdeighan/string-input'
 import {
 	mapHereDoc, addHereDocType, BaseHereDoc,

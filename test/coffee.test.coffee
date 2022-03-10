@@ -1,10 +1,10 @@
 # coffee.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	brewCoffeeStr, brewExpr, convertCoffee,

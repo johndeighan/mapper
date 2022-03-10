@@ -3,6 +3,10 @@
 var CoffeeTester, rootDir, simple, tester;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   isEmpty,
   nonEmpty
@@ -21,10 +25,6 @@ import {
   mydir,
   mkpath
 } from '@jdeighan/coffee-utils/fs';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   joinBlocks

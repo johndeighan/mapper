@@ -1,7 +1,7 @@
 # tree.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, oneline} from '@jdeighan/coffee-utils'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {taml} from '@jdeighan/string-input/taml'
 import {TreeWalker, TreeStringifier} from '@jdeighan/string-input/tree'

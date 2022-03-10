@@ -1,12 +1,12 @@
-# auto-import.test.coffee
+# walker.test.coffee
 
 import assert from 'assert'
 import CoffeeScript from 'coffeescript'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, words} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {ASTWalker} from '@jdeighan/string-input/tree'
 

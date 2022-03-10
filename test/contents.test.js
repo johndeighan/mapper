@@ -3,6 +3,10 @@
 var root, simple;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef
 } from '@jdeighan/coffee-utils';
 
@@ -10,10 +14,6 @@ import {
   mydir,
   mkpath
 } from '@jdeighan/coffee-utils/fs';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   getFileContents

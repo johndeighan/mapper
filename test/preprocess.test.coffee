@@ -1,10 +1,10 @@
 # preProcess.test.coffee
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, isEmpty,
 	} from '@jdeighan/coffee-utils'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {preProcessCoffee} from '@jdeighan/string-input/coffee'
 
 simple = new UnitTester()

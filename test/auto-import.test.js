@@ -5,6 +5,10 @@ var dumpfile, hSymbols, simple;
 import assert from 'assert';
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   words,
   isArray
@@ -23,10 +27,6 @@ import {
 import {
   log
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   joinBlocks

@@ -5,6 +5,10 @@ var CustomInput, SmartTester, UCHereDoc, dir, simple, tester;
 import assert from 'assert';
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef,
   pass,
   isEmpty,
@@ -34,10 +38,6 @@ import {
   mydir,
   mkpath
 } from '@jdeighan/coffee-utils/fs';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   SmartInput

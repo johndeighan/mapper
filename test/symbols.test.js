@@ -3,16 +3,16 @@
 var code, simple;
 
 import {
+  UnitTester
+} from '@jdeighan/unit-tester';
+
+import {
   undef
 } from '@jdeighan/coffee-utils';
 
 import {
   log
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  UnitTester
-} from '@jdeighan/coffee-utils/test';
 
 import {
   getNeededSymbols

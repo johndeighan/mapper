@@ -1,9 +1,9 @@
-# StarbucksPreMapper.test.coffee
+# CoffeePreMapper.test.coffee
 
 import assert from 'assert'
 
+import {UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
-import {UnitTester} from '@jdeighan/coffee-utils/test'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {StarbucksPreMapper} from '@jdeighan/string-input/coffee'
 import {convertCoffee} from '@jdeighan/string-input/coffee'

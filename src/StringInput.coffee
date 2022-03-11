@@ -21,7 +21,7 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {markdownify} from '@jdeighan/string-input/markdown'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
-import {mapHereDoc} from '@jdeighan/string-input/heredoc'
+import {lineToParts, mapHereDoc} from '@jdeighan/string-input/heredoc'
 
 # ---------------------------------------------------------------------------
 
@@ -528,38 +528,20 @@ export class SmartInput extends StringInput
 	# ..........................................................
 
 	handleHereDoc: (line, level) ->
-		# --- Indentation is removed from line
+		# --- Indentation has been removed from line
 		# --- Find each '<<<' and replace with result of mapHereDoc()
 
 		assert isString(line), "handleHereDoc(): not a string"
 		debug "enter handleHereDoc(#{OL(line)})"
-		lParts = []     # joined at the end
-		pos = 0
-		while ((start = line.indexOf('<<<', pos)) != -1)
-			part = line.substring(pos, start)
-			debug "PUSH #{OL(part)}"
-			lParts.push part
-			lLines = @getHereDocLines(level+1)
-			assert isArray(lLines), "handleHereDoc(): lLines not an array"
-			debug "HEREDOC lines: #{OL(lLines)}"
-			newstr = mapHereDoc(arrayToBlock(lLines))
-			assert isString(newstr), "handleHereDoc(): newstr not a string"
-			debug "PUSH #{OL(newstr)}"
-			lParts.push newstr
-			pos = start + 3
+		lParts = lineToParts(line)
+		lNewParts = for part in lParts
+			if part == '<<<'
+				lLines = @getHereDocLines(level+1)
+				mapHereDoc(arrayToBlock(lLines))
+			else
+				part    # keep as is
 
-		# --- If no '<<<' in string, just return original line
-		if (pos == 0)
-			debug "return from handleHereDoc - no <<< in line"
-			return line
-
-		assert line.indexOf('<<<', pos) == -1,
-			"handleHereDoc(): Not all HEREDOC markers were replaced" \
-				+ "in '#{line}'"
-		part = line.substring(pos, line.length)
-		debug "PUSH #{OL(part)}"
-		lParts.push part
-		result = lParts.join('')
+		result = lNewParts.join('')
 		debug "return from handleHereDoc", result
 		return result
 

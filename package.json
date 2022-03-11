@@ -15,6 +15,7 @@
 		"./heredoc": "./src/heredoc.js",
 		"./sass": "./src/sass.js",
 		"./markdown": "./src/markdown.js",
+		"./symbols": "./src/Symbols.js",
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
 		"./builtins": "./src/JavaScriptBuiltins.js",

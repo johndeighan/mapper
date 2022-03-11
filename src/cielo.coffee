@@ -9,11 +9,14 @@ import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	withExt, newerDestFileExists, slurp, barf, shortenPath,
+	mydir,
 	} from '@jdeighan/coffee-utils/fs'
 import {SmartInput} from '@jdeighan/string-input'
 import {
 	getNeededSymbols, buildImportList,
-	} from '@jdeighan/string-input/coffee'
+	} from '@jdeighan/string-input/symbols'
+
+rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
 
 # ---------------------------------------------------------------------------
 
@@ -65,7 +68,7 @@ export brewCielo = (lBlocks...) ->
 		debug 'lNeededSymbols', lNeededSymbols
 		debug 'COFFEE CODE', coffeeCode
 
-	importStmts = buildImportList(lAllNeededSymbols).join("\n")
+	importStmts = buildImportList(lAllNeededSymbols, rootDir).join("\n")
 	debug 'importStmts', importStmts
 
 	debug "return from brewCielo()"

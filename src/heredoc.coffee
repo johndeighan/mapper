@@ -1,14 +1,38 @@
 # heredoc.coffee
 
 import {
-	undef, pass, croak, escapeStr, CWS,
+	assert, isString, undef, pass, croak, escapeStr, CWS,
 	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 lAllHereDocs = []
 lAllHereDocNames = []
-export DEBUG = false
+DEBUG = false
+
+# ---------------------------------------------------------------------------
+
+export doDebug = (flag=true) ->
+
+	DEBUG = flag
+	return
+
+# ---------------------------------------------------------------------------
+
+export lineToParts = (line) ->
+	# --- Odd number of parts
+	#     Each even index part is '<<<'
+
+	lParts = []     # joined at the end
+	pos = 0
+	while ((start = line.indexOf('<<<', pos)) != -1)
+		if (start > pos)
+			lParts.push line.substring(pos, start)
+		lParts.push '<<<'
+		pos = start + 3
+	if (line.length > pos)
+		lParts.push line.substring(pos)
+	return lParts
 
 # ---------------------------------------------------------------------------
 
@@ -17,9 +41,15 @@ export mapHereDoc = (block) ->
 	for heredoc,i in lAllHereDocs
 		if heredoc.isMyHereDoc(block)
 			if DEBUG
-				console.log "Found HEREDOC type #{lAllHereDocNames[i]}"
+				console.log "--------------------------------------"
+				console.log "HEREDOC type '#{lAllHereDocNames[i]}'"
+				console.log "--------------------------------------"
 				console.log block
-			return heredoc.map(block)
+				console.log "--------------------------------------"
+			result = heredoc.map(block)
+			assert isString(result), "mapHereDoc(): result not a string"
+			return result
+
 	croak "No valid heredoc type found"
 
 # ---------------------------------------------------------------------------

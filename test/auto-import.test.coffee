@@ -9,10 +9,13 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	convertCoffee, buildImportList, getAvailSymbols, brewCoffeeStr,
+	convertCoffee, brewCoffeeStr,
 	} from '@jdeighan/string-input/coffee'
+import {
+	buildImportList, getAvailSymbols,
+	} from '@jdeighan/string-input/symbols'
 
-process.env.DIR_ROOT = mydir(`import.meta.url`)
+rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
 
 simple = new UnitTester()
 convertCoffee false
@@ -21,7 +24,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 # ----------------------------------------------------------------------------
 # --- make sure it's using the testing .symbols file
 
-hSymbols = getAvailSymbols()
+hSymbols = getAvailSymbols(rootDir)
 simple.equal 23, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
@@ -60,7 +63,7 @@ simple.equal 23, hSymbols, {
 
 (() ->
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 58, buildImportList(lNeeded), [
+	simple.equal 58, buildImportList(lNeeded, rootDir), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"

@@ -85,10 +85,3 @@ y = x + 5`);
 tester.equal(67, `x = 23
 y = x + 5`, `x = 23
 y = x + 5`);
-
-// ---------------------------------------------------------------------------
-// --- test auto-import of symbols from file '.symbols'
-tester.equal(80, `x = 23
-logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log'
-x = 23
-logger x`);

@@ -8,6 +8,7 @@ import {
 } from '@jdeighan/unit-tester';
 
 import {
+  assert,
   undef,
   extractMatches
 } from '@jdeighan/coffee-utils';
@@ -23,10 +24,25 @@ import {
 import {
   mapHereDoc,
   addHereDocType,
-  BaseHereDoc
+  BaseHereDoc,
+  lineToParts,
+  doDebug
 } from '@jdeighan/string-input/heredoc';
 
 simple = new UnitTester();
+
+// ---------------------------------------------------------------------------
+simple.equal(15, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
+
+simple.equal(22, lineToParts('<<< is <<< heredoc'), ['<<<', ' is ', '<<<', ' heredoc']);
+
+simple.equal(29, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<']);
+
+simple.equal(36, lineToParts('<<< is <<<'), ['<<<', ' is ', '<<<']);
+
+simple.equal(43, lineToParts('<<<'), ['<<<']);
+
+simple.equal(43, lineToParts('<<<<<<'), ['<<<', '<<<']);
 
 // ---------------------------------------------------------------------------
 HereDocTester = class HereDocTester extends UnitTesterNoNorm {
@@ -40,31 +56,31 @@ tester = new HereDocTester();
 
 // ---------------------------------------------------------------------------
 // Default heredoc type is a block
-tester.equal(28, `this is a
+tester.equal(61, `this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ---------------------------------------------------------------------------
 // Make explicit that the heredoc type is a block
-tester.equal(37, `===
+tester.equal(70, `===
 this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ---------------------------------------------------------------------------
 // TAML block
-tester.equal(47, `---
+tester.equal(80, `---
 - abc
 - def`, '["abc","def"]');
 
 // ---------------------------------------------------------------------------
 // TAML-like block, but actually a block
-tester.equal(57, `===
+tester.equal(90, `===
 ---
 - abc
 - def`, '"---\\n- abc\\n- def"');
 
 // ---------------------------------------------------------------------------
 // TAML block 2
-tester.equal(68, `---
+tester.equal(101, `---
 -
 	label: Help
 	url: /help
@@ -74,28 +90,28 @@ tester.equal(68, `---
 
 // ---------------------------------------------------------------------------
 // One Line block
-tester.equal(82, `...this is a
+tester.equal(115, `...this is a
 line of text`, '"this is a line of text"');
 
 // ---------------------------------------------------------------------------
 // One Line block
-tester.equal(91, `...
+tester.equal(124, `...
 this is a
 line of text`, '"this is a line of text"');
 
 // ---------------------------------------------------------------------------
 // Function block, with no name or parameters
-tester.equal(101, `() ->
+tester.equal(134, `() ->
 	return true`, '() -> return true');
 
 // ---------------------------------------------------------------------------
 // Function block, with no name but with parameters
-tester.equal(110, `(x, y) ->
+tester.equal(143, `(x, y) ->
 	return true`, '(x, y) -> return true');
 
 // ---------------------------------------------------------------------------
 // Function block, with name end parameters
-tester.equal(119, `func = (x, y) ->
+tester.equal(152, `func = (x, y) ->
 	return true`, 'func = (x, y) -> return true');
 
 // ---------------------------------------------------------------------------
@@ -119,9 +135,9 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
 
 };
 
-addHereDocType(new MatrixHereDoc());
+addHereDocType(new MatrixHereDoc(), 'matrix');
 
-tester.equal(142, `1 2 3
+tester.equal(175, `1 2 3
 2 4 6`, '[[1,2,3],[2,4,6]]');
 
 // ---------------------------------------------------------------------------
@@ -137,8 +153,8 @@ UCHereDoc = class UCHereDoc extends BaseHereDoc {
 
 };
 
-addHereDocType(new UCHereDoc());
+addHereDocType(new UCHereDoc(), 'upper case');
 
-tester.equal(161, `^^^
+tester.equal(194, `^^^
 This is a
 block of text`, '"THIS IS A\\nBLOCK OF TEXT"');

@@ -1,14 +1,48 @@
 # heredoc.test.coffee
 
 import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
-import {undef, extractMatches} from '@jdeighan/coffee-utils'
+import {assert, undef, extractMatches} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
-	mapHereDoc, addHereDocType, BaseHereDoc,
+	mapHereDoc, addHereDocType, BaseHereDoc, lineToParts, doDebug,
 	} from '@jdeighan/string-input/heredoc'
 
 simple = new UnitTester()
+
+# ---------------------------------------------------------------------------
+
+simple.equal 15, lineToParts('this <<< is <<< heredoc'), [
+	'this '
+	'<<<'
+	' is '
+	'<<<'
+	' heredoc'
+	]
+simple.equal 22, lineToParts('<<< is <<< heredoc'), [
+	'<<<'
+	' is '
+	'<<<'
+	' heredoc'
+	]
+simple.equal 29, lineToParts('this <<< is <<<'), [
+	'this '
+	'<<<'
+	' is '
+	'<<<'
+	]
+simple.equal 36, lineToParts('<<< is <<<'), [
+	'<<<'
+	' is '
+	'<<<'
+	]
+simple.equal 43, lineToParts('<<<'), [
+	'<<<'
+	]
+simple.equal 43, lineToParts('<<<<<<'), [
+	'<<<'
+	'<<<'
+	]
 
 # ---------------------------------------------------------------------------
 
@@ -22,7 +56,7 @@ tester = new HereDocTester()
 # ---------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal  28, """
+tester.equal  61, """
 		this is a
 		block of text
 		""",
@@ -31,7 +65,7 @@ tester.equal  28, """
 # ---------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal  37, """
+tester.equal  70, """
 		===
 		this is a
 		block of text
@@ -41,7 +75,7 @@ tester.equal  37, """
 # ---------------------------------------------------------------------------
 # TAML block
 
-tester.equal  47, """
+tester.equal  80, """
 		---
 		- abc
 		- def
@@ -51,7 +85,7 @@ tester.equal  47, """
 # ---------------------------------------------------------------------------
 # TAML-like block, but actually a block
 
-tester.equal  57, """
+tester.equal  90, """
 		===
 		---
 		- abc
@@ -62,7 +96,7 @@ tester.equal  57, """
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-tester.equal  68, """
+tester.equal  101, """
 		---
 		-
 			label: Help
@@ -76,7 +110,7 @@ tester.equal  68, """
 # ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 82, """
+tester.equal 115, """
 		...this is a
 		line of text
 		""",
@@ -85,7 +119,7 @@ tester.equal 82, """
 # ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 91, """
+tester.equal 124, """
 		...
 		this is a
 		line of text
@@ -95,7 +129,7 @@ tester.equal 91, """
 # ---------------------------------------------------------------------------
 # Function block, with no name or parameters
 
-tester.equal  101, """
+tester.equal  134, """
 		() ->
 			return true
 		""",
@@ -104,7 +138,7 @@ tester.equal  101, """
 # ---------------------------------------------------------------------------
 # Function block, with no name but with parameters
 
-tester.equal  110, """
+tester.equal  143, """
 		(x, y) ->
 			return true
 		""",
@@ -113,7 +147,7 @@ tester.equal  110, """
 # ---------------------------------------------------------------------------
 # Function block, with name end parameters
 
-tester.equal  119, """
+tester.equal  152, """
 		func = (x, y) ->
 			return true
 		""",
@@ -134,9 +168,9 @@ class MatrixHereDoc extends BaseHereDoc
 			lArray.push extractMatches(line, /\d+/g, parseInt)
 		return JSON.stringify(lArray)
 
-addHereDocType(new MatrixHereDoc())
+addHereDocType new MatrixHereDoc(), 'matrix'
 
-tester.equal  142, """
+tester.equal  175, """
 		1 2 3
 		2 4 6
 		""",
@@ -153,9 +187,9 @@ class UCHereDoc extends BaseHereDoc
 	mapToString: (block) ->
 		return block.substring(4).toUpperCase()
 
-addHereDocType(new UCHereDoc())
+addHereDocType new UCHereDoc(), 'upper case'
 
-tester.equal  161, """
+tester.equal  194, """
 		^^^
 		This is a
 		block of text

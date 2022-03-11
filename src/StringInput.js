@@ -69,6 +69,7 @@ import {
 } from '@jdeighan/string-input/taml';
 
 import {
+  lineToParts,
   mapHereDoc
 } from '@jdeighan/string-input/heredoc';
 
@@ -581,36 +582,27 @@ export var SmartInput = class SmartInput extends StringInput {
 
   // ..........................................................
   handleHereDoc(line, level) {
-    var lLines, lParts, newstr, part, pos, result, start;
-    // --- Indentation is removed from line
+    var lLines, lNewParts, lParts, part, result;
+    // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
     assert(isString(line), "handleHereDoc(): not a string");
     debug(`enter handleHereDoc(${OL(line)})`);
-    lParts = []; // joined at the end
-    pos = 0;
-    while ((start = line.indexOf('<<<', pos)) !== -1) {
-      part = line.substring(pos, start);
-      debug(`PUSH ${OL(part)}`);
-      lParts.push(part);
-      lLines = this.getHereDocLines(level + 1);
-      assert(isArray(lLines), "handleHereDoc(): lLines not an array");
-      debug(`HEREDOC lines: ${OL(lLines)}`);
-      newstr = mapHereDoc(arrayToBlock(lLines));
-      assert(isString(newstr), "handleHereDoc(): newstr not a string");
-      debug(`PUSH ${OL(newstr)}`);
-      lParts.push(newstr);
-      pos = start + 3;
-    }
-    // --- If no '<<<' in string, just return original line
-    if (pos === 0) {
-      debug("return from handleHereDoc - no <<< in line");
-      return line;
-    }
-    assert(line.indexOf('<<<', pos) === -1, "handleHereDoc(): Not all HEREDOC markers were replaced" + `in '${line}'`);
-    part = line.substring(pos, line.length);
-    debug(`PUSH ${OL(part)}`);
-    lParts.push(part);
-    result = lParts.join('');
+    lParts = lineToParts(line);
+    lNewParts = (function() {
+      var j, len1, results;
+      results = [];
+      for (j = 0, len1 = lParts.length; j < len1; j++) {
+        part = lParts[j];
+        if (part === '<<<') {
+          lLines = this.getHereDocLines(level + 1);
+          results.push(mapHereDoc(arrayToBlock(lLines)));
+        } else {
+          results.push(part); // keep as is
+        }
+      }
+      return results;
+    }).call(this);
+    result = lNewParts.join('');
     debug("return from handleHereDoc", result);
     return result;
   }

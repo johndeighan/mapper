@@ -7,6 +7,8 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {
 	mapHereDoc, addHereDocType, BaseHereDoc, lineToParts, doDebug,
 	} from '@jdeighan/string-input/heredoc'
+import {undented} from '@jdeighan/coffee-utils/indent'
+import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
 simple = new UnitTester()
 
@@ -140,7 +142,7 @@ tester.equal 132, """
 # ---------------------------------------------------------------------------
 # Function block, with no name but with parameters
 
-tester.equal 141, """
+tester.equal 143, """
 		(x, y) ->
 			return true
 		""", """
@@ -165,7 +167,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType new MatrixHereDoc(), 'matrix'
 
-tester.equal 173, """
+tester.equal 168, """
 		1 2 3
 		2 4 6
 		""",
@@ -184,9 +186,57 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType new UCHereDoc(), 'upper case'
 
-tester.equal 192, """
+tester.equal 187, """
 		^^^
 		This is a
 		block of text
 		""",
 		'"THIS IS A\\nBLOCK OF TEXT"'
+
+# ---------------------------------------------------------------------------
+
+class HereDocReplacer extends UnitTesterNoNorm
+
+	transformValue: (block) ->
+		lNewParts = for part in lineToParts(firstLine(block))
+			if part == '<<<'
+				mapHereDoc(undented(remainingLines(block)))
+			else
+				part    # keep as is
+
+		result = lNewParts.join('')
+		return result
+
+
+replacer = new HereDocReplacer()
+
+
+# ---------------------------------------------------------------------------
+
+replacer.equal 218, """
+		TopMenu lItems={<<<}
+			---
+			-
+				label: Help
+				url: /help
+			-
+				label: Books
+				url: /books
+		""", """
+		TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}
+		"""
+
+# ---------------------------------------------------------------------------
+
+replacer.equal 233, """
+		<TopMenu lItems={<<<}>
+			---
+			-
+				label: Help
+				url: /help
+			-
+				label: Books
+				url: /books
+		""", """
+		<TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}>
+		"""

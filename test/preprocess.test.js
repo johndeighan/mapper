@@ -47,7 +47,7 @@ tester = new PreprocessTester();
 			<block>
 */
 // ---------------------------------------------------------------------------
-tester.equal(39, `
+tester.equal(35, `
 # comment
 count
 		= 0
@@ -56,7 +56,7 @@ meaning = 42`, `count = 0
 meaning = 42`);
 
 // ---------------------------------------------------------------------------
-tester.equal(53, `
+tester.equal(49, `
 # comment
 hData = <<<
 	---
@@ -67,19 +67,21 @@ hData = <<<
 `, `hData = {"a":1,"b":["abc","def"]}`);
 
 // ---------------------------------------------------------------------------
-tester.equal(31, `count = 0
+tester.equal(65, `count = 0
 doubled <== 2 * count`, `count = 0
-\`$:\`
-doubled = 2 * count`);
+\`$:{\`
+doubled = 2 * count
+\`}\``);
 
 // ---------------------------------------------------------------------------
-tester.equal(46, `count = 0
+tester.equal(77, `count = 0
 doubled <== 2 * count`, `count = 0
-\`$:\`
-doubled = 2 * count`);
+\`$:{\`
+doubled = 2 * count
+\`}\``);
 
 // ---------------------------------------------------------------------------
-tester.equal(57, `count = 0
+tester.equal(89, `count = 0
 <==
 	console.log 2 * count`, `count = 0
 \`$:{\`
@@ -87,4 +89,4 @@ console.log 2 * count
 \`}\``);
 
 // ---------------------------------------------------------------------------
-tester.equal(71, `log "count is 0"`, `log "count is 0"`);
+tester.equal(102, `log "count is 0"`, `log "count is 0"`);

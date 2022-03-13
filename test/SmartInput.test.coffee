@@ -49,7 +49,7 @@ tester = new SmartTester()
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 55, """
+tester.equal 52, """
 		abc
 
 		# --- a comment
@@ -74,7 +74,7 @@ class CustomInput extends SmartInput
 		debug "in new handleComment()"
 		return "line #{@lineNum} is a comment"
 
-tester.equal 80, new CustomInput("""
+tester.equal 77, new CustomInput("""
 		abc
 
 		# --- a comment
@@ -89,7 +89,7 @@ tester.equal 80, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 95, """
+tester.equal 92, """
 		h1 color=blue
 				This is
 				a title
@@ -104,7 +104,7 @@ tester.equal 95, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 110, """
+tester.equal 107, """
 		h1 color=blue \\
 				This is \\
 				a title
@@ -119,7 +119,7 @@ tester.equal 110, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 125, """
+tester.equal 122, """
 		h1 color=blue \\
 			This is \\
 			a title
@@ -136,7 +136,7 @@ tester.equal 125, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 142, """
+tester.equal 139, """
 		h1 color=<<<
 			magenta
 
@@ -150,7 +150,7 @@ tester.equal 142, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 156, """
+tester.equal 153, """
 		h1 color=<<<
 				This is a title
 			magenta
@@ -165,7 +165,7 @@ tester.equal 156, """
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 171, """
+tester.equal 168, """
 		h1 color=<<<
 			...color
 			.
@@ -183,7 +183,7 @@ tester.equal 171, """
 # ---------------------------------------------------------------------------
 # --- test empty HEREDOC section
 
-tester.equal 189, """
+tester.equal 186, """
 		h1 name=<<<
 
 		# --- a comment
@@ -196,7 +196,7 @@ tester.equal 189, """
 # ---------------------------------------------------------------------------
 # --- test ending HEREDOC with EOF instead of a blank line
 
-tester.equal 202, """
+tester.equal 199, """
 		h1 name=<<<
 		""", """
 		h1 name=""
@@ -205,7 +205,7 @@ tester.equal 202, """
 # ---------------------------------------------------------------------------
 # --- test TAML
 
-tester.equal 211, """
+tester.equal 208, """
 		h1 lItems=<<<
 			---
 			- abc
@@ -218,7 +218,7 @@ tester.equal 211, """
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 224, """
+tester.equal 221, """
 		error message=<<<
 			...an error
 			occurred in
@@ -231,7 +231,7 @@ tester.equal 224, """
 # ---------------------------------------------------------------------------
 # --- test forcing a literal block
 
-tester.equal 237, """
+tester.equal 234, """
 		TAML looks like: <<<
 			===
 			---
@@ -245,31 +245,35 @@ tester.equal 237, """
 # ---------------------------------------------------------------------------
 # --- test anonymous functions
 
-tester.equal 251, """
+tester.equal 248, """
 		input on:click={<<<}
 			(event) ->
 				console.log('click')
 
 		""", """
-		input on:click={(event) -> console.log('click')}
+		input on:click={(event) ->
+			console.log('click')}
 		"""
 
 # ---------------------------------------------------------------------------
-# --- test named functions
+# --- test anonymous functions, again
 
-tester.equal 263, """
+tester.equal 260, """
 		input on:click={<<<}
-			clickHandler = (event) ->
+			(event) ->
+				callme(x)
 				console.log('click')
 
 		""", """
-		input on:click={clickHandler = (event) -> console.log('click')}
+		input on:click={(event) ->
+			callme(x)
+			console.log('click')}
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test ordinary block
 
-tester.equal 275, """
+tester.equal 272, """
 		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
@@ -293,7 +297,7 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType(new UCHereDoc())
 
-tester.equal 299, """
+tester.equal 296, """
 		str = <<<
 			***
 			select ID,Name

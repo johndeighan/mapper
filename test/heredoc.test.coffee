@@ -25,21 +25,21 @@ simple.equal 22, lineToParts('<<< is <<< heredoc'), [
 	'<<<'
 	' heredoc'
 	]
-simple.equal 29, lineToParts('this <<< is <<<'), [
+simple.equal 28, lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
 	'<<<'
 	]
-simple.equal 36, lineToParts('<<< is <<<'), [
+simple.equal 34, lineToParts('<<< is <<<'), [
 	'<<<'
 	' is '
 	'<<<'
 	]
-simple.equal 43, lineToParts('<<<'), [
+simple.equal 39, lineToParts('<<<'), [
 	'<<<'
 	]
-simple.equal 43, lineToParts('<<<<<<'), [
+simple.equal 42, lineToParts('<<<<<<'), [
 	'<<<'
 	'<<<'
 	]
@@ -56,7 +56,7 @@ tester = new HereDocTester()
 # ---------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal  61, """
+tester.equal 59, """
 		this is a
 		block of text
 		""",
@@ -65,7 +65,7 @@ tester.equal  61, """
 # ---------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal  70, """
+tester.equal 68, """
 		===
 		this is a
 		block of text
@@ -75,7 +75,7 @@ tester.equal  70, """
 # ---------------------------------------------------------------------------
 # TAML block
 
-tester.equal  80, """
+tester.equal 78, """
 		---
 		- abc
 		- def
@@ -85,7 +85,7 @@ tester.equal  80, """
 # ---------------------------------------------------------------------------
 # TAML-like block, but actually a block
 
-tester.equal  90, """
+tester.equal 88, """
 		===
 		---
 		- abc
@@ -96,7 +96,7 @@ tester.equal  90, """
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-tester.equal  101, """
+tester.equal 99, """
 		---
 		-
 			label: Help
@@ -110,7 +110,7 @@ tester.equal  101, """
 # ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 115, """
+tester.equal 113, """
 		...this is a
 		line of text
 		""",
@@ -119,7 +119,7 @@ tester.equal 115, """
 # ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 124, """
+tester.equal 122, """
 		...
 		this is a
 		line of text
@@ -129,29 +129,24 @@ tester.equal 124, """
 # ---------------------------------------------------------------------------
 # Function block, with no name or parameters
 
-tester.equal  134, """
+tester.equal 132, """
 		() ->
 			return true
-		""",
-		'() -> return true'
+		""", """
+		() ->
+			return true
+		"""
 
 # ---------------------------------------------------------------------------
 # Function block, with no name but with parameters
 
-tester.equal  143, """
+tester.equal 141, """
 		(x, y) ->
 			return true
-		""",
-		'(x, y) -> return true'
-
-# ---------------------------------------------------------------------------
-# Function block, with name end parameters
-
-tester.equal  152, """
-		func = (x, y) ->
+		""", """
+		(x, y) ->
 			return true
-		""",
-		'func = (x, y) -> return true'
+		"""
 
 # ---------------------------------------------------------------------------
 # Test creating a new heredoc type
@@ -170,7 +165,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType new MatrixHereDoc(), 'matrix'
 
-tester.equal  175, """
+tester.equal 173, """
 		1 2 3
 		2 4 6
 		""",
@@ -189,7 +184,7 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType new UCHereDoc(), 'upper case'
 
-tester.equal  194, """
+tester.equal 192, """
 		^^^
 		This is a
 		block of text

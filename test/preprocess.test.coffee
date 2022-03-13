@@ -32,7 +32,7 @@ tester = new PreprocessTester()
 ###
 # ---------------------------------------------------------------------------
 
-tester.equal 39, """
+tester.equal 35, """
 
 		# comment
 		count
@@ -46,7 +46,7 @@ tester.equal 39, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 53, """
+tester.equal 49, """
 
 		# comment
 		hData = <<<
@@ -62,29 +62,31 @@ tester.equal 53, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 31, """
+tester.equal 65, """
 		count = 0
 		doubled <== 2 * count
 		""", """
 		count = 0
-		`$:`
+		`$:{`
 		doubled = 2 * count
+		`}`
 		"""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 46, """
+tester.equal 77, """
 		count = 0
 		doubled <== 2 * count
 		""", """
 		count = 0
-		`$:`
+		`$:{`
 		doubled = 2 * count
+		`}`
 		"""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 57, """
+tester.equal 89, """
 		count = 0
 		<==
 			console.log 2 * count
@@ -97,7 +99,7 @@ tester.equal 57, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 71, """
+tester.equal 102, """
 		log "count is 0"
 		""", """
 		log "count is 0"

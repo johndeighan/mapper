@@ -85,7 +85,7 @@ tester = new SmartTester();
 
 // ---------------------------------------------------------------------------
 // --- test removing comments and empty lines
-tester.equal(55, `abc
+tester.equal(52, `abc
 
 # --- a comment
 def`, `abc
@@ -106,7 +106,7 @@ CustomInput = class CustomInput extends SmartInput {
 
 };
 
-tester.equal(80, new CustomInput(`abc
+tester.equal(77, new CustomInput(`abc
 
 # --- a comment
 def`), `abc
@@ -116,7 +116,7 @@ def`);
 
 // ---------------------------------------------------------------------------
 // --- test continuation lines
-tester.equal(95, `h1 color=blue
+tester.equal(92, `h1 color=blue
 		This is
 		a title
 
@@ -126,7 +126,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test trailing backslash
-tester.equal(110, `h1 color=blue \\
+tester.equal(107, `h1 color=blue \\
 		This is \\
 		a title
 
@@ -136,7 +136,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test trailing backslash
-tester.equal(125, `h1 color=blue \\
+tester.equal(122, `h1 color=blue \\
 	This is \\
 	a title
 
@@ -148,7 +148,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC
-tester.equal(142, `h1 color=<<<
+tester.equal(139, `h1 color=<<<
 	magenta
 
 # --- a comment
@@ -157,7 +157,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test HEREDOC with continuation lines
-tester.equal(156, `h1 color=<<<
+tester.equal(153, `h1 color=<<<
 		This is a title
 	magenta
 
@@ -167,7 +167,7 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test using '.' in a HEREDOC
-tester.equal(171, `h1 color=<<<
+tester.equal(168, `h1 color=<<<
 	...color
 	.
 	magenta
@@ -180,7 +180,7 @@ p the end`);
 //    Test various types of HEREDOC sections
 // ---------------------------------------------------------------------------
 // --- test empty HEREDOC section
-tester.equal(189, `h1 name=<<<
+tester.equal(186, `h1 name=<<<
 
 # --- a comment
 p the end`, `h1 name=""
@@ -188,11 +188,11 @@ p the end`);
 
 // ---------------------------------------------------------------------------
 // --- test ending HEREDOC with EOF instead of a blank line
-tester.equal(202, `h1 name=<<<`, `h1 name=""`);
+tester.equal(199, `h1 name=<<<`, `h1 name=""`);
 
 // ---------------------------------------------------------------------------
 // --- test TAML
-tester.equal(211, `h1 lItems=<<<
+tester.equal(208, `h1 lItems=<<<
 	---
 	- abc
 	- def
@@ -200,7 +200,7 @@ tester.equal(211, `h1 lItems=<<<
 
 // ---------------------------------------------------------------------------
 // --- test one liner
-tester.equal(224, `error message=<<<
+tester.equal(221, `error message=<<<
 	...an error
 	occurred in
 	your program
@@ -208,7 +208,7 @@ tester.equal(224, `error message=<<<
 
 // ---------------------------------------------------------------------------
 // --- test forcing a literal block
-tester.equal(237, `TAML looks like: <<<
+tester.equal(234, `TAML looks like: <<<
 	===
 	---
 	- abc
@@ -217,21 +217,25 @@ tester.equal(237, `TAML looks like: <<<
 
 // ---------------------------------------------------------------------------
 // --- test anonymous functions
-tester.equal(251, `input on:click={<<<}
+tester.equal(248, `input on:click={<<<}
 	(event) ->
 		console.log('click')
-`, `input on:click={(event) -> console.log('click')}`);
+`, `input on:click={(event) ->
+	console.log('click')}`);
 
 // ---------------------------------------------------------------------------
-// --- test named functions
-tester.equal(263, `input on:click={<<<}
-	clickHandler = (event) ->
+// --- test anonymous functions, again
+tester.equal(260, `input on:click={<<<}
+	(event) ->
+		callme(x)
 		console.log('click')
-`, `input on:click={clickHandler = (event) -> console.log('click')}`);
+`, `input on:click={(event) ->
+	callme(x)
+	console.log('click')}`);
 
 // ---------------------------------------------------------------------------
 // --- test ordinary block
-tester.equal(275, `lRecords = db.fetch(<<<)
+tester.equal(272, `lRecords = db.fetch(<<<)
 	select ID,Name
 	from Users
 
@@ -252,7 +256,7 @@ UCHereDoc = class UCHereDoc extends BaseHereDoc {
 
 addHereDocType(new UCHereDoc());
 
-tester.equal(299, `str = <<<
+tester.equal(296, `str = <<<
 	***
 	select ID,Name
 	from Users

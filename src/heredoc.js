@@ -5,6 +5,8 @@ var DEBUG, lAllHereDocNames, lAllHereDocs, qesc;
 import {
   assert,
   isString,
+  isEmpty,
+  nonEmpty,
   undef,
   pass,
   croak,
@@ -14,8 +16,13 @@ import {
 
 import {
   firstLine,
-  remainingLines
+  remainingLines,
+  joinBlocks
 } from '@jdeighan/coffee-utils/block';
+
+import {
+  indented
+} from '@jdeighan/coffee-utils/indent';
 
 import {
   isTAML,
@@ -143,8 +150,7 @@ export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
 
 // ---------------------------------------------------------------------------
 export var isFunctionHeader = function(str) {
-  return str.match(/^(?:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*)?\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*$/); // optional function name
-// optional parameters
+  return str.match(/^\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\)\s*->\s*(.*)$/); // optional parameters
 };
 
 export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
@@ -153,19 +159,28 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
   }
 
   map(block, lMatches = undef) {
-    var _, funcName, strParms;
+    var _, rest, strParms;
     if (!lMatches) {
       lMatches = this.isMyHereDoc(block);
     }
-    block = remainingLines(block);
-    [_, funcName, strParms] = lMatches;
+    [_, strParms, rest] = lMatches;
     if (!strParms) {
       strParms = '';
     }
-    if (funcName) {
-      return CWS(`${funcName} = (${strParms}) -> ${block}`);
+    block = remainingLines(block);
+    if (isEmpty(block)) {
+      if (isEmpty(rest)) {
+        return '';
+      } else {
+        return `(${strParms}) -> ${rest.trim()}`;
+      }
     } else {
-      return CWS(`(${strParms}) -> ${block}`);
+      if (isEmpty(rest)) {
+        return `(${strParms}) ->\n${block}`;
+      } else {
+        block = `${indented(rest, 1)}\n${block}`;
+        return `(${strParms}) ->\n${block}`;
+      }
     }
   }
 

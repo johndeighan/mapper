@@ -127,18 +127,9 @@ export preBrewCoffee = (lBlocks...) ->
 		<varname> <== <expr>
 
 	to:
-		`$:`
+		`$:{`
 		<varname> = <expr>
-
-	then to to:
-		var <varname>;
-		$:;
-		<varname> = <js expr>;
-
-	then to:
-		var <varname>;
-		$:
-		<varname> = <js expr>;
+		`}`
 
 - converts
 		<==
@@ -149,21 +140,11 @@ export preBrewCoffee = (lBlocks...) ->
 		<code>
 		`}`
 
-	then to:
-		$:{;
-		<js code>
-		};
-
-	then to:
-		$:{
-		<js code>
-		}
-
 ###
 
 # ===========================================================================
 
-export class StarbucksPreMapper extends SmartInput
+export class CieloMapper extends SmartInput
 
 	mapString: (line, level) ->
 
@@ -194,9 +175,13 @@ export class StarbucksPreMapper extends SmartInput
 					"mapString(): indented code not allowed after '#{line}'"
 			assert ! isEmpty(expr),
 					"mapString(): empty expression in '#{line}'"
+
+			# --- Alternatively, we could prepend "<varname> = undefined"
+			#     to this???
 			result = """
-					`$:`
-					#{varname} = #{expr}
+					`$:{`
+					#{line.replace('<==', '=')}
+					`}`
 					"""
 		else
 			debug "return from mapString() - no match"
@@ -213,7 +198,7 @@ export preProcessCoffee = (code) ->
 
 	assert (indentLevel(code)==0), "preProcessCoffee(): has indentation"
 
-	oInput = new StarbucksPreMapper(code)
+	oInput = new CieloMapper(code)
 	newcode = oInput.getAllText()
 	debug 'newcode', newcode
 	return newcode

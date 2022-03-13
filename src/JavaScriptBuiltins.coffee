@@ -6,6 +6,7 @@ hJSBuiltins = {
 	parseInt: true
 	process: true
 	JSON: true
+	import: true
 	}
 
 # ---------------------------------------------------------------------------

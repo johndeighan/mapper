@@ -165,18 +165,9 @@ export var preBrewCoffee = function(...lBlocks) {
 		<varname> <== <expr>
 
 	to:
-		`$:`
+		`$:{`
 		<varname> = <expr>
-
-	then to to:
-		var <varname>;
-		$:;
-		<varname> = <js expr>;
-
-	then to:
-		var <varname>;
-		$:
-		<varname> = <js expr>;
+		`}`
 
 - converts
 		<==
@@ -187,19 +178,9 @@ export var preBrewCoffee = function(...lBlocks) {
 		<code>
 		`}`
 
-	then to:
-		$:{;
-		<js code>
-		};
-
-	then to:
-		$:{
-		<js code>
-		}
-
 */
 // ===========================================================================
-export var StarbucksPreMapper = class StarbucksPreMapper extends SmartInput {
+export var CieloMapper = class CieloMapper extends SmartInput {
   mapString(line, level) {
     var _, code, expr, lMatches, result, varname;
     debug(`enter mapString(${OL(line)})`);
@@ -219,8 +200,11 @@ ${code}
       code = this.fetchBlock(level + 1); // must be empty
       assert(isEmpty(code), `mapString(): indented code not allowed after '${line}'`);
       assert(!isEmpty(expr), `mapString(): empty expression in '${line}'`);
-      result = `\`$:\`
-${varname} = ${expr}`;
+      // --- Alternatively, we could prepend "<varname> = undefined"
+      //     to this???
+      result = `\`$:{\`
+${line.replace('<==', '=')}
+\`}\``;
     } else {
       debug("return from mapString() - no match");
       return line;
@@ -237,7 +221,7 @@ export var preProcessCoffee = function(code) {
   // --- Removes blank lines and comments
   //     inteprets <== as svelte reactive statement or block
   assert(indentLevel(code) === 0, "preProcessCoffee(): has indentation");
-  oInput = new StarbucksPreMapper(code);
+  oInput = new CieloMapper(code);
   newcode = oInput.getAllText();
   debug('newcode', newcode);
   return newcode;

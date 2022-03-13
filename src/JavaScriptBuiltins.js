@@ -7,7 +7,8 @@ var hJSBuiltins;
 hJSBuiltins = {
   parseInt: true,
   process: true,
-  JSON: true
+  JSON: true,
+  import: true
 };
 
 // ---------------------------------------------------------------------------

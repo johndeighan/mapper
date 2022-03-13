@@ -1,9 +1,12 @@
 # heredoc.coffee
 
 import {
-	assert, isString, undef, pass, croak, escapeStr, CWS,
+	assert, isString, isEmpty, nonEmpty, undef, pass, croak, escapeStr, CWS,
 	} from '@jdeighan/coffee-utils'
-import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
+import {
+	firstLine, remainingLines, joinBlocks,
+	} from '@jdeighan/coffee-utils/block'
+import {indented} from '@jdeighan/coffee-utils/indent'
 import {isTAML, taml} from '@jdeighan/string-input/taml'
 
 lAllHereDocs = []
@@ -119,12 +122,6 @@ export class TAMLHereDoc extends BaseHereDoc
 export isFunctionHeader = (str) ->
 
 	return str.match(///^
-			(?:
-				([A-Za-z_][A-Za-z0-9_]*)  # optional function name
-				\s*
-				=
-				\s*
-				)?
 			\(
 			\s*
 			(                            # optional parameters
@@ -139,6 +136,7 @@ export isFunctionHeader = (str) ->
 			\s*
 			->
 			\s*
+			(.*)
 			$///)
 
 export class FuncHereDoc extends BaseHereDoc
@@ -151,14 +149,23 @@ export class FuncHereDoc extends BaseHereDoc
 		#     but if not, we'll just call it again
 		if ! lMatches
 			lMatches = @isMyHereDoc(block)
-		block = remainingLines(block)
-		[_, funcName, strParms] = lMatches
+
+		[_, strParms, rest] = lMatches
 		if ! strParms
 			strParms = ''
-		if funcName
-			return CWS("#{funcName} = (#{strParms}) -> #{block}")
+
+		block = remainingLines(block)
+		if isEmpty(block)
+			if isEmpty(rest)
+				return ''
+			else
+				return "(#{strParms}) -> #{rest.trim()}"
 		else
-			return CWS("(#{strParms}) -> #{block}")
+			if isEmpty(rest)
+				return "(#{strParms}) ->\n#{block}"
+			else
+				block = "#{indented(rest, 1)}\n#{block}"
+				return "(#{strParms}) ->\n#{block}"
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

@@ -49,7 +49,7 @@
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^6.0.7",
+		"@jdeighan/coffee-utils": "^6.0.8",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.12",
 		"sass": "^1.49.9"

@@ -8,9 +8,8 @@ import {undef, words} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {ASTWalker} from '@jdeighan/string-input/tree'
 
-process.env.DIR_ROOT = mydir(`import.meta.url`)
+import {ASTWalker} from '@jdeighan/string-input/walker'
 
 simple = new UnitTester()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
@@ -31,7 +30,7 @@ export tester = new ASTTester()
 
 # ----------------------------------------------------------------------------
 
-tester.equal 34, """
+tester.equal 33, """
 		import {undef, pass} from '@jdeighan/coffee-utils'
 		import {slurp, barf} from '@jdeighan/coffee-utils/fs'
 
@@ -47,7 +46,7 @@ tester.equal 34, """
 
 # ----------------------------------------------------------------------------
 
-tester.equal 50, """
+tester.equal 49, """
 		import {pass} from '@jdeighan/coffee-utils'
 		import {barf} from '@jdeighan/coffee-utils/fs'
 
@@ -63,7 +62,7 @@ tester.equal 50, """
 
 # ----------------------------------------------------------------------------
 
-tester.equal 66, """
+tester.equal 65, """
 		try
 			contents = slurp('myfile.txt')
 		if (contents == undef)
@@ -73,4 +72,3 @@ tester.equal 66, """
 		lUsed: words('slurp undef print'),
 		lNeeded: words('slurp undef print'),
 		}
-

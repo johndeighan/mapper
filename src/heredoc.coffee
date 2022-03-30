@@ -1,30 +1,32 @@
 # heredoc.coffee
 
 import {
-	assert, isString, isEmpty, nonEmpty, undef, pass, croak, escapeStr, CWS,
+	assert, isString, isHash, isEmpty, nonEmpty,
+	undef, pass, croak, escapeStr, CWS,
 	} from '@jdeighan/coffee-utils'
 import {
 	firstLine, remainingLines, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 import {indented} from '@jdeighan/coffee-utils/indent'
-import {isTAML, taml} from '@jdeighan/string-input/taml'
+import {debug} from '@jdeighan/coffee-utils/debug'
+import {LOG} from '@jdeighan/coffee-utils/log'
+
+import {TAMLHereDoc} from '@jdeighan/string-input/taml'
 
 lAllHereDocs = []
 lAllHereDocNames = []
-DEBUG = false
+export debugHereDoc = false
 
 # ---------------------------------------------------------------------------
 
-export doDebug = (flag=true) ->
+export doDebugHereDoc = (flag=true) ->
 
-	DEBUG = flag
+	debugHereDoc = flag
 	return
 
 # ---------------------------------------------------------------------------
 
 export lineToParts = (line) ->
-	# --- Odd number of parts
-	#     Each even index part is '<<<'
 
 	lParts = []     # joined at the end
 	pos = 0
@@ -38,134 +40,82 @@ export lineToParts = (line) ->
 	return lParts
 
 # ---------------------------------------------------------------------------
+# This may return any type of object
 
 export mapHereDoc = (block) ->
 
+	debug "enter mapHereDoc()"
 	for heredoc,i in lAllHereDocs
-		if heredoc.isMyHereDoc(block)
-			if DEBUG
+		name = heredoc.myName()
+		debug "TRY #{name} HEREDOC"
+		if result = heredoc.isMyHereDoc(block)
+			debug "found #{name} HEREDOC"
+			if debugHereDoc
 				console.log "--------------------------------------"
-				console.log "HEREDOC type '#{lAllHereDocNames[i]}'"
+				console.log "HEREDOC type '#{name}'"
 				console.log "--------------------------------------"
 				console.log block
 				console.log "--------------------------------------"
-			result = heredoc.map(block)
-			assert isString(result), "mapHereDoc(): result not a string"
+			result = heredoc.map(block, result)
+			result.type = typeof result.obj
+			debug "return from mapHereDoc()", result
 			return result
-
-	croak "No valid heredoc type found"
+		else
+			if debugHereDoc
+				LOG "NOT A #{name} HEREDOC"
+	result = {
+		str: JSON.stringify(block) # can directly replace <<<
+		obj: block
+		type: typeof block
+		}
+	debug "return from mapHereDoc()"
+	return result
 
 # ---------------------------------------------------------------------------
 
-export addHereDocType = (obj, name='Unknown') ->
+export addHereDocType = (obj) ->
 
-	lAllHereDocs.unshift obj
-	lAllHereDocNames.unshift name
+	name = obj.myName()
+	if name not in lAllHereDocNames
+		lAllHereDocNames.unshift name
+		lAllHereDocs.unshift obj
 	return
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-export class BaseHereDoc
+export class BlockHereDoc
 
-	isMyHereDoc: (block) ->
-		return true
-
-	# --- If the returned string will represent a string, then
-	#     you can get away with just returning the represented string
-	#     here, which will be surrounded with quote marks and
-	#     have internal special characters escaped
-
-	mapToString: (block) ->
-		return block
-
-	# --- map() MUST return a string
-	#     that string will replace '<<<' in your code
-
-	map: (block) ->
-		return '"' + qesc(@mapToString(block)) + '"'
-
-# ---------------------------------------------------------------------------
-
-export class BlockHereDoc extends BaseHereDoc
+	myName: () ->
+		return 'explicit block'
 
 	isMyHereDoc: (block) ->
 		return firstLine(block) == '==='
 
-	mapToString: (block) ->
-		return remainingLines(block)
+	map: (block) ->
+		block = remainingLines(block)
+		return {
+			str: JSON.stringify(block) # can directly replace <<<
+			obj: block
+			}
 
 # ---------------------------------------------------------------------------
 
-export class OneLineHereDoc extends BaseHereDoc
+export class OneLineHereDoc
+
+	myName: () ->
+		return 'one line'
 
 	isMyHereDoc: (block) ->
 		return block.indexOf('...') == 0
 
-	mapToString: (block) ->
-		# --- replace all runs of whitespace with single space char
-		block = block.replace(/\s+/gs, ' ')
-		return block.substring(3).trim()
-
-# ---------------------------------------------------------------------------
-
-export class TAMLHereDoc extends BaseHereDoc
-
-	isMyHereDoc: (block) ->
-		return isTAML(block)
-
 	map: (block) ->
-		return JSON.stringify(taml(block))
-
-# ---------------------------------------------------------------------------
-
-export isFunctionHeader = (str) ->
-
-	return str.match(///^
-			\(
-			\s*
-			(                            # optional parameters
-				[A-Za-z_][A-Za-z0-9_]*
-				(?:
-					,
-					\s*
-					[A-Za-z_][A-Za-z0-9_]*
-					)*
-				)?
-			\)
-			\s*
-			->
-			\s*
-			(.*)
-			$///)
-
-export class FuncHereDoc extends BaseHereDoc
-
-	isMyHereDoc: (block) ->
-		return isFunctionHeader(firstLine(block))
-
-	map: (block, lMatches=undef) ->
-		# --- caller should pass return value from isMyHereDoc here
-		#     but if not, we'll just call it again
-		if ! lMatches
-			lMatches = @isMyHereDoc(block)
-
-		[_, strParms, rest] = lMatches
-		if ! strParms
-			strParms = ''
-
-		block = remainingLines(block)
-		if isEmpty(block)
-			if isEmpty(rest)
-				return ''
-			else
-				return "(#{strParms}) -> #{rest.trim()}"
-		else
-			if isEmpty(rest)
-				return "(#{strParms}) ->\n#{block}"
-			else
-				block = "#{indented(rest, 1)}\n#{block}"
-				return "(#{strParms}) ->\n#{block}"
+		# --- replace all runs of whitespace with single space char
+		block = block.substring(3).trim().replace(/\s+/gs, ' ')
+		return {
+			str: JSON.stringify(block) # can directly replace <<<
+			obj: block
+			}
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -183,8 +133,6 @@ qesc = (block) ->
 # ---------------------------------------------------------------------------
 
 # --- last one is checked first
-addHereDocType new BaseHereDoc(),    'default block'
-addHereDocType new FuncHereDoc(),    'function'         #  (args) ->
-addHereDocType new OneLineHereDoc(), 'one line'         #  ...
-addHereDocType new TAMLHereDoc(),    'taml'             #  ---
-addHereDocType new BlockHereDoc(),   'explicit block'   #  ===
+addHereDocType new OneLineHereDoc()   #  ...
+addHereDocType new BlockHereDoc()     #  ===
+addHereDocType new TAMLHereDoc()      #  ---

@@ -1,133 +1,54 @@
 # coffee.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
-import {log} from '@jdeighan/coffee-utils/log'
+import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
+
+import {doMap} from '@jdeighan/string-input'
 import {
-	brewCoffeeStr, brewExpr, convertCoffee,
+	coffeeExprToJS, coffeeCodeToJS, convertCoffee, cleanJS, minifyJS,
 	} from '@jdeighan/string-input/coffee'
 
-rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
-process.env.DIR_DATA = mkpath(rootDir, 'data')
-process.env.DIR_MARKDOWN = mkpath(rootDir, 'markdown')
 simple = new UnitTester()
 
-convertCoffee false
-
 # ---------------------------------------------------------------------------
 
-class CoffeeTester extends UnitTester
+(() ->
+	class CoffeeTester extends UnitTesterNoNorm
 
-	transformValue: (code) ->
-		newcode = brewCoffeeStr(code)
-		return newcode
+		transformValue: (code) ->
+			return coffeeCodeToJS(code)
 
-tester = new CoffeeTester()
+	tester = new CoffeeTester()
 
-# ---------------------------------------------------------------------------
-# NOTE: When not unit testing, there will be a semicolon after 1000
+	# ------------------------------------------------------------------------
 
-tester.equal 33, """
-		x <== a + 1000
-		""", """
-		`$:{`
-		x = a + 1000
-		`}`
-		"""
+	tester.equal 28, """
+			# --- a comment
 
-tester.equal 40, """
-		# --- a comment line
+			y = x
+			""", """
+			// --- a comment
+			var y;
+			y = x;
+			"""
 
-		x <== a + 1000
-		""", """
-		`$:{`
-		x = a + 1000
-		`}`
-		"""
+	tester.equal 38, """
+			# --- a comment
 
-# ---------------------------------------------------------------------------
-# --- test continuation lines
+			x = 3
+			callme 'a', 3, [1,2,3]
+			y = if x==3 then 'OK' else 'Bad'
+			""", """
+			// --- a comment
+			var x, y;
+			x = 3;
+			callme('a', 3, [1, 2, 3]);
+			y = x === 3 ? 'OK' : 'Bad';
+			"""
 
-tester.equal 52, """
-		x = 23
-		y = x
-				+ 5
-		""", """
-		x = 23
-		y = x + 5
-		"""
+	)()
 
 # ---------------------------------------------------------------------------
-# --- test use of backslash continuation lines
-
-tester.equal 64, """
-		x = 23
-		y = x \
-		+ 5
-		""", """
-		x = 23
-		y = x \
-		+ 5
-		"""
-
-# ---------------------------------------------------------------------------
-# --- test auto-import of symbols from file '.symbols'
-
-tester.equal 77, """
-		x = 23
-		logger x
-		""", """
-		import {log as logger} from '@jdeighan/coffee-utils/log'
-		x = 23
-		logger x
-		"""
-
-tester.equal 86, """
-		# --- a comment
-
-		x <== a + 1000
-		""", """
-		`$:{`
-		x = a + 1000
-		`}`
-		"""
-
-# ---------------------------------------------------------------------------
-# --- test full translation to JavaScript
-
-convertCoffee true
-
-tester.equal 100, """
-		x = 23
-		""", """
-		var x;
-		x = 23;
-		"""
-
-tester.equal 107, """
-		# --- a comment
-
-		<==
-			x = a + 1000
-			y = a + 100
-		""", """
-		var x, y;
-		$:{
-		x = a + 1000;
-		y = a + 100;
-		}
-		"""
-
-tester.equal 121, """
-		# --- a comment
-
-		x <== a + 1000
-		""", """
-		var x;
-		$:{
-		x = a + 1000;
-		}
-		"""

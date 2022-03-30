@@ -1,4 +1,4 @@
-# JavaScriptBuiltins.coffee
+# builtins.coffee
 
 # ---------------------------------------------------------------------------
 
@@ -7,6 +7,7 @@ hJSBuiltins = {
 	process: true
 	JSON: true
 	import: true
+	console: true
 	}
 
 # ---------------------------------------------------------------------------

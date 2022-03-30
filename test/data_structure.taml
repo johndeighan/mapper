@@ -1,0 +1,6 @@
+---
+- abc
+- 42
+-
+	first: 1st
+	second: 2nd

@@ -4,33 +4,23 @@ import fs from 'fs'
 import pathlib from 'path'
 
 import {
-	assert, undef, pass, croak, isString, isEmpty, nonEmpty, escapeStr,
-	isComment, isArray, isHash, isInteger, deepCopy, OL, CWS,
+	assert, error, undef, pass, croak, isString, isEmpty, nonEmpty,
+	escapeStr, isComment, isArray, isHash, isInteger, deepCopy, OL, CWS,
 	} from '@jdeighan/coffee-utils'
 import {
 	blockToArray, arrayToBlock, firstLine, remainingLines,
 	} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
-	slurp, pathTo, mydir, parseSource, mkpath,
+	slurp, pathTo, mydir, parseSource, mkpath, isDir,
 	} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine, indented, undented, indentLevel,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-import {markdownify} from '@jdeighan/string-input/markdown'
-import {isTAML, taml} from '@jdeighan/string-input/taml'
+
 import {lineToParts, mapHereDoc} from '@jdeighan/string-input/heredoc'
-
-# ---------------------------------------------------------------------------
-
-# --- Default env vars for #include files
-hExtToEnvVar = {
-	'.md':   'DIR_MARKDOWN',
-	'.taml': 'DIR_DATA',
-	'.txt':  'DIR_DATA',
-	}
 
 # ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
@@ -40,19 +30,27 @@ export class StringFetcher
 
 	constructor: (content, source='unit test') ->
 
-		# --- Has keys: dir, filename, stub, ext
-		#     If source is 'unit test', just returns:
+		@setContent content, source
+
+		# --- for handling #include
+		@altInput = undef
+		@altLevel = undef    # indentation added to lines from alt
+		@checkBuffer "StringFetcher constructor end"
+
+	# ..........................................................
+
+	setContent: (content, source) ->
+
+		# --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
+		#     If source is 'unit test', just has:
 		#     { filename: 'unit test', stub: 'unit test'}
-		hSourceInfo = parseSource(source)
+		@hSourceInfo = parseSource(source)
 
-		filename = hSourceInfo.filename
-		assert filename, "StringFetcher: parseSource returned no filename"
-		@filename = filename
-		@hSourceInfo = hSourceInfo
-
+		@filename = @hSourceInfo.filename
+		assert @filename, "StringFetcher: parseSource returned no filename"
 		if ! content?
-			if hSourceInfo.fullpath
-				content = slurp(hSourceInfo.fullpath)
+			if @hSourceInfo.fullpath
+				content = slurp(@hSourceInfo.fullpath)
 				@lBuffer = blockToArray(content)
 			else
 				croak "StringFetcher: no source or fullpath"
@@ -67,24 +65,8 @@ export class StringFetcher
 			croak "StringFetcher(): content must be array or string",
 					"CONTENT", content
 
-		# --- patch {{FILE}} and {{LINE}}
-		dir = hSourceInfo.dir
-		lPatchedBuffer = []
-		for line,i in @lBuffer
-			# --- patch(patch(line, '{{FILE}}', @filename), '{{LINE}}', i+1)
-			line = line.replace('{{FILE}}', @filename)
-			line = line.replace('{{LINE}}', i+1)
-			if dir
-				line = line.replace('{{DIR}}', dir)
-			lPatchedBuffer.push(line)
-		@lBuffer = lPatchedBuffer
-
 		@lineNum = 0
-
-		# --- for handling #include
-		@altInput = undef
-		@altLevel = undef    # indentation added to lines from alt
-		@checkBuffer "StringFetcher constructor end"
+		return
 
 	# ..........................................................
 
@@ -98,45 +80,37 @@ export class StringFetcher
 
 	# ..........................................................
 
-	getIncludeFileDir: (ext) ->
-		# --- override to not use defaults
+	getIncludeFileFullPath: (fname) ->
 
-		envvar = hExtToEnvVar[ext]
-		if envvar?
-			return process.env[envvar]
+		# --- Make sure we have a simple file name
+		{root, dir, base, ext} = pathlib.parse(fname)
+		assert ! dir, "getIncludeFileFullPath(): not a simple file name"
+
+		# --- Decide which directory to search for file
+		dir = @hSourceInfo.dir
+		if ! dir || ! isDir(dir)
+			# --- Use current directory
+			dir = process.cwd()
+
+		path = pathTo(fname, dir)
+		if path && fs.existsSync(path)
+			return path
 		else
 			return undef
-
-	# ..........................................................
-
-	getIncludeFileFullPath: (filename) ->
-
-		{root, dir, base, ext} = pathlib.parse(filename)
-		assert ! dir, "getFileFullPath(): arg is not a simple file name"
-
-		if @hSourceInfo.filename == 'unit test'
-			if process.env.DIR_ROOT?
-				path = mkpath(process.env.DIR_ROOT, filename)
-				if fs.existsSync(path)
-					return path
-
-		if @hSourceInfo.dir?
-			path = mkpath(@hSourceInfo.dir, filename)
-			if fs.existsSync(path)
-				return path
-		incDir = @getIncludeFileDir ext
-		if incDir?
-			assert fs.existsSync(incDir), "dir #{incDir} does not exist"
-		path = mkpath(incDir, filename)
-		if fs.existsSync(path)
-			return path
-		return undef
 
 	# ..........................................................
 
 	debugBuffer: () ->
 
 		debug 'BUFFER', @lBuffer
+		return
+
+	# ..........................................................
+	# --- Can override to add additional functionality
+
+	incLineNum: (inc) ->
+
+		@lineNum += inc
 		return
 
 	# ..........................................................
@@ -152,10 +126,12 @@ export class StringFetcher
 			line = @altInput.fetch(literal)
 			if line?
 				result = indented(line, @altLevel)
+				@incLineNum(1)
 				debug "return #{OL(result)} from fetch() - alt"
 				return result
 			else
-				@altInput = undef    # it's exhausted
+				# alternate input is exhausted
+				@altInput = undef
 
 		if (@lBuffer.length == 0)
 			debug "return undef from fetch() - empty buffer"
@@ -167,11 +143,7 @@ export class StringFetcher
 			@lBuffer = []
 			debug "return from fetch() - __END__ seen"
 			return undef
-		@lineNum += 1
-
-		if line == undef
-			log "HERE IT IS: line is undef!!!"
-			process.exit(-42)
+		@incLineNum(1)
 
 		if ! literal && lMatches = line.match(///^
 				(\s*)
@@ -218,7 +190,7 @@ export class StringFetcher
 			@altInput.unfetch undented(line, @altLevel)
 		else
 			@lBuffer.unshift line
-			@lineNum -= 1
+			@incLineNum(-1)
 		debug 'return from unfetch()'
 		return
 
@@ -263,18 +235,18 @@ export class StringInput extends StringFetcher
 		@lookahead = undef   # --- lookahead token, placed by unget
 
 		# --- cache in case getAll() is called multiple times
-		#     each pair is [mapped str, level]
+		#     each pair is [<mapped str>, <level>]
 		@lAllPairs = undef
 
 	# ..........................................................
 
-	unget: (pair) ->
-		# --- pair will always be [<item>, <level>]
+	unget: (lPair) ->
+		# --- lPair will always be [<item>, <level>]
 		#     <item> can be anything - i.e. it's been mapped
 
-		debug 'enter unget() with', pair
+		debug 'enter unget() with', lPair
 		assert ! @lookahead?, "unget(): there's already a lookahead"
-		@lookahead = pair
+		@lookahead = lPair
 		debug 'return from unget()'
 		return
 
@@ -286,13 +258,13 @@ export class StringInput extends StringFetcher
 		if @lookahead?
 			debug "return lookahead from peek"
 			return @lookahead
-		pair = @get()
-		if ! pair?
+		lPair = @get()
+		if ! lPair?
 			debug "return undef from peek()"
 			return undef
-		@unget(pair)
-		debug "return #{OL(pair)} from peek"
-		return pair
+		@unget(lPair)
+		debug "return #{OL(lPair)} from peek"
+		return lPair
 
 	# ..........................................................
 
@@ -401,8 +373,11 @@ export class StringInput extends StringFetcher
 			debug "return cached lAllPairs from StringInput.getAll()"
 			return @lAllPairs
 		lPairs = []
-		while (pair = @get())?
-			lPairs.push(pair)
+
+		# --- Each pair is [<result>, <level>],
+		#     where <result> can be anything
+		while (lPair = @get())?
+			lPairs.push(lPair)
 		@lAllPairs = lPairs
 		debug "lAllPairs", @lAllPairs
 		debug "return #{lPairs.length} pairs from StringInput.getAll()"
@@ -413,24 +388,77 @@ export class StringInput extends StringFetcher
 	getAllText: () ->
 
 		lLines = for [line, level] in @getAll()
+			assert isString(line), "getAllText(): got non-string"
 			indented(line, level)
 		return arrayToBlock(lLines)
 
 # ===========================================================================
 
+export stdSplitCommand = (line, level) ->
+
+	if lMatches = line.match(///^
+			\#
+			([A-Za-z_]\w*)   # name of the command
+			\s*
+			(.*)             # argstr for command
+			$///)
+		[_, cmd, argstr] = lMatches
+		return [cmd, argstr]
+	else
+		return undef      # not a command
+
+# ---------------------------------------------------------------------------
+
+export stdIsComment = (line, level) ->
+
+	lMatches = line.match(///^
+			(\#+)     # one or more # characters
+			(.|$)     # following character, if any
+			///)
+	if lMatches
+		[_, hashes, ch] = lMatches
+		return (hashes.length > 1) || (ch in [' ','\t',''])
+	else
+		return false
+
+# ---------------------------------------------------------------------------
+
 export class SmartInput extends StringInput
-	# - removes blank lines and comments (but can be overridden)
+	# - removes blank lines (but can be overridden)
+	# - does NOT remove comments (but can be overridden)
 	# - joins continuation lines
 	# - handles HEREDOCs
 
 	constructor: (content, source) ->
 		super content, source
 
+		@hVars = {
+			FILE: @filename
+			DIR:  @hSourceInfo.dir
+			LINE: 0
+			}
+
 		# --- This should only be used in mapLine(), where
 		#     it keeps track of the level we're at, to be passed
 		#     to handleEmptyLine() since the empty line itself
 		#     is always at level 0
 		@curLevel = 0
+
+	# ..........................................................
+
+	setVariable: (name, value) ->
+
+		assert (name not in ['DIR','FILE','LINE']), "Bad var #{name}"
+		@hVars[name] = value
+		return
+
+	# ..........................................................
+	# --- override to keep variable LINE updated
+
+	incLineNum: (inc) ->
+		super inc    # adjusts property @lineNum
+		@hVars.LINE = @lineNum
+		return
 
 	# ..........................................................
 
@@ -463,14 +491,49 @@ export class SmartInput extends StringInput
 	handleEmptyLine: (level) ->
 
 		debug "in SmartInput.handleEmptyLine()"
-		return undef      # skip blank lines by default
+
+		# --- remove blank lines by default
+		#     return '' to retain empty lines
+		return undef
+
+	# ..........................................................
+
+	splitCommand: (line, level) ->
+
+		debug "in SmartInput.splitCommand()"
+		return stdSplitCommand(line, level)
+
+	# ..........................................................
+
+	handleCommand: (cmd, argstr, level) ->
+
+		switch cmd
+			when 'define'
+				@setVariable cmd argstr
+				return undef
+			else
+				return undef   # return value added to output if not undef
+
+	# ..........................................................
+
+	isComment: (line, level) ->
+
+		debug "in SmartInput.isComment()"
+		return stdIsComment(line, level)
 
 	# ..........................................................
 
 	handleComment: (line, level) ->
 
 		debug "in SmartInput.handleComment()"
-		return undef      # skip comments by default
+		return line      # keep comments by default
+
+	# ..........................................................
+
+	replaceVars: (line, level) ->
+
+		debug "in SmartInput.replaceVars()"
+		return line.replace(/\bDIR\b/g, @hVars.DIR).replace(/\bFILE\b/g, @hVars.FILE).replace(/\bLINE\b/g, @hVars.LINE)
 
 	# ..........................................................
 	# --- designed to override with a mapping method
@@ -483,12 +546,20 @@ export class SmartInput extends StringInput
 		assert line?, "mapLine(): line is undef"
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
-			debug "return undef from SmartInput.mapLine() - empty"
+			line = @handleEmptyLine(@curLevel)
+			debug "return #{line} from SmartInput.mapLine() - empty line"
 			return @handleEmptyLine(@curLevel)
+
+		lParts = @splitCommand(line)
+		if lParts
+			[cmd, rest] = lParts
+			return @handleCommand cmd, rest
 
 		if isComment(line)
 			debug "return undef from SmartInput.mapLine() - comment"
 			return @handleComment(line, level)
+
+		line = @replaceVars(line, level)
 
 		orgLineNum = @lineNum
 		@curLevel = level
@@ -506,7 +577,8 @@ export class SmartInput extends StringInput
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
 		if (line.indexOf('<<<') != -1)
-			line = @handleHereDoc(line, level)
+			hResult = @handleHereDoc(line, level)
+			line = hResult.line
 			debug "line becomes #{OL(line)}"
 
 		debug "mapping string"
@@ -534,16 +606,30 @@ export class SmartInput extends StringInput
 		assert isString(line), "handleHereDoc(): not a string"
 		debug "enter handleHereDoc(#{OL(line)})"
 		lParts = lineToParts(line)
+		lObjects = []
 		lNewParts = for part in lParts
 			if part == '<<<'
 				lLines = @getHereDocLines(level+1)
-				mapHereDoc(arrayToBlock(lLines))
+				hResult = mapHereDoc(arrayToBlock(lLines))
+				if isString(hResult)
+					lObjects.push hResult
+					hResult
+				else if isHash(hResult)
+					lObjects.push hResult.obj
+					hResult.str
+				else
+					error "Invalid hResult from mapHereDoc()"
 			else
 				part    # keep as is
 
-		result = lNewParts.join('')
-		debug "return from handleHereDoc", result
-		return result
+		hResult = {
+			line: lNewParts.join('')
+			lParts: lParts
+			lObjects: lObjects
+			}
+
+		debug "return from handleHereDoc", hResult
+		return hResult
 
 	# ..........................................................
 
@@ -575,196 +661,17 @@ export class SmartInput extends StringInput
 		else
 			return line
 
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# --- To derive a class from this:
-#        1. Extend this class
-#        2. Override mapNode(), which gets the line with
-#           any continuation lines appended, plus any
-#           HEREDOC sections expanded
-#        3. If desired, override handleHereDoc, which patches
-#           HEREDOC lines into the original string
+# ===========================================================================
 
-export class PLLParser extends SmartInput
+export doMap = (inputClass, text, source='unit test') ->
 
-	constructor: (content, source) ->
-		super content, source
-
-		# --- Cached tree, in case getTree() is called multiple times
-		@tree = undef
-
-	# ..........................................................
-
-	mapString: (line, level) ->
-
-		result = @mapNode(line, level)
-		if result?
-			return [level, @lineNum, result]
-		else
-			# --- We need to skip over all following nodes
-			#     at a higher level than this one
-			@fetchBlock(level+1)
-			return undef
-
-	# ..........................................................
-
-	mapNode: (line, level) ->
-
-		return line
-
-	# ..........................................................
-
-	getAll: () ->
-
-		# --- This returns a list of pairs, but
-		#     we don't need the level anymore since it's
-		#     also stored in the node
-
-		lPairs = super()
-		debug "lPairs", lPairs
-
-		lItems = for pair in lPairs
-			pair[0]
-		debug "lItems", lItems
-		return lItems
-
-	# ..........................................................
-
-	getTree: () ->
-
-		debug "enter getTree()"
-		if @tree?
-			debug "return cached tree from getTree()"
-			return @tree
-
-		lItems = @getAll()
-
-		assert lItems?, "lItems is undef"
-		assert isArray(lItems), "getTree(): lItems is not an array"
-
-		# --- treeify will consume its input, so we'll first
-		#     make a deep copy
-		tree = treeify(deepCopy(lItems))
-		debug "TREE", tree
-
-		@tree = tree
-		debug "return from getTree()", tree
-		return tree
-
-# ---------------------------------------------------------------------------
-# Utility function to get a tree from text,
-#    given a function to map a string (to anything!)
-
-export treeFromBlock = (block, mapFunc) ->
-
-	class MyPLLParser extends PLLParser
-
-		mapNode: (line, level) ->
-			assert isString(line), "StringInput.mapNode(): not a string"
-			return mapFunc(line, level)
-
-	parser = new MyPLLParser(block)
-	return parser.getTree()
-
-# ---------------------------------------------------------------------------
-# Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
-# If a predicate is supplied, it must return true for any <node>
-
-export treeify = (lItems, atLevel=0, predicate=undef) ->
-	# --- stop when an item of lower level is found, or at end of array
-
-	debug "enter treeify(#{atLevel})"
-	debug 'lItems', lItems
-	try
-		checkTree(lItems, predicate)
-		debug "check OK"
-	catch err
-		croak err, 'lItems', lItems
-	lNodes = []
-	while (lItems.length > 0) && (lItems[0][0] >= atLevel)
-		item = lItems.shift()
-		[level, lineNum, node] = item
-
-		if (level != atLevel)
-			croak "treeify(): item at level #{level}, should be #{atLevel}",
-					"TREE", lItems
-
-		h = {node, lineNum}
-		body = treeify(lItems, atLevel+1)
-		if body?
-			h.body = body
-		lNodes.push(h)
-	if lNodes.length==0
-		debug "return undef from treeify()"
-		return undef
+	debug "enter doMap() source='#{source}'"
+	if inputClass
+		oInput = new inputClass(text, source)
+		assert oInput instanceof StringInput,
+			"doMap() requires a StringInput or subclass"
 	else
-		debug "return #{lNodes.length} nodes from treeify()", lNodes
-		return lNodes
-
-# ---------------------------------------------------------------------------
-
-export checkTree = (lItems, predicate) ->
-
-	# --- Each item should be a sub-array with 3 items:
-	#        1. an integer - level
-	#        2. an integer - a line number
-	#        3. anything, but if predicate is defined, it must return true
-
-	assert isArray(lItems), "treeify(): lItems is not an array"
-	for item,i in lItems
-		assert isArray(item), "treeify(): lItems[#{i}] is not an array"
-		len = item.length
-		assert len == 3, "treeify(): item has length #{len}"
-		[level, lineNum, node] = item
-		assert isInteger(level), "checkTree(): level not an integer"
-		assert isInteger(lineNum), "checkTree(): lineNum not an integer"
-		if predicate?
-			assert predicate(node), "checkTree(): node fails predicate"
-	return
-
-# ---------------------------------------------------------------------------
-
-export getFileContents = (fname, convert=false, dir=undef) ->
-
-	fname = fname.trim()
-	debug "enter getFileContents('#{fname}')"
-
-	assert isString(fname), "getFileContents(): fname not a string"
-	{root, dir, base, ext} = pathlib.parse(fname)
-	assert ! root && ! dir, "getFileContents():" \
-		+ " root='#{root}', dir='#{dir}'" \
-		+ " - full path not allowed"
-
-	if dir
-		path = mkpath(dir, fname)
-		if fs.existsSync(path)
-			return slurp(path)
-
-	envvar = hExtToEnvVar[ext]
-	debug "envvar = '#{envvar}'"
-	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
-
-	dir = process.env[envvar]
-	debug "dir = '#{dir}'"
-	if ! dir?
-		croak "env var '#{envvar}' not set for file extension '#{ext}'",
-			'process.env', process.env
-	fullpath = pathTo(base, dir)   # guarantees that file exists
-	debug "fullpath = '#{fullpath}'"
-	assert fullpath, "getFileContents(): Can't find file #{fname}"
-
-	contents = slurp(fullpath)
-	if ! convert
-		debug "return from getFileContents() - not converting"
-		return contents
-	switch ext
-		when '.md'
-			contents = markdownify(contents)
-		when '.taml'
-			contents = taml(contents)
-		when '.txt'
-			pass
-		else
-			croak "getFileContents(): No handler for ext '#{ext}'"
-	debug "return from getFileContents()", contents
-	return contents
+		oInput = new SmartInput(text, source)
+	result = oInput.getAllText()
+	debug "return from doMap()", result
+	return result

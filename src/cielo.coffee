@@ -1,156 +1,142 @@
 # cielo.coffee
 
 import {
-	assert, say, isString, isArray, isEmpty, nonEmpty, isHash,
-	undef, OL, uniq, rtrim,
+	undef, assert, croak, isString, uniq,
 	} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
+import {debug} from '@jdeighan/coffee-utils/debug'
 import {
-	withExt, newerDestFileExists, slurp, barf, shortenPath, mydir,
+	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
-import {SmartInput} from '@jdeighan/string-input'
+
+import {
+	doMap, StringInput, SmartInput,
+	} from '@jdeighan/string-input'
+import {addHereDocType} from '@jdeighan/string-input/heredoc'
 import {
 	getNeededSymbols, buildImportList,
 	} from '@jdeighan/string-input/symbols'
+import {coffeeCodeToJS} from '@jdeighan/string-input/coffee'
+import {FuncHereDoc} from '@jdeighan/string-input/func'
 
-rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
+addHereDocType new FuncHereDoc()
 
-# ---------------------------------------------------------------------------
-# --- Features:
-#        1. REMOVE blank lines
-#        2. REMOVE comments
-#        3. #include <file>
-#        4. handle <== (blocks and statements)
-#        5. replace {{FILE}}, {{LINE}} and {{DIR}}
-#        6. handle continuation lines
-#        7. handle HEREDOC
-#        8. stop on __END__
-#        9. add auto-imports
+export convertingCielo = true
 
 # ---------------------------------------------------------------------------
 
-export brewCielo = (lBlocks, hOptions={}) ->
-	# --- convert blocks of cielo code to blocks of coffee code
-	#     also provides needed import statements
+export convertCielo = (flag) ->
 
-	debug "enter brewCielo()"
-
-	lAllNeededSymbols = []
-	lNewBlocks = for code,i in lBlocks
-		assert (indentLevel(code)==0), "brewCielo(): code #{i} has indent"
-
-		# --- CieloMapper handles the above conversions
-		if hOptions.source
-			oInput = new CieloMapper(code, hOptions.source)
-		else
-			oInput = new CieloMapper(code)
-		coffeeCode = oInput.getAllText()
-
-		lNeededSymbols = getNeededSymbols(coffeeCode)
-		lAllNeededSymbols = lAllNeededSymbols.concat(lNeededSymbols)
-
-		debug 'CIELO CODE', code
-		debug 'lNeededSymbols', lNeededSymbols
-		debug 'COFFEE CODE', coffeeCode
-
-		coffeeCode    # add to lNewBlocks
-
-	importStmts = buildImportList(lAllNeededSymbols, rootDir).join("\n")
-	debug 'importStmts', importStmts
-
-	debug "return from brewCielo()"
-	return {
-		code: lNewBlocks
-		lAllNeededSymbols: uniq(lAllNeededSymbols)
-		importStmts
-		}
-
-# ---------------------------------------------------------------------------
-
-export brewCieloStr = (lBlocks, hOptions={}) ->
-	# --- cielo => coffee
-	#     Valid options:
-	#        source - the source, e.g. file full path
-
-	hCielo = brewCielo(lBlocks, hOptions)
-	checkCieloHash(hCielo)
-	return joinBlocks(hCielo.importStmts, hCielo.code...)
-
-# ---------------------------------------------------------------------------
-
-class CieloMapper extends SmartInput
-
-	mapString: (line, level) ->
-
-		debug "enter mapString(#{OL(line)})"
-		if (line == '<==')
-			# --- Generate a reactive block
-			code = rtrim(@fetchBlock(level+1))   # might be empty
-			if isEmpty(code)
-				debug "return undef from mapString() - empty code block"
-				return undef
-			else
-				result = """
-						`$:{`
-						#{code}
-						`}`
-						"""
-
-		else if lMatches = line.match(///^
-				([A-Za-z][A-Za-z0-9_]*)   # variable name
-				\s*
-				\< \= \=
-				\s*
-				(.*)
-				$///)
-			[_, varname, expr] = lMatches
-			code = @fetchBlock(level+1)    # must be empty
-			assert isEmpty(code),
-					"mapString(): indented code not allowed after '#{line}'"
-			assert nonEmpty(expr),
-					"mapString(): empty expression in '#{line}'"
-
-			# --- Alternatively, we could prepend "<varname> = undefined"
-			#     to this???
-			result = """
-					`$:{`
-					#{line.replace('<==', '=')}
-					`}`
-					"""
-		else
-			debug "return from mapString() - no match"
-			return line
-
-		debug "return from mapString()", result
-		return result
-
-# ---------------------------------------------------------------------------
-
-export brewCieloFile = (srcPath, destPath=undef, hOptions={}) ->
-	# --- cielo => coffee
-	#     Valid Options:
-	#        force
-
-	if ! destPath?
-		destPath = withExt(srcPath, '.coffee')
-	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
-		cieloCode = slurp(srcPath)
-		coffeeCode = brewCieloStr(cieloCode)
-		barf destPath, coffeeCode
+	convertingCielo = flag
 	return
 
 # ---------------------------------------------------------------------------
 
-export checkCieloHash = (hCielo, maxBlocks=1) ->
+export cieloCodeToJS = (lBlocks, hOptions={}) ->
+	# --- cielo => js    lBlocks can be a string or array
+	#     Valid Options:
+	#        premapper:  SmartInput or subclass
+	#        postmapper: SmartInput or subclass
+	#        source: name of source file
+	#        hCoffeeOptions  - passed to CoffeeScript.parse()
+	#           default:
+	#              bare: true
+	#              header: false
 
-	assert hCielo?, "checkCieloHash(): empty hCielo"
-	assert isHash(hCielo), "checkCieloHash(): hCielo is not a hash"
-	assert hCielo.hasOwnProperty('code'), "checkCieloHash(): No key 'code'"
-	assert (hCielo.code.length <= maxBlocks), "checkCieloHash(): Too many blocks"
-	assert isString(hCielo.code[0]), "checkCieloHash(): code[0] not a string"
-	if hCielo.hasOwnProperty('importStmts')
-		assert isString(hCielo.importStmts), "checkCieloHash(): 'importStmts' not a string"
+	debug "enter cieloCodeToJS()"
+
+	if isString(lBlocks)
+		debug "string => array"
+		lBlocks = [lBlocks]
+
+	premapper = hOptions.premapper
+	postmapper = hOptions.postmapper
+
+	lNeededSymbols = []
+	lNewBlocks = []
+	for code,i in lBlocks
+		assert (indentLevel(code)==0), "cieloCodeToJS(): has indentation"
+		orgCode = code    # used in error messages
+		debug "BLOCK #{i}", code
+
+		# --- Even if no premapper is defined, this will handle
+		#     continuation lines, HEREDOCs, etc.
+		if premapper
+			assert premapper instanceof StringInput, "bad premapper"
+			newcode = doMap(premapper, code, hOptions.source)
+		else
+			newcode = doMap(SmartInput, code, hOptions.source)
+
+		if newcode != code
+			code = newcode
+			debug "pre mapped", code
+
+		# --- symbols will always be unique
+		lNeededSymbols = lNeededSymbols.concat(getNeededSymbols(code))
+		try
+			if convertingCielo
+				jsCode = coffeeCodeToJS(code, hOptions.hCoffeeOptions)
+				debug "jsCode", jsCode
+			else
+				jsCode = code
+			if postmapper
+				assert postmapper instanceof StringInput, "bad postmapper"
+				newcode = doMap(postmapper, jsCode, hOptions.source)
+				if newcode != jsCode
+					jsCode = newcode
+					debug "post mapped", jsCode
+			lNewBlocks.push jsCode
+		catch err
+			log "Code", code
+			croak err, "Original Code", orgCode
+
+	jsCode = joinBlocks(lNewBlocks...)
+	debug "return from cieloCodeToJS()"
+	return {
+		jsCode,
+		lNeededSymbols: uniq(lNeededSymbols)
+		}
+
+# ---------------------------------------------------------------------------
+
+export addImports = (jsCode, lNeededSymbols, sep=undef) ->
+
+	if ! sep?
+		sep = if convertingCielo then ";\n" else "\n"
+
+	# --- These import statements don't include a trailing ';'
+	lImportStmts = buildImportList(lNeededSymbols)
+	if lImportStmts.length == 0
+		return jsCode
+	return lImportStmts.join(sep) + sep + jsCode
+
+# ---------------------------------------------------------------------------
+
+export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
+	# --- coffee => js
+	#     Valid Options:
+	#        saveAST
+	#        force
+	#        premapper
+	#        postmapper
+
+	if ! destPath?
+		destPath = withExt(srcPath, '.js', {removeLeadingUnderScore:true})
+	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
+		coffeeCode = slurp(srcPath)
+		if hOptions.saveAST
+			dumpfile = withExt(srcPath, '.ast')
+			lNeeded = getNeededSymbols(coffeeCode, {dumpfile})
+			if (lNeeded == undef) || (lNeeded.length == 0)
+				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
+			else
+				n = lNeeded.length
+				word = if (n==1) then'SYMBOL' else 'SYMBOLS'
+				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
+				for sym in lNeeded
+					debug "   - #{sym}"
+		jsCode = cieloCodeToJS(coffeeCode, hOptions)
+		barf destPath, jsCode
 	return

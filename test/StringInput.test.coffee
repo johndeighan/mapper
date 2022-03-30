@@ -22,7 +22,7 @@ simple = new UnitTester()
 
 ###
 	class StringInput should handle the following:
-		- #include <file> statements, when DIR_* env vars are set
+		- #include <file> statements
 		- get(), peek(), unget(), skip()
 		- overriding of mapLine() to return alternate strings or objects
 		- fetch() and fetchBlock() inside mapLine()
@@ -38,35 +38,32 @@ simple = new UnitTester()
 					ghi
 			""")
 
-	[item, level] = input.peek()
-	simple.equal 72, item, 'abc'
-	simple.equal 73, level, 0
+	# --- lPair is [item, level]
 
-	[item, level] = input.peek()
-	simple.equal 76, item, 'abc'
-	simple.equal 77, level, 0
+	lPair = input.peek()
+	simple.equal 44, lPair, ['abc', 0]
 
-	[item, level] = input.get()
-	simple.equal 80, item, 'abc'
-	simple.equal 81, level, 0
+	lPair = input.peek()
+	simple.equal 47, lPair, ['abc', 0]
 
-	[item, level] = input.get()
-	simple.equal 84, item, 'def'
-	simple.equal 85, level, 1
+	lPair = input.get()
+	simple.equal 50, lPair, ['abc', 0]
 
-	input.unget([item, level])
-	[item, level] = input.get()
-	simple.equal 89, item, 'def'
-	simple.equal 90, level, 1
+	lPair = input.get()
+	simple.equal 53, lPair, ['def', 1]
 
-	[item, level] = input.get()
-	simple.equal 93, item, 'ghi'
-	simple.equal 944, level, 2
-	input.unget(item)
+	input.unget(lPair)
+	lPair = input.get()
+	simple.equal 57, lPair, ['def', 1]
+
+	lPair = input.get()
+	simple.equal 60, lPair, ['ghi', 2]
+	input.unget(lPair)
 
 	input.skip()
 	pair = input.get()
-	simple.equal 99, pair, undef
+	simple.equal 65, pair, undef
+
 	)()
 
 # ---------------------------------------------------------------------------
@@ -108,13 +105,14 @@ tester.equal 95, new StringInput("""
 (() ->
 	class TestInput extends StringInput
 
+		# --- This removes blank lines
 		mapLine: (line, level) ->
 			if line == ''
 				return undef
 			else
 				return line
 
-	tester.equal 114, new TestInput("""
+	tester.equal 115, new TestInput("""
 			abc
 
 			def
@@ -130,13 +128,14 @@ tester.equal 95, new StringInput("""
 (()->
 	class TestInput extends StringInput
 
+		# --- This maps all non-empty lines to the string 'x'
 		mapLine: (line, level) ->
 			if line == ''
 				return undef
 			else
 				return 'x'
 
-	tester.equal 136, new TestInput("""
+	tester.equal 138, new TestInput("""
 			abc
 
 			def
@@ -154,6 +153,7 @@ tester.equal 95, new StringInput("""
 
 	class TestInput extends StringInput
 
+		# --- Remove blank lines PLUS the line following a blank line
 		mapLine: (line, level) ->
 			if line == ''
 				follow = @fetch()
@@ -161,7 +161,7 @@ tester.equal 95, new StringInput("""
 			else
 				return line
 
-	tester.equal 161, new TestInput("""
+	tester.equal 164, new TestInput("""
 			abc
 
 			def
@@ -173,7 +173,7 @@ tester.equal 95, new StringInput("""
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test continuation lines
+# --- Test implementing continuation lines
 
 (()->
 
@@ -190,7 +190,7 @@ tester.equal 95, new StringInput("""
 				line += ' ' + undented(next)
 			return line
 
-	tester.equal 190, new TestInput("""
+	tester.equal 193, new TestInput("""
 			str = compare(
 					"abcde",
 					expected
@@ -254,7 +254,7 @@ tester.equal 243, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test advanced use of mapping function
 #        - skip comments and blank lines
-#        -
+#        - replace reactive statements
 
 (()->
 	class TestInput extends StringInput
@@ -273,7 +273,7 @@ tester.equal 243, new StringInput("""
 					(.*)
 					$///)
 				[_, varName, expr] = lMatches
-				return "`$: #{varName} = #{expr};`"
+				return "`$:{\n#{varName} = #{expr}\n}`"
 			else
 				return line
 
@@ -284,7 +284,9 @@ tester.equal 243, new StringInput("""
 			def
 			"""), """
 			abc
-			`$: myvar = 2 * 3;`
+			`$:{
+			myvar = 2 * 3
+			}`
 			def
 			"""
 	)()
@@ -308,11 +310,11 @@ tester.equal 243, new StringInput("""
 			return line
 
 	oInput = new TestParser(text)
-	[line] = oInput.get()
-	simple.equal 312, line, 'p a paragraph'
-	[line] = oInput.get()
-	simple.equal 314, line, 'div:markdown'
-	simple.equal 315, block, '\ttitle\n\t====='
+	lPair = oInput.get()
+	simple.equal 314, lPair[0], 'p a paragraph'
+	lPair = oInput.get()
+	simple.equal 316, lPair[0], 'div:markdown'
+	simple.equal 317, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -335,11 +337,11 @@ tester.equal 243, new StringInput("""
 
 				line 3
 			""")
-	[line] = oInput.get()
-	simple.equal 339, line, 'p a paragraph'
-	[line] = oInput.get()
-	simple.equal 341, line, 'div:markdown'
-	simple.equal 342, block, """
+	lPair = oInput.get()
+	simple.equal 341, lPair[0], 'p a paragraph'
+	lPair = oInput.get()
+	simple.equal 343, lPair[0], 'div:markdown'
+	simple.equal 344, block, """
 			line 1
 
 			line 3
@@ -364,13 +366,13 @@ tester.equal 243, new StringInput("""
 			return line
 
 	oInput = new TestParser(text)
-	[line] = oInput.get()
-	simple.equal 368, line, 'p a paragraph'
+	lPair = oInput.get()
+	simple.equal 370, lPair[0], 'p a paragraph'
 
-	[line] = oInput.get()
-	simple.equal 371, line, 'div:markdown'
+	lPair = oInput.get()
+	simple.equal 373, lPair[0], 'div:markdown'
 
-	simple.equal 373, block, '\ttitle\n\t====='
+	simple.equal 375, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -398,7 +400,7 @@ tester.equal 243, new StringInput("""
 
 	oInput = new StringInput(text)
 
-	tester.equal 401, oInput, """
+	tester.equal 403, oInput, """
 		p a paragraph
 		div:markdown
 			header
@@ -412,7 +414,7 @@ tester.equal 243, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test comment
 
-tester.equal 415, new StringInput("""
+tester.equal 417, new StringInput("""
 		abc
 
 		# --- this is a comment
@@ -457,7 +459,7 @@ tester.equal 415, new StringInput("""
 			else
 				return line
 
-	tester2.equal 460, new TestInput2("""
+	tester2.equal 462, new TestInput2("""
 			abc
 			#if x==y
 				def

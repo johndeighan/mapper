@@ -5,11 +5,13 @@ import yaml from 'js-yaml'
 import {
 	assert, undef, oneline, isString,
 	} from '@jdeighan/coffee-utils'
-import {untabify, tabify} from '@jdeighan/coffee-utils/indent'
+import {
+	untabify, tabify, splitLine,
+	} from '@jdeighan/coffee-utils/indent'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
-import {slurp} from '@jdeighan/coffee-utils/fs'
+import {slurp, forEachLineInFile} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {firstLine} from '@jdeighan/coffee-utils/block'
+import {firstLine, blockToArray} from '@jdeighan/coffee-utils/block'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?
@@ -29,7 +31,45 @@ export taml = (text) ->
 		return undef
 	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"
 	debug "return from taml()"
-	return yaml.load(untabify(text, 1), {skipInvalid: true})
+	return yaml.load(taml2yaml(text), {skipInvalid: true})
+
+# ---------------------------------------------------------------------------
+
+fix = (orgline) ->
+
+	[level, line] = splitLine(orgline)
+	prefix = ' '.repeat(level)
+	if lMatches = line.match(///
+			([A-Za-z_][A-Za-z0-9_]*)  # identifier
+			\:                        # colon
+			\s*                       # optional whitespace
+			(.+)                      # a non-empty string
+			$///)
+		[_, ident, str] = lMatches
+
+		if str.match(///
+				\d+
+				(?:
+					\.
+					\d*
+					)?
+				$///)
+			return "#{prefix}#{ident}: #{str}"
+		else
+			# --- surround with single quotes, double internal single quotes
+			str = "'" + str.replace(/\'/g, "''") + "'"
+			return "#{prefix}#{ident}: #{str}"
+	else
+		return "#{prefix}#{line}"
+
+# ---------------------------------------------------------------------------
+# --- export to allow unit testing
+
+export taml2yaml = (text) ->
+
+	lLines = for line in blockToArray(text)
+		fix(line)
+	return lLines.join("\n")
 
 # ---------------------------------------------------------------------------
 #   slurpTAML - read TAML from a file
@@ -38,3 +78,21 @@ export slurpTAML = (filepath) ->
 
 	contents = slurp(filepath)
 	return taml(contents)
+
+# ---------------------------------------------------------------------------
+# --- Install a TAML heredoc plugin
+
+export class TAMLHereDoc
+
+	myName: () ->
+		return 'taml'
+
+	isMyHereDoc: (block) ->
+		return isTAML(block)
+
+	map: (block) ->
+		obj = taml(block)
+		return {
+			obj
+			str: JSON.stringify(obj)
+			}

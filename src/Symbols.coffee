@@ -6,27 +6,37 @@ import {
 	assert, undef, isString, isArray, croak, uniq, words,
 	} from '@jdeighan/coffee-utils'
 import {
-	barf, slurp, pathTo,
+	barf, slurp, pathTo, mkpath,
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
+
 import {StringInput, SmartInput} from '@jdeighan/string-input'
-import {ASTWalker} from '@jdeighan/string-input/tree'
+import {ASTWalker} from '@jdeighan/string-input/walker'
+
+export symbolsRootDir = mkpath(process.cwd())
 
 # ---------------------------------------------------------------------------
 
-export getNeededSymbols = (code, hOptions={}) ->
+export setSymbolsRootDir = (dir) ->
+
+	symbolsRootDir = dir
+	return
+
+# ---------------------------------------------------------------------------
+
+export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
 	#     NOTE: array returned will always be unique
 
-	assert isString(code), "getNeededSymbols(): code must be a string"
+	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
 	debug "enter getNeededSymbols()"
 	try
-		debug "COMPILE CODE", code
-		ast = CoffeeScript.compile code, {ast: true}
+		debug "COMPILE CODE", coffeeCode
+		ast = CoffeeScript.compile coffeeCode, {ast: true}
 		assert ast?, "getNeededSymbols(): ast is empty"
 	catch err
-		croak err, 'CODE (in getNeededSymbols)', code
+		croak err, 'CODE (in getNeededSymbols)', coffeeCode
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.getSymbols()
@@ -37,21 +47,21 @@ export getNeededSymbols = (code, hOptions={}) ->
 
 # ---------------------------------------------------------------------------
 
-export addImports = (code, rootDir, hOptions={}) ->
+export addImports = (coffeeCode, hOptions={}) ->
 
-	lNeededSymbols = getNeededSymbols(code, hOptions)
-	strImports = buildImportBlock(lNeededSymbols, rootDir, hOptions)
-	return [strImports, code].join("\n")
-
-# ---------------------------------------------------------------------------
-
-export buildImportBlock = (lNeededSymbols, rootDir, hOptions={}) ->
-
-	return buildImportList(lNeededSymbols, rootDir, hOptions).join("\n")
+	lNeededSymbols = getNeededSymbols(coffeeCode, hOptions)
+	strImports = buildImportBlock(lNeededSymbols, hOptions)
+	return [strImports, coffeeCode].join("\n")
 
 # ---------------------------------------------------------------------------
 
-export buildImportList = (lNeededSymbols, rootDir, hOptions={}) ->
+export buildImportBlock = (lNeededSymbols, hOptions={}) ->
+
+	return buildImportList(lNeededSymbols, hOptions).join("\n")
+
+# ---------------------------------------------------------------------------
+
+export buildImportList = (lNeededSymbols, hOptions={}) ->
 	# --- Valid options:
 	#     recurse - search upward for .symbols files
 
@@ -59,7 +69,7 @@ export buildImportList = (lNeededSymbols, rootDir, hOptions={}) ->
 	lImports = []
 
 	# --- { <sym>: {lib: <lib>, src: <name> }}
-	hAvailSymbols = getAvailSymbols(rootDir, hOptions)
+	hAvailSymbols = getAvailSymbols()
 
 	for symbol in lNeededSymbols
 		hSymbol = hAvailSymbols[symbol]
@@ -88,15 +98,15 @@ export buildImportList = (lNeededSymbols, rootDir, hOptions={}) ->
 	return lImports
 
 # ---------------------------------------------------------------------------
-# export to allow unit testing
+# export only to allow unit testing
 
-export getAvailSymbols = (rootDir, hOptions={}) ->
+export getAvailSymbols = () ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
 
 	debug "enter getAvailSymbols()"
-	assert rootDir, "empty rootDir"
-	debug "search for .symbols from '#{rootDir}'"
-	filepath = pathTo('.symbols', rootDir, 'up')
+	assert symbolsRootDir, "empty symbolsRootDir"
+	debug "search for .symbols from '#{symbolsRootDir}'"
+	filepath = pathTo('.symbols', symbolsRootDir, 'up')
 	if ! filepath?
 		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
@@ -125,8 +135,7 @@ getAvailSymbolsFrom = (filepath) ->
 # ---------------------------------------------------------------------------
 
 class SymbolParser extends SmartInput
-	# --- We want to allow blank lines and comments
-	#     We want to allow continuation lines
+	# --- Parse a .symbols file
 
 	constructor: (content) ->
 

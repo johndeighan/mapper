@@ -10,6 +10,7 @@ import {
 import {
   assert,
   undef,
+  isString,
   extractMatches
 } from '@jdeighan/coffee-utils';
 
@@ -18,16 +19,9 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  log
+  log,
+  LOG
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  mapHereDoc,
-  addHereDocType,
-  BaseHereDoc,
-  lineToParts,
-  doDebug
-} from '@jdeighan/string-input/heredoc';
 
 import {
   undented
@@ -38,25 +32,31 @@ import {
   remainingLines
 } from '@jdeighan/coffee-utils/block';
 
+import {
+  lineToParts,
+  mapHereDoc,
+  addHereDocType
+} from '@jdeighan/string-input/heredoc';
+
 simple = new UnitTester();
 
 // ---------------------------------------------------------------------------
-simple.equal(15, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
+simple.equal(20, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
 
-simple.equal(22, lineToParts('<<< is <<< heredoc'), ['<<<', ' is ', '<<<', ' heredoc']);
+simple.equal(28, lineToParts('<<< is <<< heredoc'), ['<<<', ' is ', '<<<', ' heredoc']);
 
-simple.equal(28, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<']);
+simple.equal(35, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<']);
 
-simple.equal(34, lineToParts('<<< is <<<'), ['<<<', ' is ', '<<<']);
+simple.equal(42, lineToParts('<<< is <<<'), ['<<<', ' is ', '<<<']);
 
-simple.equal(39, lineToParts('<<<'), ['<<<']);
+simple.equal(48, lineToParts('<<<'), ['<<<']);
 
-simple.equal(42, lineToParts('<<<<<<'), ['<<<', '<<<']);
+simple.equal(52, lineToParts('<<<<<<'), ['<<<', '<<<']);
 
 // ---------------------------------------------------------------------------
 HereDocTester = class HereDocTester extends UnitTesterNoNorm {
   transformValue(block) {
-    return mapHereDoc(block);
+    return mapHereDoc(block).str;
   }
 
 };
@@ -65,31 +65,31 @@ tester = new HereDocTester();
 
 // ---------------------------------------------------------------------------
 // Default heredoc type is a block
-tester.equal(59, `this is a
+tester.equal(69, `this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ---------------------------------------------------------------------------
 // Make explicit that the heredoc type is a block
-tester.equal(68, `===
+tester.equal(78, `===
 this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ---------------------------------------------------------------------------
 // TAML block
-tester.equal(78, `---
+tester.equal(88, `---
 - abc
 - def`, '["abc","def"]');
 
 // ---------------------------------------------------------------------------
 // TAML-like block, but actually a block
-tester.equal(88, `===
+tester.equal(98, `===
 ---
 - abc
 - def`, '"---\\n- abc\\n- def"');
 
 // ---------------------------------------------------------------------------
 // TAML block 2
-tester.equal(99, `---
+tester.equal(109, `---
 -
 	label: Help
 	url: /help
@@ -99,30 +99,22 @@ tester.equal(99, `---
 
 // ---------------------------------------------------------------------------
 // One Line block
-tester.equal(113, `...this is a
+tester.equal(123, `...this is a
 line of text`, '"this is a line of text"');
 
 // ---------------------------------------------------------------------------
 // One Line block
-tester.equal(122, `...
+tester.equal(132, `...
 this is a
 line of text`, '"this is a line of text"');
 
 // ---------------------------------------------------------------------------
-// Function block, with no name or parameters
-tester.equal(132, `() ->
-	return true`, `() ->
-	return true`);
-
-// ---------------------------------------------------------------------------
-// Function block, with no name but with parameters
-tester.equal(143, `(x, y) ->
-	return true`, `(x, y) ->
-	return true`);
-
-// ---------------------------------------------------------------------------
 // Test creating a new heredoc type
-MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
+MatrixHereDoc = class MatrixHereDoc {
+  myName() {
+    return 'matrix';
+  }
+
   isMyHereDoc(block) {
     // --- if block starts with a digit
     return block.match(/^\s*\d/);
@@ -136,32 +128,43 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
       line = ref[i];
       lArray.push(extractMatches(line, /\d+/g, parseInt));
     }
-    return JSON.stringify(lArray);
+    return {
+      obj: lArray,
+      str: JSON.stringify(lArray)
+    };
   }
 
 };
 
-addHereDocType(new MatrixHereDoc(), 'matrix');
+addHereDocType(new MatrixHereDoc());
 
-tester.equal(168, `1 2 3
+tester.equal(162, `1 2 3
 2 4 6`, '[[1,2,3],[2,4,6]]');
 
 // ---------------------------------------------------------------------------
 // Test creating a new heredoc type by overriding mapToString
-UCHereDoc = class UCHereDoc extends BaseHereDoc {
+UCHereDoc = class UCHereDoc {
+  myName() {
+    return 'upper case';
+  }
+
   isMyHereDoc(block) {
     return block.indexOf('^^^') === 0;
   }
 
-  mapToString(block) {
-    return block.substring(4).toUpperCase();
+  map(block) {
+    block = block.substring(4).toUpperCase();
+    return {
+      obj: block,
+      str: JSON.stringify(block)
+    };
   }
 
 };
 
-addHereDocType(new UCHereDoc(), 'upper case');
+addHereDocType(new UCHereDoc());
 
-tester.equal(187, `^^^
+tester.equal(188, `^^^
 This is a
 block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
 
@@ -176,7 +179,7 @@ HereDocReplacer = class HereDocReplacer extends UnitTesterNoNorm {
       for (i = 0, len = ref.length; i < len; i++) {
         part = ref[i];
         if (part === '<<<') {
-          results.push(mapHereDoc(undented(remainingLines(block))));
+          results.push(mapHereDoc(undented(remainingLines(block))).str);
         } else {
           results.push(part); // keep as is
         }
@@ -192,7 +195,7 @@ HereDocReplacer = class HereDocReplacer extends UnitTesterNoNorm {
 replacer = new HereDocReplacer();
 
 // ---------------------------------------------------------------------------
-replacer.equal(218, `TopMenu lItems={<<<}
+replacer.equal(213, `TopMenu lItems={<<<}
 	---
 	-
 		label: Help
@@ -202,7 +205,7 @@ replacer.equal(218, `TopMenu lItems={<<<}
 		url: /books`, `TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}`);
 
 // ---------------------------------------------------------------------------
-replacer.equal(233, `<TopMenu lItems={<<<}>
+replacer.equal(228, `<TopMenu lItems={<<<}>
 	---
 	-
 		label: Help

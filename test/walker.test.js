@@ -31,9 +31,7 @@ import {
 
 import {
   ASTWalker
-} from '@jdeighan/string-input/tree';
-
-process.env.DIR_ROOT = mydir(import.meta.url);
+} from '@jdeighan/string-input/walker';
 
 simple = new UnitTester();
 
@@ -57,7 +55,7 @@ ASTTester = class ASTTester extends UnitTester {
 export var tester = new ASTTester();
 
 // ----------------------------------------------------------------------------
-tester.equal(34, `import {undef, pass} from '@jdeighan/coffee-utils'
+tester.equal(33, `import {undef, pass} from '@jdeighan/coffee-utils'
 import {slurp, barf} from '@jdeighan/coffee-utils/fs'
 
 try
@@ -70,7 +68,7 @@ if (contents == undef)
 });
 
 // ----------------------------------------------------------------------------
-tester.equal(50, `import {pass} from '@jdeighan/coffee-utils'
+tester.equal(49, `import {pass} from '@jdeighan/coffee-utils'
 import {barf} from '@jdeighan/coffee-utils/fs'
 
 try
@@ -83,7 +81,7 @@ if (contents == undef)
 });
 
 // ----------------------------------------------------------------------------
-tester.equal(66, `try
+tester.equal(65, `try
 	contents = slurp('myfile.txt')
 if (contents == undef)
 	print "File does not exist"`, {

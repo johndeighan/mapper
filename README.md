@@ -1,110 +1,94 @@
-class StringInput
+@jdeighan/string-input
 =================
 
-A StringInput object is constructed with a multi-line string
-and when the get() method is called it returns each of those
-lines in turn, returning undef when EOF is reached.
+This npm package provides the following libraries:
 
-In addition:
+/taml:
+------
 
-	- if you override the method `mapLine()` each line will
-		be passed to that method, which can convert the line
-		to any JavaScript value, and can fetch additional
-		lines, using the `fetch()` method, in the process.
+	isTAML(block) - returns true if 1st line of block is '---'
+	taml(block) - returns data structure that block represents
+	slurpTAML(path) - returns data structure text in file represents
 
-	- the line `#include <filename>` (which may include preceding
-		indentation) will result in the given file being read and
-		used for input until the file is exhausted:
+/markdown:
+----------
 
-		1. <filename> must be a simple filename (no path allowed)
-		2. File is searched for in this order:
-			a. the same directory as the file containing #include
-			b. these directories, if defined in hPrivEnv for these extensions:
-				'.md':   'DIR_MARKDOWN',
-				'.taml': 'DIR_DATA',
-				'.txt':  'DIR_DATA',
+	convertMarkdown(flag) - if false, markdownify just returns 1st arg
+	markdownify(block) - convert markdown to HTML
 
-		2. The option hIncludePaths was passed to the StringInput
-			constructor
-		3. The file extension of the <filename> was included as
-			a key in hIncludePaths (the key must start with '.')
+NOTE: Since one or more '#' characters introduce a comment, don't do this:
 
-		The indentation of the line containing '#include' will be
-		added to each line of the file being included.
-
-Environment variables to control include paths:
-
-DIR_ROOT
-DIR_MARKDOWN
-DIR_DATA
-DIR_TEXT
-
-Parsing a PLL (Python-like language)
-====================================
-
-1. Define a mapping function
-2. Use function treeFromBlock to get the tree
-
-Let's say that you want to create a language for
-creating "expression objects" that allows functions:
-
-	add - to add some numbers
-	subtract - to add some numbers
-	multiply - to add some numbers
-	divide - to add some numbers
-	sigma - to sum numbers over some index set
-
-For example, these are valid expressions:
-
-```text
-sum
-	13
-	49
-	53
+```markdown
+# A title
 ```
 
-```text
-multiply
-	sum
-		13
-		22
-		53
-	22
+but, instead, do this:
+
+```markdown
+A title
+=======
 ```
 
-Numbers must be integers.
-We also want to allow identifiers, which must be single upper-case letters:
+replace '=' characters with '-' characters for a level 2 heading
 
-```text
-multiply
-	sum
-		13
-		X
-	divide
-		Y
-		3
-```
+/builtins:
+----------
 
-Here is a valid sigma expression:
+	isBuiltin(name) - tells you whether the name is a JavaScript reserved
+		name. The list is VERY incomplete and should probably not be
+		used from outside this package.
 
-```text
-sigma
-	I in range(5)
-	multiply
-		I
-		22
-```
-
-i.e. sigma expects 2 parts:
-
-	1. <identifier> in range(<number> or <identifier>)
-	2. an expression
-
-SYNOPSIS:
+/heredoc:
 ---------
 
-```coffeescript
-mapper = (str) ->
-	if lMatches =
+	doDebug(flag) - turns on HEREDOC debugging if flag = true
+	mapHereDoc(block) - interprets a HEREDOC block and returns result
+	addHereDocType(obj) - add a new HEREDOC type by passing a class
+		that implements methods myName(), isMyHereDoc(block) and map(block)
 
+/func:
+------
 
+Provides class FuncHereDoc, which can be used to add a new HEREDOC
+type via addHereDocType() in /heredoc
+
+/string-input:
+--------------
+
+This library provides 4 classes of increasing complexity:
+
+1. [StringFetcher](./StringFetcher.md)
+2. [StringInput](./StringInput.md)
+3. [SmartInput](./SmartInput.md)
+4. [PLLParser](./PLLParser.md)
+
+/walker:
+--------
+
+Implements these 3 classes:
+
+1. [TreeWalker](./TreeWalker.md)
+2. [ASTWalker](./ASTWalker.md)
+3. [TreeStringifier](./TreeStringifier.md)
+
+/symbols:
+---------
+
+Includes functions:
+
+- `getNeededSymbols(coffeeCode, hOptions)`
+- `addImports(coffeeCode, rootDir, hOptions)`
+- `buildImportBlock(lNeededSymbols, rootDir, hOptions)`
+- `buildImportList(lNeededSymbols, rootDir, hOptions)`
+- `getAvailSymbols(rootDir, hOptions)`
+
+/coffee:
+--------
+
+Includes functions:
+
+- `convertCoffee(flag)`
+- `coffeeExprToJS(coffeeExpr, force)`
+- `coffeeCodeToJS(code, hOptions)`
+- `coffeeFileToJS(srcPath, destPath, hOptions)`
+- `coffeeEvalFunc(lParmNames, strBody)` - use with FuncHereDoc

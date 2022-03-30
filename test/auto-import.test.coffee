@@ -2,30 +2,29 @@
 
 import assert from 'assert'
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {undef, words, isArray} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	convertCoffee, brewCoffeeStr,
-	} from '@jdeighan/string-input/coffee'
+	cieloCodeToJS, addImports, convertCielo,
+	} from '@jdeighan/string-input/cielo'
 import {
-	buildImportList, getAvailSymbols,
+	setSymbolsRootDir, buildImportList, getAvailSymbols,
 	} from '@jdeighan/string-input/symbols'
 
-rootDir = process.env.DIR_ROOT = mydir(`import.meta.url`)
-
+setSymbolsRootDir mydir(`import.meta.url`)
 simple = new UnitTester()
-convertCoffee false
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
+convertCielo false
 
 # ----------------------------------------------------------------------------
 # --- make sure it's using the testing .symbols file
 
-hSymbols = getAvailSymbols(rootDir)
-simple.equal 23, hSymbols, {
+hSymbols = getAvailSymbols()
+simple.equal 26, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
 		readFile:{lib: 'fs'}
@@ -51,7 +50,7 @@ simple.equal 23, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	simple.equal 46, joinBlocks(lImports..., text), """
+	simple.equal 52, joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42
@@ -63,7 +62,7 @@ simple.equal 23, hSymbols, {
 
 (() ->
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 58, buildImportList(lNeeded, rootDir), [
+	simple.equal 64, buildImportList(lNeeded), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
@@ -80,14 +79,51 @@ simple.equal 23, hSymbols, {
 				logger "file exists"
 			"""
 
-	newcode = brewCoffeeStr(code)
+	{jsCode, lNeededSymbols} = cieloCodeToJS(code)
+	newcode = addImports(jsCode, lNeededSymbols, "\n")
 
-	simple.equal 81, newcode, """
+	simple.equal 84, newcode, """
 			import fs from 'fs'
 			import {log as logger} from '@jdeighan/coffee-utils/log'
+			# --- temp.cielo
 			if fs.existsSync('file.txt')
 				logger "file exists"
 			"""
 	)()
 
 # ---------------------------------------------------------------------------
+
+(() ->
+
+	class CieloTester extends UnitTesterNoNorm
+
+		transformValue: (text) ->
+			{jsCode, lNeededSymbols} = cieloCodeToJS(text)
+			return addImports(jsCode, lNeededSymbols)
+
+	tester = new CieloTester('cielo.test')
+
+	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
+
+	tester.equal 107, """
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			""", """
+			import {mydir,mkpath} from '@jdeighan/coffee-utils/fs'
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			"""
+
+	# --- But not if we're already importing them
+
+	tester.equal 118, """
+			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			""", """
+			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			"""
+
+	)()

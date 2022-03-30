@@ -9,7 +9,8 @@
 	"main": "./StringInput.js",
 	"exports": {
 		".": "./src/StringInput.js",
-		"./tree": "./src/TreeWalker.js",
+		"./pll": "./src/PLLParser.js",
+		"./walker": "./src/TreeWalker.js",
 		"./get": "./src/Getter.js",
 		"./taml": "./src/taml.js",
 		"./heredoc": "./src/heredoc.js",
@@ -18,7 +19,9 @@
 		"./symbols": "./src/Symbols.js",
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
-		"./builtins": "./src/JavaScriptBuiltins.js",
+		"./builtins": "./src/builtins.js",
+		"./func": "./src/FuncHereDoc.js",
+		"./mappers": "./src/StarbucksMappers.js",
 		"./package.json": "./package.json"
 	},
 	"scripts": {
@@ -46,7 +49,7 @@
 		"coffeescript": "^2.6.1"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^5.0.4",
+		"@jdeighan/coffee-utils": "^6.0.7",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.12",
 		"sass": "^1.49.9"

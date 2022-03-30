@@ -3,11 +3,8 @@
 import {UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
-import {markdownify} from '@jdeighan/string-input/markdown'
+import {convertMarkdown, markdownify} from '@jdeighan/string-input/markdown'
 
-root = process.env.DIR_ROOT = mydir(`import.meta.url`)
-process.env.DIR_DATA = "#{root}/data
-process.env.DIR_MARKDOWN = "#{root}/markdown
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
@@ -24,27 +21,47 @@ tester = new MarkdownTester()
 
 (() ->
 
-	tester.equal 31, """
+	tester.equal 24, """
 			title
 			=====
+			text
 			""", """
 			<h1>title</h1>
+			<p>text</p>
 			"""
 
-	tester.equal 38, """
+	tester.equal 33, """
 			title
 			-----
+			text
 			""", """
 			<h2>title</h2>
+			<p>text</p>
 			"""
 
-	tester.equal 45, """
+	# --- Comments and blank lines are stripped
+
+	tester.equal 44, """
+			# title
+			text
+			""", """
+			<p>text</p>
+			"""
+
+	tester.equal 51, """
+			## title
+			text
+			""", """
+			<p>text</p>
+			"""
+
+	tester.equal 58, """
 		this is **bold** text
 		""", """
 		<p>this is <strong>bold</strong> text</p>
 		"""
 
-	tester.equal 51, """
+	tester.equal 64, """
 		```javascript
 				adapter: adapter({
 					pages: 'build',
@@ -61,4 +78,15 @@ tester = new MarkdownTester()
 		</code></pre>
 		"""
 
+	convertMarkdown false
+
+	tester.equal 83, """
+			title
+			=====
+			text
+			""", """
+			title
+			=====
+			text
+			"""
 	)()

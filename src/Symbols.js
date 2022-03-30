@@ -17,7 +17,8 @@ import {
 import {
   barf,
   slurp,
-  pathTo
+  pathTo,
+  mkpath
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -31,25 +32,32 @@ import {
 
 import {
   ASTWalker
-} from '@jdeighan/string-input/tree';
+} from '@jdeighan/string-input/walker';
+
+export var symbolsRootDir = mkpath(process.cwd());
 
 // ---------------------------------------------------------------------------
-export var getNeededSymbols = function(code, hOptions = {}) {
+export var setSymbolsRootDir = function(dir) {
+  symbolsRootDir = dir;
+};
+
+// ---------------------------------------------------------------------------
+export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   var ast, err, hSymbolInfo, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //     NOTE: array returned will always be unique
-  assert(isString(code), "getNeededSymbols(): code must be a string");
+  assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
   debug("enter getNeededSymbols()");
   try {
-    debug("COMPILE CODE", code);
-    ast = CoffeeScript.compile(code, {
+    debug("COMPILE CODE", coffeeCode);
+    ast = CoffeeScript.compile(coffeeCode, {
       ast: true
     });
     assert(ast != null, "getNeededSymbols(): ast is empty");
   } catch (error) {
     err = error;
-    croak(err, 'CODE (in getNeededSymbols)', code);
+    croak(err, 'CODE (in getNeededSymbols)', coffeeCode);
   }
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.getSymbols();
@@ -61,27 +69,27 @@ export var getNeededSymbols = function(code, hOptions = {}) {
 };
 
 // ---------------------------------------------------------------------------
-export var addImports = function(code, rootDir, hOptions = {}) {
+export var addImports = function(coffeeCode, hOptions = {}) {
   var lNeededSymbols, strImports;
-  lNeededSymbols = getNeededSymbols(code, hOptions);
-  strImports = buildImportBlock(lNeededSymbols, rootDir, hOptions);
-  return [strImports, code].join("\n");
+  lNeededSymbols = getNeededSymbols(coffeeCode, hOptions);
+  strImports = buildImportBlock(lNeededSymbols, hOptions);
+  return [strImports, coffeeCode].join("\n");
 };
 
 // ---------------------------------------------------------------------------
-export var buildImportBlock = function(lNeededSymbols, rootDir, hOptions = {}) {
-  return buildImportList(lNeededSymbols, rootDir, hOptions).join("\n");
+export var buildImportBlock = function(lNeededSymbols, hOptions = {}) {
+  return buildImportList(lNeededSymbols, hOptions).join("\n");
 };
 
 // ---------------------------------------------------------------------------
-export var buildImportList = function(lNeededSymbols, rootDir, hOptions = {}) {
+export var buildImportList = function(lNeededSymbols, hOptions = {}) {
   var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
   // --- Valid options:
   //     recurse - search upward for .symbols files
   hLibs = {}; // { <lib>: [<symbol>, ... ], ... }
   lImports = [];
   // --- { <sym>: {lib: <lib>, src: <name> }}
-  hAvailSymbols = getAvailSymbols(rootDir, hOptions);
+  hAvailSymbols = getAvailSymbols();
   for (j = 0, len = lNeededSymbols.length; j < len; j++) {
     symbol = lNeededSymbols[j];
     hSymbol = hAvailSymbols[symbol];
@@ -116,14 +124,14 @@ export var buildImportList = function(lNeededSymbols, rootDir, hOptions = {}) {
 };
 
 // ---------------------------------------------------------------------------
-// export to allow unit testing
-export var getAvailSymbols = function(rootDir, hOptions = {}) {
+// export only to allow unit testing
+export var getAvailSymbols = function() {
   var filepath, hSymbols;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
   debug("enter getAvailSymbols()");
-  assert(rootDir, "empty rootDir");
-  debug(`search for .symbols from '${rootDir}'`);
-  filepath = pathTo('.symbols', rootDir, 'up');
+  assert(symbolsRootDir, "empty symbolsRootDir");
+  debug(`search for .symbols from '${symbolsRootDir}'`);
+  filepath = pathTo('.symbols', symbolsRootDir, 'up');
   if (filepath == null) {
     debug("return from getAvailSymbols() - no .symbols file found");
     return {};
@@ -150,8 +158,7 @@ getAvailSymbolsFrom = function(filepath) {
 
 // ---------------------------------------------------------------------------
 SymbolParser = class SymbolParser extends SmartInput {
-  // --- We want to allow blank lines and comments
-  //     We want to allow continuation lines
+  // --- Parse a .symbols file
   constructor(content) {
     super(content);
     this.curLib = undef;

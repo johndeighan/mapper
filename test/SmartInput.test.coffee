@@ -2,9 +2,9 @@
 
 import assert from 'assert'
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {
-	undef, pass, isEmpty, isArray, isString, CWS,
+	undef, pass, isEmpty, isArray, isString,
 	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {
@@ -12,14 +12,27 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {SmartInput} from '@jdeighan/string-input'
-import {addHereDocType, BaseHereDoc} from '@jdeighan/string-input/heredoc'
-
-dir = mydir(`import.meta.url`)
-process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
-process.env.DIR_DATA = mkpath(dir, 'data')
+import {
+	SmartInput, stdSplitCommand, stdIsComment,
+	} from '@jdeighan/string-input'
+import {addHereDocType} from '@jdeighan/string-input/heredoc'
 
 simple = new UnitTester()
+
+# ---------------------------------------------------------------------------
+
+simple.equal 24, stdIsComment('# ---'), true
+simple.equal 25, stdIsComment('#'), true
+simple.equal 26, stdIsComment('##'), true
+simple.equal 27, stdIsComment('#define X 3'), false
+simple.equal 28, stdIsComment('##define X 3'), true
+
+simple.equal 30, stdSplitCommand('#define X 3'), ['define', 'X 3']
+simple.equal 30, stdSplitCommand('#define    X  3'), ['define', 'X  3']
+simple.equal 30, stdSplitCommand('##define X 3'), undef
+simple.equal 30, stdSplitCommand('# define X 3'), undef
+
+# ---------------------------------------------------------------------------
 
 ###
 	class SmartInput should handle the following:
@@ -31,10 +44,7 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class SmartTester extends UnitTester
-
-	normalize: (str) ->
-		return str
+class SmartTester extends UnitTesterNoNorm
 
 	transformValue: (oInput) ->
 		if isString(oInput)
@@ -49,13 +59,14 @@ tester = new SmartTester()
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 52, """
+tester.equal 57, """
 		abc
 
 		# --- a comment
 		def
 		""", """
 		abc
+		# --- a comment
 		def
 		"""
 
@@ -74,7 +85,7 @@ class CustomInput extends SmartInput
 		debug "in new handleComment()"
 		return "line #{@lineNum} is a comment"
 
-tester.equal 77, new CustomInput("""
+tester.equal 83, new CustomInput("""
 		abc
 
 		# --- a comment
@@ -89,7 +100,7 @@ tester.equal 77, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 92, """
+tester.equal 98, """
 		h1 color=blue
 				This is
 				a title
@@ -98,13 +109,14 @@ tester.equal 92, """
 		p the end
 		""", """
 		h1 color=blue This is a title
+		# --- a comment
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 107, """
+tester.equal 114, """
 		h1 color=blue \\
 				This is \\
 				a title
@@ -113,13 +125,14 @@ tester.equal 107, """
 		p the end
 		""", """
 		h1 color=blue This is a title
+		# --- a comment
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 122, """
+tester.equal 130, """
 		h1 color=blue \\
 			This is \\
 			a title
@@ -130,13 +143,14 @@ tester.equal 122, """
 		h1 color=blue \\
 			This is \\
 			a title
+		# --- a comment
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 139, """
+tester.equal 148, """
 		h1 color=<<<
 			magenta
 
@@ -144,13 +158,14 @@ tester.equal 139, """
 		p the end
 		""", """
 		h1 color="magenta"
+		# --- a comment
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 153, """
+tester.equal 163, """
 		h1 color=<<<
 				This is a title
 			magenta
@@ -159,13 +174,14 @@ tester.equal 153, """
 		p the end
 		""", """
 		h1 color="magenta" This is a title
+		# --- a comment
 		p the end
 		"""
 
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 168, """
+tester.equal 179, """
 		h1 color=<<<
 			...color
 			.
@@ -175,6 +191,7 @@ tester.equal 168, """
 		p the end
 		""", """
 		h1 color="color magenta"
+		# --- a comment
 		p the end
 		"""
 
@@ -183,10 +200,9 @@ tester.equal 168, """
 # ---------------------------------------------------------------------------
 # --- test empty HEREDOC section
 
-tester.equal 186, """
+tester.equal 198, """
 		h1 name=<<<
 
-		# --- a comment
 		p the end
 		""", """
 		h1 name=""
@@ -196,7 +212,7 @@ tester.equal 186, """
 # ---------------------------------------------------------------------------
 # --- test ending HEREDOC with EOF instead of a blank line
 
-tester.equal 199, """
+tester.equal 210, """
 		h1 name=<<<
 		""", """
 		h1 name=""
@@ -205,7 +221,7 @@ tester.equal 199, """
 # ---------------------------------------------------------------------------
 # --- test TAML
 
-tester.equal 208, """
+tester.equal 219, """
 		h1 lItems=<<<
 			---
 			- abc
@@ -218,7 +234,7 @@ tester.equal 208, """
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 221, """
+tester.equal 232, """
 		error message=<<<
 			...an error
 			occurred in
@@ -231,7 +247,7 @@ tester.equal 221, """
 # ---------------------------------------------------------------------------
 # --- test forcing a literal block
 
-tester.equal 234, """
+tester.equal 245, """
 		TAML looks like: <<<
 			===
 			---
@@ -243,66 +259,42 @@ tester.equal 234, """
 		"""
 
 # ---------------------------------------------------------------------------
-# --- test anonymous functions
-
-tester.equal 248, """
-		input on:click={<<<}
-			(event) ->
-				console.log('click')
-
-		""", """
-		input on:click={(event) ->
-			console.log('click')}
-		"""
-
-# ---------------------------------------------------------------------------
-# --- test anonymous functions, again
-
-tester.equal 260, """
-		input on:click={<<<}
-			(event) ->
-				callme(x)
-				console.log('click')
-
-		""", """
-		input on:click={(event) ->
-			callme(x)
-			console.log('click')}
-		"""
-
-# ---------------------------------------------------------------------------
 # --- test ordinary block
 
-tester.equal 272, """
+tester.equal 259, """
 		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
 
-		console.dir(lRecords);
+		console.dir lRecords
 		""", """
 		lRecords = db.fetch("select ID,Name\\nfrom Users")
-		console.dir(lRecords);
+		console.dir lRecords
 		"""
 
 # ---------------------------------------------------------------------------
-# --- test creating a custom HEREDOC section
-#
-#     e.g. with header line *** we'll create an upper-cased single line string
+# --- Test patching file name
 
-class UCHereDoc extends BaseHereDoc
+tester.equal 273, new SmartInput("""
+		in file FILE
+		ok
+		exiting file FILE
+		"""), """
+		in file unit test
+		ok
+		exiting file unit test
+		"""
 
-	map: (block) ->
-		block = CWS(remainingLines(block).toUpperCase())
-		return super block
 
-addHereDocType(new UCHereDoc())
+# ---------------------------------------------------------------------------
+# --- Test patching line number
 
-tester.equal 296, """
-		str = <<<
-			***
-			select ID,Name
-			from Users
-
-		""", """
-		str = "SELECT ID,NAME FROM USERS"
+tester.equal 287, new SmartInput("""
+		on line LINE
+		ok
+		on line LINE
+		"""), """
+		on line 1
+		ok
+		on line 3
 		"""

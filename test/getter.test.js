@@ -16,11 +16,6 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  isTAML,
-  taml
-} from '@jdeighan/string-input/taml';
-
-import {
   Getter
 } from '@jdeighan/string-input/get';
 
@@ -30,28 +25,28 @@ simple = new UnitTester();
 (function() {
   var getter;
   getter = new Getter([1, 2, 3]);
+  simple.equal(20, getter.peek(), 1);
   simple.equal(21, getter.peek(), 1);
-  simple.equal(22, getter.peek(), 1);
-  simple.falsy(23, getter.eof());
-  simple.equal(24, getter.get(), 1);
-  simple.equal(25, getter.get(), 2);
-  simple.falsy(27, getter.eof());
-  simple.succeeds(28, function() {
+  simple.falsy(22, getter.eof());
+  simple.equal(23, getter.get(), 1);
+  simple.equal(24, getter.get(), 2);
+  simple.falsy(26, getter.eof());
+  simple.succeeds(27, function() {
     return getter.unget(5);
   });
-  simple.fails(29, function() {
+  simple.fails(28, function() {
     return getter.unget(5);
   });
-  simple.equal(30, getter.get(), 5);
-  simple.falsy(31, getter.eof());
-  simple.equal(33, getter.get(), 3);
-  simple.truthy(34, getter.eof());
-  simple.succeeds(35, function() {
+  simple.equal(29, getter.get(), 5);
+  simple.falsy(30, getter.eof());
+  simple.equal(32, getter.get(), 3);
+  simple.truthy(33, getter.eof());
+  simple.succeeds(34, function() {
     return getter.unget(13);
   });
-  simple.falsy(36, getter.eof());
-  simple.equal(37, getter.get(), 13);
-  return simple.truthy(38, getter.eof());
+  simple.falsy(35, getter.eof());
+  simple.equal(36, getter.get(), 13);
+  return simple.truthy(37, getter.eof());
 })();
 
 // ---------------------------------------------------------------------------

@@ -1,26 +1,19 @@
 # StringFetcher.test.coffee
 
-import assert from 'assert'
-
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {
-	undef, pass, isEmpty, isComment,
+	assert, undef, pass, isEmpty, isComment,
 	} from '@jdeighan/coffee-utils'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {StringFetcher} from '@jdeighan/string-input'
 
-dir = mydir(`import.meta.url`)
-process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
-process.env.DIR_DATA = mkpath(dir, 'data')
-
 simple = new UnitTester()
 
 ###
 	class StringFetcher should handle the following:
-		- #include <file> statements, when DIR_* env vars are set
-		- patch {{FILE}} with the name of the input file
-		- patch {{LINE}} with the line number
+		- #include <file> statements
+		- end file at __END__
 ###
 
 # ---------------------------------------------------------------------------
@@ -34,31 +27,31 @@ simple = new UnitTester()
 			""")
 
 	line = input.fetch()
-	simple.equal 37, line, 'abc'
+	simple.equal 33, line, 'abc'
 
 	hInfo = input.getPositionInfo()
-	simple.equal 40, hInfo, {
+	simple.equal 36, hInfo, {
 			file: 'unit test',
 			lineNum: 1,
 			}
 
 	line = input.fetch()
-	simple.equal 46, line, '\tdef'
+	simple.equal 42, line, '\tdef'
 	input.unfetch(line)            # make available again
 
 	line = input.fetch()
-	simple.equal 50, line, '\tdef'
+	simple.equal 46, line, '\tdef'
 
 	line = input.fetch()
-	simple.equal 53, line, '\t\tghi'
+	simple.equal 49, line, '\t\tghi'
 
 	line = input.fetch()
-	simple.equal 56, line, undef
+	simple.equal 52, line, undef
 	)()
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends UnitTester
+class GatherTester extends UnitTesterNoNorm
 
 	transformValue: (oInput) ->
 
@@ -72,7 +65,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 75, new StringFetcher("""
+tester.equal 71, new StringFetcher("""
 		abc
 		def
 		"""), """
@@ -80,7 +73,7 @@ tester.equal 75, new StringFetcher("""
 		def
 		"""
 
-tester.equal 83, new StringFetcher("""
+tester.equal 79, new StringFetcher("""
 		abc
 
 		def
@@ -93,7 +86,7 @@ tester.equal 83, new StringFetcher("""
 # ---------------------------------------------------------------------------
 # --- Test __END__
 
-tester.equal 96, new StringFetcher("""
+tester.equal 92, new StringFetcher("""
 		abc
 		__END__
 		def
@@ -101,7 +94,7 @@ tester.equal 96, new StringFetcher("""
 		abc
 		"""
 
-tester.equal 104, new StringFetcher("""
+tester.equal 100, new StringFetcher("""
 		abc
 			def
 			__END__
@@ -124,7 +117,7 @@ tester.equal 104, new StringFetcher("""
 	def
 ###
 
-tester.equal 127, new StringFetcher("""
+tester.equal 123, new StringFetcher("""
 		first line
 
 			#include file.txt
@@ -132,8 +125,8 @@ tester.equal 127, new StringFetcher("""
 		"""), """
 		first line
 
-			abc
 			def
+			ghi
 		last line
 		"""
 
@@ -148,7 +141,7 @@ __END__
 def
 ###
 
-tester.equal 151, new StringFetcher("""
+tester.equal 147, new StringFetcher("""
 		first line
 
 			#include file2.txt
@@ -158,31 +151,4 @@ tester.equal 151, new StringFetcher("""
 
 			abc
 		last line
-		"""
-
-# ---------------------------------------------------------------------------
-# --- Test patching file name
-
-tester.equal 166, new StringFetcher("""
-		in file {{FILE}}
-		ok
-		exiting file {{FILE}}
-		"""), """
-		in file unit test
-		ok
-		exiting file unit test
-		"""
-
-
-# ---------------------------------------------------------------------------
-# --- Test patching line number
-
-tester.equal 180, new StringFetcher("""
-		on line {{LINE}}
-		ok
-		on line {{LINE}}
-		"""), """
-		on line 1
-		ok
-		on line 3
 		"""

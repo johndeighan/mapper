@@ -22,7 +22,7 @@ import {
 import {
   TreeWalker,
   TreeStringifier
-} from '@jdeighan/string-input/tree';
+} from '@jdeighan/string-input/walker';
 
 simple = new UnitTester();
 

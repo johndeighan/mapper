@@ -8,7 +8,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {PLLParser} from '@jdeighan/string-input'
+import {PLLParser} from '@jdeighan/string-input/pll'
 
 simple = new UnitTester()
 

@@ -45,7 +45,7 @@ simple = new UnitTester();
 
 /*
 	class StringInput should handle the following:
-		- #include <file> statements, when DIR_* env vars are set
+		- #include <file> statements
 		- get(), peek(), unget(), skip()
 		- overriding of mapLine() to return alternate strings or objects
 		- fetch() and fetchBlock() inside mapLine()
@@ -53,33 +53,28 @@ simple = new UnitTester();
 // ---------------------------------------------------------------------------
 // --- test get(), peek(), unget(), skip()
 (function() {
-  var input, item, level, pair;
+  var input, lPair, pair;
   input = new StringInput(`abc
 	def
 		ghi`);
-  [item, level] = input.peek();
-  simple.equal(72, item, 'abc');
-  simple.equal(73, level, 0);
-  [item, level] = input.peek();
-  simple.equal(76, item, 'abc');
-  simple.equal(77, level, 0);
-  [item, level] = input.get();
-  simple.equal(80, item, 'abc');
-  simple.equal(81, level, 0);
-  [item, level] = input.get();
-  simple.equal(84, item, 'def');
-  simple.equal(85, level, 1);
-  input.unget([item, level]);
-  [item, level] = input.get();
-  simple.equal(89, item, 'def');
-  simple.equal(90, level, 1);
-  [item, level] = input.get();
-  simple.equal(93, item, 'ghi');
-  simple.equal(944, level, 2);
-  input.unget(item);
+  // --- lPair is [item, level]
+  lPair = input.peek();
+  simple.equal(44, lPair, ['abc', 0]);
+  lPair = input.peek();
+  simple.equal(47, lPair, ['abc', 0]);
+  lPair = input.get();
+  simple.equal(50, lPair, ['abc', 0]);
+  lPair = input.get();
+  simple.equal(53, lPair, ['def', 1]);
+  input.unget(lPair);
+  lPair = input.get();
+  simple.equal(57, lPair, ['def', 1]);
+  lPair = input.get();
+  simple.equal(60, lPair, ['ghi', 2]);
+  input.unget(lPair);
   input.skip();
   pair = input.get();
-  return simple.equal(99, pair, undef);
+  return simple.equal(65, pair, undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -112,6 +107,7 @@ def`);
 (function() {
   var TestInput;
   TestInput = class TestInput extends StringInput {
+    // --- This removes blank lines
     mapLine(line, level) {
       if (line === '') {
         return undef;
@@ -121,7 +117,7 @@ def`);
     }
 
   };
-  return tester.equal(114, new TestInput(`abc
+  return tester.equal(115, new TestInput(`abc
 
 def`), `abc
 def`);
@@ -132,6 +128,7 @@ def`);
 (function() {
   var TestInput;
   TestInput = class TestInput extends StringInput {
+    // --- This maps all non-empty lines to the string 'x'
     mapLine(line, level) {
       if (line === '') {
         return undef;
@@ -141,7 +138,7 @@ def`);
     }
 
   };
-  return tester.equal(136, new TestInput(`abc
+  return tester.equal(138, new TestInput(`abc
 
 def`), `x
 x`);
@@ -153,6 +150,7 @@ x`);
 (function() {
   var TestInput;
   TestInput = class TestInput extends StringInput {
+    // --- Remove blank lines PLUS the line following a blank line
     mapLine(line, level) {
       var follow;
       if (line === '') {
@@ -164,7 +162,7 @@ x`);
     }
 
   };
-  return tester.equal(161, new TestInput(`abc
+  return tester.equal(164, new TestInput(`abc
 
 def
 ghi`), `abc
@@ -172,7 +170,7 @@ ghi`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- Test continuation lines
+// --- Test implementing continuation lines
 (function() {
   var TestInput;
   TestInput = class TestInput extends StringInput {
@@ -189,7 +187,7 @@ ghi`);
     }
 
   };
-  return tester.equal(190, new TestInput(`str = compare(
+  return tester.equal(193, new TestInput(`str = compare(
 		"abcde",
 		expected
 		)
@@ -239,7 +237,7 @@ def`);
 // ---------------------------------------------------------------------------
 // --- Test advanced use of mapping function
 //        - skip comments and blank lines
-//        -
+//        - replace reactive statements
 (function() {
   var TestInput;
   TestInput = class TestInput extends StringInput {
@@ -250,7 +248,7 @@ def`);
       }
       if (lMatches = line.match(/^(?:([A-Za-z][A-Za-z0-9_]*)\s*)?\<\=\=\s*(.*)$/)) { // variable name
         [_, varName, expr] = lMatches;
-        return `\`$: ${varName} = ${expr};\``;
+        return `\`$:{\n${varName} = ${expr}\n}\``;
       } else {
         return line;
       }
@@ -261,14 +259,16 @@ def`);
 myvar    <==     2 * 3
 
 def`), `abc
-\`$: myvar = 2 * 3;\`
+\`$:{
+myvar = 2 * 3
+}\`
 def`);
 })();
 
 // ---------------------------------------------------------------------------
 // --- Test #include inside block processed by fetchBlock()
 (function() {
-  var TestParser, block, line, oInput, text;
+  var TestParser, block, lPair, oInput, text;
   text = `p a paragraph
 div:markdown
 	#include title.md`;
@@ -283,17 +283,17 @@ div:markdown
 
   };
   oInput = new TestParser(text);
-  [line] = oInput.get();
-  simple.equal(312, line, 'p a paragraph');
-  [line] = oInput.get();
-  simple.equal(314, line, 'div:markdown');
-  return simple.equal(315, block, '\ttitle\n\t=====');
+  lPair = oInput.get();
+  simple.equal(314, lPair[0], 'p a paragraph');
+  lPair = oInput.get();
+  simple.equal(316, lPair[0], 'div:markdown');
+  return simple.equal(317, block, '\ttitle\n\t=====');
 })();
 
 // ---------------------------------------------------------------------------
 // --- Test blank lines inside a block
 (function() {
-  var TestParser, block, line, oInput;
+  var TestParser, block, lPair, oInput;
   block = undef;
   TestParser = class TestParser extends StringInput {
     mapLine(line, level) {
@@ -309,18 +309,18 @@ div:markdown
 	line 1
 
 	line 3`);
-  [line] = oInput.get();
-  simple.equal(339, line, 'p a paragraph');
-  [line] = oInput.get();
-  simple.equal(341, line, 'div:markdown');
-  return simple.equal(342, block, `line 1
+  lPair = oInput.get();
+  simple.equal(341, lPair[0], 'p a paragraph');
+  lPair = oInput.get();
+  simple.equal(343, lPair[0], 'div:markdown');
+  return simple.equal(344, block, `line 1
 
 line 3`);
 })();
 
 // ---------------------------------------------------------------------------
 (function() {
-  var TestParser, block, line, oInput, text;
+  var TestParser, block, lPair, oInput, text;
   text = `p a paragraph
 div:markdown
 	#include title.md`;
@@ -335,11 +335,11 @@ div:markdown
 
   };
   oInput = new TestParser(text);
-  [line] = oInput.get();
-  simple.equal(368, line, 'p a paragraph');
-  [line] = oInput.get();
-  simple.equal(371, line, 'div:markdown');
-  return simple.equal(373, block, '\ttitle\n\t=====');
+  lPair = oInput.get();
+  simple.equal(370, lPair[0], 'p a paragraph');
+  lPair = oInput.get();
+  simple.equal(373, lPair[0], 'div:markdown');
+  return simple.equal(375, block, '\ttitle\n\t=====');
 })();
 
 // ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ div:markdown
 div:markdown
 	#include header.md`;
   oInput = new StringInput(text);
-  return tester.equal(401, oInput, `p a paragraph
+  return tester.equal(403, oInput, `p a paragraph
 div:markdown
 	header
 	======
@@ -373,7 +373,7 @@ div:markdown
 
 // ---------------------------------------------------------------------------
 // --- Test comment
-tester.equal(415, new StringInput(`abc
+tester.equal(417, new StringInput(`abc
 
 # --- this is a comment
 
@@ -414,7 +414,7 @@ def`);
     }
 
   };
-  return tester2.equal(460, new TestInput2(`abc
+  return tester2.equal(462, new TestInput2(`abc
 #if x==y
 	def
 #else

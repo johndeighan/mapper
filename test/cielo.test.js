@@ -33,7 +33,8 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  doMap
+  doMap,
+  SmartInput
 } from '@jdeighan/string-input';
 
 import {
@@ -41,9 +42,12 @@ import {
 } from '@jdeighan/string-input/symbols';
 
 import {
+  convertCoffee
+} from '@jdeighan/string-input/coffee';
+
+import {
   cieloCodeToJS,
-  addImports,
-  convertCielo
+  addImports
 } from '@jdeighan/string-input/cielo';
 
 rootDir = mydir(import.meta.url);
@@ -54,8 +58,7 @@ setSymbolsRootDir(rootDir);
 
 simple = new UnitTester('cielo.test.coffee');
 
-// setDebugging 'cieloCodeToJS doMap'
-convertCielo(false);
+convertCoffee(false);
 
 // ---------------------------------------------------------------------------
 // --- Features:
@@ -69,72 +72,78 @@ convertCielo(false);
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  CieloTester = class CieloTester extends UnitTesterNoNorm {
+  CieloTester = class CieloTester extends UnitTester {
     transformValue(code) {
-      var jsCode, lNeededSymbols;
-      ({jsCode, lNeededSymbols} = cieloCodeToJS(code, {source}));
-      return addImports(jsCode, lNeededSymbols);
+      return cieloCodeToJS(code, {source});
     }
 
   };
   tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
-  // --- test removing blank lines and comments
-  tester.equal(47, `# --- a comment
+  // --- test retaining comments
+  tester.equal(45, `# --- a comment
+y = x`, `# --- a comment
+y = x`);
+  // ------------------------------------------------------------------------
+  // --- test removing blank lines
+  tester.equal(57, `# --- a comment
 
 y = x`, `# --- a comment
 y = x`);
   // ------------------------------------------------------------------------
-  // --- test include files
-  tester.equal(59, `for x in [1,5]
+  // --- test include files - include.txt is:
+  // y = f(2*3)
+  // for i in range(5)
+  //    y *= i
+  tester.equal(73, `for x in [1,5]
 	#include include.txt`, `for x in [1,5]
 	y = f(2*3)
 	for i in range(5)
 		y *= i`);
   // ------------------------------------------------------------------------
   // --- test continuation lines
-  tester.equal(72, `x = 23
+  tester.equal(92, `x = 23
 y = x
 		+ 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
   // --- test use of backslash continuation lines
-  tester.equal(84, `x = 23
+  tester.equal(104, `x = 23
 y = x + 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
   // --- test replacing LINE, FILE, DIR
   //     source = "c:/Users/johnd/string-input/test/cielo.test.coffee"
-  tester.equal(98, `x = 23
+  tester.equal(118, `x = 23
 y = "line LINE in FILE"
 + 5`, `x = 23
 y = "line 2 in cielo.test.coffee"
 + 5`);
-  tester.equal(108, `str = <<<
+  tester.equal(128, `str = <<<
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(119, `str = <<<
+  tester.equal(139, `str = <<<
 	===
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(131, `str = <<<
+  tester.equal(151, `str = <<<
 	...this is a
 		long line`, `str = "this is a long line"`);
-  tester.equal(139, `lItems = <<<
+  tester.equal(159, `lItems = <<<
 	---
 	- a
 	- b`, `lItems = ["a","b"]`);
-  tester.equal(148, `hItems = <<<
+  tester.equal(168, `hItems = <<<
 	---
 	a: 13
 	b: 42`, `hItems = {"a":13,"b":42}`);
-  tester.equal(157, `lItems = <<<
+  tester.equal(177, `lItems = <<<
 	---
 	-
 		a: 13
@@ -142,7 +151,7 @@ x = 42`);
 	-
 		c: 2
 		d: 3`, `lItems = [{"a":13,"b":42},{"c":2,"d":3}]`);
-  tester.equal(170, `func(<<<, <<<, <<<)
+  tester.equal(190, `func(<<<, <<<, <<<)
 	a block
 	of text
 
@@ -153,14 +162,14 @@ x = 42`);
 	---
 	a: 13
 	b: 42`, `func("a block\\nof text", ["a","b"], {"a":13,"b":42})`);
-  tester.equal(186, `x = 42
+  tester.equal(206, `x = 42
 func(x, "abc")
 __END__
 This is extraneous text
 which should be ignored`, `x = 42
 func(x, "abc")`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(199, `str = \"\"\"
+  tester.equal(219, `str = \"\"\"
 	this is a
 	long string
 	\"\"\"`, `str = \"\"\"
@@ -168,7 +177,7 @@ func(x, "abc")`);
 	long string
 	\"\"\"`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(213, `str = """
+  tester.equal(233, `str = """
 	this is a
 	long string
 	"""`, `str = """
@@ -176,7 +185,7 @@ func(x, "abc")`);
 	long string
 	"""`);
   // --- Make sure triple quoted strings are passed through as is
-  return tester.equal(227, `str = '''
+  return tester.equal(247, `str = '''
 	this is a
 	long string
 	'''`, `str = '''
@@ -188,25 +197,26 @@ func(x, "abc")`);
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
+  convertCoffee(true);
   CieloTester = class CieloTester extends UnitTester {
     transformValue(text) {
-      return doMap(undef, text);
+      return doMap(SmartInput, text);
     }
 
   };
   tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
   // Test function HEREDOC types
-  tester.equal(255, `handler = <<<
+  tester.equal(275, `handler = <<<
 	() ->
 		return 42`, `handler = (function() {
 	return 42;
 	});`);
-  tester.equal(264, `handler = <<<
+  tester.equal(285, `handler = <<<
 	() -> return 42`, `handler = (function() {
 	return 42;
 	});`);
-  return tester.equal(271, `handler = <<<
+  return tester.equal(294, `handler = <<<
 	(x, y) ->
 		return 42`, `handler = (function(x, y) {
 	return 42;

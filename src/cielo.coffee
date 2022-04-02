@@ -3,7 +3,7 @@
 import {
 	undef, assert, croak, isString, uniq,
 	} from '@jdeighan/coffee-utils'
-import {log} from '@jdeighan/coffee-utils/log'
+import {log, DEBUG} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -34,8 +34,8 @@ export convertCielo = (flag) ->
 
 # ---------------------------------------------------------------------------
 
-export cieloCodeToJS = (lBlocks, hOptions={}) ->
-	# --- cielo => js    lBlocks can be a string or array
+export cieloCodeToJS = (cieloCode, hOptions={}) ->
+	# --- cielo => js
 	#     Valid Options:
 	#        premapper:  SmartInput or subclass
 	#        postmapper: SmartInput or subclass
@@ -46,58 +46,48 @@ export cieloCodeToJS = (lBlocks, hOptions={}) ->
 	#              header: false
 
 	debug "enter cieloCodeToJS()"
+	debug "cieloCode", cieloCode
 
-	if isString(lBlocks)
-		debug "string => array"
-		lBlocks = [lBlocks]
+	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indentation"
 
-	premapper = hOptions.premapper
-	postmapper = hOptions.postmapper
+	premapper = hOptions.premapper || SmartInput
+	postmapper = hOptions.postmapper   # may be undef
+	source = hOptions.source
 
-	lNeededSymbols = []
-	lNewBlocks = []
-	for code,i in lBlocks
-		assert (indentLevel(code)==0), "cieloCodeToJS(): has indentation"
-		orgCode = code    # used in error messages
-		debug "BLOCK #{i}", code
+	# --- Even if no premapper is defined, this will handle
+	#     continuation lines, HEREDOCs, etc.
+	coffeeCode = doMap(premapper, cieloCode, source)
+	if coffeeCode != cieloCode
+		debug "coffeeCode", coffeeCode
 
-		# --- Even if no premapper is defined, this will handle
-		#     continuation lines, HEREDOCs, etc.
-		if premapper
-			assert premapper instanceof StringInput, "bad premapper"
-			newcode = doMap(premapper, code, hOptions.source)
+	# --- symbols will always be unique
+	lNeededSymbols = getNeededSymbols(coffeeCode)
+	debug "#{lNeededSymbols.length} needed symbols: #{lNeededSymbols}"
+
+	try
+		if convertingCielo
+			jsPreCode = coffeeCodeToJS(coffeeCode, hOptions.hCoffeeOptions)
+			debug "jsPreCode", jsPreCode
 		else
-			newcode = doMap(SmartInput, code, hOptions.source)
+			jsPreCode = cieloCode
+		if postmapper
+			jsPostCode = doMap(postmapper, jsPreCode, source)
+			if jsPostCode != jsPreCode
+				debug "post mapped", jsPostCode
+		else
+			jsPostCode = jsPreCode
 
-		if newcode != code
-			code = newcode
-			debug "pre mapped", code
+		# --- A separator can be specified as 3rd arg
+		#     But by default, the variable convertCielo is checked
+		#        and the appropriate separator is used
+		jsCode = addImports(jsPostCode, lNeededSymbols)
 
-		# --- symbols will always be unique
-		lNeededSymbols = lNeededSymbols.concat(getNeededSymbols(code))
-		try
-			if convertingCielo
-				jsCode = coffeeCodeToJS(code, hOptions.hCoffeeOptions)
-				debug "jsCode", jsCode
-			else
-				jsCode = code
-			if postmapper
-				assert postmapper instanceof StringInput, "bad postmapper"
-				newcode = doMap(postmapper, jsCode, hOptions.source)
-				if newcode != jsCode
-					jsCode = newcode
-					debug "post mapped", jsCode
-			lNewBlocks.push jsCode
-		catch err
-			log "Code", code
-			croak err, "Original Code", orgCode
-
-	jsCode = joinBlocks(lNewBlocks...)
-	debug "return from cieloCodeToJS()"
-	return {
-		jsCode,
-		lNeededSymbols: uniq(lNeededSymbols)
-		}
+		if jsCode != jsPostCode
+			debug "with imports", jsCode
+	catch err
+		croak err, "Original Code", cieloCode
+	debug "return from cieloCodeToJS()", jsCode
+	return jsCode
 
 # ---------------------------------------------------------------------------
 
@@ -125,10 +115,10 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 	if ! destPath?
 		destPath = withExt(srcPath, '.js', {removeLeadingUnderScore:true})
 	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
-		coffeeCode = slurp(srcPath)
+		cieloCode = slurp(srcPath)
 		if hOptions.saveAST
 			dumpfile = withExt(srcPath, '.ast')
-			lNeeded = getNeededSymbols(coffeeCode, {dumpfile})
+			lNeeded = getNeededSymbols(cieloCode, {dumpfile})
 			if (lNeeded == undef) || (lNeeded.length == 0)
 				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
 			else
@@ -137,6 +127,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		jsCode = cieloCodeToJS(coffeeCode, hOptions)
+		jsCode = cieloCodeToJS(cieloCode, hOptions)
 		barf destPath, jsCode
 	return

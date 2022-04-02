@@ -53,24 +53,28 @@ export coffeeExprToJS = (coffeeExpr) ->
 #        inlineMap - generate source map inside the JS file
 # ---------------------------------------------------------------------------
 
-export coffeeCodeToJS = (code, hOptions=undef) ->
+export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
-	assert (indentLevel(code)==0), "coffeeCodeToJS(): has indentation"
+	assert (indentLevel(coffeeCode)==0), "coffeeCodeToJS(): has indentation"
 	debug "enter coffeeCodeToJS()"
 
 	if ! convertingCoffee
-		debug "return from coffeeCodeToJS() not converting", code
-		return code
+		debug "return from coffeeCodeToJS() not converting", coffeeCode
+		return coffeeCode
 
-	if ! hOptions
-		hOptions = {
+	hCoffeeOptions = hOptions.hCoffeeOptions
+	if ! hCoffeeOptions
+		hCoffeeOptions = {
 			bare: true
 			header: false
 			}
 	try
-		jsCode = cleanJS(CoffeeScript.compile(code, hOptions))
+		# --- cleanJS() does:
+		#        1. remove blank lines
+		#        2. remove trailing newline
+		jsCode = cleanJS(CoffeeScript.compile(coffeeCode, hCoffeeOptions))
 	catch err
-		croak err, "Original Code", code
+		croak err, "Original Code", coffeeCode
 
 	debug "return from coffeeCodeToJS()", jsCode
 	return jsCode

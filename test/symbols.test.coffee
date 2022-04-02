@@ -6,7 +6,6 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
 	setSymbolsRootDir, symbolsRootDir, getAvailSymbols, getNeededSymbols,
-	addImports,
 	} from '@jdeighan/string-input/symbols'
 
 dir = mydir(import.meta.url)
@@ -99,45 +98,3 @@ simple.equal 97, getNeededSymbols("""
 	x = myfunc(4)
 	y = x + 5
 	"""), []
-
-# ---------------------------------------------------------------------------
-
-class ImportTester extends UnitTesterNoNorm
-
-	transformValue: (code) ->
-		return addImports(code)
-
-tester = new ImportTester()
-
-# ---------------------------------------------------------------------------
-
-tester.equal 114, """
-		x = undef
-		""",
-	"""
-		import {undef} from '@jdeighan/coffee-utils'
-		x = undef
-		"""
-
-tester.equal 122, """
-		x = undef
-		contents = 'this is a file'
-		fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
-		""",
-	"""
-		import fs from 'fs'
-		import {undef} from '@jdeighan/coffee-utils'
-		x = undef
-		contents = 'this is a file'
-		fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
-		"""
-
-tester.equal 135, """
-		x = 23
-		logger x
-		""",
-	"""
-		import {log as logger} from '@jdeighan/coffee-utils/log'
-		x = 23
-		logger x
-		"""

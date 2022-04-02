@@ -9,7 +9,8 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  log
+  log,
+  DEBUG
 } from '@jdeighan/coffee-utils/log';
 
 import {
@@ -65,9 +66,9 @@ export var convertCielo = function(flag) {
 };
 
 // ---------------------------------------------------------------------------
-export var cieloCodeToJS = function(lBlocks, hOptions = {}) {
-  var code, err, i, j, jsCode, lNeededSymbols, lNewBlocks, len, newcode, orgCode, postmapper, premapper;
-  // --- cielo => js    lBlocks can be a string or array
+export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
+  var coffeeCode, err, jsCode, jsPostCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
+  // --- cielo => js
   //     Valid Options:
   //        premapper:  SmartInput or subclass
   //        postmapper: SmartInput or subclass
@@ -77,61 +78,48 @@ export var cieloCodeToJS = function(lBlocks, hOptions = {}) {
   //              bare: true
   //              header: false
   debug("enter cieloCodeToJS()");
-  if (isString(lBlocks)) {
-    debug("string => array");
-    lBlocks = [lBlocks];
+  debug("cieloCode", cieloCode);
+  assert(indentLevel(cieloCode) === 0, "cieloCodeToJS(): has indentation");
+  premapper = hOptions.premapper || SmartInput;
+  postmapper = hOptions.postmapper; // may be undef
+  source = hOptions.source;
+  // --- Even if no premapper is defined, this will handle
+  //     continuation lines, HEREDOCs, etc.
+  coffeeCode = doMap(premapper, cieloCode, source);
+  if (coffeeCode !== cieloCode) {
+    debug("coffeeCode", coffeeCode);
   }
-  premapper = hOptions.premapper;
-  postmapper = hOptions.postmapper;
-  lNeededSymbols = [];
-  lNewBlocks = [];
-  for (i = j = 0, len = lBlocks.length; j < len; i = ++j) {
-    code = lBlocks[i];
-    assert(indentLevel(code) === 0, "cieloCodeToJS(): has indentation");
-    orgCode = code; // used in error messages
-    debug(`BLOCK ${i}`, code);
-    // --- Even if no premapper is defined, this will handle
-    //     continuation lines, HEREDOCs, etc.
-    if (premapper) {
-      assert(premapper instanceof StringInput, "bad premapper");
-      newcode = doMap(premapper, code, hOptions.source);
+  // --- symbols will always be unique
+  lNeededSymbols = getNeededSymbols(coffeeCode);
+  debug(`${lNeededSymbols.length} needed symbols: ${lNeededSymbols}`);
+  try {
+    if (convertingCielo) {
+      jsPreCode = coffeeCodeToJS(coffeeCode, hOptions.hCoffeeOptions);
+      debug("jsPreCode", jsPreCode);
     } else {
-      newcode = doMap(SmartInput, code, hOptions.source);
+      jsPreCode = cieloCode;
     }
-    if (newcode !== code) {
-      code = newcode;
-      debug("pre mapped", code);
-    }
-    // --- symbols will always be unique
-    lNeededSymbols = lNeededSymbols.concat(getNeededSymbols(code));
-    try {
-      if (convertingCielo) {
-        jsCode = coffeeCodeToJS(code, hOptions.hCoffeeOptions);
-        debug("jsCode", jsCode);
-      } else {
-        jsCode = code;
+    if (postmapper) {
+      jsPostCode = doMap(postmapper, jsPreCode, source);
+      if (jsPostCode !== jsPreCode) {
+        debug("post mapped", jsPostCode);
       }
-      if (postmapper) {
-        assert(postmapper instanceof StringInput, "bad postmapper");
-        newcode = doMap(postmapper, jsCode, hOptions.source);
-        if (newcode !== jsCode) {
-          jsCode = newcode;
-          debug("post mapped", jsCode);
-        }
-      }
-      lNewBlocks.push(jsCode);
-    } catch (error) {
-      err = error;
-      log("Code", code);
-      croak(err, "Original Code", orgCode);
+    } else {
+      jsPostCode = jsPreCode;
     }
+    // --- A separator can be specified as 3rd arg
+    //     But by default, the variable convertCielo is checked
+    //        and the appropriate separator is used
+    jsCode = addImports(jsPostCode, lNeededSymbols);
+    if (jsCode !== jsPostCode) {
+      debug("with imports", jsCode);
+    }
+  } catch (error) {
+    err = error;
+    croak(err, "Original Code", cieloCode);
   }
-  jsCode = joinBlocks(...lNewBlocks);
-  debug("return from cieloCodeToJS()");
-  return {
-    jsCode,
-    lNeededSymbols: uniq(lNeededSymbols)
-  };
+  debug("return from cieloCodeToJS()", jsCode);
+  return jsCode;
 };
 
 // ---------------------------------------------------------------------------
@@ -150,30 +138,30 @@ export var addImports = function(jsCode, lNeededSymbols, sep = undef) {
 
 // ---------------------------------------------------------------------------
 export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
-  var coffeeCode, dumpfile, j, jsCode, lNeeded, len, n, sym, word;
+  var cieloCode, dumpfile, i, jsCode, lNeeded, len, n, sym, word;
   if (destPath == null) {
     destPath = withExt(srcPath, '.js', {
       removeLeadingUnderScore: true
     });
   }
   if (hOptions.force || !newerDestFileExists(srcPath, destPath)) {
-    coffeeCode = slurp(srcPath);
+    cieloCode = slurp(srcPath);
     if (hOptions.saveAST) {
       dumpfile = withExt(srcPath, '.ast');
-      lNeeded = getNeededSymbols(coffeeCode, {dumpfile});
+      lNeeded = getNeededSymbols(cieloCode, {dumpfile});
       if ((lNeeded === undef) || (lNeeded.length === 0)) {
         debug(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
       } else {
         n = lNeeded.length;
         word = n === 1 ? 'SYMBOL' : 'SYMBOLS';
         debug(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
-        for (j = 0, len = lNeeded.length; j < len; j++) {
-          sym = lNeeded[j];
+        for (i = 0, len = lNeeded.length; i < len; i++) {
+          sym = lNeeded[i];
           debug(`   - ${sym}`);
         }
       }
     }
-    jsCode = cieloCodeToJS(coffeeCode, hOptions);
+    jsCode = cieloCodeToJS(cieloCode, hOptions);
     barf(destPath, jsCode);
   }
 };

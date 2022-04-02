@@ -24,7 +24,7 @@ convertCielo false
 # --- make sure it's using the testing .symbols file
 
 hSymbols = getAvailSymbols()
-simple.equal 26, hSymbols, {
+simple.equal 27, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
 		readFile:{lib: 'fs'}
@@ -50,7 +50,7 @@ simple.equal 26, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	simple.equal 52, joinBlocks(lImports..., text), """
+	simple.equal 53, joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42
@@ -62,7 +62,7 @@ simple.equal 26, hSymbols, {
 
 (() ->
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 64, buildImportList(lNeeded), [
+	simple.equal 65, buildImportList(lNeeded), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
@@ -79,10 +79,9 @@ simple.equal 26, hSymbols, {
 				logger "file exists"
 			"""
 
-	{jsCode, lNeededSymbols} = cieloCodeToJS(code)
-	newcode = addImports(jsCode, lNeededSymbols, "\n")
+	jsCode = cieloCodeToJS(code)
 
-	simple.equal 84, newcode, """
+	simple.equal 85, jsCode, """
 			import fs from 'fs'
 			import {log as logger} from '@jdeighan/coffee-utils/log'
 			# --- temp.cielo
@@ -98,14 +97,13 @@ simple.equal 26, hSymbols, {
 	class CieloTester extends UnitTesterNoNorm
 
 		transformValue: (text) ->
-			{jsCode, lNeededSymbols} = cieloCodeToJS(text)
-			return addImports(jsCode, lNeededSymbols)
+			return cieloCodeToJS(text)
 
 	tester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 107, """
+	tester.equal 108, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -116,7 +114,7 @@ simple.equal 26, hSymbols, {
 
 	# --- But not if we're already importing them
 
-	tester.equal 118, """
+	tester.equal 119, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -124,6 +122,37 @@ simple.equal 26, hSymbols, {
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
+			"""
+
+	tester.equal 114, """
+			x = undef
+			""",
+		"""
+			import {undef} from '@jdeighan/coffee-utils'
+			x = undef
+			"""
+
+	tester.equal 122, """
+			x = undef
+			contents = 'this is a file'
+			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
+			""",
+		"""
+			import fs from 'fs'
+			import {undef} from '@jdeighan/coffee-utils'
+			x = undef
+			contents = 'this is a file'
+			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
+			"""
+
+	tester.equal 135, """
+			x = 23
+			logger x
+			""",
+		"""
+			import {log as logger} from '@jdeighan/coffee-utils/log'
+			x = 23
+			logger x
 			"""
 
 	)()

@@ -47,8 +47,8 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //     NOTE: array returned will always be unique
-  assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
   debug("enter getNeededSymbols()");
+  assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
   try {
     debug("COMPILE CODE", coffeeCode);
     ast = CoffeeScript.compile(coffeeCode, {
@@ -69,23 +69,16 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
 };
 
 // ---------------------------------------------------------------------------
-export var addImports = function(coffeeCode, hOptions = {}) {
-  var lNeededSymbols, strImports;
-  lNeededSymbols = getNeededSymbols(coffeeCode, hOptions);
-  strImports = buildImportBlock(lNeededSymbols, hOptions);
-  return [strImports, coffeeCode].join("\n");
-};
-
-// ---------------------------------------------------------------------------
-export var buildImportBlock = function(lNeededSymbols, hOptions = {}) {
-  return buildImportList(lNeededSymbols, hOptions).join("\n");
-};
-
-// ---------------------------------------------------------------------------
 export var buildImportList = function(lNeededSymbols, hOptions = {}) {
   var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
   // --- Valid options:
   //     recurse - search upward for .symbols files
+  debug("enter buildImportList()");
+  debug("lNeededSymbols", lNeededSymbols);
+  if (!lNeededSymbols || (lNeededSymbols.length === 0)) {
+    debug("return from buildImportList() - no needed symbols");
+    return [];
+  }
   hLibs = {}; // { <lib>: [<symbol>, ... ], ... }
   lImports = [];
   // --- { <sym>: {lib: <lib>, src: <name> }}
@@ -120,6 +113,7 @@ export var buildImportList = function(lNeededSymbols, hOptions = {}) {
     strSymbols = hLibs[lib].join(',');
     lImports.push(`import {${strSymbols}} from '${lib}'`);
   }
+  debug("return from buildImportList()", lImports);
   return lImports;
 };
 

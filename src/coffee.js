@@ -66,25 +66,29 @@ export var coffeeExprToJS = function(coffeeExpr) {
 //        filename - name of the source map file
 //        inlineMap - generate source map inside the JS file
 // ---------------------------------------------------------------------------
-export var coffeeCodeToJS = function(code, hOptions = undef) {
-  var err, jsCode;
-  assert(indentLevel(code) === 0, "coffeeCodeToJS(): has indentation");
+export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
+  var err, hCoffeeOptions, jsCode;
+  assert(indentLevel(coffeeCode) === 0, "coffeeCodeToJS(): has indentation");
   debug("enter coffeeCodeToJS()");
   if (!convertingCoffee) {
-    debug("return from coffeeCodeToJS() not converting", code);
-    return code;
+    debug("return from coffeeCodeToJS() not converting", coffeeCode);
+    return coffeeCode;
   }
-  if (!hOptions) {
-    hOptions = {
+  hCoffeeOptions = hOptions.hCoffeeOptions;
+  if (!hCoffeeOptions) {
+    hCoffeeOptions = {
       bare: true,
       header: false
     };
   }
   try {
-    jsCode = cleanJS(CoffeeScript.compile(code, hOptions));
+    // --- cleanJS() does:
+    //        1. remove blank lines
+    //        2. remove trailing newline
+    jsCode = cleanJS(CoffeeScript.compile(coffeeCode, hCoffeeOptions));
   } catch (error) {
     err = error;
-    croak(err, "Original Code", code);
+    croak(err, "Original Code", coffeeCode);
   }
   debug("return from coffeeCodeToJS()", jsCode);
   return jsCode;

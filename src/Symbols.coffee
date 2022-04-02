@@ -29,8 +29,8 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	#        dumpfile: <filepath>   - where to dump ast
 	#     NOTE: array returned will always be unique
 
-	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
 	debug "enter getNeededSymbols()"
+	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
 	try
 		debug "COMPILE CODE", coffeeCode
 		ast = CoffeeScript.compile coffeeCode, {ast: true}
@@ -47,23 +47,16 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 
 # ---------------------------------------------------------------------------
 
-export addImports = (coffeeCode, hOptions={}) ->
-
-	lNeededSymbols = getNeededSymbols(coffeeCode, hOptions)
-	strImports = buildImportBlock(lNeededSymbols, hOptions)
-	return [strImports, coffeeCode].join("\n")
-
-# ---------------------------------------------------------------------------
-
-export buildImportBlock = (lNeededSymbols, hOptions={}) ->
-
-	return buildImportList(lNeededSymbols, hOptions).join("\n")
-
-# ---------------------------------------------------------------------------
-
 export buildImportList = (lNeededSymbols, hOptions={}) ->
 	# --- Valid options:
 	#     recurse - search upward for .symbols files
+
+	debug "enter buildImportList()"
+	debug "lNeededSymbols", lNeededSymbols
+
+	if !lNeededSymbols || (lNeededSymbols.length == 0)
+		debug "return from buildImportList() - no needed symbols"
+		return []
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
 	lImports = []
@@ -95,6 +88,7 @@ export buildImportList = (lNeededSymbols, hOptions={}) ->
 	for lib in Object.keys(hLibs).sort()
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
+	debug "return from buildImportList()", lImports
 	return lImports
 
 # ---------------------------------------------------------------------------

@@ -39,6 +39,10 @@
 	"bugs": {
 		"url": "https://github.com/johndeighan/string-input/issues"
 	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/johndeighan/mapper.git"
+	},
 	"homepage": "https://github.com/johndeighan/string-input#readme",
 	"devDependencies": {
 		"@jdeighan/unit-tester": "^1.0.5",

@@ -22,7 +22,7 @@ import {
 import {
   sassify,
   convertSASS
-} from '@jdeighan/string-input/sass';
+} from '@jdeighan/mapper/sass';
 
 root = process.env.DIR_ROOT = mydir(import.meta.url);
 

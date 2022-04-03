@@ -11,8 +11,8 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  StringInput
-} from '@jdeighan/string-input';
+  Mapper
+} from '@jdeighan/mapper';
 
 convert = true;
 
@@ -22,7 +22,7 @@ export var convertSASS = function(flag) {
 };
 
 // ---------------------------------------------------------------------------
-export var SassMapper = class SassMapper extends StringInput {
+export var SassMapper = class SassMapper extends Mapper {
   // --- only removes comments
   mapLine(line, level) {
     if (isComment(line)) {
@@ -38,7 +38,7 @@ export var SassMapper = class SassMapper extends StringInput {
 export var sassify = function(text) {
   var newtext, oInput, result;
   oInput = new SassMapper(text);
-  newtext = oInput.getAllText();
+  newtext = oInput.getBlock();
   if (!convert) {
     return newtext;
   }

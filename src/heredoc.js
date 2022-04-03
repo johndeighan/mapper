@@ -34,10 +34,6 @@ import {
   LOG
 } from '@jdeighan/coffee-utils/log';
 
-import {
-  TAMLHereDoc
-} from '@jdeighan/string-input/taml';
-
 lAllHereDocs = [];
 
 lAllHereDocNames = [];
@@ -175,5 +171,3 @@ qesc = function(block) {
 addHereDocType(new OneLineHereDoc()); //  ...
 
 addHereDocType(new BlockHereDoc()); //  ===
-
-addHereDocType(new TAMLHereDoc()); //  ---

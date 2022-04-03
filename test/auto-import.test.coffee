@@ -10,10 +10,10 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	cieloCodeToJS, addImports, convertCielo,
-	} from '@jdeighan/string-input/cielo'
+	} from '@jdeighan/mapper/cielo'
 import {
 	setSymbolsRootDir, buildImportList, getAvailSymbols,
-	} from '@jdeighan/string-input/symbols'
+	} from '@jdeighan/mapper/symbols'
 
 setSymbolsRootDir mydir(`import.meta.url`)
 simple = new UnitTester()

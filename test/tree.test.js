@@ -17,12 +17,12 @@ import {
 
 import {
   taml
-} from '@jdeighan/string-input/taml';
+} from '@jdeighan/mapper/taml';
 
 import {
   TreeWalker,
   TreeStringifier
-} from '@jdeighan/string-input/walker';
+} from '@jdeighan/mapper/walker';
 
 simple = new UnitTester();
 

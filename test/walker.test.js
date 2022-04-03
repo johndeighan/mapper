@@ -31,7 +31,7 @@ import {
 
 import {
   ASTWalker
-} from '@jdeighan/string-input/walker';
+} from '@jdeighan/mapper/walker';
 
 simple = new UnitTester();
 

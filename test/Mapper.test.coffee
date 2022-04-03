@@ -1,4 +1,4 @@
-# StringInput.test.coffee
+# Mapper.test.coffee
 
 import assert from 'assert'
 
@@ -13,7 +13,7 @@ import {
 	debug, debugging, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {StringInput} from '@jdeighan/string-input'
+import {Mapper} from '@jdeighan/mapper'
 
 dir = mydir(`import.meta.url`)
 process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
@@ -21,7 +21,7 @@ process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
 simple = new UnitTester()
 
 ###
-	class StringInput should handle the following:
+	class Mapper should handle the following:
 		- #include <file> statements
 		- get(), peek(), unget(), skip()
 		- overriding of mapLine() to return alternate strings or objects
@@ -32,7 +32,7 @@ simple = new UnitTester()
 # --- test get(), peek(), unget(), skip()
 
 (() ->
-	input = new StringInput("""
+	input = new Mapper("""
 			abc
 				def
 					ghi
@@ -72,9 +72,9 @@ class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
 
-		assert oInput instanceof StringInput,
-			"oInput should be a StringInput object"
-		return oInput.getAllText()
+		assert oInput instanceof Mapper,
+			"oInput should be a Mapper object"
+		return oInput.getBlock()
 
 	normalize: (str) ->
 		return str
@@ -84,7 +84,7 @@ tester = new GatherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 87, new StringInput("""
+tester.equal 87, new Mapper("""
 		abc
 		def
 		"""), """
@@ -92,7 +92,7 @@ tester.equal 87, new StringInput("""
 		def
 		"""
 
-tester.equal 95, new StringInput("""
+tester.equal 95, new Mapper("""
 		abc
 
 		def
@@ -103,7 +103,7 @@ tester.equal 95, new StringInput("""
 		"""
 
 (() ->
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		# --- This removes blank lines
 		mapLine: (line, level) ->
@@ -126,7 +126,7 @@ tester.equal 95, new StringInput("""
 # --- Test basic use of mapping function
 
 (()->
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		# --- This maps all non-empty lines to the string 'x'
 		mapLine: (line, level) ->
@@ -151,7 +151,7 @@ tester.equal 95, new StringInput("""
 
 (()->
 
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		# --- Remove blank lines PLUS the line following a blank line
 		mapLine: (line, level) ->
@@ -177,7 +177,7 @@ tester.equal 95, new StringInput("""
 
 (()->
 
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -213,7 +213,7 @@ tester.equal 95, new StringInput("""
 
 (()->
 
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -240,7 +240,7 @@ tester.equal 95, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 243, new StringInput("""
+tester.equal 243, new Mapper("""
 		abc
 			#include title.md
 		def
@@ -257,7 +257,7 @@ tester.equal 243, new StringInput("""
 #        - replace reactive statements
 
 (()->
-	class TestInput extends StringInput
+	class TestInput extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -302,7 +302,7 @@ tester.equal 243, new StringInput("""
 			"""
 
 	block = undef
-	class TestParser extends StringInput
+	class TestParser extends Mapper
 
 		mapLine: (line, level) ->
 			if line == 'div:markdown'
@@ -322,7 +322,7 @@ tester.equal 243, new StringInput("""
 
 (() ->
 	block = undef
-	class TestParser extends StringInput
+	class TestParser extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -357,7 +357,7 @@ tester.equal 243, new StringInput("""
 				#include title.md
 			"""
 	block = undef
-	class TestParser extends StringInput
+	class TestParser extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -398,7 +398,7 @@ tester.equal 243, new StringInput("""
 		```
 	###
 
-	oInput = new StringInput(text)
+	oInput = new Mapper(text)
 
 	tester.equal 403, oInput, """
 		p a paragraph
@@ -414,7 +414,7 @@ tester.equal 243, new StringInput("""
 # ---------------------------------------------------------------------------
 # --- Test comment
 
-tester.equal 417, new StringInput("""
+tester.equal 417, new Mapper("""
 		abc
 
 		# --- this is a comment
@@ -437,8 +437,8 @@ tester.equal 417, new StringInput("""
 
 		transformValue: (oInput) ->
 
-			assert oInput instanceof StringInput,
-				"oInput should be a StringInput object"
+			assert oInput instanceof Mapper,
+				"oInput should be a Mapper object"
 			return oInput.getAll()
 
 	tester2 = new GatherTester2()
@@ -450,7 +450,7 @@ tester.equal 417, new StringInput("""
 			(.*)               # command arguments
 			$///
 
-	class TestInput2 extends StringInput
+	class TestInput2 extends Mapper
 
 		mapLine: (line, level) ->
 			lMatches = line.match(cmdRE)

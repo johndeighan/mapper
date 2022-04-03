@@ -22,7 +22,7 @@ import {
 
 import {
   coffeeCodeToJS
-} from '@jdeighan/string-input/coffee';
+} from '@jdeighan/mapper/coffee';
 
 // ---------------------------------------------------------------------------
 // --- This class, or a subclass, can be used

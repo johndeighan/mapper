@@ -11,7 +11,7 @@ import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
 import {
 	lineToParts, mapHereDoc, addHereDocType,
-	} from '@jdeighan/string-input/heredoc'
+	} from '@jdeighan/mapper/heredoc'
 
 simple = new UnitTester()
 
@@ -83,44 +83,9 @@ tester.equal 78, """
 		'"this is a\\nblock of text"'
 
 # ---------------------------------------------------------------------------
-# TAML block
-
-tester.equal 88, """
-		---
-		- abc
-		- def
-		""",
-		'["abc","def"]'
-
-# ---------------------------------------------------------------------------
-# TAML-like block, but actually a block
-
-tester.equal 98, """
-		===
-		---
-		- abc
-		- def
-		""",
-		'"---\\n- abc\\n- def"'
-
-# ---------------------------------------------------------------------------
-# TAML block 2
-
-tester.equal 109, """
-		---
-		-
-			label: Help
-			url: /help
-		-
-			label: Books
-			url: /books
-		""",
-		'[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]'
-
-# ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 123, """
+tester.equal 88, """
 		...this is a
 		line of text
 		""",
@@ -129,7 +94,7 @@ tester.equal 123, """
 # ---------------------------------------------------------------------------
 # One Line block
 
-tester.equal 132, """
+tester.equal 97, """
 		...
 		this is a
 		line of text
@@ -159,7 +124,7 @@ class MatrixHereDoc
 
 addHereDocType new MatrixHereDoc()
 
-tester.equal 162, """
+tester.equal 127, """
 		1 2 3
 		2 4 6
 		""",
@@ -185,55 +150,9 @@ class UCHereDoc
 
 addHereDocType new UCHereDoc()
 
-tester.equal 188, """
+tester.equal 153, """
 		^^^
 		This is a
 		block of text
 		""",
 		'"THIS IS A\\nBLOCK OF TEXT"'
-
-# ---------------------------------------------------------------------------
-
-class HereDocReplacer extends UnitTesterNoNorm
-
-	transformValue: (block) ->
-		lNewParts = for part in lineToParts(firstLine(block))
-			if part == '<<<'
-				mapHereDoc(undented(remainingLines(block))).str
-			else
-				part    # keep as is
-
-		result = lNewParts.join('')
-		return result
-
-replacer = new HereDocReplacer()
-
-# ---------------------------------------------------------------------------
-
-replacer.equal 213, """
-		TopMenu lItems={<<<}
-			---
-			-
-				label: Help
-				url: /help
-			-
-				label: Books
-				url: /books
-		""", """
-		TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}
-		"""
-
-# ---------------------------------------------------------------------------
-
-replacer.equal 228, """
-		<TopMenu lItems={<<<}>
-			---
-			-
-				label: Help
-				url: /help
-			-
-				label: Books
-				url: /books
-		""", """
-		<TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}>
-		"""

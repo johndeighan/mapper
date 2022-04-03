@@ -6,10 +6,10 @@ import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {doMap} from '@jdeighan/string-input'
+import {doMap} from '@jdeighan/mapper'
 import {
 	coffeeExprToJS, coffeeCodeToJS, convertCoffee, cleanJS, minifyJS,
-	} from '@jdeighan/string-input/coffee'
+	} from '@jdeighan/mapper/coffee'
 
 simple = new UnitTester()
 

@@ -4,20 +4,22 @@ import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {
 	assert, undef, pass, isEmpty, isComment,
 	} from '@jdeighan/coffee-utils'
+import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {StringFetcher} from '@jdeighan/string-input'
+import {StringFetcher} from '@jdeighan/mapper'
 
 simple = new UnitTester()
 
 ###
 	class StringFetcher should handle the following:
 		- #include <file> statements
+		- replace __LINE, __DIR, __FILE
 		- end file at __END__
 ###
 
 # ---------------------------------------------------------------------------
-# --- test fetch(), unfetch(), getPositionInfo()
+# --- test fetch(), unfetch()
 
 (() ->
 	input = new StringFetcher("""
@@ -27,57 +29,55 @@ simple = new UnitTester()
 			""")
 
 	line = input.fetch()
-	simple.equal 33, line, 'abc'
+	simple.equal 30, line, 'abc'
 
-	hInfo = input.getPositionInfo()
-	simple.equal 36, hInfo, {
-			file: 'unit test',
-			lineNum: 1,
-			}
+	simple.equal 32, input.filename, 'unit test'
+	simple.equal 33, input.lineNum, 1
 
 	line = input.fetch()
-	simple.equal 42, line, '\tdef'
+	simple.equal 36, line, '\tdef'
 	input.unfetch(line)            # make available again
 
 	line = input.fetch()
-	simple.equal 46, line, '\tdef'
+	simple.equal 40, line, '\tdef'
 
 	line = input.fetch()
-	simple.equal 49, line, '\t\tghi'
+	simple.equal 43, line, '\t\tghi'
 
 	line = input.fetch()
-	simple.equal 52, line, undef
+	simple.equal 46, line, undef
 	)()
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends UnitTesterNoNorm
+class FetcherTester extends UnitTesterNoNorm
 
-	transformValue: (oInput) ->
+	transformValue: (block) ->
 
-		assert oInput instanceof StringFetcher,
-			"oInput should be a StringFetcher object"
+		fetcher = new StringFetcher(block)
+		lLines = []
+		while (line = fetcher.fetch())?
+			lLines.push line
+		return arrayToBlock(lLines)
 
-		return oInput.fetchAllBlock()
-
-tester = new GatherTester()
+tester = new FetcherTester()
 
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 71, new StringFetcher("""
+tester.equal 65, """
 		abc
 		def
-		"""), """
+		""", """
 		abc
 		def
 		"""
 
-tester.equal 79, new StringFetcher("""
+tester.equal 73, """
 		abc
 
 		def
-		"""), """
+		""", """
 		abc
 
 		def
@@ -86,20 +86,20 @@ tester.equal 79, new StringFetcher("""
 # ---------------------------------------------------------------------------
 # --- Test __END__
 
-tester.equal 92, new StringFetcher("""
+tester.equal 86, """
 		abc
 		__END__
 		def
-		"""), """
+		""", """
 		abc
 		"""
 
-tester.equal 100, new StringFetcher("""
+tester.equal 94, """
 		abc
 			def
 			__END__
 		ghi
-		"""), """
+		""", """
 		abc
 			def
 			__END__
@@ -117,12 +117,12 @@ tester.equal 100, new StringFetcher("""
 	def
 ###
 
-tester.equal 123, new StringFetcher("""
+tester.equal 117, """
 		first line
 
 			#include file.txt
 		last line
-		"""), """
+		""", """
 		first line
 
 			def
@@ -141,12 +141,12 @@ __END__
 def
 ###
 
-tester.equal 147, new StringFetcher("""
+tester.equal 141, """
 		first line
 
 			#include file2.txt
 		last line
-		"""), """
+		""", """
 		first line
 
 			abc

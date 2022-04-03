@@ -17,7 +17,7 @@ import {
 import {
   convertMarkdown,
   markdownify
-} from '@jdeighan/string-input/markdown';
+} from '@jdeighan/mapper/markdown';
 
 simple = new UnitTester();
 

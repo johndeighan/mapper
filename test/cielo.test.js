@@ -34,21 +34,21 @@ import {
 
 import {
   doMap,
-  SmartInput
-} from '@jdeighan/string-input';
+  SmartMapper
+} from '@jdeighan/mapper';
 
 import {
   setSymbolsRootDir
-} from '@jdeighan/string-input/symbols';
+} from '@jdeighan/mapper/symbols';
 
 import {
   convertCoffee
-} from '@jdeighan/string-input/coffee';
+} from '@jdeighan/mapper/coffee';
 
 import {
   cieloCodeToJS,
   addImports
-} from '@jdeighan/string-input/cielo';
+} from '@jdeighan/mapper/cielo';
 
 rootDir = mydir(import.meta.url);
 
@@ -200,7 +200,7 @@ func(x, "abc")`);
   convertCoffee(true);
   CieloTester = class CieloTester extends UnitTester {
     transformValue(text) {
-      return doMap(SmartInput, text);
+      return doMap(SmartMapper, text);
     }
 
   };

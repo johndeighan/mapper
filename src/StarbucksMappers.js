@@ -17,8 +17,8 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  SmartInput
-} from '@jdeighan/string-input';
+  SmartMapper
+} from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
 /*
@@ -42,7 +42,7 @@ import {
 
 */
 // ===========================================================================
-export var StarbucksPreMapper = class StarbucksPreMapper extends SmartInput {
+export var StarbucksPreMapper = class StarbucksPreMapper extends SmartMapper {
   mapString(line, level) {
     var _, code, expr, lMatches, result, varname;
     debug(`enter mapString(${OL(line)})`);
@@ -78,7 +78,7 @@ ${line.replace('<==', '=')}
 };
 
 // ===========================================================================
-export var StarbucksPostMapper = class StarbucksPostMapper extends SmartInput {
+export var StarbucksPostMapper = class StarbucksPostMapper extends SmartMapper {
   // --- variable declaration immediately following one of:
   //        $:{;
   //        $:;

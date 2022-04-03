@@ -9,7 +9,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {ASTWalker} from '@jdeighan/string-input/walker'
+import {ASTWalker} from '@jdeighan/mapper/walker'
 
 simple = new UnitTester()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"

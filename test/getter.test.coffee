@@ -6,7 +6,7 @@ import {UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
-import {Getter} from '@jdeighan/string-input/get'
+import {Getter} from '@jdeighan/mapper/get'
 
 simple = new UnitTester()
 

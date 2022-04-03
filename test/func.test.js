@@ -13,19 +13,19 @@ import {
 } from '@jdeighan/coffee-utils/stack';
 
 import {
-  SmartInput,
+  SmartMapper,
   doMap
-} from '@jdeighan/string-input';
+} from '@jdeighan/mapper';
 
 import {
   mapHereDoc,
   doDebugHereDoc,
   addHereDocType
-} from '@jdeighan/string-input/heredoc';
+} from '@jdeighan/mapper/heredoc';
 
 import {
   FuncHereDoc
-} from '@jdeighan/string-input/func';
+} from '@jdeighan/mapper/func';
 
 addHereDocType(new FuncHereDoc()); // --- CoffeeScript function
 
@@ -70,7 +70,7 @@ addHereDocType(new FuncHereDoc()); // --- CoffeeScript function
   var HereDocMapper, tester;
   HereDocMapper = class HereDocMapper extends UnitTester {
     transformValue(block) {
-      return doMap(SmartInput, block);
+      return doMap(SmartMapper, block);
     }
 
   };

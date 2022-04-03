@@ -58,8 +58,8 @@ type via addHereDocType() in /heredoc
 This library provides 4 classes of increasing complexity:
 
 1. [StringFetcher](./StringFetcher.md)
-2. [StringInput](./StringInput.md)
-3. [SmartInput](./SmartInput.md)
+2. [Mapper](./Mapper.md)
+3. [SmartMapper](./SmartMapper.md)
 4. [PLLParser](./PLLParser.md)
 
 /walker:

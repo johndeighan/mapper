@@ -15,8 +15,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  SmartInput
-} from '@jdeighan/string-input';
+  SmartMapper
+} from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ import {
 //           HEREDOC sections expanded
 //        3. If desired, override handleHereDoc, which patches
 //           HEREDOC lines into the original string
-export var PLLParser = class PLLParser extends SmartInput {
+export var PLLParser = class PLLParser extends SmartMapper {
   constructor(content, source) {
     super(content, source);
     // --- Cached tree, in case getTree() is called multiple times
@@ -103,7 +103,7 @@ export var treeFromBlock = function(block, mapFunc) {
   var MyPLLParser, parser;
   MyPLLParser = class MyPLLParser extends PLLParser {
     mapNode(line, level) {
-      assert(isString(line), "StringInput.mapNode(): not a string");
+      assert(isString(line), "Mapper.mapNode(): not a string");
       return mapFunc(line, level);
     }
 

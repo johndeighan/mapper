@@ -23,19 +23,19 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  SmartInput
-} from '@jdeighan/string-input';
+  SmartMapper
+} from '@jdeighan/mapper';
 
 import {
   addHereDocType
-} from '@jdeighan/string-input/heredoc';
+} from '@jdeighan/mapper/heredoc';
 
 // ---------------------------------------------------------------------------
 SmartTester = class SmartTester extends UnitTesterNoNorm {
   transformValue(block) {
     var oInput;
-    oInput = new SmartInput(block);
-    return oInput.getAllText();
+    oInput = new SmartMapper(block);
+    return oInput.getBlock();
   }
 
 };

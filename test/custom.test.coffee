@@ -5,16 +5,16 @@ import {
 	assert, undef, pass, isEmpty, isArray, isString, CWS,
 	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
-import {SmartInput} from '@jdeighan/string-input'
-import {addHereDocType} from '@jdeighan/string-input/heredoc'
+import {SmartMapper} from '@jdeighan/mapper'
+import {addHereDocType} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
 
 class SmartTester extends UnitTesterNoNorm
 
 	transformValue: (block) ->
-		oInput = new SmartInput(block)
-		return oInput.getAllText()
+		oInput = new SmartMapper(block)
+		return oInput.getBlock()
 
 tester = new SmartTester()
 

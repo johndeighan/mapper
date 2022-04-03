@@ -37,13 +37,13 @@ import {
   cieloCodeToJS,
   addImports,
   convertCielo
-} from '@jdeighan/string-input/cielo';
+} from '@jdeighan/mapper/cielo';
 
 import {
   setSymbolsRootDir,
   buildImportList,
   getAvailSymbols
-} from '@jdeighan/string-input/symbols';
+} from '@jdeighan/mapper/symbols';
 
 setSymbolsRootDir(mydir(import.meta.url));
 

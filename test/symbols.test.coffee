@@ -6,7 +6,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
 	setSymbolsRootDir, symbolsRootDir, getAvailSymbols, getNeededSymbols,
-	} from '@jdeighan/string-input/symbols'
+	} from '@jdeighan/mapper/symbols'
 
 dir = mydir(import.meta.url)
 setSymbolsRootDir dir

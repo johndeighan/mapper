@@ -11,8 +11,6 @@ import {indented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {LOG} from '@jdeighan/coffee-utils/log'
 
-import {TAMLHereDoc} from '@jdeighan/string-input/taml'
-
 lAllHereDocs = []
 lAllHereDocNames = []
 export debugHereDoc = false
@@ -135,4 +133,3 @@ qesc = (block) ->
 # --- last one is checked first
 addHereDocType new OneLineHereDoc()   #  ...
 addHereDocType new BlockHereDoc()     #  ===
-addHereDocType new TAMLHereDoc()      #  ---

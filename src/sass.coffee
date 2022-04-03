@@ -4,7 +4,7 @@ import sass from 'sass'
 
 import {assert, undef, isComment} from '@jdeighan/coffee-utils'
 
-import {StringInput} from '@jdeighan/string-input'
+import {Mapper} from '@jdeighan/mapper'
 
 convert = true
 
@@ -17,7 +17,7 @@ export convertSASS = (flag) ->
 
 # ---------------------------------------------------------------------------
 
-export class SassMapper extends StringInput
+export class SassMapper extends Mapper
 	# --- only removes comments
 
 	mapLine: (line, level) ->
@@ -32,7 +32,7 @@ export class SassMapper extends StringInput
 export sassify = (text) ->
 
 	oInput = new SassMapper(text)
-	newtext = oInput.getAllText()
+	newtext = oInput.getBlock()
 	if ! convert
 		return newtext
 	result = sass.renderSync({

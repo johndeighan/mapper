@@ -4,7 +4,7 @@ import {undef, isEmpty, assert, OL} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indentLevel, indented} from '@jdeighan/coffee-utils/indent'
 
-import {SmartInput} from '@jdeighan/string-input'
+import {SmartMapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ import {SmartInput} from '@jdeighan/string-input'
 
 # ===========================================================================
 
-export class StarbucksPreMapper extends SmartInput
+export class StarbucksPreMapper extends SmartMapper
 
 	mapString: (line, level) ->
 
@@ -79,7 +79,7 @@ export class StarbucksPreMapper extends SmartInput
 
 # ===========================================================================
 
-export class StarbucksPostMapper extends SmartInput
+export class StarbucksPostMapper extends SmartMapper
 	# --- variable declaration immediately following one of:
 	#        $:{;
 	#        $:;

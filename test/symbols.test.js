@@ -25,7 +25,7 @@ import {
   symbolsRootDir,
   getAvailSymbols,
   getNeededSymbols
-} from '@jdeighan/string-input/symbols';
+} from '@jdeighan/mapper/symbols';
 
 dir = mydir(import.meta.url);
 

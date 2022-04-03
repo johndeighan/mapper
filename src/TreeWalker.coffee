@@ -6,7 +6,7 @@ import {
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'
 
-import {isBuiltin} from '@jdeighan/string-input/builtins'
+import {isBuiltin} from '@jdeighan/mapper/builtins'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------

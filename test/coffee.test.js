@@ -30,7 +30,7 @@ import {
 
 import {
   doMap
-} from '@jdeighan/string-input';
+} from '@jdeighan/mapper';
 
 import {
   coffeeExprToJS,
@@ -38,7 +38,7 @@ import {
   convertCoffee,
   cleanJS,
   minifyJS
-} from '@jdeighan/string-input/coffee';
+} from '@jdeighan/mapper/coffee';
 
 simple = new UnitTester();
 

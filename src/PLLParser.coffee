@@ -5,7 +5,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {SmartInput} from '@jdeighan/string-input'
+import {SmartMapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ import {SmartInput} from '@jdeighan/string-input'
 #        3. If desired, override handleHereDoc, which patches
 #           HEREDOC lines into the original string
 
-export class PLLParser extends SmartInput
+export class PLLParser extends SmartMapper
 
 	constructor: (content, source) ->
 		super content, source
@@ -92,7 +92,7 @@ export treeFromBlock = (block, mapFunc) ->
 	class MyPLLParser extends PLLParser
 
 		mapNode: (line, level) ->
-			assert isString(line), "StringInput.mapNode(): not a string"
+			assert isString(line), "Mapper.mapNode(): not a string"
 			return mapFunc(line, level)
 
 	parser = new MyPLLParser(block)

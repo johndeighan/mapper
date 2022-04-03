@@ -4,8 +4,8 @@ import {UnitTester} from '@jdeighan/unit-tester'
 import {undef, oneline} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {taml} from '@jdeighan/string-input/taml'
-import {TreeWalker, TreeStringifier} from '@jdeighan/string-input/walker'
+import {taml} from '@jdeighan/mapper/taml'
+import {TreeWalker, TreeStringifier} from '@jdeighan/mapper/walker'
 
 simple = new UnitTester()
 

@@ -7,10 +7,10 @@ import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {doMap, SmartInput} from '@jdeighan/string-input'
-import {setSymbolsRootDir} from '@jdeighan/string-input/symbols'
-import {convertCoffee} from '@jdeighan/string-input/coffee'
-import {cieloCodeToJS, addImports} from '@jdeighan/string-input/cielo'
+import {doMap, SmartMapper} from '@jdeighan/mapper'
+import {setSymbolsRootDir} from '@jdeighan/mapper/symbols'
+import {convertCoffee} from '@jdeighan/mapper/coffee'
+import {cieloCodeToJS, addImports} from '@jdeighan/mapper/cielo'
 
 rootDir = mydir(`import.meta.url`)
 source = mkpath(rootDir, 'cielo.test.coffee')
@@ -258,7 +258,7 @@ convertCoffee false
 	class CieloTester extends UnitTester
 
 		transformValue: (text) ->
-			return doMap(SmartInput, text)
+			return doMap(SmartMapper, text)
 
 	tester = new CieloTester('cielo.test')
 

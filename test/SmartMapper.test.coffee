@@ -1,4 +1,4 @@
-# SmartInput.test.coffee
+# SmartMapper.test.coffee
 
 import assert from 'assert'
 
@@ -13,10 +13,14 @@ import {
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {
-	SmartInput, stdSplitCommand, stdIsComment,
-	} from '@jdeighan/string-input'
-import {addHereDocType} from '@jdeighan/string-input/heredoc'
+	SmartMapper, stdSplitCommand, stdIsComment,
+	} from '@jdeighan/mapper'
+import {addHereDocType} from '@jdeighan/mapper/heredoc'
+import {FuncHereDoc} from '@jdeighan/mapper/func'
+import {TAMLHereDoc} from '@jdeighan/mapper/taml'
 
+addHereDocType new FuncHereDoc()
+addHereDocType new TAMLHereDoc()
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
@@ -28,14 +32,14 @@ simple.equal 27, stdIsComment('#define X 3'), false
 simple.equal 28, stdIsComment('##define X 3'), true
 
 simple.equal 30, stdSplitCommand('#define X 3'), ['define', 'X 3']
-simple.equal 30, stdSplitCommand('#define    X  3'), ['define', 'X  3']
-simple.equal 30, stdSplitCommand('##define X 3'), undef
-simple.equal 30, stdSplitCommand('# define X 3'), undef
+simple.equal 31, stdSplitCommand('#define    X  3'), ['define', 'X  3']
+simple.equal 32, stdSplitCommand('##define X 3'), undef
+simple.equal 33, stdSplitCommand('# define X 3'), undef
 
 # ---------------------------------------------------------------------------
 
 ###
-	class SmartInput should handle the following:
+	class SmartMapper should handle the following:
 		- remove empty lines (or override handleEmptyLine())
 		- remove comments (or override handleComment())
 		- join continue lines (or override getContLines() / joinContLines())
@@ -49,17 +53,17 @@ class SmartTester extends UnitTesterNoNorm
 	transformValue: (oInput) ->
 		if isString(oInput)
 			str = oInput
-			oInput = new SmartInput(str)
-		assert oInput instanceof SmartInput,
-			"oInput should be a SmartInput object"
-		return oInput.getAllText()
+			oInput = new SmartMapper(str)
+		assert oInput instanceof SmartMapper,
+			"oInput should be a SmartMapper object"
+		return oInput.getBlock()
 
 tester = new SmartTester()
 
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 57, """
+tester.equal 62, """
 		abc
 
 		# --- a comment
@@ -73,7 +77,7 @@ tester.equal 57, """
 # ---------------------------------------------------------------------------
 # --- test overriding handling of comments and empty lines
 
-class CustomInput extends SmartInput
+class CustomInput extends SmartMapper
 
 	handleEmptyLine: () ->
 
@@ -85,7 +89,7 @@ class CustomInput extends SmartInput
 		debug "in new handleComment()"
 		return "line #{@lineNum} is a comment"
 
-tester.equal 83, new CustomInput("""
+tester.equal 88, new CustomInput("""
 		abc
 
 		# --- a comment
@@ -100,7 +104,7 @@ tester.equal 83, new CustomInput("""
 # ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 98, """
+tester.equal 103, """
 		h1 color=blue
 				This is
 				a title
@@ -116,7 +120,7 @@ tester.equal 98, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 114, """
+tester.equal 119, """
 		h1 color=blue \\
 				This is \\
 				a title
@@ -132,7 +136,7 @@ tester.equal 114, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 130, """
+tester.equal 135, """
 		h1 color=blue \\
 			This is \\
 			a title
@@ -150,7 +154,7 @@ tester.equal 130, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 148, """
+tester.equal 153, """
 		h1 color=<<<
 			magenta
 
@@ -165,7 +169,7 @@ tester.equal 148, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 163, """
+tester.equal 168, """
 		h1 color=<<<
 				This is a title
 			magenta
@@ -181,7 +185,7 @@ tester.equal 163, """
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 179, """
+tester.equal 184, """
 		h1 color=<<<
 			...color
 			.
@@ -200,7 +204,7 @@ tester.equal 179, """
 # ---------------------------------------------------------------------------
 # --- test empty HEREDOC section
 
-tester.equal 198, """
+tester.equal 203, """
 		h1 name=<<<
 
 		p the end
@@ -212,7 +216,7 @@ tester.equal 198, """
 # ---------------------------------------------------------------------------
 # --- test ending HEREDOC with EOF instead of a blank line
 
-tester.equal 210, """
+tester.equal 215, """
 		h1 name=<<<
 		""", """
 		h1 name=""
@@ -221,7 +225,7 @@ tester.equal 210, """
 # ---------------------------------------------------------------------------
 # --- test TAML
 
-tester.equal 219, """
+tester.equal 224, """
 		h1 lItems=<<<
 			---
 			- abc
@@ -234,7 +238,7 @@ tester.equal 219, """
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 232, """
+tester.equal 237, """
 		error message=<<<
 			...an error
 			occurred in
@@ -247,7 +251,7 @@ tester.equal 232, """
 # ---------------------------------------------------------------------------
 # --- test forcing a literal block
 
-tester.equal 245, """
+tester.equal 250, """
 		TAML looks like: <<<
 			===
 			---
@@ -261,7 +265,7 @@ tester.equal 245, """
 # ---------------------------------------------------------------------------
 # --- test ordinary block
 
-tester.equal 259, """
+tester.equal 264, """
 		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
@@ -275,7 +279,7 @@ tester.equal 259, """
 # ---------------------------------------------------------------------------
 # --- Test patching file name
 
-tester.equal 273, new SmartInput("""
+tester.equal 278, new SmartMapper("""
 		in file FILE
 		ok
 		exiting file FILE
@@ -289,7 +293,7 @@ tester.equal 273, new SmartInput("""
 # ---------------------------------------------------------------------------
 # --- Test patching line number
 
-tester.equal 287, new SmartInput("""
+tester.equal 292, new SmartMapper("""
 		on line LINE
 		ok
 		on line LINE

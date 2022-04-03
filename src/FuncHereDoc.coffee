@@ -9,7 +9,7 @@ import {
 	indented, undented,
 	} from '@jdeighan/coffee-utils/indent'
 
-import {coffeeCodeToJS} from '@jdeighan/string-input/coffee'
+import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
 
 # ---------------------------------------------------------------------------
 # --- This class, or a subclass, can be used

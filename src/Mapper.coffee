@@ -1,4 +1,4 @@
-# StringInput.coffee
+# Mapper.coffee
 
 import fs from 'fs'
 import pathlib from 'path'
@@ -20,11 +20,11 @@ import {
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {lineToParts, mapHereDoc} from '@jdeighan/string-input/heredoc'
+import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
-#                         handles #include
+#                         handles __LINE, __DIR, __FILE, #include
 
 export class StringFetcher
 
@@ -45,7 +45,6 @@ export class StringFetcher
 		#     If source is 'unit test', just has:
 		#     { filename: 'unit test', stub: 'unit test'}
 		@hSourceInfo = parseSource(source)
-
 		@filename = @hSourceInfo.filename
 		assert @filename, "StringFetcher: parseSource returned no filename"
 		if ! content?
@@ -194,41 +193,13 @@ export class StringFetcher
 		debug 'return from unfetch()'
 		return
 
-	# ..........................................................
-
-	getPositionInfo: () ->
-
-		if @altInput
-			return @altInput.getPositionInfo()
-		else
-			return {
-				file: @filename,
-				lineNum: @lineNum,
-				}
-
-	# ..........................................................
-
-	fetchAll: () ->
-
-		lLines = []
-		while (line = @fetch())?
-			lLines.push line
-		return lLines
-
-	# ..........................................................
-
-	fetchAllBlock: () ->
-
-		lLines = @fetchAll()
-		return arrayToBlock(lLines)
-
 # ===========================================================================
-#   class StringInput
+#   class Mapper
 #      - keep track of indentation
 #      - allow mapping of lines, including skipping lines
 #      - implement look ahead via peek()
 
-export class StringInput extends StringFetcher
+export class Mapper extends StringFetcher
 
 	constructor: (content, source) ->
 		super content, source
@@ -285,27 +256,27 @@ export class StringInput extends StringFetcher
 
 	mapLine: (line, level) ->
 
-		debug "enter StringInput.mapLine()"
-		assert line? && isString(line), "StringInput.mapLine(): not a string"
-		debug "return #{OL(line)}, #{level} from StringInput.mapLine()"
+		debug "enter Mapper.mapLine()"
+		assert line? && isString(line), "Mapper.mapLine(): not a string"
+		debug "return #{OL(line)}, #{level} from Mapper.mapLine()"
 		return line
 
 	# ..........................................................
 
 	get: () ->
 
-		debug "enter StringInput.get() - from #{@filename}"
+		debug "enter Mapper.get() - from #{@filename}"
 		if @lookahead?
 			saved = @lookahead
 			@lookahead = undef
-			debug "return lookahead pair from StringInput.get()"
+			debug "return lookahead pair from Mapper.get()"
 			return saved
 
 		line = @fetch()    # will handle #include
 		debug "LINE", line
 
 		if ! line?
-			debug "return undef from StringInput.get() at EOF"
+			debug "return undef from Mapper.get() at EOF"
 			return undef
 
 		[level, str] = splitLine(line)
@@ -321,10 +292,10 @@ export class StringInput extends StringFetcher
 			debug "MAP: '#{str}' => #{OL(result)}"
 
 		if result?
-			debug "return [#{OL(result)}, #{level}] from StringInput.get()"
+			debug "return [#{OL(result)}, #{level}] from Mapper.get()"
 			return [result, level]
 		else
-			debug "return undef from StringInput.get()"
+			debug "return undef from Mapper.get()"
 			return undef
 
 	# ..........................................................
@@ -345,7 +316,7 @@ export class StringInput extends StringFetcher
 		while (line = @fetch())?
 			debug "LINE IS #{OL(line)}"
 			assert isString(line),
-				"StringInput.fetchBlock(#{atLevel}) - not a string: #{line}"
+				"Mapper.fetchBlock(#{atLevel}) - not a string: #{line}"
 			if isEmpty(line)
 				debug "empty line"
 				lLines.push ''
@@ -368,9 +339,9 @@ export class StringInput extends StringFetcher
 
 	getAll: () ->
 
-		debug "enter StringInput.getAll()"
+		debug "enter Mapper.getAll()"
 		if @lAllPairs?
-			debug "return cached lAllPairs from StringInput.getAll()"
+			debug "return cached lAllPairs from Mapper.getAll()"
 			return @lAllPairs
 		lPairs = []
 
@@ -380,15 +351,15 @@ export class StringInput extends StringFetcher
 			lPairs.push(lPair)
 		@lAllPairs = lPairs
 		debug "lAllPairs", @lAllPairs
-		debug "return #{lPairs.length} pairs from StringInput.getAll()"
+		debug "return #{lPairs.length} pairs from Mapper.getAll()"
 		return lPairs
 
 	# ..........................................................
 
-	getAllText: () ->
+	getBlock: () ->
 
 		lLines = for [line, level] in @getAll()
-			assert isString(line), "getAllText(): got non-string"
+			assert isString(line), "getBlock(): got non-string"
 			indented(line, level)
 		return arrayToBlock(lLines)
 
@@ -423,7 +394,7 @@ export stdIsComment = (line, level) ->
 
 # ---------------------------------------------------------------------------
 
-export class SmartInput extends StringInput
+export class SmartMapper extends Mapper
 	# - removes blank lines (but can be overridden)
 	# - does NOT remove comments (but can be overridden)
 	# - joins continuation lines
@@ -490,7 +461,7 @@ export class SmartInput extends StringInput
 
 	handleEmptyLine: (level) ->
 
-		debug "in SmartInput.handleEmptyLine()"
+		debug "in SmartMapper.handleEmptyLine()"
 
 		# --- remove blank lines by default
 		#     return '' to retain empty lines
@@ -500,7 +471,7 @@ export class SmartInput extends StringInput
 
 	splitCommand: (line, level) ->
 
-		debug "in SmartInput.splitCommand()"
+		debug "in SmartMapper.splitCommand()"
 		return stdSplitCommand(line, level)
 
 	# ..........................................................
@@ -518,21 +489,21 @@ export class SmartInput extends StringInput
 
 	isComment: (line, level) ->
 
-		debug "in SmartInput.isComment()"
+		debug "in SmartMapper.isComment()"
 		return stdIsComment(line, level)
 
 	# ..........................................................
 
 	handleComment: (line, level) ->
 
-		debug "in SmartInput.handleComment()"
+		debug "in SmartMapper.handleComment()"
 		return line      # keep comments by default
 
 	# ..........................................................
 
 	replaceVars: (line, level) ->
 
-		debug "in SmartInput.replaceVars()"
+		debug "in SmartMapper.replaceVars()"
 		return line.replace(/\bDIR\b/g, @hVars.DIR).replace(/\bFILE\b/g, @hVars.FILE).replace(/\bLINE\b/g, @hVars.LINE)
 
 	# ..........................................................
@@ -541,13 +512,13 @@ export class SmartInput extends StringInput
 
 	mapLine: (line, level) ->
 
-		debug "enter SmartInput.mapLine(#{OL(line)}, #{level})"
+		debug "enter SmartMapper.mapLine(#{OL(line)}, #{level})"
 
 		assert line?, "mapLine(): line is undef"
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
 			line = @handleEmptyLine(@curLevel)
-			debug "return #{line} from SmartInput.mapLine() - empty line"
+			debug "return #{line} from SmartMapper.mapLine() - empty line"
 			return @handleEmptyLine(@curLevel)
 
 		lParts = @splitCommand(line)
@@ -556,7 +527,7 @@ export class SmartInput extends StringInput
 			return @handleCommand cmd, rest
 
 		if isComment(line)
-			debug "return undef from SmartInput.mapLine() - comment"
+			debug "return undef from SmartMapper.mapLine() - comment"
 			return @handleComment(line, level)
 
 		line = @replaceVars(line, level)
@@ -583,7 +554,7 @@ export class SmartInput extends StringInput
 
 		debug "mapping string"
 		result = @mapString(line, level)
-		debug "return #{OL(result)} from SmartInput.mapLine()"
+		debug "return #{OL(result)} from SmartMapper.mapLine()"
 		return result
 
 	# ..........................................................
@@ -639,7 +610,7 @@ export class SmartInput extends StringInput
 		#        of the line containing <<<
 
 		# --- NOTE: splitLine() removes trailing whitespace
-		debug "enter SmartInput.getHereDocLines()"
+		debug "enter SmartMapper.getHereDocLines()"
 		lLines = []
 		while (line = @fetch())? \
 				&& (newline = @hereDocLine(undented(line, atLevel)))?
@@ -647,7 +618,7 @@ export class SmartInput extends StringInput
 				"invalid indentation in HEREDOC section"
 			lLines.push newline
 		assert isArray(lLines), "getHereDocLines(): retval not an array"
-		debug "return from SmartInput.getHereDocLines()", lLines
+		debug "return from SmartMapper.getHereDocLines()", lLines
 		return lLines
 
 	# ..........................................................
@@ -668,10 +639,10 @@ export doMap = (inputClass, text, source='unit test') ->
 	debug "enter doMap() source='#{source}'"
 	if inputClass
 		oInput = new inputClass(text, source)
-		assert oInput instanceof StringInput,
-			"doMap() requires a StringInput or subclass"
+		assert oInput instanceof Mapper,
+			"doMap() requires a Mapper or subclass"
 	else
-		oInput = new SmartInput(text, source)
-	result = oInput.getAllText()
+		oInput = new SmartMapper(text, source)
+	result = oInput.getBlock()
 	debug "return from doMap()", result
 	return result

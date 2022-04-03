@@ -25,7 +25,7 @@ import {
 
 import {
   PLLParser
-} from '@jdeighan/string-input/pll';
+} from '@jdeighan/mapper/pll';
 
 simple = new UnitTester();
 

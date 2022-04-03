@@ -26,13 +26,13 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  StringInput,
-  SmartInput
-} from '@jdeighan/string-input';
+  Mapper,
+  SmartMapper
+} from '@jdeighan/mapper';
 
 import {
   ASTWalker
-} from '@jdeighan/string-input/walker';
+} from '@jdeighan/mapper/walker';
 
 export var symbolsRootDir = mkpath(process.cwd());
 
@@ -151,7 +151,7 @@ getAvailSymbolsFrom = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
-SymbolParser = class SymbolParser extends SmartInput {
+SymbolParser = class SymbolParser extends SmartMapper {
   // --- Parse a .symbols file
   constructor(content) {
     super(content);

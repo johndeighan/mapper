@@ -1,4 +1,4 @@
-# PLLParser.test.coffee
+# TreeMapper.test.coffee
 
 import assert from 'assert'
 
@@ -8,7 +8,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {PLLParser} from '@jdeighan/mapper/pll'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 simple = new UnitTester()
 
@@ -17,8 +17,8 @@ simple = new UnitTester()
 class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
-		assert oInput instanceof PLLParser,
-			"oInput should be a PLLParser object"
+		assert oInput instanceof TreeMapper,
+			"oInput should be a TreeMapper object"
 		return oInput.getAll()
 
 	normalize: (str) ->
@@ -28,7 +28,7 @@ tester = new GatherTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 31, new PLLParser("""
+tester.equal 31, new TreeMapper("""
 		line 1
 		line 2
 			line 3
@@ -40,7 +40,7 @@ tester.equal 31, new PLLParser("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 43, new PLLParser("""
+tester.equal 43, new TreeMapper("""
 		line 1
 			line 2
 				line 3
@@ -51,10 +51,10 @@ tester.equal 43, new PLLParser("""
 		]
 
 # ---------------------------------------------------------------------------
-# Test extending PLLParser
+# Test extending TreeMapper
 
 (() ->
-	class EnvParser extends PLLParser
+	class EnvMapper extends TreeMapper
 
 		mapNode: (line) ->
 
@@ -70,9 +70,9 @@ tester.equal 43, new PLLParser("""
 				[_, left, right] = lMatches
 				return [left, right]
 			else
-				croak "Bad line in EnvParser"
+				croak "Bad line in EnvMapper"
 
-	parser = new EnvParser("""
+	parser = new EnvMapper("""
 			name = John
 				last = Deighan
 			age = 68
@@ -92,10 +92,10 @@ tester.equal 43, new PLLParser("""
 	)()
 
 # ---------------------------------------------------------------------------
-# Test extending PLLParser when mapNode() sometimes returns undef
+# Test extending TreeMapper when mapNode() sometimes returns undef
 
 (() ->
-	class EnvParser extends PLLParser
+	class EnvMapper extends TreeMapper
 
 		mapNode: (line) ->
 
@@ -113,9 +113,9 @@ tester.equal 43, new PLLParser("""
 					return undef
 				return right
 			else
-				croak "Bad line in EnvParser"
+				croak "Bad line in EnvMapper"
 
-	parser = new EnvParser("""
+	parser = new EnvMapper("""
 			name = John
 				last = Deighan
 			age = 68

@@ -1,7 +1,7 @@
 class PLLParser
 ===============
 
-1. Define a mapping function
+1. Define a mapping function (regular function)
 2. Use function treeFromBlock to get the tree
 
 Let's say that you want to create a language for

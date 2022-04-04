@@ -1,4 +1,4 @@
-# PLLParser.coffee
+# TreeMapper.coffee
 
 import {
 	undef, assert, croak, deepCopy, isString, isArray, isInteger,
@@ -17,7 +17,7 @@ import {SmartMapper} from '@jdeighan/mapper'
 #        3. If desired, override handleHereDoc, which patches
 #           HEREDOC lines into the original string
 
-export class PLLParser extends SmartMapper
+export class TreeMapper extends SmartMapper
 
 	constructor: (content, source) ->
 		super content, source
@@ -89,13 +89,13 @@ export class PLLParser extends SmartMapper
 
 export treeFromBlock = (block, mapFunc) ->
 
-	class MyPLLParser extends PLLParser
+	class MyTreeMapper extends TreeMapper
 
 		mapNode: (line, level) ->
 			assert isString(line), "Mapper.mapNode(): not a string"
 			return mapFunc(line, level)
 
-	parser = new MyPLLParser(block)
+	parser = new MyTreeMapper(block)
 	return parser.getTree()
 
 # ---------------------------------------------------------------------------

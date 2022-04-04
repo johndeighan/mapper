@@ -52,7 +52,7 @@ replace '=' characters with '-' characters for a level 2 heading
 Provides class FuncHereDoc, which can be used to add a new HEREDOC
 type via addHereDocType() in /heredoc
 
-/string-input:
+/mapper:
 --------------
 
 This library provides 4 classes of increasing complexity:
@@ -60,7 +60,7 @@ This library provides 4 classes of increasing complexity:
 1. [StringFetcher](./StringFetcher.md)
 2. [Mapper](./Mapper.md)
 3. [SmartMapper](./SmartMapper.md)
-4. [PLLParser](./PLLParser.md)
+4. [TreeMapper](./TreeMapper.md)
 
 /walker:
 --------

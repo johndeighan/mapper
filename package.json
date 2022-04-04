@@ -9,7 +9,7 @@
 	"main": "./StringInput.js",
 	"exports": {
 		".": "./src/Mapper.js",
-		"./pll": "./src/PLLParser.js",
+		"./tree": "./src/TreeMapper.js",
 		"./walker": "./src/TreeWalker.js",
 		"./get": "./src/Getter.js",
 		"./taml": "./src/taml.js",

@@ -13,7 +13,7 @@ import {
 } from '@jdeighan/coffee-utils/stack';
 
 import {
-  SmartMapper,
+  CieloMapper,
   doMap
 } from '@jdeighan/mapper';
 
@@ -70,7 +70,7 @@ addHereDocType(new FuncHereDoc()); // --- CoffeeScript function
   var HereDocMapper, tester;
   HereDocMapper = class HereDocMapper extends UnitTester {
     transformValue(block) {
-      return doMap(SmartMapper, block);
+      return doMap(CieloMapper, block);
     }
 
   };

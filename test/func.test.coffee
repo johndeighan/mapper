@@ -5,7 +5,7 @@ import {UnitTester} from '@jdeighan/unit-tester'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {debugStack} from '@jdeighan/coffee-utils/stack'
 
-import {SmartMapper, doMap} from '@jdeighan/mapper'
+import {CieloMapper, doMap} from '@jdeighan/mapper'
 import {
 	mapHereDoc, doDebugHereDoc, addHereDocType,
 	} from '@jdeighan/mapper/heredoc'
@@ -81,7 +81,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 	class HereDocMapper extends UnitTester
 
 		transformValue: (block) ->
-			return doMap(SmartMapper, block)
+			return doMap(CieloMapper, block)
 
 	tester = new HereDocMapper()
 

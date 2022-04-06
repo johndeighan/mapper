@@ -5,7 +5,7 @@ import {
 	assert, undef, pass, isEmpty, isArray, isString, CWS,
 	} from '@jdeighan/coffee-utils'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
-import {SmartMapper} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper'
 import {addHereDocType} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
@@ -13,7 +13,7 @@ import {addHereDocType} from '@jdeighan/mapper/heredoc'
 class SmartTester extends UnitTesterNoNorm
 
 	transformValue: (block) ->
-		oInput = new SmartMapper(block)
+		oInput = new CieloMapper(block)
 		return oInput.getBlock()
 
 tester = new SmartTester()

@@ -36,7 +36,7 @@ import {
 import {
   doMap,
   Mapper,
-  SmartMapper
+  CieloMapper
 } from '@jdeighan/mapper';
 
 import {
@@ -76,8 +76,8 @@ export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
   var coffeeCode, err, jsCode, jsPostCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
   // --- cielo => js
   //     Valid Options:
-  //        premapper:  SmartMapper or subclass
-  //        postmapper: SmartMapper or subclass
+  //        premapper:  CieloMapper or subclass
+  //        postmapper: CieloMapper or subclass
   //        source: name of source file
   //        hCoffeeOptions  - passed to CoffeeScript.parse()
   //           default:
@@ -86,7 +86,7 @@ export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
   debug("enter cieloCodeToJS()");
   debug("cieloCode", cieloCode);
   assert(indentLevel(cieloCode) === 0, "cieloCodeToJS(): has indentation");
-  premapper = hOptions.premapper || SmartMapper;
+  premapper = hOptions.premapper || CieloMapper;
   postmapper = hOptions.postmapper; // may be undef
   source = hOptions.source;
   // --- Even if no premapper is defined, this will handle

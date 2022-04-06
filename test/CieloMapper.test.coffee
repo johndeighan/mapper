@@ -1,4 +1,4 @@
-# SmartMapper.test.coffee
+# CieloMapper.test.coffee
 
 import assert from 'assert'
 
@@ -13,7 +13,7 @@ import {
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {
-	SmartMapper, stdSplitCommand, stdIsComment,
+	CieloMapper, stdSplitCommand, stdIsComment,
 	} from '@jdeighan/mapper'
 import {addHereDocType} from '@jdeighan/mapper/heredoc'
 import {FuncHereDoc} from '@jdeighan/mapper/func'
@@ -39,7 +39,7 @@ simple.equal 33, stdSplitCommand('# define X 3'), undef
 # ---------------------------------------------------------------------------
 
 ###
-	class SmartMapper should handle the following:
+	class CieloMapper should handle the following:
 		- remove empty lines (or override handleEmptyLine())
 		- remove comments (or override handleComment())
 		- join continue lines (or override getContLines() / joinContLines())
@@ -53,9 +53,9 @@ class SmartTester extends UnitTesterNoNorm
 	transformValue: (oInput) ->
 		if isString(oInput)
 			str = oInput
-			oInput = new SmartMapper(str)
-		assert oInput instanceof SmartMapper,
-			"oInput should be a SmartMapper object"
+			oInput = new CieloMapper(str)
+		assert oInput instanceof CieloMapper,
+			"oInput should be a CieloMapper object"
 		return oInput.getBlock()
 
 tester = new SmartTester()
@@ -77,7 +77,7 @@ tester.equal 62, """
 # ---------------------------------------------------------------------------
 # --- test overriding handling of comments and empty lines
 
-class CustomInput extends SmartMapper
+class CustomInput extends CieloMapper
 
 	handleEmptyLine: () ->
 
@@ -279,7 +279,7 @@ tester.equal 264, """
 # ---------------------------------------------------------------------------
 # --- Test patching file name
 
-tester.equal 278, new SmartMapper("""
+tester.equal 278, new CieloMapper("""
 		in file FILE
 		ok
 		exiting file FILE
@@ -293,7 +293,7 @@ tester.equal 278, new SmartMapper("""
 # ---------------------------------------------------------------------------
 # --- Test patching line number
 
-tester.equal 292, new SmartMapper("""
+tester.equal 292, new CieloMapper("""
 		on line LINE
 		ok
 		on line LINE

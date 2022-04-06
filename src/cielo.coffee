@@ -11,7 +11,7 @@ import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
-import {doMap, Mapper, SmartMapper} from '@jdeighan/mapper'
+import {doMap, Mapper, CieloMapper} from '@jdeighan/mapper'
 import {addHereDocType} from '@jdeighan/mapper/heredoc'
 import {
 	getNeededSymbols, buildImportList,
@@ -37,8 +37,8 @@ export convertCielo = (flag) ->
 export cieloCodeToJS = (cieloCode, hOptions={}) ->
 	# --- cielo => js
 	#     Valid Options:
-	#        premapper:  SmartMapper or subclass
-	#        postmapper: SmartMapper or subclass
+	#        premapper:  CieloMapper or subclass
+	#        postmapper: CieloMapper or subclass
 	#        source: name of source file
 	#        hCoffeeOptions  - passed to CoffeeScript.parse()
 	#           default:
@@ -50,7 +50,7 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 
 	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indentation"
 
-	premapper = hOptions.premapper || SmartMapper
+	premapper = hOptions.premapper || CieloMapper
 	postmapper = hOptions.postmapper   # may be undef
 	source = hOptions.source
 

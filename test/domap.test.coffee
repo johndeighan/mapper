@@ -6,12 +6,12 @@ import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 
-import {SmartMapper, doMap} from '@jdeighan/mapper'
+import {CieloMapper, doMap} from '@jdeighan/mapper'
 
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
-# By default, a SmartMapper:
+# By default, a CieloMapper:
 #    1. removes blank lines
 #    2. handles #include
 #    3. joins continuation lines
@@ -31,7 +31,7 @@ tester = new MapTester()
 # ---------------------------------------------------------------------------
 # --- by default, DO NOT remove comments
 
-class MyInput extends SmartMapper
+class MyInput extends CieloMapper
 
 	mapString: (line, level) ->
 		return line.toUpperCase()
@@ -50,7 +50,7 @@ tester.equal 33, [MyInput, """
 # ---------------------------------------------------------------------------
 # --- DO remove comments
 
-class MyInput extends SmartMapper
+class MyInput extends CieloMapper
 
 	mapString: (line, level) ->
 		return line.toUpperCase()
@@ -71,7 +71,7 @@ tester.equal 55, [MyInput, """
 # ---------------------------------------------------------------------------
 # Retain empty lines
 
-class MyInput extends SmartMapper
+class MyInput extends CieloMapper
 
 	mapString: (line, level) ->
 		return line.toUpperCase()
@@ -94,7 +94,7 @@ tester.equal 76, [MyInput, """
 # ---------------------------------------------------------------------------
 # Join continuation lines
 
-class MyInput extends SmartMapper
+class MyInput extends CieloMapper
 
 	mapString: (line, level) ->
 		return line.toUpperCase()

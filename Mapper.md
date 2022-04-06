@@ -1,7 +1,7 @@
-class StringInput
+class Mapper
 =================
 
-A StringInput object is a subclass of StringFetcher, and is therefore
+A Mapper object is a subclass of StringFetcher, and is therefore
 constructed from a block (i.e. a multi-line string) and an optional source.
 It has the following features:
 

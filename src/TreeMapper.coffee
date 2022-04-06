@@ -5,7 +5,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {SmartMapper} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ import {SmartMapper} from '@jdeighan/mapper'
 #        3. If desired, override handleHereDoc, which patches
 #           HEREDOC lines into the original string
 
-export class TreeMapper extends SmartMapper
+export class TreeMapper extends CieloMapper
 
 	constructor: (content, source) ->
 		super content, source

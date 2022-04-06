@@ -34,7 +34,7 @@ import {
 
 import {
   doMap,
-  SmartMapper
+  CieloMapper
 } from '@jdeighan/mapper';
 
 import {
@@ -200,7 +200,7 @@ func(x, "abc")`);
   convertCoffee(true);
   CieloTester = class CieloTester extends UnitTester {
     transformValue(text) {
-      return doMap(SmartMapper, text);
+      return doMap(CieloMapper, text);
     }
 
   };

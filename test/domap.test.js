@@ -18,14 +18,14 @@ import {
 } from '@jdeighan/coffee-utils/log';
 
 import {
-  SmartMapper,
+  CieloMapper,
   doMap
 } from '@jdeighan/mapper';
 
 simple = new UnitTester();
 
 // ---------------------------------------------------------------------------
-// By default, a SmartMapper:
+// By default, a CieloMapper:
 //    1. removes blank lines
 //    2. handles #include
 //    3. joins continuation lines
@@ -45,7 +45,7 @@ tester = new MapTester();
 
 // ---------------------------------------------------------------------------
 // --- by default, DO NOT remove comments
-MyInput = class MyInput extends SmartMapper {
+MyInput = class MyInput extends CieloMapper {
   mapString(line, level) {
     return line.toUpperCase();
   }
@@ -64,7 +64,7 @@ DEF`);
 
 // ---------------------------------------------------------------------------
 // --- DO remove comments
-MyInput = class MyInput extends SmartMapper {
+MyInput = class MyInput extends CieloMapper {
   mapString(line, level) {
     return line.toUpperCase();
   }
@@ -86,7 +86,7 @@ DEF`);
 
 // ---------------------------------------------------------------------------
 // Retain empty lines
-MyInput = class MyInput extends SmartMapper {
+MyInput = class MyInput extends CieloMapper {
   mapString(line, level) {
     return line.toUpperCase();
   }
@@ -110,7 +110,7 @@ DEF`);
 
 // ---------------------------------------------------------------------------
 // Join continuation lines
-MyInput = class MyInput extends SmartMapper {
+MyInput = class MyInput extends CieloMapper {
   mapString(line, level) {
     return line.toUpperCase();
   }

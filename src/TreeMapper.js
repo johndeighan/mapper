@@ -15,7 +15,7 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  SmartMapper
+  CieloMapper
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ import {
 //           HEREDOC sections expanded
 //        3. If desired, override handleHereDoc, which patches
 //           HEREDOC lines into the original string
-export var TreeMapper = class TreeMapper extends SmartMapper {
+export var TreeMapper = class TreeMapper extends CieloMapper {
   constructor(content, source) {
     super(content, source);
     // --- Cached tree, in case getTree() is called multiple times

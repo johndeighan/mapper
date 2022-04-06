@@ -27,7 +27,7 @@ import {
 
 import {
   Mapper,
-  SmartMapper
+  CieloMapper
 } from '@jdeighan/mapper';
 
 import {
@@ -151,7 +151,7 @@ getAvailSymbolsFrom = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
-SymbolParser = class SymbolParser extends SmartMapper {
+SymbolParser = class SymbolParser extends CieloMapper {
   // --- Parse a .symbols file
   constructor(content) {
     super(content);

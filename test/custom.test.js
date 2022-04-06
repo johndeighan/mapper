@@ -23,7 +23,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  SmartMapper
+  CieloMapper
 } from '@jdeighan/mapper';
 
 import {
@@ -34,7 +34,7 @@ import {
 SmartTester = class SmartTester extends UnitTesterNoNorm {
   transformValue(block) {
     var oInput;
-    oInput = new SmartMapper(block);
+    oInput = new CieloMapper(block);
     return oInput.getBlock();
   }
 

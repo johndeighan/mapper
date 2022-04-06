@@ -31,6 +31,12 @@ A title
 
 replace '=' characters with '-' characters for a level 2 heading
 
+/sass:
+------
+
+	convertSASS(flag) - if false, sassify() just returns block
+	sassify(block) - returns equivalent CSS
+
 /builtins:
 ----------
 
@@ -38,6 +44,24 @@ replace '=' characters with '-' characters for a level 2 heading
 		name. The list is VERY incomplete and should probably not be
 		used from outside this package.
 
+/mapper:
+--------------
+
+This library provides 4 classes of increasing complexity:
+
+1. [StringFetcher](./StringFetcher.md)
+2. [Mapper](./Mapper.md)
+3. [CieloMapper](./CieloMapper.md)
+
+/get:
+-----
+
+	class Getter(lItems) with methods:
+		- get()
+		- unget(item)
+		- peek()
+		- skip()
+		- eof()
 /heredoc:
 ---------
 
@@ -52,15 +76,12 @@ replace '=' characters with '-' characters for a level 2 heading
 Provides class FuncHereDoc, which can be used to add a new HEREDOC
 type via addHereDocType() in /heredoc
 
-/mapper:
+/tree:
 --------------
 
-This library provides 4 classes of increasing complexity:
+Provides:
 
-1. [StringFetcher](./StringFetcher.md)
-2. [Mapper](./Mapper.md)
-3. [SmartMapper](./SmartMapper.md)
-4. [TreeMapper](./TreeMapper.md)
+- [TreeMapper](./TreeMapper.md)
 
 /walker:
 --------
@@ -92,3 +113,11 @@ Includes functions:
 - `coffeeCodeToJS(code, hOptions)`
 - `coffeeFileToJS(srcPath, destPath, hOptions)`
 - `coffeeEvalFunc(lParmNames, strBody)` - use with FuncHereDoc
+
+/cielo:
+-------
+
+	convertCielo(flag) - if false, cieloCodeToJS() just returns block
+	cieloCodeToJS(block)
+	addImports()
+	cieloFileToJS()

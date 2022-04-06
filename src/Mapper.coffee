@@ -24,7 +24,9 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
-#                         handles __LINE, __DIR, __FILE, #include
+#                         handles:
+#                            __END__
+#                            #include
 
 export class StringFetcher
 
@@ -40,6 +42,8 @@ export class StringFetcher
 	# ..........................................................
 
 	setContent: (content, source) ->
+
+		debug "enter setContent()", content
 
 		# --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
 		#     If source is 'unit test', just has:
@@ -61,10 +65,11 @@ export class StringFetcher
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
 		else
-			croak "StringFetcher(): content must be array or string",
+			croak "StringFetcher(): content must be a string",
 					"CONTENT", content
 
 		@lineNum = 0
+		debug "return from setContent()", @lBuffer
 		return
 
 	# ..........................................................
@@ -75,11 +80,19 @@ export class StringFetcher
 			if str == undef
 				log "undef value in lBuffer in #{where}"
 				croak "A string in lBuffer is undef"
+			else if str.match(/\r/)
+				log "string has a carriage return"
+				croak "A string in lBuffer has a carriage return"
+			else if str.match(/\n/)
+				log "string has newline"
+				croak "A string in lBuffer has a newline"
 		return
 
 	# ..........................................................
 
 	getIncludeFileFullPath: (fname) ->
+
+		debug "enter getIncludeFileFullPath('#{fname}')"
 
 		# --- Make sure we have a simple file name
 		{root, dir, base, ext} = pathlib.parse(fname)
@@ -92,9 +105,13 @@ export class StringFetcher
 			dir = process.cwd()
 
 		path = pathTo(fname, dir)
-		if path && fs.existsSync(path)
+		debug "path", path
+		if path
+			assert fs.existsSync(path), "path does not exist"
+			debug "return from getIncludeFileFullPath()"
 			return path
 		else
+			debug "return from getIncludeFileFullPath() - file not found"
 			return undef
 
 	# ..........................................................
@@ -119,7 +136,7 @@ export class StringFetcher
 		#               just return it as is
 
 		debug "enter fetch(literal=#{literal}) from #{@filename}"
-		@checkBuffer "in fetch()"
+		# --- @checkBuffer "in fetch()"
 		if @altInput
 			assert @altLevel?, "fetch(): alt input without alt level"
 			line = @altInput.fetch(literal)
@@ -192,6 +209,18 @@ export class StringFetcher
 			@incLineNum(-1)
 		debug 'return from unfetch()'
 		return
+
+	# ..........................................................
+
+	getBlock: () ->
+
+		debug "enter getBlock()"
+		lLines = while line = @fetch()
+			assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
+			line
+		block = arrayToBlock(lLines)
+		debug "return from getBlock()", block
+		return block
 
 # ===========================================================================
 #   class Mapper
@@ -394,7 +423,7 @@ export stdIsComment = (line, level) ->
 
 # ---------------------------------------------------------------------------
 
-export class SmartMapper extends Mapper
+export class CieloMapper extends Mapper
 	# - removes blank lines (but can be overridden)
 	# - does NOT remove comments (but can be overridden)
 	# - joins continuation lines
@@ -461,7 +490,7 @@ export class SmartMapper extends Mapper
 
 	handleEmptyLine: (level) ->
 
-		debug "in SmartMapper.handleEmptyLine()"
+		debug "in CieloMapper.handleEmptyLine()"
 
 		# --- remove blank lines by default
 		#     return '' to retain empty lines
@@ -471,7 +500,7 @@ export class SmartMapper extends Mapper
 
 	splitCommand: (line, level) ->
 
-		debug "in SmartMapper.splitCommand()"
+		debug "in CieloMapper.splitCommand()"
 		return stdSplitCommand(line, level)
 
 	# ..........................................................
@@ -489,21 +518,21 @@ export class SmartMapper extends Mapper
 
 	isComment: (line, level) ->
 
-		debug "in SmartMapper.isComment()"
+		debug "in CieloMapper.isComment()"
 		return stdIsComment(line, level)
 
 	# ..........................................................
 
 	handleComment: (line, level) ->
 
-		debug "in SmartMapper.handleComment()"
+		debug "in CieloMapper.handleComment()"
 		return line      # keep comments by default
 
 	# ..........................................................
 
 	replaceVars: (line, level) ->
 
-		debug "in SmartMapper.replaceVars()"
+		debug "in CieloMapper.replaceVars()"
 		return line.replace(/\bDIR\b/g, @hVars.DIR).replace(/\bFILE\b/g, @hVars.FILE).replace(/\bLINE\b/g, @hVars.LINE)
 
 	# ..........................................................
@@ -512,13 +541,13 @@ export class SmartMapper extends Mapper
 
 	mapLine: (line, level) ->
 
-		debug "enter SmartMapper.mapLine(#{OL(line)}, #{level})"
+		debug "enter CieloMapper.mapLine(#{OL(line)}, #{level})"
 
 		assert line?, "mapLine(): line is undef"
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
 			line = @handleEmptyLine(@curLevel)
-			debug "return #{line} from SmartMapper.mapLine() - empty line"
+			debug "return #{line} from CieloMapper.mapLine() - empty line"
 			return @handleEmptyLine(@curLevel)
 
 		lParts = @splitCommand(line)
@@ -527,7 +556,7 @@ export class SmartMapper extends Mapper
 			return @handleCommand cmd, rest
 
 		if isComment(line)
-			debug "return undef from SmartMapper.mapLine() - comment"
+			debug "return undef from CieloMapper.mapLine() - comment"
 			return @handleComment(line, level)
 
 		line = @replaceVars(line, level)
@@ -554,7 +583,7 @@ export class SmartMapper extends Mapper
 
 		debug "mapping string"
 		result = @mapString(line, level)
-		debug "return #{OL(result)} from SmartMapper.mapLine()"
+		debug "return #{OL(result)} from CieloMapper.mapLine()"
 		return result
 
 	# ..........................................................
@@ -610,7 +639,7 @@ export class SmartMapper extends Mapper
 		#        of the line containing <<<
 
 		# --- NOTE: splitLine() removes trailing whitespace
-		debug "enter SmartMapper.getHereDocLines()"
+		debug "enter CieloMapper.getHereDocLines()"
 		lLines = []
 		while (line = @fetch())? \
 				&& (newline = @hereDocLine(undented(line, atLevel)))?
@@ -618,7 +647,7 @@ export class SmartMapper extends Mapper
 				"invalid indentation in HEREDOC section"
 			lLines.push newline
 		assert isArray(lLines), "getHereDocLines(): retval not an array"
-		debug "return from SmartMapper.getHereDocLines()", lLines
+		debug "return from CieloMapper.getHereDocLines()", lLines
 		return lLines
 
 	# ..........................................................
@@ -642,7 +671,7 @@ export doMap = (inputClass, text, source='unit test') ->
 		assert oInput instanceof Mapper,
 			"doMap() requires a Mapper or subclass"
 	else
-		oInput = new SmartMapper(text, source)
+		oInput = new CieloMapper(text, source)
 	result = oInput.getBlock()
 	debug "return from doMap()", result
 	return result

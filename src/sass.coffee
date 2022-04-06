@@ -29,14 +29,14 @@ export class SassMapper extends Mapper
 
 # ---------------------------------------------------------------------------
 
-export sassify = (text) ->
+export sassify = (block) ->
 
-	oInput = new SassMapper(text)
-	newtext = oInput.getBlock()
+	oInput = new SassMapper(block)
+	newblock = oInput.getBlock()
 	if ! convert
-		return newtext
+		return newblock
 	result = sass.renderSync({
-		data: newtext,
+		data: newblock,
 		indentedSyntax: true,
 		indentType: "tab",
 		})

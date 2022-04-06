@@ -35,15 +35,15 @@ export var SassMapper = class SassMapper extends Mapper {
 };
 
 // ---------------------------------------------------------------------------
-export var sassify = function(text) {
-  var newtext, oInput, result;
-  oInput = new SassMapper(text);
-  newtext = oInput.getBlock();
+export var sassify = function(block) {
+  var newblock, oInput, result;
+  oInput = new SassMapper(block);
+  newblock = oInput.getBlock();
   if (!convert) {
-    return newtext;
+    return newblock;
   }
   result = sass.renderSync({
-    data: newtext,
+    data: newblock,
     indentedSyntax: true,
     indentType: "tab"
   });

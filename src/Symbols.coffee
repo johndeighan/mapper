@@ -10,7 +10,7 @@ import {
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {Mapper, SmartMapper} from '@jdeighan/mapper'
+import {Mapper, CieloMapper} from '@jdeighan/mapper'
 import {ASTWalker} from '@jdeighan/mapper/walker'
 
 export symbolsRootDir = mkpath(process.cwd())
@@ -128,7 +128,7 @@ getAvailSymbolsFrom = (filepath) ->
 
 # ---------------------------------------------------------------------------
 
-class SymbolParser extends SmartMapper
+class SymbolParser extends CieloMapper
 	# --- Parse a .symbols file
 
 	constructor: (content) ->

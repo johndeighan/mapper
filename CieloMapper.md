@@ -1,7 +1,7 @@
-class SmartMapper
+class CieloMapper
 =================
 
-A SmartMapper object is a subclass of StringInput, and is therefore
+A CieloMapper object is a subclass of StringInput, and is therefore
 constructed from a block (i.e. a multi-line string) and an optional source.
 It has the following features:
 

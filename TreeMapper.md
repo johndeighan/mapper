@@ -1,69 +1,58 @@
-class PLLParser
+class TreeMapper
 ===============
 
-1. Define a mapping function (regular function)
+To use the TreeMapper class:
+
+1. Define a mapping function (a regular function)
 2. Use function treeFromBlock to get the tree
 
-Let's say that you want to create a language for
-creating "expression objects" that allows functions:
+As an example, let's create a limited mathematical language.
+The primitive items in this language includes:
 
-	add - to add some numbers
-	subtract - to add some numbers
-	multiply - to add some numbers
-	divide - to add some numbers
-	sigma - to sum numbers over some index set
+	- numbers      - a string of one or more digits
+	- identifiers  - a string of one or more letters or digits
+	                 beginning with a letter
+	- operators    - arbitrary non-whitespace strings
 
-For example, these are valid expressions:
+From these, we can build the following expressions:
 
-```text
-sum
-	13
-	49
-	53
-```
+	<expr> ::=
+		  <number>
+		| <ident>
+		| <binop>
+		| <array>
 
-```text
-multiply
-	sum
-		13
-		22
-		53
-	22
-```
+	<binop> ::=
+		| <expr> <op> <expr>
+		| '(' <expr> <op> <expr> ')'
 
-Numbers must be integers.
-We also want to allow identifiers, which must be single upper-case letters:
+	<array> ::=
+		'[' <expr>* ']'
 
-```text
-multiply
-	sum
-		13
-		X
-	divide
-		Y
-		3
-```
+	<sup> ::=
+		'sup' <expr> <expr>
 
-Here is a valid sigma expression:
+	<sub> ::=
+		'sub' <expr> <expr>
+
+	<frac> ::=
+		'frac' <expr> <expr>
+
+	<underover> ::=
+		'underover' <expr> <expr> <expr>
+
+For example, this
 
 ```text
-sigma
-	I in range(5)
-	multiply
-		I
-		22
+sup
+	X
+	2
 ```
+should produce MathML that displays:
 
-i.e. sigma expects 2 parts:
-
-	1. <identifier> in range(<number> or <identifier>)
-	2. an expression
-
-SYNOPSIS:
----------
-
-```coffeescript
-mapper = (str) ->
-	if lMatches =
-
-
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+	<sup>
+		<mi>X</mi>
+		<mn>2</mn>
+	</sup>
+</math>

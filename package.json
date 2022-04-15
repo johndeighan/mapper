@@ -39,13 +39,13 @@
 	"author": "John Deighan",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/johndeighan/string-input/issues"
+		"url": "https://github.com/johndeighan/mapper/issues"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/johndeighan/mapper.git"
 	},
-	"homepage": "https://github.com/johndeighan/string-input#readme",
+	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
 		"@jdeighan/unit-tester": "^1.0.5",
 		"coffeescript": "^2.6.1"

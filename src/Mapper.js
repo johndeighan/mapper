@@ -567,7 +567,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
 
   // ..........................................................
   // --- designed to override with a mapping method
-  //     NOTE: line includes the indentation
+  //     NOTE: line does not include the indentation
   mapLine(line, level) {
     var cmd, hResult, lContLines, lParts, orgLineNum, rest, result;
     debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);

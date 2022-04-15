@@ -1,0 +1,46 @@
+------------------------------------------
+result:
+---
+-
+   lineNum: 1
+   node:
+      cmd: SIGMA
+   subtree:
+      -
+         lineNum: 2
+         node:
+            cmd: expr
+            lAtoms:
+               -
+                  type: number
+                  value: '0'
+      -
+         lineNum: 3
+         node:
+            cmd: expr
+            lAtoms:
+               -
+                  type: number
+                  value: '10'
+      -
+         lineNum: 4
+         node:
+            cmd: sub
+         subtree:
+            -
+               lineNum: 5
+               node:
+                  cmd: expr
+                  lAtoms:
+                     -
+                        type: ident
+                        value: X
+            -
+               lineNum: 6
+               node:
+                  cmd: expr
+                  lAtoms:
+                     -
+                        type: number
+                        value: '2'
+------------------------------------------

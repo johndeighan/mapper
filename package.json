@@ -8,11 +8,11 @@
 	"description": "A class to help parse text files",
 	"main": "./StringInput.js",
 	"exports": {
+		".": "./src/Mapper.js",
 		"./taml": "./src/taml.js",
 		"./markdown": "./src/markdown.js",
 		"./sass": "./src/sass.js",
 		"./builtins": "./src/builtins.js",
-		".": "./src/Mapper.js",
 		"./get": "./src/Getter.js",
 		"./heredoc": "./src/heredoc.js",
 		"./func": "./src/FuncHereDoc.js",
@@ -21,6 +21,9 @@
 		"./symbols": "./src/Symbols.js",
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
+		"./parsetag": "./src/parsetag.js",
+		"./math": "./src/MathML.js",
+		"./trans": "./src/Translator.js",
 		"./package.json": "./package.json"
 	},
 	"scripts": {

@@ -4,6 +4,7 @@ import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log} from '@jdeighan/coffee-utils/log'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
 	setSymbolsRootDir, symbolsRootDir, getAvailSymbols, getNeededSymbols,
 	} from '@jdeighan/mapper/symbols'
@@ -64,6 +65,15 @@ simple.equal 34, getAvailSymbols(), {
 		lib: '@jdeighan/coffee-utils',
 		},
 	}
+
+# ---------------------------------------------------------------------------
+
+class SymbolsTester extends UnitTesterNoNorm
+
+	transformValue: (text) ->
+		return getNeededSymbols(text)
+
+tester = new SymbolsTester()
 
 # ---------------------------------------------------------------------------
 

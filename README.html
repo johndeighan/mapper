@@ -1,0 +1,88 @@
+<h1 id="jdeighanstring-input">@jdeighan/string-input</h1>
+<p>This npm package provides the following libraries:</p>
+<h2 id="taml">/taml:</h2>
+<pre><code>isTAML(block) - returns true if 1st line of block is &#39;---&#39;
+taml(block) - returns data structure that block represents
+slurpTAML(path) - returns data structure text in file represents
+</code></pre>
+<h2 id="markdown">/markdown:</h2>
+<pre><code>convertMarkdown(flag) - if false, markdownify just returns 1st arg
+markdownify(block) - convert markdown to HTML
+</code></pre>
+<p>NOTE: Since one or more &#39;#&#39; characters introduce a comment, don&#39;t do this:</p>
+<pre><code class="language-markdown"># A title
+</code></pre>
+<p>but, instead, do this:</p>
+<pre><code class="language-markdown">A title
+=======
+</code></pre>
+<p>replace &#39;=&#39; characters with &#39;-&#39; characters for a level 2 heading</p>
+<h2 id="sass">/sass:</h2>
+<pre><code>convertSASS(flag) - if false, sassify() just returns block
+sassify(block) - returns equivalent CSS
+</code></pre>
+<h2 id="builtins">/builtins:</h2>
+<pre><code>isBuiltin(name) - tells you whether the name is a JavaScript reserved
+    name. The list is VERY incomplete and should probably not be
+    used from outside this package.
+</code></pre>
+<h2 id="mapper">/mapper:</h2>
+<p>This library provides 4 classes of increasing complexity:</p>
+<ol>
+<li><a href="./StringFetcher.md">StringFetcher</a></li>
+<li><a href="./Mapper.md">Mapper</a></li>
+<li><a href="./CieloMapper.md">CieloMapper</a></li>
+</ol>
+<h2 id="get">/get:</h2>
+<pre><code>class Getter(lItems) with methods:
+    - get()
+    - unget(item)
+    - peek()
+    - skip()
+    - eof()
+</code></pre>
+<h2 id="heredoc">/heredoc:</h2>
+<pre><code>doDebug(flag) - turns on HEREDOC debugging if flag = true
+mapHereDoc(block) - interprets a HEREDOC block and returns result
+addHereDocType(obj) - add a new HEREDOC type by passing a class
+    that implements methods myName(), isMyHereDoc(block) and map(block)
+</code></pre>
+<h2 id="func">/func:</h2>
+<p>Provides class FuncHereDoc, which can be used to add a new HEREDOC
+type via addHereDocType() in /heredoc</p>
+<h2 id="tree">/tree:</h2>
+<p>Provides:</p>
+<ul>
+<li><a href="./TreeMapper.md">TreeMapper</a></li>
+</ul>
+<h2 id="walker">/walker:</h2>
+<p>Implements these 3 classes:</p>
+<ol>
+<li><a href="./TreeWalker.md">TreeWalker</a></li>
+<li><a href="./ASTWalker.md">ASTWalker</a></li>
+<li><a href="./TreeStringifier.md">TreeStringifier</a></li>
+</ol>
+<h2 id="symbols">/symbols:</h2>
+<p>Includes functions:</p>
+<ul>
+<li><code>getNeededSymbols(coffeeCode, hOptions)</code></li>
+<li><code>addImports(coffeeCode, rootDir, hOptions)</code></li>
+<li><code>buildImportBlock(lNeededSymbols, rootDir, hOptions)</code></li>
+<li><code>buildImportList(lNeededSymbols, rootDir, hOptions)</code></li>
+<li><code>getAvailSymbols(rootDir, hOptions)</code></li>
+</ul>
+<h2 id="coffee">/coffee:</h2>
+<p>Includes functions:</p>
+<ul>
+<li><code>convertCoffee(flag)</code></li>
+<li><code>coffeeExprToJS(coffeeExpr, force)</code></li>
+<li><code>coffeeCodeToJS(code, hOptions)</code></li>
+<li><code>coffeeFileToJS(srcPath, destPath, hOptions)</code></li>
+<li><code>coffeeEvalFunc(lParmNames, strBody)</code> - use with FuncHereDoc</li>
+</ul>
+<h2 id="cielo">/cielo:</h2>
+<pre><code>convertCielo(flag) - if false, cieloCodeToJS() just returns block
+cieloCodeToJS(block)
+addImports()
+cieloFileToJS()
+</code></pre>

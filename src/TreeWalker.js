@@ -25,30 +25,57 @@ import {
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 export var TreeWalker = class TreeWalker {
-  constructor(root) {
-    this.root = root;
-    // --- root can be a hash or array of hashes
-    pass;
+  constructor(tree1, hStdKeys = {}) {
+    this.tree = tree1;
+    debug("enter TreeWalker()", hStdKeys);
+    // --- tree can be a hash or array of hashes
+    if (isHash(this.tree)) {
+      debug("tree was hash - constructing list from it");
+      this.tree = [this.tree];
+    }
+    assert(isArrayOfHashes(this.tree), "new TreeWalker: Bad tree");
+    // --- @hStdKeys allows you to provide an alternate name for 'subtree'
+    //     Ditto for 'node', but if the 'node' key exists, but is
+    //        set to undef, the tree is assumed to NOT use user nodes
+    this.hStdKeys = {};
+    if (hStdKeys.subtree != null) {
+      assert(hStdKeys.subtree, "empty subtree key");
+      this.hStdKeys.subtree = hStdKeys.subtree;
+    } else {
+      this.hStdKeys.subtree = 'subtree';
+    }
+    if (hStdKeys.node != null) {
+      this.hStdKeys.node = hStdKeys.node;
+    } else {
+      this.hStdKeys.node = 'node'; // --- if set to undef, leave it alone
+    }
+    debug("return from TreeWalker()", this.hStdKeys);
   }
 
   // ..........................................................
   walk() {
-    debug("enter TreeWalker.walk");
-    if (isHash(this.root)) {
-      debug("walking node");
-      this.walkNode(this.root, 0);
-    } else if (isArrayOfHashes(this.root)) {
-      debug("walking array");
-      this.walkNodes(this.root, 0);
-    } else {
-      croak("TreeWalker: Invalid root", 'ROOT', this.root);
+    debug("enter TreeWalker.walk()");
+    this.walkNodes(this.tree, 0);
+    debug("return from TreeWalker.walk()");
+  }
+
+  // ..........................................................
+  walkNodes(lNodes, level) {
+    var i, len, node;
+    debug("enter walkNodes()", lNodes);
+    for (i = 0, len = lNodes.length; i < len; i++) {
+      node = lNodes[i];
+      this.walkNode(node, level);
     }
-    debug("return from TreeWalker.walk");
+    debug("return from walkNodes()");
   }
 
   // ..........................................................
   walkSubTrees(lSubTrees, level) {
     var i, len, subtree;
+    if ((lSubTrees == null) || (lSubTrees.length === 0)) {
+      return;
+    }
     for (i = 0, len = lSubTrees.length; i < len; i++) {
       subtree = lSubTrees[i];
       if (subtree != null) {
@@ -64,34 +91,95 @@ export var TreeWalker = class TreeWalker {
   }
 
   // ..........................................................
-  walkNode(node, level) {
-    var lSubTrees;
-    lSubTrees = this.visit(node, level);
-    if (lSubTrees) {
+  walkNode(superNode, level) {
+    var key, lSubTrees, node, subkey;
+    debug("enter walkNode()");
+    key = this.hStdKeys.node;
+    subkey = this.hStdKeys.subtree;
+    debug(`KEYS: '${key}', '${subkey}'`);
+    node = superNode;
+    if (key && (superNode[key] != null)) {
+      debug(`found node under key '${key}'`);
+      node = superNode[key];
+    }
+    // --- give visit() method chance to provide list of subtrees
+    lSubTrees = this.visit(node, superNode, level);
+    if (lSubTrees != null) {
+      debug("visit() returned subtrees", lSubTrees);
       this.walkSubTrees(lSubTrees, level + 1);
+    } else {
+      this.walkSubTrees(superNode[subkey], level + 1);
     }
-    return this.endVisit(node, level);
-  }
-
-  // ..........................................................
-  walkNodes(lNodes, level = 0) {
-    var i, len, node;
-    for (i = 0, len = lNodes.length; i < len; i++) {
-      node = lNodes[i];
-      this.walkNode(node, level);
-    }
+    this.endVisit(node, superNode, level);
+    debug("return from walkNode()");
   }
 
   // ..........................................................
   // --- return lSubTrees, if any
-  visit(node, level) {
-    return node.body; // it's handled ok if node.body is undef
+  visit(node, hInfo, level) {
+    debug("enter visit() - std");
+    // --- automatically visit subtree if it exists
+    debug("return from visit() - std");
+    return undef;
   }
 
-  
-    // ..........................................................
+  // ..........................................................
   // --- called after all subtrees have been visited
-  endVisit(node, level) {}
+  endVisit(node, hInfo, level) {}
+
+};
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+export var TreeStringifier = class TreeStringifier extends TreeWalker {
+  constructor(tree, hStdKeys = {}) {
+    debug("enter TreeStringifier()", tree);
+    super(tree, hStdKeys); // sets @tree
+    this.lLines = [];
+    debug("return from TreeStringifier()");
+  }
+
+  // ..........................................................
+  visit(node, hInfo, level) {
+    var str;
+    assert(node != null, "TreeStringifier.visit(): empty node");
+    debug("enter TreeStringifier.visit()");
+    str = indented(this.stringify(node), level);
+    debug(`stringified: '${str}'`);
+    this.lLines.push(str);
+    debug("return from TreeStringifier.visit()");
+    return undef;
+  }
+
+  // ..........................................................
+  get() {
+    var result;
+    debug("enter TreeStringifier.get()");
+    this.walk();
+    result = this.lLines.join('\n');
+    debug("return from TreeStringifier.get()");
+    return result;
+  }
+
+  // ..........................................................
+  excludeKey(key) {
+    return key === this.hStdKeys.subtree;
+  }
+
+  // ..........................................................
+  // --- override this
+  stringify(node) {
+    var key, newnode, value;
+    assert(isHash(node), `TreeStringifier.stringify(): node '${node}' is not a hash`);
+    newnode = {};
+    for (key in node) {
+      value = node[key];
+      if (!this.excludeKey(key)) {
+        newnode[key] = node[key];
+      }
+    }
+    return JSON.stringify(newnode);
+  }
 
 };
 
@@ -99,7 +187,10 @@ export var TreeWalker = class TreeWalker {
 // ---------------------------------------------------------------------------
 export var ASTWalker = class ASTWalker extends TreeWalker {
   constructor(ast) {
-    super(ast.program);
+    super(ast.program, {
+      subtree: 'body',
+      node: undef
+    });
     this.ast = ast.program;
     this.lImportedSymbols = [];
     this.lUsedSymbols = [];
@@ -148,7 +239,7 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
   }
 
   // ..........................................................
-  visit(node, level) {
+  visit(node, hInfo, level) {
     var add, hSpec, i, importKind, imported, j, lNames, lSubTrees, len, len1, lib, local, name, param, parm, ref, source, specifiers, type;
     // --- add to local vars & formal params, where appropriate
     switch (node.type) {
@@ -289,8 +380,8 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
 
   // ..........................................................
   getSymbols() {
-    var i, lNeededSymbols, len, name, ref;
-    debug("enter CodeWalker.getNeededSymbols()");
+    var hResult, i, lNeededSymbols, len, name, ref;
+    debug("enter CodeWalker.getSymbols()");
     this.lImportedSymbols = []; // filled in during walking
     this.lUsedSymbols = []; // filled in during walking
     debug("walking");
@@ -304,65 +395,13 @@ export var ASTWalker = class ASTWalker extends TreeWalker {
         lNeededSymbols.push(name);
       }
     }
-    debug("return from CodeWalker.getNeededSymbols()");
-    return {
+    hResult = {
       lImported: this.lImportedSymbols,
       lUsed: this.lUsedSymbols,
       lNeeded: lNeededSymbols
     };
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-export var TreeStringifier = class TreeStringifier extends TreeWalker {
-  constructor(tree) {
-    super(tree); // sets @tree
-    this.lLines = [];
-  }
-
-  // ..........................................................
-  visit(node, level) {
-    var str;
-    assert(node != null, "TreeStringifier.visit(): empty node");
-    debug("enter visit()");
-    str = indented(this.stringify(node), level);
-    debug(`stringified: '${str}'`);
-    this.lLines.push(str);
-    if (node.body) {
-      debug("return from visit() - has subtree 'body'");
-      return node.body;
-    } else {
-      debug("return from visit()");
-      return undef;
-    }
-  }
-
-  // ..........................................................
-  get() {
-    this.walk();
-    return this.lLines.join('\n');
-  }
-
-  // ..........................................................
-  excludeKey(key) {
-    return key === 'body';
-  }
-
-  // ..........................................................
-  // --- override this
-  stringify(node) {
-    var key, newnode, value;
-    assert(isHash(node), `TreeStringifier.stringify(): node '${node}' is not a hash`);
-    newnode = {};
-    for (key in node) {
-      value = node[key];
-      if (!this.excludeKey(key)) {
-        newnode[key] = node[key];
-      }
-    }
-    return JSON.stringify(newnode);
+    debug("return from CodeWalker.getSymbols()", hResult);
+    return hResult;
   }
 
 };

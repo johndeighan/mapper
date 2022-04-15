@@ -122,9 +122,9 @@ export treeify = (lItems, atLevel=0, predicate=undef) ->
 					"TREE", lItems
 
 		h = {node, lineNum}
-		body = treeify(lItems, atLevel+1)
-		if body?
-			h.body = body
+		subtree = treeify(lItems, atLevel+1)
+		if subtree?
+			h.subtree = subtree
 		lNodes.push(h)
 	if lNodes.length==0
 		debug "return undef from treeify()"

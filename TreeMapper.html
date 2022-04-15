@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<style>
+    body {
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        }
+    .language-text {
+        display: block;
+        padding: 15px;
+        width: 500px;
+        background-color: khaki;
+        }
+    .language-coffeescript {
+        display: block;
+        padding: 15px;
+        width: 500px;
+        background-color: antiquewhite;
+        }
+    math {
+        display: block;
+        padding: 15px;
+        width: 500px;
+        height: auto;
+        background-color: lightGray;
+        }
+    .large {
+        font-size: 48px;
+        }
+</style>
+
+<h1 id="class-treemapper">class TreeMapper</h1>
+<p>To use the TreeMapper class:</p>
+<ol>
+<li><p>Define a mapping function (a regular function)</p>
+</li>
+<li><p>Use function treeFromBlock() to get the tree</p>
+</li>
+<li><p>Create a subclass of TreeWalker, overriding method
+ visit(superNode, level) and optionally
+ endVisit(superNode, level)</p>
+</li>
+<li><p>Pass the tree to the TreeWalker constructor, call the
+ walk() method, then fetch the mapped data. Often, you&#39;ll
+ want to create a method in your class to fetch the mapped
+ data but you may also simply get it directly from a
+ property of your class.</p>
+</li>
+</ol>
+<p>As an example, let&#39;s create a limited mathematical language.
+The primitive items in this language includes:</p>
+<pre><code>- numbers      - a string of one or more digits
+- identifiers  - a string of one or more letters or digits
+                 beginning with a letter
+- operators    - arbitrary non-whitespace strings
+</code></pre>
+<p>From these, we can build the following expressions:</p>
+<pre><code>&lt;program&gt; ::= &lt;expr&gt;+
+&lt;atom&gt; ::= &lt;number&gt; | &lt;ident&gt; | &lt;op&gt;
+&lt;expr&gt; ::=
+      &#39;expr&#39; &lt;atom&gt;*    =&gt; &lt;expr&gt;*
+    | &#39;group&#39; &lt;op&gt;{0,2} =&gt; &lt;expr&gt;+
+    | &#39;sub&#39;             =&gt; &lt;expr&gt;{2}
+    | &#39;SIGMA&#39;           =&gt; &lt;expr&gt;{3,}
+    | &lt;atom&gt;
+
+Everything before a =&gt; is on one line, and everything
+after the =&gt; is on a separate line, at one higher level,
+i.e. everything after the =&gt; is a child of the target element.
+</code></pre>
+<h2 id="examples">Examples:</h2>
+<hr>
+<pre><code class="language-text">expr X + 3
+</code></pre>
+<p>should produce MathML that displays:</p>
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+    <row>
+        <mi> X </mi>
+        <mo> + </mo>
+        <mn> 3 </mn>
+    </row>
+</math>
+
+<hr>
+<pre><code class="language-text">group
+    expr X + 3
+</code></pre>
+<p>should produce MathML that displays:</p>
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+    <row>
+        <mo> ( </mo>
+        <mi> X </mi>
+        <mo> + </mo>
+        <mn> 3 </mn>
+        <mo> ) </mo>
+    </row>
+</math>
+
+<hr>
+<pre><code class="language-text">sub
+    X
+    2
+</code></pre>
+<p>should produce MathML that displays:</p>
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+    <msub>
+        <mi> X </mi>
+        <mn> 2 </mn>
+    </msub>
+</math>
+-----------------------------------------------
+
+<pre><code class="language-text">SIGMA
+    0
+    10
+    sub
+        X
+        2
+</code></pre>
+<p>should produce MathML that displays:</p>
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+    <munderover>
+        <mo class="large"> &#x03A3; <!--SIGMA--> </mo>
+        <mi>0</mi>
+        <mi>10</mi>
+    </munderover>
+    <msub>
+        <mi>X</mi>
+        <mn>2</mn>
+    </msub>
+</math>
+
+<hr>
+<pre><code class="language-text">group
+    SIGMA
+        0
+        10
+        sub
+            X
+            2
+</code></pre>
+<p>should produce MathML that displays:</p>
+<math xmlns='http://www.w3.org/1998/Math/MathML'>
+    <mrow>
+        <mo> ( </mo>
+        <munderover>
+            <mo class="large"> &#x03A3; <!--SIGMA--> </mo>
+            <mi>  0 </mi>
+            <mi> 10 </mi>
+        </munderover>
+        <msub>
+            <mi> X </mi>
+            <mn> 2 </mn>
+        </msub>
+        <mo> ) </mo>
+    </mrow>
+</math>
+
+<h1 id="implementation">Implementation</h1>
+<ol>
+<li>Define a mapping function</li>
+</ol>
+<hr>
+<p>To implement this, we first create a mapping function. The
+critical thing to understand is that your mapping function does
+not need to deal with nested items, i.e. child nodes. It should
+only map simple strings, i.e. with no embedded newline or
+carriage return characters. Later, when you write your
+TreeWalker subclass, you will get a chance to deal with a node&#39;s
+children. Here is a mapping function for this language:</p>
+<pre><code class="language-coffeescript">export mathMapper = (line) -&gt;
+
+    if isEmpty(line) then return undef
+    lWords = line.split(/\s+/)    # split on whitespace
+    return getNode(lWords[0], lWords.slice(1))
+</code></pre>
+<p><code>isEmpty()</code> returns true if str is undefined or consists of only
+whitespace characters. Returning undef indicates that this line
+should be ignored.</p>
+<p><code>getNode()</code> receives a command name and an array of strings as
+input and returns a hash with key &#39;cmd&#39; and &#39;lAtoms&#39; if there
+is something besides the command name on the line.</p>
+<p>Each input string is mapped to one of the following:</p>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;expr&#39;
+    lAtoms: [&lt;atom&gt;, ... ]
+    }
+</code></pre>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;group&#39;
+    lAtoms: [&lt;op&gt;, &lt;op&gt;]
+    }
+</code></pre>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;sub&#39;
+    }
+</code></pre>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;SIGMA&#39;
+    }
+</code></pre>
+<p>The lAtoms key will not be present if there are no atoms
+(currently only applies to cmd &#39;expr&#39;). A node&#39;s children
+(e.g. subtree) does not appear in the above, i.e. not handled
+by your mathMapper() function. Note that you can supply 0..3
+arguments to the <code>group</code> command, but if less than 2, default
+values will be supplied.
+Each atom in lAtoms, where it exists, is one of the following:</p>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;ident&#39;
+    value: str
+    }
+</code></pre>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;number&#39;
+    value: str
+    }
+</code></pre>
+<pre><code class="language-coffeescript">{
+    cmd: &#39;op&#39;
+    value: str
+    }
+</code></pre>
+<p>A number consists of a string of one or more digits. Any string that
+starts with a digit, but is not just a string of digits, is an error.</p>
+<p>An identifier is anything that starts with a letter or underscore
+and is followed by zero or more letters, underscores or digits.</p>
+<p>Anything else is considered an operator.</p>
+<ol start="2">
+<li>Use function treeFromBlock() to get the tree</li>
+</ol>
+<hr>
+<p>Execute the following code:</p>
+<pre><code class="language-coffeescript">code = &quot;&quot;&quot;
+    SIGMA
+        0
+        10
+        sub
+            X
+            2
+    &quot;&quot;&quot;
+
+result = treeFromBlock(code, mathMapper)
+LOG &#39;result&#39;, result
+</code></pre>
+<p>The output will be:</p>
+<pre><code class="language-text">------------------------------------------
+result:
+---
+-
+   lineNum: 1
+   node:
+      cmd: SIGMA
+   subtree:
+      -
+         lineNum: 2
+         node:
+            cmd: expr
+            lAtoms:
+               -
+                  type: number
+                  value: &#39;0&#39;
+      -
+         lineNum: 3
+         node:
+            cmd: expr
+            lAtoms:
+               -
+                  type: number
+                  value: &#39;10&#39;
+      -
+         lineNum: 4
+         node:
+            cmd: sub
+         subtree:
+            -
+               lineNum: 5
+               node:
+                  cmd: expr
+                  lAtoms:
+                     -
+                        type: ident
+                        value: X
+            -
+               lineNum: 6
+               node:
+                  cmd: expr
+                  lAtoms:
+                     -
+                        type: number
+                        value: &#39;2&#39;
+------------------------------------------
+</code></pre>
+<p>You can check that the structure is correct, but remember that
+none of your code will rely on the key names &#39;node&#39;, &#39;children&#39;
+or &#39;lineNum&#39; - we&#39;re just ensuring that the correct tree will be
+used in the next step.</p>
+<ol start="3">
+<li>Create a subclass of TreeWalker</li>
+</ol>
+<hr>
+<p>The critial methods to override are visit() and endVisit().</p>
+<p>The visit() method receives parameters <strong>node</strong> and
+<strong>level</strong>. The behavior of our visit() method won&#39;t depend on
+the level, so we&#39;ll concern ourselves only with the <strong>node</strong>
+parameter. This parameter will be set to whatever our
+mathMapper() function returned - in this case, a hash with
+key <strong>cmd</strong>, and also key <strong>lAtoms</strong> if anything beside the
+command name appeard on the line.</p>
+<p>While our tree is being &quot;walked&quot;, we want to build up a
+string of MathML code. For that purpose, our TreeWalker
+subclass will define a property named <strong>@mathml</strong> that will
+initially be set to the empty string, which will be appended
+to as nodes are visited.</p>
+<p>Our subclass of TreeWalker is:</p>
+<pre><code class="language-coffeescript">export class MathTreeWalker extends TreeWalker
+
+    constructor: (tree) -&gt;
+        super tree
+        @mathml = &#39;&#39;
+
+    visit: (superNode) -&gt;
+        debug &quot;enter visit()&quot;
+        node = superNode.node
+        switch node.cmd
+            when &#39;expr&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;mrow&gt;&quot;
+                for atom in node.lAtoms
+                    switch atom.type
+                        when &#39;number&#39;
+                            @mathml += &quot;&lt;mn&gt;#{atom.value}&lt;/mn&gt;&quot;
+                        when &#39;ident&#39;
+                            @mathml += &quot;&lt;mi&gt;#{atom.value}&lt;/mi&gt;&quot;
+                        when &#39;op&#39;
+                            @mathml += &quot;&lt;mo&gt;#{atom.value}&lt;/mo&gt;&quot;
+            when &#39;group&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;mrow&gt;&quot;
+                @mathml += node.lAtoms[0].value
+            when &#39;sub&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;msub&gt;&quot;
+            when &#39;SIGMA&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;munderover&gt;&quot;
+                @mathml += &quot;&lt;mo class=&#39;large&#39;&gt; &amp;#x03A3; &lt;/mo&gt;&quot;
+            else
+                croak &quot;visit(): Not a command: &#39;#{node.cmd}&#39;&quot;
+        debug &quot;return from visit()&quot;
+        return
+
+    endVisit: (superNode) -&gt;
+        debug &quot;enter endVisit()&quot;
+        node = superNode.node
+        switch node.cmd
+            when &#39;expr&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;/mrow&gt;&quot;
+            when &#39;group&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += node.lAtoms[1].value
+                @mathml += &quot;&lt;/mrow&gt;&quot;
+            when &#39;sub&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;/msub&gt;&quot;
+            when &#39;SIGMA&#39;
+                debug &quot;cmd: #{node.cmd}&quot;
+                @mathml += &quot;&lt;/munderover&gt;&quot;
+            else
+                croak &quot;endVisit(): Not a command: &#39;#{node.cmd}&#39;&quot;
+        debug &quot;return from endVisit()&quot;
+        return
+
+    getMathML: () -&gt;
+
+        debug &quot;CALL getMathML()&quot;
+        return &quot;&lt;math displaystyle=&#39;true&#39;&gt; #{@mathml} &lt;/math&gt;&quot;
+</code></pre>
+<ol start="4">
+<li>Pass the tree to the TreeWalker constructor, call the
+ walk() method, then fetch the mapped data.</li>
+</ol>
+<hr>
+<pre><code class="language-coffeescript">code = &quot;&quot;&quot;
+    SIGMA
+        0
+        10
+    sub
+        X
+        2
+    &quot;&quot;&quot;
+
+tree = treeFromBlock(code, mathMapper)
+walker = new MathTreeWalker(tree)
+walker.walk()
+mathml = walker.getMathML()
+LOG &#39;mathml&#39;, mathml
+</code></pre>
+<p>This will output:</p>
+<pre><code class="language-xml">------------------------------------------
+mathml:
+---
+&lt;math displaystyle=&#39;true&#39;&gt; &lt;munderover&gt;&lt;mo class=&#39;large&#39;&gt; &amp;#x03A3; &lt;/mo
+&gt;&lt;mrow&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/mrow&gt;&lt;mrow&gt;&lt;mn&gt;10&lt;/mn&gt;&lt;/mrow&gt;&lt;/munderover&gt;&lt;msub&gt;&lt;mro
+w&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;/mrow&gt;&lt;mrow&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt; &lt;/math&gt;
+------------------------------------------
+</code></pre>

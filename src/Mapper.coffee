@@ -537,7 +537,7 @@ export class CieloMapper extends Mapper
 
 	# ..........................................................
 	# --- designed to override with a mapping method
-	#     NOTE: line includes the indentation
+	#     NOTE: line does not include the indentation
 
 	mapLine: (line, level) ->
 

@@ -116,7 +116,7 @@ export var treeFromBlock = function(block, mapFunc) {
 // Each item must be a sub-array with 3 items: [<level>, <lineNum>, <node>]
 // If a predicate is supplied, it must return true for any <node>
 export var treeify = function(lItems, atLevel = 0, predicate = undef) {
-  var body, err, h, item, lNodes, level, lineNum, node;
+  var err, h, item, lNodes, level, lineNum, node, subtree;
   // --- stop when an item of lower level is found, or at end of array
   debug(`enter treeify(${atLevel})`);
   debug('lItems', lItems);
@@ -135,9 +135,9 @@ export var treeify = function(lItems, atLevel = 0, predicate = undef) {
       croak(`treeify(): item at level ${level}, should be ${atLevel}`, "TREE", lItems);
     }
     h = {node, lineNum};
-    body = treeify(lItems, atLevel + 1);
-    if (body != null) {
-      h.body = body;
+    subtree = treeify(lItems, atLevel + 1);
+    if (subtree != null) {
+      h.subtree = subtree;
     }
     lNodes.push(h);
   }

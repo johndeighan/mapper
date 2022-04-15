@@ -1,57 +1,129 @@
 # tree.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
-import {undef, oneline} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
+import assert from 'assert'
 
-import {taml} from '@jdeighan/mapper/taml'
-import {TreeWalker, TreeStringifier} from '@jdeighan/mapper/walker'
+import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {
+	undef, error, warn, croak,
+	} from '@jdeighan/coffee-utils'
+import {log} from '@jdeighan/coffee-utils/log'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class TreeTester extends UnitTester
+class GatherTester extends UnitTesterNoNorm
 
-	transformValue: (tree) ->
-		debug "enter transformValue()"
-		debug "TREE", tree
-		stringifier = new TreeStringifier(tree)
-		str = stringifier.get()
-		debug "return #{oneline(str)} from transformValue()"
-		return str
+	transformValue: (oInput) ->
+		assert oInput instanceof TreeMapper,
+			"oInput should be a TreeMapper object"
+		return oInput.getAll()
 
-	normalize: (str) -> return str   # disable normalize()
-
-tester = new TreeTester()
+tester = new GatherTester()
 
 # ---------------------------------------------------------------------------
 
+tester.equal 31, new TreeMapper("""
+		line 1
+		line 2
+			line 3
+		"""), [
+		[0, 1, 'line 1']
+		[0, 2, 'line 2']
+		[1, 3, 'line 3']
+		]
+
+# ---------------------------------------------------------------------------
+
+tester.equal 43, new TreeMapper("""
+		line 1
+			line 2
+				line 3
+		"""), [
+		[0, 1, 'line 1']
+		[1, 2, 'line 2']
+		[2, 3, 'line 3']
+		]
+
+# ---------------------------------------------------------------------------
+# Test extending TreeMapper
+
 (() ->
+	class EnvMapper extends TreeMapper
 
-	tree = taml("""
-		---
-		-
-			name: John
-			age: 68
-			body:
-				-
-					name: Judy
-					age: 24
-				-
-					name: Bob
-					age: 34
-		-
-			name: Lewis
-			age: 40
-		""")
+		mapNode: (line) ->
 
-	tester.equal 49, tree, """
-			{"name":"John","age":68}
-				{"name":"Judy","age":24}
-				{"name":"Bob","age":34}
-			{"name":"Lewis","age":40}
-			"""
+			if (lMatches = line.match(///^
+					\s*
+					([A-Za-z]+)
+					\s*
+					=
+					\s*
+					([A-Za-z0-9]+)
+					\s*
+					$///))
+				[_, left, right] = lMatches
+				return [left, right]
+			else
+				croak "Bad line in EnvMapper"
+
+	parser = new EnvMapper("""
+			name = John
+				last = Deighan
+			age = 68
+			town = Blacksburg
+			""")
+
+	tree = parser.getTree()
+
+	simple.equal 84, tree, [
+		{ lineNum: 1, node: ['name','John'], subtree: [
+			{ lineNum: 2, node: ['last','Deighan'] }
+			]}
+		{ lineNum: 3, node: ['age','68'] },
+		{ lineNum: 4, node: ['town','Blacksburg'] },
+		]
+
 	)()
 
 # ---------------------------------------------------------------------------
+# Test extending TreeMapper when mapNode() sometimes returns undef
+
+(() ->
+	class EnvMapper extends TreeMapper
+
+		mapNode: (line) ->
+
+			if (lMatches = line.match(///^
+					\s*
+					([A-Za-z]+)
+					\s*
+					=
+					\s*
+					([A-Za-z0-9]+)
+					\s*
+					$///))
+				[_, left, right] = lMatches
+				if (left == 'name')
+					return undef
+				return right
+			else
+				croak "Bad line in EnvMapper"
+
+	parser = new EnvMapper("""
+			name = John
+				last = Deighan
+			age = 68
+			town = Blacksburg
+			""")
+
+	tree = parser.getTree()
+
+	simple.equal 127, tree, [
+		{ lineNum: 3, node: '68' },
+		{ lineNum: 4, node: 'Blacksburg' },
+		]
+
+	)()

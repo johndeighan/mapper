@@ -13,31 +13,58 @@ import {isBuiltin} from '@jdeighan/mapper/builtins'
 
 export class TreeWalker
 
-	constructor: (@root) ->
-		# --- root can be a hash or array of hashes
+	constructor: (@tree, hStdKeys={}) ->
+		debug "enter TreeWalker()", hStdKeys
 
-		pass
+		# --- tree can be a hash or array of hashes
+		if isHash(@tree)
+			debug "tree was hash - constructing list from it"
+			@tree = [@tree]
+		assert isArrayOfHashes(@tree), "new TreeWalker: Bad tree"
+
+		# --- @hStdKeys allows you to provide an alternate name for 'subtree'
+		#     Ditto for 'node', but if the 'node' key exists, but is
+		#        set to undef, the tree is assumed to NOT use user nodes
+		@hStdKeys = {}
+
+		if hStdKeys.subtree?
+			assert hStdKeys.subtree, "empty subtree key"
+			@hStdKeys.subtree = hStdKeys.subtree
+		else
+			@hStdKeys.subtree = 'subtree'
+
+		if hStdKeys.node?            # --- if set to undef, leave it alone
+			@hStdKeys.node = hStdKeys.node
+		else
+			@hStdKeys.node = 'node'
+
+		debug "return from TreeWalker()", @hStdKeys
 
 	# ..........................................................
 
 	walk: () ->
 
-		debug "enter TreeWalker.walk"
-		if isHash(@root)
-			debug "walking node"
-			@walkNode @root, 0
-		else if isArrayOfHashes(@root)
-			debug "walking array"
-			@walkNodes @root, 0
-		else
-			croak "TreeWalker: Invalid root", 'ROOT', @root
-		debug "return from TreeWalker.walk"
+		debug "enter TreeWalker.walk()"
+		@walkNodes @tree, 0
+		debug "return from TreeWalker.walk()"
+		return
+
+	# ..........................................................
+
+	walkNodes: (lNodes, level) ->
+
+		debug "enter walkNodes()", lNodes
+		for node in lNodes
+			@walkNode node, level
+		debug "return from walkNodes()"
 		return
 
 	# ..........................................................
 
 	walkSubTrees: (lSubTrees, level) ->
 
+		if !lSubTrees? || (lSubTrees.length==0)
+			return
 		for subtree in lSubTrees
 			if subtree?
 				if isArray(subtree)
@@ -50,34 +77,100 @@ export class TreeWalker
 
 	# ..........................................................
 
-	walkNode: (node, level) ->
+	walkNode: (superNode, level) ->
 
-		lSubTrees = @visit node, level
-		if lSubTrees
+		debug "enter walkNode()"
+
+		key = @hStdKeys.node
+		subkey = @hStdKeys.subtree
+		debug "KEYS: '#{key}', '#{subkey}'"
+
+		node = superNode
+		if key && superNode[key]?
+			debug "found node under key '#{key}'"
+			node = superNode[key]
+
+		# --- give visit() method chance to provide list of subtrees
+		lSubTrees = @visit node, superNode, level
+
+		if lSubTrees?
+			debug "visit() returned subtrees", lSubTrees
 			@walkSubTrees lSubTrees, level+1
-		@endVisit node, level
-
-	# ..........................................................
-
-	walkNodes: (lNodes, level=0) ->
-
-		for node in lNodes
-			@walkNode node, level
+		else
+			@walkSubTrees superNode[subkey], level+1
+		@endVisit node, superNode, level
+		debug "return from walkNode()"
 		return
 
 	# ..........................................................
 	# --- return lSubTrees, if any
 
-	visit: (node, level) ->
+	visit: (node, hInfo, level) ->
 
-		return node.body  # it's handled ok if node.body is undef
+		debug "enter visit() - std"
+		# --- automatically visit subtree if it exists
+		debug "return from visit() - std"
+		return undef
 
 	# ..........................................................
 	# --- called after all subtrees have been visited
 
-	endVisit: (node, level) ->
+	endVisit: (node, hInfo, level) ->
 
 		return
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+export class TreeStringifier extends TreeWalker
+
+	constructor: (tree, hStdKeys={}) ->
+
+		debug "enter TreeStringifier()", tree
+		super(tree, hStdKeys)      # sets @tree
+		@lLines = []
+		debug "return from TreeStringifier()"
+
+	# ..........................................................
+
+	visit: (node, hInfo, level) ->
+
+		assert node?, "TreeStringifier.visit(): empty node"
+		debug "enter TreeStringifier.visit()"
+		str = indented(@stringify(node), level)
+		debug "stringified: '#{str}'"
+		@lLines.push str
+		debug "return from TreeStringifier.visit()"
+		return undef
+
+	# ..........................................................
+
+	get: () ->
+
+		debug "enter TreeStringifier.get()"
+		@walk()
+		result = @lLines.join('\n')
+		debug "return from TreeStringifier.get()"
+		return result
+
+	# ..........................................................
+
+	excludeKey: (key) ->
+
+		return (key == @hStdKeys.subtree)
+
+	# ..........................................................
+	# --- override this
+
+	stringify: (node) ->
+
+		assert isHash(node),
+				"TreeStringifier.stringify(): node '#{node}' is not a hash"
+		newnode = {}
+		for key,value of node
+			if (! @excludeKey(key))
+				newnode[key] = node[key]
+		return JSON.stringify(newnode)
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -86,7 +179,7 @@ export class ASTWalker extends TreeWalker
 
 	constructor: (ast) ->
 
-		super ast.program
+		super ast.program, {subtree: 'body', node: undef}
 		@ast = ast.program
 		@lImportedSymbols = []
 		@lUsedSymbols = []
@@ -135,7 +228,7 @@ export class ASTWalker extends TreeWalker
 
 	# ..........................................................
 
-	visit: (node, level) ->
+	visit: (node, hInfo, level) ->
 
 
 		# --- add to local vars & formal params, where appropriate
@@ -254,7 +347,7 @@ export class ASTWalker extends TreeWalker
 
 	getSymbols: () ->
 
-		debug "enter CodeWalker.getNeededSymbols()"
+		debug "enter CodeWalker.getSymbols()"
 
 		@lImportedSymbols = []  # filled in during walking
 		@lUsedSymbols = []      # filled in during walking
@@ -268,61 +361,10 @@ export class ASTWalker extends TreeWalker
 			if ! @lImportedSymbols.includes(name) && ! isBuiltin(name)
 				lNeededSymbols.push(name)
 
-		debug "return from CodeWalker.getNeededSymbols()"
-		return {
+		hResult = {
 			lImported: @lImportedSymbols,
 			lUsed:     @lUsedSymbols,
 			lNeeded:   lNeededSymbols,
 			}
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-export class TreeStringifier extends TreeWalker
-
-	constructor: (tree) ->
-
-		super(tree)      # sets @tree
-		@lLines = []
-
-	# ..........................................................
-
-	visit: (node, level) ->
-
-		assert node?, "TreeStringifier.visit(): empty node"
-		debug "enter visit()"
-		str = indented(@stringify(node), level)
-		debug "stringified: '#{str}'"
-		@lLines.push str
-		if node.body
-			debug "return from visit() - has subtree 'body'"
-			return node.body
-		else
-			debug "return from visit()"
-			return undef
-
-	# ..........................................................
-
-	get: () ->
-
-		@walk()
-		return @lLines.join('\n')
-
-	# ..........................................................
-
-	excludeKey: (key) ->
-
-		return (key=='body')
-
-	# ..........................................................
-	# --- override this
-
-	stringify: (node) ->
-
-		assert isHash(node),
-				"TreeStringifier.stringify(): node '#{node}' is not a hash"
-		newnode = {}
-		for key,value of node
-			if (! @excludeKey(key))
-				newnode[key] = node[key]
-		return JSON.stringify(newnode)
+		debug "return from CodeWalker.getSymbols()", hResult
+		return hResult

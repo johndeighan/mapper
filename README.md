@@ -1,5 +1,5 @@
-@jdeighan/string-input
-=================
+@jdeighan/mapper
+================
 
 This npm package provides the following libraries:
 

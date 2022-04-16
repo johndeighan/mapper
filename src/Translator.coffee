@@ -16,6 +16,7 @@ export class Translator
 		@hDict = {}
 		if dictPath
 			@load(dictPath)
+		@lFound = undef
 		debug "return from Translator()", @hDict
 
 	# ..........................................................
@@ -26,33 +27,57 @@ export class Translator
 
 	# ..........................................................
 
+	found: (str, trans, pos, end) ->
+
+		@lFound.push([str, trans, pos, end])
+		return
+
+	# ..........................................................
+
 	findWords: (sent, lPhrases=[]) ->
-		# --- lPhrases should have list of [<string>, <translation> ]
+		# --- lPhrases should have list of {en, zh, pinyin}
 		# --- returns [ [<word>, <trans>, <startPos>, <endPos>], .. ]
 
 		debug "enter findWords()", sent
 		if nonEmpty(lPhrases)
 			debug "lPhrases", lPhrases
-		lFound = []
+		@lFound = []
 
-		for [phrase, trans] in lPhrases
-			pos = sent.indexOf(phrase)
-			if pos > -1
-				lFound.push([phrase, trans, pos, pos + phrase.length])
+		for h in lPhrases
+			phrase = h.en
+			start = sent.indexOf(phrase)
+			if start > -1
+				end = start + phrase.length
+				@found phrase, "#{h.zh} #{h.pinyin}", start, end
 
 		self = this
 		doTrans = @translate
 		func = (match, start) ->
 			end = start + match.length
 			if trans = doTrans.call(self, match)
-				# --- Don't add if it overlaps with other entry in lFound
-				if ! hasOverlap(start, end, lFound)
-					lFound.push([match, trans, start, end])
+				# --- Don't add if it overlaps with other entry in @lFound
+				if ! self.hasOverlap(start, end)
+					self.found match, trans, start, end
 			return match
 
+		# --- This will find all matches - it doesn't actually replace
 		newString = sent.replace(/\w+/g, func)
+		lFound = @lFound
+		@lFound = undef
 		debug "return from findWords()", lFound
 		return lFound
+
+	# ..........................................................
+
+	hasOverlap: (start, end) ->
+
+		assert start <= end, "hasOverlap(): Bad positions"
+		for lInfo in @lFound
+			[_, _, pStart, pEnd] = lInfo
+			assert pStart <= pEnd, "hasOverlap(): Bad phrase positions"
+			if (start <= pEnd) && (end >= pStart)
+				return true
+		return false
 
 	# ..........................................................
 
@@ -82,18 +107,6 @@ export class Translator
 		debug "#{nKeys} words loaded"
 		debug "return from load()"
 		return
-
-# ---------------------------------------------------------------------------
-
-hasOverlap = (start, end, lFound) ->
-
-	assert start <= end, "hasOverlap(): Bad positions"
-	for lInfo in lFound
-		[_, _, pStart, pEnd] = lInfo
-		assert pStart <= pEnd, "hasOverlap(): Bad phrase positions"
-		if (start <= pEnd) && (end >= pStart)
-			return true
-	return false
 
 # ---------------------------------------------------------------------------
 

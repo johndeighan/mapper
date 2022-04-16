@@ -1,6 +1,6 @@
 # Translator.coffee
 
-import {undef, assert} from '@jdeighan/coffee-utils'
+import {undef, assert, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
@@ -26,18 +26,16 @@ export class Translator
 
 	# ..........................................................
 
-	findWords: (sent, hPhrases={}) ->
-		# --- hPhrases should have keys, which are strings
-		#        and string values, which are translations
-		# --- returns {
-		#        lFound: [ [<word>, <trans>, <startPos>, <endPos>], .. ]
-		#        newString: <string>
-		#        }
+	findWords: (sent, lPhrases=[]) ->
+		# --- lPhrases should have list of [<string>, <translation> ]
+		# --- returns [ [<word>, <trans>, <startPos>, <endPos>], .. ]
 
 		debug "enter findWords()", sent
+		if nonEmpty(lPhrases)
+			debug "lPhrases", lPhrases
 		lFound = []
 
-		for own phrase,trans of hPhrases
+		for [phrase, trans] in lPhrases
 			pos = sent.indexOf(phrase)
 			if pos > -1
 				lFound.push([phrase, trans, pos, pos + phrase.length])

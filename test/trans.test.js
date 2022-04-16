@@ -37,8 +37,8 @@ DictionaryTester = class DictionaryTester extends UnitTester {
     this.dict = new Translator(dictPath);
   }
 
-  transformValue([sent, hPhrases]) {
-    return this.dict.findWords(sent, hPhrases);
+  transformValue([sent, lPhrases]) {
+    return this.dict.findWords(sent, lPhrases);
   }
 
 };
@@ -52,9 +52,4 @@ tester.equal(34, ["he was afraid, so he agreed"], [['afraid', '害怕 hài pà',
 
 tester.equal(39, ["Don't pass out"], [['pass', '过去 guò qù', 6, 10]]);
 
-tester.equal(39, [
-  "Don't pass out",
-  {
-    'pass out': '昏倒 hūn dǎo'
-  }
-], [['pass out', '昏倒 hūn dǎo', 6, 14]]);
+tester.equal(43, ["Don't pass out", [['pass out', '昏倒 hūn dǎo']]], [['pass out', '昏倒 hūn dǎo', 6, 14]]);

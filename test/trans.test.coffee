@@ -20,8 +20,8 @@ class DictionaryTester extends UnitTester
 		super()
 		@dict = new Translator(dictPath)
 
-	transformValue: ([sent, hPhrases]) ->
-		return @dict.findWords(sent, hPhrases)
+	transformValue: ([sent, lPhrases]) ->
+		return @dict.findWords(sent, lPhrases)
 
 tester = new DictionaryTester()
 
@@ -40,6 +40,6 @@ tester.equal 39, ["Don't pass out"], [
 	['pass', '过去 guò qù', 6, 10]
 	]
 
-tester.equal 39, ["Don't pass out", {'pass out': '昏倒 hūn dǎo'}], [
+tester.equal 43, ["Don't pass out", [['pass out', '昏倒 hūn dǎo']]], [
 	['pass out', '昏倒 hūn dǎo', 6, 14]
 	]

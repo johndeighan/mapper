@@ -623,6 +623,16 @@ export var CieloMapper = class CieloMapper extends Mapper {
   }
 
   // ..........................................................
+  mapHereDoc(block) {
+    var hResult;
+    // --- A method you can override
+    //     Distinct from the mapHereDoc() function found in /heredoc
+    hResult = mapHereDoc(block);
+    assert(isHash(hResult), "mapHereDoc(): hResult not a hash");
+    return hResult;
+  }
+
+  // ..........................................................
   handleHereDoc(line, level) {
     var hResult, lLines, lNewParts, lObjects, lParts, part;
     // --- Indentation has been removed from line
@@ -638,16 +648,9 @@ export var CieloMapper = class CieloMapper extends Mapper {
         part = lParts[i];
         if (part === '<<<') {
           lLines = this.getHereDocLines(level + 1);
-          hResult = mapHereDoc(arrayToBlock(lLines));
-          if (isString(hResult)) {
-            lObjects.push(hResult);
-            results.push(hResult);
-          } else if (isHash(hResult)) {
-            lObjects.push(hResult.obj);
-            results.push(hResult.str);
-          } else {
-            results.push(error("Invalid hResult from mapHereDoc()"));
-          }
+          hResult = this.mapHereDoc(arrayToBlock(lLines));
+          lObjects.push(hResult.obj);
+          results.push(hResult.str);
         } else {
           results.push(part); // keep as is
         }

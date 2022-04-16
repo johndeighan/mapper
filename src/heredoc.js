@@ -64,10 +64,14 @@ export var lineToParts = function(line) {
 };
 
 // ---------------------------------------------------------------------------
-// This may return any type of object
+// Returns a hash with keys:
+//    str - replacement string
+//    obj - any kind of object, number, string, etc.
+//    type - typeof obj
 export var mapHereDoc = function(block) {
   var heredoc, i, j, len, name, result;
   debug("enter mapHereDoc()");
+  assert(isString(block), "mapHereDoc(): not a string");
   for (i = j = 0, len = lAllHereDocs.length; j < len; i = ++j) {
     heredoc = lAllHereDocs[i];
     name = heredoc.myName();

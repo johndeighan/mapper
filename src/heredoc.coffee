@@ -38,11 +38,15 @@ export lineToParts = (line) ->
 	return lParts
 
 # ---------------------------------------------------------------------------
-# This may return any type of object
+# Returns a hash with keys:
+#    str - replacement string
+#    obj - any kind of object, number, string, etc.
+#    type - typeof obj
 
 export mapHereDoc = (block) ->
 
 	debug "enter mapHereDoc()"
+	assert isString(block), "mapHereDoc(): not a string"
 	for heredoc,i in lAllHereDocs
 		name = heredoc.myName()
 		debug "TRY #{name} HEREDOC"

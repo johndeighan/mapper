@@ -599,6 +599,16 @@ export class CieloMapper extends Mapper
 
 	# ..........................................................
 
+	mapHereDoc: (block) ->
+		# --- A method you can override
+		#     Distinct from the mapHereDoc() function found in /heredoc
+
+		hResult = mapHereDoc(block)
+		assert isHash(hResult), "mapHereDoc(): hResult not a hash"
+		return hResult
+
+	# ..........................................................
+
 	handleHereDoc: (line, level) ->
 		# --- Indentation has been removed from line
 		# --- Find each '<<<' and replace with result of mapHereDoc()
@@ -610,15 +620,9 @@ export class CieloMapper extends Mapper
 		lNewParts = for part in lParts
 			if part == '<<<'
 				lLines = @getHereDocLines(level+1)
-				hResult = mapHereDoc(arrayToBlock(lLines))
-				if isString(hResult)
-					lObjects.push hResult
-					hResult
-				else if isHash(hResult)
-					lObjects.push hResult.obj
-					hResult.str
-				else
-					error "Invalid hResult from mapHereDoc()"
+				hResult = @mapHereDoc(arrayToBlock(lLines))
+				lObjects.push hResult.obj
+				hResult.str
 			else
 				part    # keep as is
 

@@ -53,7 +53,7 @@
 	"dependencies": {
 		"@jdeighan/coffee-utils": "^7.0.8",
 		"cross-env": "^7.0.3",
-		"marked": "^4.0.12",
-		"sass": "^1.49.11"
+		"marked": "^4.0.14",
+		"sass": "^1.50.0"
 	}
 }

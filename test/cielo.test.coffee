@@ -34,18 +34,18 @@ convertCoffee false
 	class CieloTester extends UnitTester
 
 		transformValue: (code) ->
-			{imports, jsCode} = cieloCodeToJS(code, {source})
+			{imports, jsCode} = cieloCodeToJS(code, {source: @source})
 			if isEmpty(imports)
 				return jsCode
 			else
 				return [imports, jsCode].join("\n")
 
-	tester = new CieloTester('cielo.test')
+	tester = new CieloTester('cielo.test.coffee')
 
 	# ------------------------------------------------------------------------
 	# --- test retaining comments
 
-	tester.equal 45, """
+	tester.equal 48, """
 			# --- a comment
 			y = x
 			""", """
@@ -56,7 +56,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 57, """
+	tester.equal 59, """
 			# --- a comment
 
 			y = x
@@ -71,7 +71,7 @@ convertCoffee false
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 73, """
+	tester.equal 74, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -84,7 +84,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 92, """
+	tester.equal 87, """
 			x = 23
 			y = x
 					+ 5
@@ -96,7 +96,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test use of backslash continuation lines
 
-	tester.equal 104, """
+	tester.equal 99, """
 			x = 23
 			y = x \
 			+ 5
@@ -110,7 +110,7 @@ convertCoffee false
 	# --- test replacing LINE, FILE, DIR
 	#     source = "c:/Users/johnd/string-input/test/cielo.test.coffee"
 
-	tester.equal 118, """
+	tester.equal 113, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -120,7 +120,7 @@ convertCoffee false
 			+ 5
 			"""
 
-	tester.equal 128, """
+	tester.equal 123, """
 			str = <<<
 				abc
 				def
@@ -131,7 +131,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 139, """
+	tester.equal 134, """
 			str = <<<
 				===
 				abc
@@ -143,7 +143,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 151, """
+	tester.equal 146, """
 			str = <<<
 				...this is a
 					long line
@@ -151,7 +151,7 @@ convertCoffee false
 			str = "this is a long line"
 			"""
 
-	tester.equal 159, """
+	tester.equal 154, """
 			lItems = <<<
 				---
 				- a
@@ -160,7 +160,7 @@ convertCoffee false
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 168, """
+	tester.equal 163, """
 			hItems = <<<
 				---
 				a: 13
@@ -169,7 +169,7 @@ convertCoffee false
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 177, """
+	tester.equal 172, """
 			lItems = <<<
 				---
 				-
@@ -182,7 +182,7 @@ convertCoffee false
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 190, """
+	tester.equal 185, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -198,7 +198,7 @@ convertCoffee false
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 206, """
+	tester.equal 201, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -211,7 +211,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 219, """
+	tester.equal 214, """
 			str = \"\"\"
 				this is a
 				long string
@@ -225,7 +225,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 233, '''
+	tester.equal 228, '''
 			str = """
 				this is a
 				long string
@@ -239,7 +239,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 247, """
+	tester.equal 242, """
 			str = '''
 				this is a
 				long string
@@ -269,7 +269,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 275, """
+	tester.equal 272, """
 			handler = <<<
 				() ->
 					return 42
@@ -279,7 +279,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 285, """
+	tester.equal 282, """
 			handler = <<<
 				() -> return 42
 			""", """
@@ -288,7 +288,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 294, """
+	tester.equal 291, """
 			handler = <<<
 				(x, y) ->
 					return 42

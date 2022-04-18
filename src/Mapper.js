@@ -473,6 +473,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // - handles #define <name> <value> and __<name>__ substitution
   constructor(content, source) {
     super(content, source);
+    debug(`enter CieloMapper(source='${source}')`, content);
     this.hVars = {
       FILE: this.filename,
       DIR: this.hSourceInfo.dir,
@@ -483,34 +484,41 @@ export var CieloMapper = class CieloMapper extends Mapper {
     //     to handleEmptyLine() since the empty line itself
     //     is always at level 0
     this.curLevel = 0;
+    debug("return from CieloMapper()");
   }
 
   // ..........................................................
   // --- designed to override with a mapping method
   //     NOTE: line does not include the indentation
   mapLine(line, level) {
-    var cmd, hResult, lContLines, lParts, orgLineNum, result, tail;
+    var cmd, hResult, lContLines, lParts, longline, orgLineNum, replaced, result, tail, verylongline;
     debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);
     assert(line != null, "mapLine(): line is undef");
     assert(isString(line), `mapLine(): ${OL(line)} not a string`);
     if (isEmpty(line)) {
-      line = this.handleEmptyLine(this.curLevel);
-      debug(`return ${line} from CieloMapper.mapLine() - empty line`);
-      return this.handleEmptyLine(this.curLevel);
+      result = this.handleEmptyLine(this.curLevel);
+      debug(`return ${OL(result)} from CieloMapper.mapLine() - empty line`);
+      return result;
     }
     debug("line is not empty, checking for command");
     lParts = this.splitCommand(line);
     if (lParts) {
       debug("found command", lParts);
       [cmd, tail] = lParts;
-      debug("return from CieloMapper.mapLine() - command handled");
-      return this.handleCommand(cmd, tail, level);
+      result = this.handleCommand(cmd, tail, level);
+      debug(`return ${OL(result)} from CieloMapper.mapLine() - command handled`);
+      return result;
     }
     if (isComment(line)) {
-      debug("return undef from CieloMapper.mapLine() - comment");
-      return this.handleComment(line, level);
+      result = this.handleComment(line, level);
+      debug(`return ${OL(result)} from CieloMapper.mapLine() - comment`);
+      return result;
     }
-    line = replaceVars(line, this.hVars);
+    debug("hVars", this.hVars);
+    replaced = replaceVars(line, this.hVars);
+    if (replaced !== line) {
+      debug("replaced", replaced);
+    }
     orgLineNum = this.lineNum;
     this.curLevel = level;
     // --- Merge in any continuation lines
@@ -518,20 +526,23 @@ export var CieloMapper = class CieloMapper extends Mapper {
     lContLines = this.getContLines(level);
     if (isEmpty(lContLines)) {
       debug("no continuation lines found");
+      longline = replaced;
     } else {
       debug(`${lContLines.length} continuation lines found`);
-      line = this.joinContLines(line, lContLines);
-      debug(`line becomes ${OL(line)}`);
+      longline = this.joinContLines(replaced, lContLines);
+      debug(`line becomes ${OL(longline)}`);
     }
     // --- handle HEREDOCs
     debug("check for HEREDOC");
-    if (line.indexOf('<<<') !== -1) {
-      hResult = this.handleHereDoc(line, level);
-      line = hResult.line;
-      debug(`line becomes ${OL(line)}`);
+    if (line.indexOf('<<<') === -1) {
+      verylongline = longline;
+    } else {
+      hResult = this.handleHereDoc(longline, level);
+      verylongline = hResult.line;
+      debug(`line becomes ${OL(verylongline)}`);
     }
     debug("mapping string");
-    result = this.mapString(line, level);
+    result = this.mapString(verylongline, level);
     debug(`return ${OL(result)} from CieloMapper.mapLine()`);
     return result;
   }
@@ -729,8 +740,13 @@ export var CieloMapper = class CieloMapper extends Mapper {
 
 // ===========================================================================
 export var doMap = function(inputClass, text, source = 'unit test') {
-  var oInput, result;
-  debug(`enter doMap() source='${source}'`);
+  var className, lMatches, oInput, result;
+  if (lMatches = inputClass.toString().match(/class\s+(\w+)/)) {
+    className = lMatches[1];
+  } else {
+    className = 'unknown';
+  }
+  debug(`enter doMap(${className}) source='${source}'`);
   if (inputClass) {
     oInput = new inputClass(text, source);
     assert(oInput instanceof Mapper, "doMap() requires a Mapper or subclass");

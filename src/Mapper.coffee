@@ -436,6 +436,7 @@ export class CieloMapper extends Mapper
 
 	constructor: (content, source) ->
 		super content, source
+		debug "enter CieloMapper(source='#{source}')", content
 
 		@hVars = {
 			FILE: @filename
@@ -448,6 +449,7 @@ export class CieloMapper extends Mapper
 		#     to handleEmptyLine() since the empty line itself
 		#     is always at level 0
 		@curLevel = 0
+		debug "return from CieloMapper()"
 
 	# ..........................................................
 	# --- designed to override with a mapping method
@@ -460,23 +462,28 @@ export class CieloMapper extends Mapper
 		assert line?, "mapLine(): line is undef"
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
-			line = @handleEmptyLine(@curLevel)
-			debug "return #{line} from CieloMapper.mapLine() - empty line"
-			return @handleEmptyLine(@curLevel)
+			result = @handleEmptyLine(@curLevel)
+			debug "return #{OL(result)} from CieloMapper.mapLine() - empty line"
+			return result
 
 		debug "line is not empty, checking for command"
 		lParts = @splitCommand(line)
 		if lParts
 			debug "found command", lParts
 			[cmd, tail] = lParts
-			debug "return from CieloMapper.mapLine() - command handled"
-			return @handleCommand cmd, tail, level
+			result = @handleCommand cmd, tail, level
+			debug "return #{OL(result)} from CieloMapper.mapLine() - command handled"
+			return result
 
 		if isComment(line)
-			debug "return undef from CieloMapper.mapLine() - comment"
-			return @handleComment(line, level)
+			result = @handleComment(line, level)
+			debug "return #{OL(result)} from CieloMapper.mapLine() - comment"
+			return result
 
-		line = replaceVars(line, @hVars)
+		debug "hVars", @hVars
+		replaced = replaceVars(line, @hVars)
+		if replaced != line
+			debug "replaced", replaced
 
 		orgLineNum = @lineNum
 		@curLevel = level
@@ -486,20 +493,23 @@ export class CieloMapper extends Mapper
 		lContLines = @getContLines(level)
 		if isEmpty(lContLines)
 			debug "no continuation lines found"
+			longline = replaced
 		else
 			debug "#{lContLines.length} continuation lines found"
-			line = @joinContLines(line, lContLines)
-			debug "line becomes #{OL(line)}"
+			longline = @joinContLines(replaced, lContLines)
+			debug "line becomes #{OL(longline)}"
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
-		if (line.indexOf('<<<') != -1)
-			hResult = @handleHereDoc(line, level)
-			line = hResult.line
-			debug "line becomes #{OL(line)}"
+		if (line.indexOf('<<<') == -1)
+			verylongline = longline
+		else
+			hResult = @handleHereDoc(longline, level)
+			verylongline = hResult.line
+			debug "line becomes #{OL(verylongline)}"
 
 		debug "mapping string"
-		result = @mapString(line, level)
+		result = @mapString(verylongline, level)
 		debug "return #{OL(result)} from CieloMapper.mapLine()"
 		return result
 
@@ -701,7 +711,11 @@ export class CieloMapper extends Mapper
 
 export doMap = (inputClass, text, source='unit test') ->
 
-	debug "enter doMap() source='#{source}'"
+	if lMatches = inputClass.toString().match(/class\s+(\w+)/)
+		className = lMatches[1]
+	else
+		className = 'unknown'
+	debug "enter doMap(#{className}) source='#{source}'"
 	if inputClass
 		oInput = new inputClass(text, source)
 		assert oInput instanceof Mapper,

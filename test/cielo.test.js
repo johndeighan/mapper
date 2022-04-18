@@ -74,7 +74,9 @@ convertCoffee(false);
   CieloTester = class CieloTester extends UnitTester {
     transformValue(code) {
       var imports, jsCode;
-      ({imports, jsCode} = cieloCodeToJS(code, {source}));
+      ({imports, jsCode} = cieloCodeToJS(code, {
+        source: this.source
+      }));
       if (isEmpty(imports)) {
         return jsCode;
       } else {
@@ -83,15 +85,15 @@ convertCoffee(false);
     }
 
   };
-  tester = new CieloTester('cielo.test');
+  tester = new CieloTester('cielo.test.coffee');
   // ------------------------------------------------------------------------
   // --- test retaining comments
-  tester.equal(45, `# --- a comment
+  tester.equal(48, `# --- a comment
 y = x`, `# --- a comment
 y = x`);
   // ------------------------------------------------------------------------
   // --- test removing blank lines
-  tester.equal(57, `# --- a comment
+  tester.equal(59, `# --- a comment
 
 y = x`, `# --- a comment
 y = x`);
@@ -100,55 +102,55 @@ y = x`);
   // y = f(2*3)
   // for i in range(5)
   //    y *= i
-  tester.equal(73, `for x in [1,5]
+  tester.equal(74, `for x in [1,5]
 	#include include.txt`, `for x in [1,5]
 	y = f(2*3)
 	for i in range(5)
 		y *= i`);
   // ------------------------------------------------------------------------
   // --- test continuation lines
-  tester.equal(92, `x = 23
+  tester.equal(87, `x = 23
 y = x
 		+ 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
   // --- test use of backslash continuation lines
-  tester.equal(104, `x = 23
+  tester.equal(99, `x = 23
 y = x + 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
   // --- test replacing LINE, FILE, DIR
   //     source = "c:/Users/johnd/string-input/test/cielo.test.coffee"
-  tester.equal(118, `x = 23
+  tester.equal(113, `x = 23
 y = "line __LINE__ in __FILE__"
 + 5`, `x = 23
 y = "line 2 in cielo.test.coffee"
 + 5`);
-  tester.equal(128, `str = <<<
+  tester.equal(123, `str = <<<
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(139, `str = <<<
+  tester.equal(134, `str = <<<
 	===
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(151, `str = <<<
+  tester.equal(146, `str = <<<
 	...this is a
 		long line`, `str = "this is a long line"`);
-  tester.equal(159, `lItems = <<<
+  tester.equal(154, `lItems = <<<
 	---
 	- a
 	- b`, `lItems = ["a","b"]`);
-  tester.equal(168, `hItems = <<<
+  tester.equal(163, `hItems = <<<
 	---
 	a: 13
 	b: 42`, `hItems = {"a":13,"b":42}`);
-  tester.equal(177, `lItems = <<<
+  tester.equal(172, `lItems = <<<
 	---
 	-
 		a: 13
@@ -156,7 +158,7 @@ x = 42`);
 	-
 		c: 2
 		d: 3`, `lItems = [{"a":13,"b":42},{"c":2,"d":3}]`);
-  tester.equal(190, `func(<<<, <<<, <<<)
+  tester.equal(185, `func(<<<, <<<, <<<)
 	a block
 	of text
 
@@ -167,14 +169,14 @@ x = 42`);
 	---
 	a: 13
 	b: 42`, `func("a block\\nof text", ["a","b"], {"a":13,"b":42})`);
-  tester.equal(206, `x = 42
+  tester.equal(201, `x = 42
 func(x, "abc")
 __END__
 This is extraneous text
 which should be ignored`, `x = 42
 func(x, "abc")`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(219, `str = \"\"\"
+  tester.equal(214, `str = \"\"\"
 	this is a
 	long string
 	\"\"\"`, `str = \"\"\"
@@ -182,7 +184,7 @@ func(x, "abc")`);
 	long string
 	\"\"\"`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(233, `str = """
+  tester.equal(228, `str = """
 	this is a
 	long string
 	"""`, `str = """
@@ -190,7 +192,7 @@ func(x, "abc")`);
 	long string
 	"""`);
   // --- Make sure triple quoted strings are passed through as is
-  return tester.equal(247, `str = '''
+  return tester.equal(242, `str = '''
 	this is a
 	long string
 	'''`, `str = '''
@@ -212,16 +214,16 @@ func(x, "abc")`);
   tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
   // Test function HEREDOC types
-  tester.equal(275, `handler = <<<
+  tester.equal(272, `handler = <<<
 	() ->
 		return 42`, `handler = (function() {
 	return 42;
 	});`);
-  tester.equal(285, `handler = <<<
+  tester.equal(282, `handler = <<<
 	() -> return 42`, `handler = (function() {
 	return 42;
 	});`);
-  return tester.equal(294, `handler = <<<
+  return tester.equal(291, `handler = <<<
 	(x, y) ->
 		return 42`, `handler = (function(x, y) {
 	return 42;

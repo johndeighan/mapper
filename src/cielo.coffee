@@ -45,6 +45,8 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 	#              bare: true
 	#              header: false
 
+	debug 'hOptions', hOptions
+
 	debug "enter cieloCodeToJS()"
 	debug "cieloCode", cieloCode
 

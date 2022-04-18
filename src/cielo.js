@@ -83,6 +83,7 @@ export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
   //           default:
   //              bare: true
   //              header: false
+  debug('hOptions', hOptions);
   debug("enter cieloCodeToJS()");
   debug("cieloCode", cieloCode);
   assert(indentLevel(cieloCode) === 0, "cieloCodeToJS(): has indentation");

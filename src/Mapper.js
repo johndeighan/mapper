@@ -20,7 +20,8 @@ import {
   isInteger,
   deepCopy,
   OL,
-  CWS
+  CWS,
+  replaceVars
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -469,6 +470,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // - does NOT remove comments (but can be overridden)
   // - joins continuation lines
   // - handles HEREDOCs
+  // - handles #define <name> <value> and __<name>__ substitution
   constructor(content, source) {
     super(content, source);
     this.hVars = {
@@ -508,7 +510,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
       debug("return undef from CieloMapper.mapLine() - comment");
       return this.handleComment(line, level);
     }
-    line = this.replaceVars(line, level);
+    line = replaceVars(line, this.hVars);
     orgLineNum = this.lineNum;
     this.curLevel = level;
     // --- Merge in any continuation lines
@@ -641,22 +643,6 @@ export var CieloMapper = class CieloMapper extends Mapper {
 
   
     // ..........................................................
-  replaceVars(line, level) {
-    var replacerFunc;
-    debug("enter CieloMapper.replaceVars()", line);
-    // --- We have to use a "fat arrow" function here
-    //     to prevent 'this' being changed
-    replacerFunc = (match, prefix, name) => {
-      var newstr;
-      newstr = prefix ? process.env[name] : this.hVars[name];
-      debug(`replace '${match}' with '${newstr}'`);
-      return newstr;
-    };
-    debug("return from CieloMapper.replaceVars()");
-    return line.replace(/__(env\.)?([A-Za-z_]\w*)__/g, replacerFunc);
-  }
-
-  // ..........................................................
   mapString(line, level) {
     // --- NOTE: line has indentation removed
     //     when overriding, may return anything

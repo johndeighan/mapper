@@ -5,7 +5,8 @@ import pathlib from 'path'
 
 import {
 	assert, error, undef, pass, croak, isString, isEmpty, nonEmpty,
-	escapeStr, isComment, isArray, isHash, isInteger, deepCopy, OL, CWS,
+	escapeStr, isComment, isArray, isHash, isInteger, deepCopy,
+	OL, CWS, replaceVars,
 	} from '@jdeighan/coffee-utils'
 import {
 	blockToArray, arrayToBlock, firstLine, remainingLines,
@@ -431,6 +432,7 @@ export class CieloMapper extends Mapper
 	# - does NOT remove comments (but can be overridden)
 	# - joins continuation lines
 	# - handles HEREDOCs
+	# - handles #define <name> <value> and __<name>__ substitution
 
 	constructor: (content, source) ->
 		super content, source
@@ -474,7 +476,7 @@ export class CieloMapper extends Mapper
 			debug "return undef from CieloMapper.mapLine() - comment"
 			return @handleComment(line, level)
 
-		line = @replaceVars(line, level)
+		line = replaceVars(line, @hVars)
 
 		orgLineNum = @lineNum
 		@curLevel = level
@@ -615,27 +617,6 @@ export class CieloMapper extends Mapper
 
 		debug "in CieloMapper.handleComment()"
 		return line      # keep comments by default
-
-	# ..........................................................
-
-	replaceVars: (line, level) ->
-
-		debug "enter CieloMapper.replaceVars()", line
-
-		# --- We have to use a "fat arrow" function here
-		#     to prevent 'this' being changed
-		replacerFunc = (match, prefix, name) =>
-			newstr = if prefix then process.env[name] else @hVars[name]
-			debug "replace '#{match}' with '#{newstr}'"
-			return newstr
-
-		debug "return from CieloMapper.replaceVars()"
-		return line.replace(///
-				__
-				(env\.)?
-				([A-Za-z_]\w*)
-				__
-				///g, replacerFunc)
 
 	# ..........................................................
 

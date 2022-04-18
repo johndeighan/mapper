@@ -3,13 +3,13 @@
 import assert from 'assert'
 
 import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
-import {undef, words, isArray} from '@jdeighan/coffee-utils'
+import {undef, words, isArray, isEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {log} from '@jdeighan/coffee-utils/log'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	cieloCodeToJS, addImports, convertCielo,
+	cieloCodeToJS, convertCielo,
 	} from '@jdeighan/mapper/cielo'
 import {
 	setSymbolsRootDir, buildImportList, getAvailSymbols,
@@ -73,17 +73,20 @@ simple.equal 27, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
-	code = """
+	cieloCode = """
 			# --- temp.cielo
 			if fs.existsSync('file.txt')
 				logger "file exists"
 			"""
 
-	jsCode = cieloCodeToJS(code)
+	{imports, jsCode} = cieloCodeToJS(cieloCode)
 
-	simple.equal 85, jsCode, """
+	simple.equal 84, imports, """
 			import fs from 'fs'
 			import {log as logger} from '@jdeighan/coffee-utils/log'
+			"""
+
+	simple.equal 89, jsCode, """
 			# --- temp.cielo
 			if fs.existsSync('file.txt')
 				logger "file exists"
@@ -97,13 +100,17 @@ simple.equal 27, hSymbols, {
 	class CieloTester extends UnitTesterNoNorm
 
 		transformValue: (text) ->
-			return cieloCodeToJS(text)
+			{imports, jsCode} = cieloCodeToJS(text)
+			if isEmpty(imports)
+				return jsCode
+			else
+				return [imports, jsCode].join("\n")
 
 	tester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 108, """
+	tester.equal 110, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -114,7 +121,7 @@ simple.equal 27, hSymbols, {
 
 	# --- But not if we're already importing them
 
-	tester.equal 119, """
+	tester.equal 121, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -124,7 +131,7 @@ simple.equal 27, hSymbols, {
 			filepath = mkpath(dir, 'test.txt')
 			"""
 
-	tester.equal 114, """
+	tester.equal 131, """
 			x = undef
 			""",
 		"""
@@ -132,7 +139,7 @@ simple.equal 27, hSymbols, {
 			x = undef
 			"""
 
-	tester.equal 122, """
+	tester.equal 139, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -145,7 +152,7 @@ simple.equal 27, hSymbols, {
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
 			"""
 
-	tester.equal 135, """
+	tester.equal 152, """
 			x = 23
 			logger x
 			""",

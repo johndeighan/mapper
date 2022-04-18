@@ -73,7 +73,7 @@ export var convertCielo = function(flag) {
 
 // ---------------------------------------------------------------------------
 export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
-  var coffeeCode, err, jsCode, jsPostCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
+  var coffeeCode, err, hResult, jsPostCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
   // --- cielo => js
   //     Valid Options:
   //        premapper:  CieloMapper or subclass
@@ -113,38 +113,21 @@ export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
     } else {
       jsPostCode = jsPreCode;
     }
-    // --- A separator can be specified as 3rd arg
-    //     But by default, the variable convertCielo is checked
-    //        and the appropriate separator is used
-    jsCode = addImports(jsPostCode, lNeededSymbols);
-    if (jsCode !== jsPostCode) {
-      debug("with imports", jsCode);
-    }
   } catch (error) {
     err = error;
     croak(err, "Original Code", cieloCode);
   }
-  debug("return from cieloCodeToJS()", jsCode);
-  return jsCode;
-};
-
-// ---------------------------------------------------------------------------
-export var addImports = function(jsCode, lNeededSymbols, sep = undef) {
-  var lImportStmts;
-  if (sep == null) {
-    sep = convertingCielo ? ";\n" : "\n";
-  }
-  // --- These import statements don't include a trailing ';'
-  lImportStmts = buildImportList(lNeededSymbols);
-  if (lImportStmts.length === 0) {
-    return jsCode;
-  }
-  return lImportStmts.join(sep) + sep + jsCode;
+  hResult = {
+    jsCode: jsPostCode,
+    imports: buildImportList(lNeededSymbols).join("\n")
+  };
+  debug("return from cieloCodeToJS()", hResult);
+  return hResult;
 };
 
 // ---------------------------------------------------------------------------
 export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
-  var cieloCode, dumpfile, i, jsCode, lNeeded, len, n, sym, word;
+  var cieloCode, dumpfile, i, imports, jsCode, lNeeded, len, n, sym, word;
   if (destPath == null) {
     destPath = withExt(srcPath, '.js', {
       removeLeadingUnderScore: true
@@ -167,7 +150,7 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
         }
       }
     }
-    jsCode = cieloCodeToJS(cieloCode, hOptions);
-    barf(destPath, jsCode);
+    ({imports, jsCode} = cieloCodeToJS(cieloCode, hOptions));
+    barf(destPath, [imports, jsCode]);
   }
 };

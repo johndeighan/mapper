@@ -12,7 +12,8 @@ import {
 import {
   undef,
   words,
-  isArray
+  isArray,
+  isEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -35,7 +36,6 @@ import {
 
 import {
   cieloCodeToJS,
-  addImports,
   convertCielo
 } from '@jdeighan/mapper/cielo';
 
@@ -113,14 +113,14 @@ say "Answer is 42"`);
 
 // ----------------------------------------------------------------------------
 (function() {
-  var code, jsCode;
-  code = `# --- temp.cielo
+  var cieloCode, imports, jsCode;
+  cieloCode = `# --- temp.cielo
 if fs.existsSync('file.txt')
 	logger "file exists"`;
-  jsCode = cieloCodeToJS(code);
-  return simple.equal(85, jsCode, `import fs from 'fs'
-import {log as logger} from '@jdeighan/coffee-utils/log'
-# --- temp.cielo
+  ({imports, jsCode} = cieloCodeToJS(cieloCode));
+  simple.equal(84, imports, `import fs from 'fs'
+import {log as logger} from '@jdeighan/coffee-utils/log'`);
+  return simple.equal(89, jsCode, `# --- temp.cielo
 if fs.existsSync('file.txt')
 	logger "file exists"`);
 })();
@@ -130,32 +130,38 @@ if fs.existsSync('file.txt')
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTesterNoNorm {
     transformValue(text) {
-      return cieloCodeToJS(text);
+      var imports, jsCode;
+      ({imports, jsCode} = cieloCodeToJS(text));
+      if (isEmpty(imports)) {
+        return jsCode;
+      } else {
+        return [imports, jsCode].join("\n");
+      }
     }
 
   };
   tester = new CieloTester('cielo.test');
   // --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
-  tester.equal(108, `dir = mydir(import.meta.url)
+  tester.equal(110, `dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `import {mydir,mkpath} from '@jdeighan/coffee-utils/fs'
 dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`);
   // --- But not if we're already importing them
-  tester.equal(119, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+  tester.equal(121, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`);
-  tester.equal(114, `x = undef`, `import {undef} from '@jdeighan/coffee-utils'
+  tester.equal(131, `x = undef`, `import {undef} from '@jdeighan/coffee-utils'
 x = undef`);
-  tester.equal(122, `x = undef
+  tester.equal(139, `x = undef
 contents = 'this is a file'
 fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})`, `import fs from 'fs'
 import {undef} from '@jdeighan/coffee-utils'
 x = undef
 contents = 'this is a file'
 fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})`);
-  return tester.equal(135, `x = 23
+  return tester.equal(152, `x = 23
 logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log'
 x = 23
 logger x`);

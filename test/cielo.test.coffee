@@ -10,7 +10,7 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {doMap, CieloMapper} from '@jdeighan/mapper'
 import {setSymbolsRootDir} from '@jdeighan/mapper/symbols'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
-import {cieloCodeToJS, addImports} from '@jdeighan/mapper/cielo'
+import {cieloCodeToJS} from '@jdeighan/mapper/cielo'
 
 rootDir = mydir(`import.meta.url`)
 source = mkpath(rootDir, 'cielo.test.coffee')
@@ -34,7 +34,11 @@ convertCoffee false
 	class CieloTester extends UnitTester
 
 		transformValue: (code) ->
-			return cieloCodeToJS(code, {source})
+			{imports, jsCode} = cieloCodeToJS(code, {source})
+			if isEmpty(imports)
+				return jsCode
+			else
+				return [imports, jsCode].join("\n")
 
 	tester = new CieloTester('cielo.test')
 

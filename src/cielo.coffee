@@ -76,31 +76,14 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 				debug "post mapped", jsPostCode
 		else
 			jsPostCode = jsPreCode
-
-		# --- A separator can be specified as 3rd arg
-		#     But by default, the variable convertCielo is checked
-		#        and the appropriate separator is used
-		jsCode = addImports(jsPostCode, lNeededSymbols)
-
-		if jsCode != jsPostCode
-			debug "with imports", jsCode
 	catch err
 		croak err, "Original Code", cieloCode
-	debug "return from cieloCodeToJS()", jsCode
-	return jsCode
-
-# ---------------------------------------------------------------------------
-
-export addImports = (jsCode, lNeededSymbols, sep=undef) ->
-
-	if ! sep?
-		sep = if convertingCielo then ";\n" else "\n"
-
-	# --- These import statements don't include a trailing ';'
-	lImportStmts = buildImportList(lNeededSymbols)
-	if lImportStmts.length == 0
-		return jsCode
-	return lImportStmts.join(sep) + sep + jsCode
+	hResult = {
+		jsCode: jsPostCode
+		imports: buildImportList(lNeededSymbols).join("\n")
+		}
+	debug "return from cieloCodeToJS()", hResult
+	return hResult
 
 # ---------------------------------------------------------------------------
 
@@ -127,6 +110,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		jsCode = cieloCodeToJS(cieloCode, hOptions)
-		barf destPath, jsCode
+		{imports, jsCode} = cieloCodeToJS(cieloCode, hOptions)
+		barf destPath, [imports, jsCode]
 	return

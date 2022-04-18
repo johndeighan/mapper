@@ -46,8 +46,7 @@ import {
 } from '@jdeighan/mapper/coffee';
 
 import {
-  cieloCodeToJS,
-  addImports
+  cieloCodeToJS
 } from '@jdeighan/mapper/cielo';
 
 rootDir = mydir(import.meta.url);
@@ -74,7 +73,13 @@ convertCoffee(false);
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTester {
     transformValue(code) {
-      return cieloCodeToJS(code, {source});
+      var imports, jsCode;
+      ({imports, jsCode} = cieloCodeToJS(code, {source}));
+      if (isEmpty(imports)) {
+        return jsCode;
+      } else {
+        return [imports, jsCode].join("\n");
+      }
     }
 
   };

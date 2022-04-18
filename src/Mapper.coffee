@@ -540,7 +540,7 @@ export class CieloMapper extends Mapper
 			when 'define'
 				if lMatches = argstr.match(///^
 						(env\.)?
-						([A-Za-z_]\w*)   # name of the variable
+						([A-Za-z_][\w\.]*)   # name of the variable
 						(.*)
 						$///)
 					[_, prefix, name, tail] = lMatches

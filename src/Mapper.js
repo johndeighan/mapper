@@ -565,7 +565,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
     debug(`enter handleCommand ${cmd} '${argstr}', ${level}`);
     switch (cmd) {
       case 'define':
-        if (lMatches = argstr.match(/^(env\.)?([A-Za-z_]\w*)(.*)$/)) { // name of the variable
+        if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
           [_, prefix, name, tail] = lMatches;
           tail = tail.trim();
           if (prefix) {

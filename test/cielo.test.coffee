@@ -108,7 +108,7 @@ convertCoffee false
 
 	tester.equal 118, """
 			x = 23
-			y = "line LINE in FILE"
+			y = "line __LINE__ in __FILE__"
 			+ 5
 			""", """
 			x = 23

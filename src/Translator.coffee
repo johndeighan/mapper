@@ -50,14 +50,14 @@ export class Translator
 				end = start + phrase.length
 				@found phrase, "#{h.zh} #{h.pinyin}", start, end
 
-		self = this
-		doTrans = @translate
-		func = (match, start) ->
+		# --- We need to use a "fat arrow" function here
+		#     to prevent 'this' being replaced
+		func = (match, start) =>
 			end = start + match.length
-			if trans = doTrans.call(self, match)
+			if trans = @translate(match)
 				# --- Don't add if it overlaps with other entry in @lFound
-				if ! self.hasOverlap(start, end)
-					self.found match, trans, start, end
+				if ! @hasOverlap(start, end)
+					@found match, trans, start, end
 			return match
 
 		# --- This will find all matches - it doesn't actually replace

@@ -66,12 +66,16 @@ import {
 
 // ---------------------------------------------------------------------------
 //   class StringFetcher - stream in lines from a string
-//                         handles:
-//                            __END__
-//                            #include
+//       handles:
+//          __END__
+//          #include
 export var StringFetcher = class StringFetcher {
-  constructor(content, source = 'unit test') {
-    this.setContent(content, source);
+  constructor(content, source = undef) {
+    if (isEmpty(source)) {
+      this.setContent(content, 'unit test');
+    } else {
+      this.setContent(content, source);
+    }
     // --- for handling #include
     this.altInput = undef;
     this.altLevel = undef; // indentation added to lines from alt
@@ -480,9 +484,112 @@ export var CieloMapper = class CieloMapper extends Mapper {
   }
 
   // ..........................................................
+  // --- designed to override with a mapping method
+  //     NOTE: line does not include the indentation
+  mapLine(line, level) {
+    var cmd, hResult, lContLines, lParts, orgLineNum, result, tail;
+    debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);
+    assert(line != null, "mapLine(): line is undef");
+    assert(isString(line), `mapLine(): ${OL(line)} not a string`);
+    if (isEmpty(line)) {
+      line = this.handleEmptyLine(this.curLevel);
+      debug(`return ${line} from CieloMapper.mapLine() - empty line`);
+      return this.handleEmptyLine(this.curLevel);
+    }
+    debug("line is not empty, checking for command");
+    lParts = this.splitCommand(line);
+    if (lParts) {
+      debug("found command", lParts);
+      [cmd, tail] = lParts;
+      debug("return from CieloMapper.mapLine() - command handled");
+      return this.handleCommand(cmd, tail, level);
+    }
+    if (isComment(line)) {
+      debug("return undef from CieloMapper.mapLine() - comment");
+      return this.handleComment(line, level);
+    }
+    line = this.replaceVars(line, level);
+    orgLineNum = this.lineNum;
+    this.curLevel = level;
+    // --- Merge in any continuation lines
+    debug("check for continuation lines");
+    lContLines = this.getContLines(level);
+    if (isEmpty(lContLines)) {
+      debug("no continuation lines found");
+    } else {
+      debug(`${lContLines.length} continuation lines found`);
+      line = this.joinContLines(line, lContLines);
+      debug(`line becomes ${OL(line)}`);
+    }
+    // --- handle HEREDOCs
+    debug("check for HEREDOC");
+    if (line.indexOf('<<<') !== -1) {
+      hResult = this.handleHereDoc(line, level);
+      line = hResult.line;
+      debug(`line becomes ${OL(line)}`);
+    }
+    debug("mapping string");
+    result = this.mapString(line, level);
+    debug(`return ${OL(result)} from CieloMapper.mapLine()`);
+    return result;
+  }
+
+  // ..........................................................
+  handleEmptyLine(level) {
+    debug("in CieloMapper.handleEmptyLine()");
+    // --- remove blank lines by default
+    //     return '' to retain empty lines
+    return undef;
+  }
+
+  // ..........................................................
+  splitCommand(line, level) {
+    var _, argstr, cmd, lMatches, lResult;
+    debug("enter CieloMapper.splitCommand()");
+    if (lMatches = line.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
+      // argstr for command
+      [_, cmd, argstr] = lMatches;
+      lResult = [cmd, argstr];
+      debug("return from CieloMapper.splitCommand()", lResult);
+      return lResult;
+    } else {
+      // --- not a command
+      debug("return undef from CieloMapper.splitCommand()");
+      return undef;
+    }
+  }
+
+  // ..........................................................
+  handleCommand(cmd, argstr, level) {
+    var _, lMatches, name, prefix, tail;
+    debug(`enter handleCommand ${cmd} '${argstr}', ${level}`);
+    switch (cmd) {
+      case 'define':
+        if (lMatches = argstr.match(/^(env\.)?([A-Za-z_]\w*)(.*)$/)) { // name of the variable
+          [_, prefix, name, tail] = lMatches;
+          tail = tail.trim();
+          if (prefix) {
+            debug(`set env var ${name} to '${tail}'`);
+            process.env[name] = tail;
+          } else {
+            debug(`set var ${name} to '${tail}'`);
+            this.setVariable(name, tail);
+          }
+        }
+    }
+    debug("return undef from handleCommand()");
+    return undef; // return value added to output if not undef
+  }
+
+  
+    // ..........................................................
   setVariable(name, value) {
-    assert((name !== 'DIR' && name !== 'FILE' && name !== 'LINE'), `Bad var ${name}`);
+    debug(`enter setVariable('${name}')`, value);
+    assert(isString(name), "name is not a string");
+    assert(isString(value), "value is not a string");
+    assert((name !== 'DIR' && name !== 'FILE' && name !== 'LINE' && name !== 'END'), `Bad var name '${name}'`);
     this.hVars[name] = value;
+    debug("return from setVariable()");
   }
 
   // ..........................................................
@@ -521,32 +628,6 @@ export var CieloMapper = class CieloMapper extends Mapper {
   }
 
   // ..........................................................
-  handleEmptyLine(level) {
-    debug("in CieloMapper.handleEmptyLine()");
-    // --- remove blank lines by default
-    //     return '' to retain empty lines
-    return undef;
-  }
-
-  // ..........................................................
-  splitCommand(line, level) {
-    debug("in CieloMapper.splitCommand()");
-    return stdSplitCommand(line, level);
-  }
-
-  // ..........................................................
-  handleCommand(cmd, argstr, level) {
-    switch (cmd) {
-      case 'define':
-        this.setVariable(cmd(argstr));
-        return undef;
-      default:
-        return undef; // return value added to output if not undef
-    }
-  }
-
-  
-    // ..........................................................
   isComment(line, level) {
     debug("in CieloMapper.isComment()");
     return stdIsComment(line, level);
@@ -561,56 +642,18 @@ export var CieloMapper = class CieloMapper extends Mapper {
   
     // ..........................................................
   replaceVars(line, level) {
-    debug("in CieloMapper.replaceVars()");
-    return line.replace(/\bDIR\b/g, this.hVars.DIR).replace(/\bFILE\b/g, this.hVars.FILE).replace(/\bLINE\b/g, this.hVars.LINE);
-  }
-
-  // ..........................................................
-  // --- designed to override with a mapping method
-  //     NOTE: line does not include the indentation
-  mapLine(line, level) {
-    var cmd, hResult, lContLines, lParts, orgLineNum, rest, result;
-    debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);
-    assert(line != null, "mapLine(): line is undef");
-    assert(isString(line), `mapLine(): ${OL(line)} not a string`);
-    if (isEmpty(line)) {
-      line = this.handleEmptyLine(this.curLevel);
-      debug(`return ${line} from CieloMapper.mapLine() - empty line`);
-      return this.handleEmptyLine(this.curLevel);
-    }
-    lParts = this.splitCommand(line);
-    if (lParts) {
-      [cmd, rest] = lParts;
-      return this.handleCommand(cmd, rest);
-    }
-    if (isComment(line)) {
-      debug("return undef from CieloMapper.mapLine() - comment");
-      return this.handleComment(line, level);
-    }
-    line = this.replaceVars(line, level);
-    orgLineNum = this.lineNum;
-    this.curLevel = level;
-    // --- Merge in any continuation lines
-    debug("check for continuation lines");
-    lContLines = this.getContLines(level);
-    if (isEmpty(lContLines)) {
-      debug("no continuation lines found");
-    } else {
-      debug(`${lContLines.length} continuation lines found`);
-      line = this.joinContLines(line, lContLines);
-      debug(`line becomes ${OL(line)}`);
-    }
-    // --- handle HEREDOCs
-    debug("check for HEREDOC");
-    if (line.indexOf('<<<') !== -1) {
-      hResult = this.handleHereDoc(line, level);
-      line = hResult.line;
-      debug(`line becomes ${OL(line)}`);
-    }
-    debug("mapping string");
-    result = this.mapString(line, level);
-    debug(`return ${OL(result)} from CieloMapper.mapLine()`);
-    return result;
+    var replacerFunc;
+    debug("enter CieloMapper.replaceVars()", line);
+    // --- We have to use a "fat arrow" function here
+    //     to prevent 'this' being changed
+    replacerFunc = (match, prefix, name) => {
+      var newstr;
+      newstr = prefix ? process.env[name] : this.hVars[name];
+      debug(`replace '${match}' with '${newstr}'`);
+      return newstr;
+    };
+    debug("return from CieloMapper.replaceVars()");
+    return line.replace(/__(env\.)?([A-Za-z_]\w*)__/g, replacerFunc);
   }
 
   // ..........................................................

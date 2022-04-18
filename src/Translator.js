@@ -45,7 +45,7 @@ export var Translator = class Translator {
 
   // ..........................................................
   findWords(sent, lPhrases = []) {
-    var doTrans, end, func, h, i, lFound, len1, newString, phrase, self, start;
+    var end, func, h, i, lFound, len1, newString, phrase, start;
     // --- lPhrases should have list of {en, zh, pinyin}
     // --- returns [ [<word>, <trans>, <startPos>, <endPos>], .. ]
     debug("enter findWords()", sent);
@@ -62,14 +62,14 @@ export var Translator = class Translator {
         this.found(phrase, `${h.zh} ${h.pinyin}`, start, end);
       }
     }
-    self = this;
-    doTrans = this.translate;
-    func = function(match, start) {
+    // --- We need to use a "fat arrow" function here
+    //     to prevent 'this' being replaced
+    func = (match, start) => {
       var trans;
       end = start + match.length;
-      if (trans = doTrans.call(self, match)) {
-        if (!self.hasOverlap(start, end)) {
-          self.found(match, trans, start, end);
+      if (trans = this.translate(match)) {
+        if (!this.hasOverlap(start, end)) {
+          this.found(match, trans, start, end);
         }
       }
       return match;

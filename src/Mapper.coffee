@@ -24,15 +24,18 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
 #   class StringFetcher - stream in lines from a string
-#                         handles:
-#                            __END__
-#                            #include
+#       handles:
+#          __END__
+#          #include
 
 export class StringFetcher
 
-	constructor: (content, source='unit test') ->
+	constructor: (content, source=undef) ->
 
-		@setContent content, source
+		if isEmpty(source)
+			@setContent content, 'unit test'
+		else
+			@setContent content, source
 
 		# --- for handling #include
 		@altInput = undef
@@ -445,11 +448,124 @@ export class CieloMapper extends Mapper
 		@curLevel = 0
 
 	# ..........................................................
+	# --- designed to override with a mapping method
+	#     NOTE: line does not include the indentation
+
+	mapLine: (line, level) ->
+
+		debug "enter CieloMapper.mapLine(#{OL(line)}, #{level})"
+
+		assert line?, "mapLine(): line is undef"
+		assert isString(line), "mapLine(): #{OL(line)} not a string"
+		if isEmpty(line)
+			line = @handleEmptyLine(@curLevel)
+			debug "return #{line} from CieloMapper.mapLine() - empty line"
+			return @handleEmptyLine(@curLevel)
+
+		debug "line is not empty, checking for command"
+		lParts = @splitCommand(line)
+		if lParts
+			debug "found command", lParts
+			[cmd, tail] = lParts
+			debug "return from CieloMapper.mapLine() - command handled"
+			return @handleCommand cmd, tail, level
+
+		if isComment(line)
+			debug "return undef from CieloMapper.mapLine() - comment"
+			return @handleComment(line, level)
+
+		line = @replaceVars(line, level)
+
+		orgLineNum = @lineNum
+		@curLevel = level
+
+		# --- Merge in any continuation lines
+		debug "check for continuation lines"
+		lContLines = @getContLines(level)
+		if isEmpty(lContLines)
+			debug "no continuation lines found"
+		else
+			debug "#{lContLines.length} continuation lines found"
+			line = @joinContLines(line, lContLines)
+			debug "line becomes #{OL(line)}"
+
+		# --- handle HEREDOCs
+		debug "check for HEREDOC"
+		if (line.indexOf('<<<') != -1)
+			hResult = @handleHereDoc(line, level)
+			line = hResult.line
+			debug "line becomes #{OL(line)}"
+
+		debug "mapping string"
+		result = @mapString(line, level)
+		debug "return #{OL(result)} from CieloMapper.mapLine()"
+		return result
+
+	# ..........................................................
+
+	handleEmptyLine: (level) ->
+
+		debug "in CieloMapper.handleEmptyLine()"
+
+		# --- remove blank lines by default
+		#     return '' to retain empty lines
+		return undef
+
+	# ..........................................................
+
+	splitCommand: (line, level) ->
+
+		debug "enter CieloMapper.splitCommand()"
+		if lMatches = line.match(///^
+				\#
+				([A-Za-z_]\w*)   # name of the command
+				\s*
+				(.*)             # argstr for command
+				$///)
+			[_, cmd, argstr] = lMatches
+			lResult = [cmd, argstr]
+			debug "return from CieloMapper.splitCommand()", lResult
+			return lResult
+		else
+			# --- not a command
+			debug "return undef from CieloMapper.splitCommand()"
+			return undef
+
+	# ..........................................................
+
+	handleCommand: (cmd, argstr, level) ->
+
+		debug "enter handleCommand #{cmd} '#{argstr}', #{level}"
+		switch cmd
+			when 'define'
+				if lMatches = argstr.match(///^
+						(env\.)?
+						([A-Za-z_]\w*)   # name of the variable
+						(.*)
+						$///)
+					[_, prefix, name, tail] = lMatches
+					tail = tail.trim()
+					if prefix
+						debug "set env var #{name} to '#{tail}'"
+						process.env[name] = tail
+					else
+						debug "set var #{name} to '#{tail}'"
+						@setVariable name, tail
+
+		debug "return undef from handleCommand()"
+		return undef   # return value added to output if not undef
+
+	# ..........................................................
 
 	setVariable: (name, value) ->
 
-		assert (name not in ['DIR','FILE','LINE']), "Bad var #{name}"
+		debug "enter setVariable('#{name}')", value
+		assert isString(name), "name is not a string"
+		assert isString(value), "value is not a string"
+		assert (name not in ['DIR','FILE','LINE','END']),\
+				"Bad var name '#{name}'"
 		@hVars[name] = value
+		debug "return from setVariable()"
 		return
 
 	# ..........................................................
@@ -488,34 +604,6 @@ export class CieloMapper extends Mapper
 
 	# ..........................................................
 
-	handleEmptyLine: (level) ->
-
-		debug "in CieloMapper.handleEmptyLine()"
-
-		# --- remove blank lines by default
-		#     return '' to retain empty lines
-		return undef
-
-	# ..........................................................
-
-	splitCommand: (line, level) ->
-
-		debug "in CieloMapper.splitCommand()"
-		return stdSplitCommand(line, level)
-
-	# ..........................................................
-
-	handleCommand: (cmd, argstr, level) ->
-
-		switch cmd
-			when 'define'
-				@setVariable cmd argstr
-				return undef
-			else
-				return undef   # return value added to output if not undef
-
-	# ..........................................................
-
 	isComment: (line, level) ->
 
 		debug "in CieloMapper.isComment()"
@@ -532,59 +620,22 @@ export class CieloMapper extends Mapper
 
 	replaceVars: (line, level) ->
 
-		debug "in CieloMapper.replaceVars()"
-		return line.replace(/\bDIR\b/g, @hVars.DIR).replace(/\bFILE\b/g, @hVars.FILE).replace(/\bLINE\b/g, @hVars.LINE)
+		debug "enter CieloMapper.replaceVars()", line
 
-	# ..........................................................
-	# --- designed to override with a mapping method
-	#     NOTE: line does not include the indentation
+		# --- We have to use a "fat arrow" function here
+		#     to prevent 'this' being changed
+		replacerFunc = (match, prefix, name) =>
+			newstr = if prefix then process.env[name] else @hVars[name]
+			debug "replace '#{match}' with '#{newstr}'"
+			return newstr
 
-	mapLine: (line, level) ->
-
-		debug "enter CieloMapper.mapLine(#{OL(line)}, #{level})"
-
-		assert line?, "mapLine(): line is undef"
-		assert isString(line), "mapLine(): #{OL(line)} not a string"
-		if isEmpty(line)
-			line = @handleEmptyLine(@curLevel)
-			debug "return #{line} from CieloMapper.mapLine() - empty line"
-			return @handleEmptyLine(@curLevel)
-
-		lParts = @splitCommand(line)
-		if lParts
-			[cmd, rest] = lParts
-			return @handleCommand cmd, rest
-
-		if isComment(line)
-			debug "return undef from CieloMapper.mapLine() - comment"
-			return @handleComment(line, level)
-
-		line = @replaceVars(line, level)
-
-		orgLineNum = @lineNum
-		@curLevel = level
-
-		# --- Merge in any continuation lines
-		debug "check for continuation lines"
-		lContLines = @getContLines(level)
-		if isEmpty(lContLines)
-			debug "no continuation lines found"
-		else
-			debug "#{lContLines.length} continuation lines found"
-			line = @joinContLines(line, lContLines)
-			debug "line becomes #{OL(line)}"
-
-		# --- handle HEREDOCs
-		debug "check for HEREDOC"
-		if (line.indexOf('<<<') != -1)
-			hResult = @handleHereDoc(line, level)
-			line = hResult.line
-			debug "line becomes #{OL(line)}"
-
-		debug "mapping string"
-		result = @mapString(line, level)
-		debug "return #{OL(result)} from CieloMapper.mapLine()"
-		return result
+		debug "return from CieloMapper.replaceVars()"
+		return line.replace(///
+				__
+				(env\.)?
+				([A-Za-z_]\w*)
+				__
+				///g, replacerFunc)
 
 	# ..........................................................
 

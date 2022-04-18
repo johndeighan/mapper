@@ -115,7 +115,7 @@ y = x + 5`);
   // --- test replacing LINE, FILE, DIR
   //     source = "c:/Users/johnd/string-input/test/cielo.test.coffee"
   tester.equal(118, `x = 23
-y = "line LINE in FILE"
+y = "line __LINE__ in __FILE__"
 + 5`, `x = 23
 y = "line 2 in cielo.test.coffee"
 + 5`);

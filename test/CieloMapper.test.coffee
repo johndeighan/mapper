@@ -26,16 +26,16 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-simple.equal 24, stdIsComment('# ---'), true
-simple.equal 25, stdIsComment('#'), true
-simple.equal 26, stdIsComment('##'), true
-simple.equal 27, stdIsComment('#define X 3'), false
-simple.equal 28, stdIsComment('##define X 3'), true
+simple.equal 29, stdIsComment('# ---'), true
+simple.equal 30, stdIsComment('#'), true
+simple.equal 31, stdIsComment('##'), true
+simple.equal 32, stdIsComment('#define X 3'), false
+simple.equal 33, stdIsComment('##define X 3'), true
 
-simple.equal 30, stdSplitCommand('#define X 3'), ['define', 'X 3']
-simple.equal 31, stdSplitCommand('#define    X  3'), ['define', 'X  3']
-simple.equal 32, stdSplitCommand('##define X 3'), undef
-simple.equal 33, stdSplitCommand('# define X 3'), undef
+simple.equal 35, stdSplitCommand('#define X 3'), ['define', 'X 3']
+simple.equal 36, stdSplitCommand('#define    X  3'), ['define', 'X  3']
+simple.equal 37, stdSplitCommand('##define X 3'), undef
+simple.equal 38, stdSplitCommand('# define X 3'), undef
 
 # ---------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ tester = new SmartTester()
 # ---------------------------------------------------------------------------
 # --- test removing comments and empty lines
 
-tester.equal 62, """
+tester.equal 67, """
 		abc
 
 		# --- a comment
@@ -76,36 +76,9 @@ tester.equal 62, """
 		"""
 
 # ---------------------------------------------------------------------------
-# --- test overriding handling of comments and empty lines
-
-class CustomInput extends CieloMapper
-
-	handleEmptyLine: () ->
-
-		debug "in new handleEmptyLine()"
-		return "line #{@lineNum} is empty"
-
-	handleComment: () ->
-
-		debug "in new handleComment()"
-		return "line #{@lineNum} is a comment"
-
-tester.equal 88, new CustomInput("""
-		abc
-
-		# --- a comment
-		def
-		"""), """
-		abc
-		line 2 is empty
-		line 3 is a comment
-		def
-		"""
-
-# ---------------------------------------------------------------------------
 # --- test continuation lines
 
-tester.equal 103, """
+tester.equal 81, """
 		h1 color=blue
 				This is
 				a title
@@ -121,7 +94,7 @@ tester.equal 103, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 119, """
+tester.equal 97, """
 		h1 color=blue \\
 				This is \\
 				a title
@@ -137,7 +110,7 @@ tester.equal 119, """
 # ---------------------------------------------------------------------------
 # --- test trailing backslash
 
-tester.equal 135, """
+tester.equal 113, """
 		h1 color=blue \\
 			This is \\
 			a title
@@ -155,7 +128,7 @@ tester.equal 135, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC
 
-tester.equal 153, """
+tester.equal 131, """
 		h1 color=<<<
 			magenta
 
@@ -170,7 +143,7 @@ tester.equal 153, """
 # ---------------------------------------------------------------------------
 # --- test HEREDOC with continuation lines
 
-tester.equal 168, """
+tester.equal 146, """
 		h1 color=<<<
 				This is a title
 			magenta
@@ -186,7 +159,7 @@ tester.equal 168, """
 # ---------------------------------------------------------------------------
 # --- test using '.' in a HEREDOC
 
-tester.equal 184, """
+tester.equal 162, """
 		h1 color=<<<
 			...color
 			.
@@ -205,7 +178,7 @@ tester.equal 184, """
 # ---------------------------------------------------------------------------
 # --- test empty HEREDOC section
 
-tester.equal 203, """
+tester.equal 181, """
 		h1 name=<<<
 
 		p the end
@@ -217,7 +190,7 @@ tester.equal 203, """
 # ---------------------------------------------------------------------------
 # --- test ending HEREDOC with EOF instead of a blank line
 
-tester.equal 215, """
+tester.equal 193, """
 		h1 name=<<<
 		""", """
 		h1 name=""
@@ -226,7 +199,7 @@ tester.equal 215, """
 # ---------------------------------------------------------------------------
 # --- test TAML
 
-tester.equal 224, """
+tester.equal 202, """
 		h1 lItems=<<<
 			---
 			- abc
@@ -239,7 +212,7 @@ tester.equal 224, """
 # ---------------------------------------------------------------------------
 # --- test one liner
 
-tester.equal 237, """
+tester.equal 215, """
 		error message=<<<
 			...an error
 			occurred in
@@ -252,7 +225,7 @@ tester.equal 237, """
 # ---------------------------------------------------------------------------
 # --- test forcing a literal block
 
-tester.equal 250, """
+tester.equal 228, """
 		TAML looks like: <<<
 			===
 			---
@@ -266,7 +239,7 @@ tester.equal 250, """
 # ---------------------------------------------------------------------------
 # --- test ordinary block
 
-tester.equal 264, """
+tester.equal 242, """
 		lRecords = db.fetch(<<<)
 			select ID,Name
 			from Users
@@ -280,11 +253,11 @@ tester.equal 264, """
 # ---------------------------------------------------------------------------
 # --- Test patching file name
 
-tester.equal 278, new CieloMapper("""
-		in file FILE
+tester.equal 256, """
+		in file __FILE__
 		ok
-		exiting file FILE
-		"""), """
+		exiting file __FILE__
+		""", """
 		in file unit test
 		ok
 		exiting file unit test
@@ -294,12 +267,51 @@ tester.equal 278, new CieloMapper("""
 # ---------------------------------------------------------------------------
 # --- Test patching line number
 
-tester.equal 292, new CieloMapper("""
-		on line LINE
+tester.equal 270, """
+		on line __LINE__
 		ok
-		on line LINE
-		"""), """
+		on line __LINE__
+		""", """
 		on line 1
 		ok
 		on line 3
+		"""
+
+# ---------------------------------------------------------------------------
+# --- Test #define and replacement strings
+
+tester.equal 283, """
+		abc
+		#define X 42
+		var y = __X__
+		""", """
+		abc
+		var y = 42
+		"""
+
+# ---------------------------------------------------------------------------
+# --- test overriding handling of comments and empty lines
+
+class CustomInput extends CieloMapper
+
+	handleEmptyLine: () ->
+
+		debug "in new handleEmptyLine()"
+		return "line #{@lineNum} is empty"
+
+	handleComment: () ->
+
+		debug "in new handleComment()"
+		return "line #{@lineNum} is a comment"
+
+tester.equal 307, new CustomInput("""
+		abc
+
+		# --- a comment
+		def
+		"""), """
+		abc
+		line 2 is empty
+		line 3 is a comment
+		def
 		"""

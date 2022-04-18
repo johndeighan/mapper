@@ -10,7 +10,7 @@ import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
 import {
-	debug, debugging, setDebugging,
+	debug, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {Mapper} from '@jdeighan/mapper'
@@ -68,7 +68,7 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends UnitTester
+class MapperTester extends UnitTester
 
 	transformValue: (oInput) ->
 
@@ -79,7 +79,7 @@ class GatherTester extends UnitTester
 	normalize: (str) ->
 		return str
 
-tester = new GatherTester()
+tester = new MapperTester()
 
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
@@ -103,7 +103,7 @@ tester.equal 95, new Mapper("""
 		"""
 
 (() ->
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		# --- This removes blank lines
 		mapLine: (line, level) ->
@@ -112,7 +112,7 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 115, new TestInput("""
+	tester.equal 115, new TestMapper("""
 			abc
 
 			def
@@ -126,7 +126,7 @@ tester.equal 95, new Mapper("""
 # --- Test basic use of mapping function
 
 (()->
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		# --- This maps all non-empty lines to the string 'x'
 		mapLine: (line, level) ->
@@ -135,7 +135,7 @@ tester.equal 95, new Mapper("""
 			else
 				return 'x'
 
-	tester.equal 138, new TestInput("""
+	tester.equal 138, new TestMapper("""
 			abc
 
 			def
@@ -151,7 +151,7 @@ tester.equal 95, new Mapper("""
 
 (()->
 
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		# --- Remove blank lines PLUS the line following a blank line
 		mapLine: (line, level) ->
@@ -161,7 +161,7 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 164, new TestInput("""
+	tester.equal 164, new TestMapper("""
 			abc
 
 			def
@@ -177,7 +177,7 @@ tester.equal 95, new Mapper("""
 
 (()->
 
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -190,7 +190,7 @@ tester.equal 95, new Mapper("""
 				line += ' ' + undented(next)
 			return line
 
-	tester.equal 193, new TestInput("""
+	tester.equal 193, new TestMapper("""
 			str = compare(
 					"abcde",
 					expected
@@ -213,7 +213,7 @@ tester.equal 95, new Mapper("""
 
 (()->
 
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -226,7 +226,7 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 229, new TestInput("""
+	tester.equal 229, new TestMapper("""
 			abc
 
 			def
@@ -257,7 +257,7 @@ tester.equal 243, new Mapper("""
 #        - replace reactive statements
 
 (()->
-	class TestInput extends Mapper
+	class TestMapper extends Mapper
 
 		mapLine: (line, level) ->
 
@@ -277,7 +277,7 @@ tester.equal 243, new Mapper("""
 			else
 				return line
 
-	tester.equal 280, new TestInput("""
+	tester.equal 280, new TestMapper("""
 			abc
 			myvar    <==     2 * 3
 
@@ -450,7 +450,7 @@ tester.equal 417, new Mapper("""
 			(.*)               # command arguments
 			$///
 
-	class TestInput2 extends Mapper
+	class TestMapper2 extends Mapper
 
 		mapLine: (line, level) ->
 			lMatches = line.match(cmdRE)
@@ -459,7 +459,7 @@ tester.equal 417, new Mapper("""
 			else
 				return line
 
-	tester2.equal 462, new TestInput2("""
+	tester2.equal 474, new TestMapper2("""
 			abc
 			#if x==y
 				def

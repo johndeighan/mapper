@@ -5,6 +5,7 @@ import CoffeeScript from 'coffeescript'
 import {
 	assert, undef, isString, isArray, croak, uniq, words,
 	} from '@jdeighan/coffee-utils'
+import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {
 	barf, slurp, pathTo, mkpath,
 	} from '@jdeighan/coffee-utils/fs'

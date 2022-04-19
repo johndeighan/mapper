@@ -15,6 +15,11 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  log,
+  LOG
+} from '@jdeighan/coffee-utils/log';
+
+import {
   barf,
   slurp,
   pathTo,

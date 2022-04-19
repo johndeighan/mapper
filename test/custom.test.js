@@ -3,8 +3,8 @@
 var SmartTester, UCHereDoc, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -31,7 +31,7 @@ import {
 } from '@jdeighan/mapper/heredoc';
 
 // ---------------------------------------------------------------------------
-SmartTester = class SmartTester extends UnitTesterNoNorm {
+SmartTester = class SmartTester extends UnitTester {
   transformValue(block) {
     var oInput;
     oInput = new CieloMapper(block);

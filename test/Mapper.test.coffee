@@ -2,7 +2,7 @@
 
 import assert from 'assert'
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isComment,
 	} from '@jdeighan/coffee-utils'
@@ -18,7 +18,7 @@ import {Mapper} from '@jdeighan/mapper'
 dir = mydir(`import.meta.url`)
 process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 ###
 	class Mapper should handle the following:
@@ -68,7 +68,7 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class MapperTester extends UnitTester
+class MapperTester extends UnitTesterNorm
 
 	transformValue: (oInput) ->
 
@@ -433,7 +433,7 @@ tester.equal 417, new Mapper("""
 
 (()->
 
-	class GatherTester2 extends UnitTester
+	class GatherTester2 extends UnitTesterNorm
 
 		transformValue: (oInput) ->
 

@@ -5,8 +5,8 @@ var CustomInput, SmartTester, simple, tester;
 import assert from 'assert';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -61,7 +61,7 @@ addHereDocType(new FuncHereDoc());
 
 addHereDocType(new TAMLHereDoc());
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 simple.equal(29, stdIsComment('# ---'), true);
@@ -91,7 +91,7 @@ simple.equal(38, stdSplitCommand('# define X 3'), undef);
 		- handle HEREDOCs (or override getHereDocLines() / heredocStr())
 */
 // ---------------------------------------------------------------------------
-SmartTester = class SmartTester extends UnitTesterNoNorm {
+SmartTester = class SmartTester extends UnitTester {
   transformValue(oInput) {
     var str;
     if (isString(oInput)) {

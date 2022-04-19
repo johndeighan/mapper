@@ -1,6 +1,6 @@
 # func.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm} from '@jdeighan/unit-tester'
 
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {debugStack} from '@jdeighan/coffee-utils/stack'
@@ -17,7 +17,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 
 (() ->
 
-	class HereDocMapper extends UnitTester
+	class HereDocMapper extends UnitTesterNorm
 
 		transformValue: (block) ->
 			return mapHereDoc(block).str
@@ -78,7 +78,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 
 (() ->
 
-	class HereDocMapper extends UnitTester
+	class HereDocMapper extends UnitTesterNorm
 
 		transformValue: (block) ->
 			return doMap(CieloMapper, block)

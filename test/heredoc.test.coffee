@@ -1,6 +1,6 @@
 # heredoc.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	assert, undef, isString, extractMatches,
 	} from '@jdeighan/coffee-utils'
@@ -13,7 +13,7 @@ import {
 	lineToParts, mapHereDoc, addHereDocType,
 	} from '@jdeighan/mapper/heredoc'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ simple.equal 52, lineToParts('<<<<<<'), [
 
 # ---------------------------------------------------------------------------
 
-class HereDocTester extends UnitTesterNoNorm
+class HereDocTester extends UnitTester
 
 	transformValue: (block) ->
 		return mapHereDoc(block).str

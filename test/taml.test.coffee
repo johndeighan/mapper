@@ -1,6 +1,6 @@
 # taml.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {undented} from '@jdeighan/coffee-utils/indent'
@@ -15,7 +15,7 @@ import {
 	} from '@jdeighan/mapper/taml'
 
 addHereDocType new TAMLHereDoc()
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
@@ -70,7 +70,7 @@ simple.equal 58, taml("""
 
 # ---------------------------------------------------------------------------
 
-class HereDocTester extends UnitTesterNoNorm
+class HereDocTester extends UnitTester
 
 	transformValue: (block) ->
 		return mapHereDoc(block).str
@@ -114,7 +114,7 @@ tester.equal 91, """
 
 # ---------------------------------------------------------------------------
 
-class HereDocReplacer extends UnitTesterNoNorm
+class HereDocReplacer extends UnitTester
 
 	transformValue: (block) ->
 		lNewParts = for part in lineToParts(firstLine(block))

@@ -1,6 +1,6 @@
 # custom.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	assert, undef, pass, isEmpty, isArray, isString, CWS,
 	} from '@jdeighan/coffee-utils'
@@ -10,7 +10,7 @@ import {addHereDocType} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
 
-class SmartTester extends UnitTesterNoNorm
+class SmartTester extends UnitTester
 
 	transformValue: (block) ->
 		oInput = new CieloMapper(block)

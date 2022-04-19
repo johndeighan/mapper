@@ -2,7 +2,7 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef, words, isArray, isEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -16,7 +16,7 @@ import {
 	} from '@jdeighan/mapper/symbols'
 
 setSymbolsRootDir mydir(`import.meta.url`)
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 convertCielo false
 
@@ -97,7 +97,7 @@ simple.equal 27, hSymbols, {
 
 (() ->
 
-	class CieloTester extends UnitTesterNoNorm
+	class CieloTester extends UnitTester
 
 		transformValue: (text) ->
 			{imports, jsCode} = cieloCodeToJS(text)

@@ -5,8 +5,8 @@ var MapTester, MyInput, simple, tester;
 import assert from 'assert';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -22,7 +22,7 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 // By default, a CieloMapper:
@@ -34,7 +34,7 @@ simple = new UnitTester();
 //    6. stops on __END__
 //    7. handles HEREDOCs
 // ---------------------------------------------------------------------------
-MapTester = class MapTester extends UnitTesterNoNorm {
+MapTester = class MapTester extends UnitTester {
   transformValue([myClass, text]) {
     return doMap(myClass, text);
   }

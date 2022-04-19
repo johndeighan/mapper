@@ -1,6 +1,6 @@
 # parsetag.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {parsetag, tag2str} from '@jdeighan/mapper/parsetag'
 
@@ -8,7 +8,7 @@ import {parsetag, tag2str} from '@jdeighan/mapper/parsetag'
 
 (() ->
 
-	class TagTester extends UnitTester
+	class TagTester extends UnitTesterNorm
 
 		transformValue: (input) ->
 			return parsetag(input)
@@ -163,7 +163,7 @@ import {parsetag, tag2str} from '@jdeighan/mapper/parsetag'
 
 (() ->
 
-	class TagTester2 extends UnitTester
+	class TagTester2 extends UnitTesterNorm
 
 		transformValue: (input) ->
 			return tag2str(input)

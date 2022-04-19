@@ -2,7 +2,7 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, error, warn, croak,
 	} from '@jdeighan/coffee-utils'
@@ -10,11 +10,11 @@ import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {TreeMapper} from '@jdeighan/mapper/tree'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-class GatherTester extends UnitTesterNoNorm
+class GatherTester extends UnitTester
 
 	transformValue: (oInput) ->
 		assert oInput instanceof TreeMapper,

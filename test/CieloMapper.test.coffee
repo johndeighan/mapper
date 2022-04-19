@@ -2,7 +2,7 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isArray, isString,
 	} from '@jdeighan/coffee-utils'
@@ -22,7 +22,7 @@ import {TAMLHereDoc} from '@jdeighan/mapper/taml'
 
 addHereDocType new FuncHereDoc()
 addHereDocType new TAMLHereDoc()
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ simple.equal 38, stdSplitCommand('# define X 3'), undef
 
 # ---------------------------------------------------------------------------
 
-class SmartTester extends UnitTesterNoNorm
+class SmartTester extends UnitTester
 
 	transformValue: (oInput) ->
 		if isString(oInput)

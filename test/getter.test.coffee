@@ -2,13 +2,13 @@
 
 import assert from 'assert'
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {
 	undef, error, warn, rtrim,
 	} from '@jdeighan/coffee-utils'
 import {Getter} from '@jdeighan/mapper/get'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 

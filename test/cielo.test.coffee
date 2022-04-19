@@ -1,6 +1,6 @@
 # cielo.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
@@ -16,7 +16,7 @@ rootDir = mydir(`import.meta.url`)
 source = mkpath(rootDir, 'cielo.test.coffee')
 setSymbolsRootDir rootDir
 
-simple = new UnitTester('cielo.test.coffee')
+simple = new UnitTesterNorm('cielo.test.coffee')
 convertCoffee false
 
 # ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ convertCoffee false
 # ---------------------------------------------------------------------------
 
 (() ->
-	class CieloTester extends UnitTester
+	class CieloTester extends UnitTesterNorm
 
 		transformValue: (code) ->
 			{imports, jsCode} = cieloCodeToJS(code, {source: @source})
@@ -259,7 +259,7 @@ convertCoffee false
 
 	convertCoffee true
 
-	class CieloTester extends UnitTester
+	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
 			return doMap(CieloMapper, text)

@@ -1,6 +1,6 @@
 # StringFetcher.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	assert, undef, pass, isEmpty, isComment,
 	} from '@jdeighan/coffee-utils'
@@ -9,7 +9,7 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {StringFetcher} from '@jdeighan/mapper'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 ###
 	class StringFetcher should handle the following:
@@ -50,7 +50,7 @@ simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
-class FetcherTester extends UnitTesterNoNorm
+class FetcherTester extends UnitTester
 
 	transformValue: (block) ->
 

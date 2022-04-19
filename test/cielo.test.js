@@ -3,8 +3,8 @@
 var rootDir, simple, source;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -55,7 +55,7 @@ source = mkpath(rootDir, 'cielo.test.coffee');
 
 setSymbolsRootDir(rootDir);
 
-simple = new UnitTester('cielo.test.coffee');
+simple = new UnitTesterNorm('cielo.test.coffee');
 
 convertCoffee(false);
 
@@ -71,7 +71,7 @@ convertCoffee(false);
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  CieloTester = class CieloTester extends UnitTester {
+  CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(code) {
       var imports, jsCode;
       ({imports, jsCode} = cieloCodeToJS(code, {
@@ -205,7 +205,7 @@ func(x, "abc")`);
 (function() {
   var CieloTester, tester;
   convertCoffee(true);
-  CieloTester = class CieloTester extends UnitTester {
+  CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(text) {
       return doMap(CieloMapper, text);
     }

@@ -1,6 +1,6 @@
 # trans.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -10,11 +10,11 @@ import {Translator} from '@jdeighan/mapper/trans'
 dir = mydir(import.meta.url)
 dictPath = mkpath(dir, 'dictionary.taml')
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-class DictionaryTester extends UnitTester
+class DictionaryTester extends UnitTesterNorm
 
 	constructor: () ->
 		super()

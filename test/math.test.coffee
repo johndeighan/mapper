@@ -2,18 +2,18 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isArray, isString,
 	} from '@jdeighan/coffee-utils'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mathMapper} from '@jdeighan/mapper/math'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-class MathTester extends UnitTesterNoNorm
+class MathTester extends UnitTester
 
 	transformValue: (str) ->
 		assert isString(str), "MathTester: not a string"

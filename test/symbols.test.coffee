@@ -1,6 +1,6 @@
 # symbols.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log} from '@jdeighan/coffee-utils/log'
@@ -11,7 +11,7 @@ import {
 
 dir = mydir(import.meta.url)
 setSymbolsRootDir dir
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ simple.equal 34, getAvailSymbols(), {
 
 # ---------------------------------------------------------------------------
 
-class SymbolsTester extends UnitTesterNoNorm
+class SymbolsTester extends UnitTester
 
 	transformValue: (text) ->
 		return getNeededSymbols(text)

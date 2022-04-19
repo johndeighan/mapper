@@ -5,8 +5,8 @@ var dumpfile, hSymbols, simple;
 import assert from 'assert';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -47,7 +47,7 @@ import {
 
 setSymbolsRootDir(mydir(import.meta.url));
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
@@ -128,7 +128,7 @@ if fs.existsSync('file.txt')
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  CieloTester = class CieloTester extends UnitTesterNoNorm {
+  CieloTester = class CieloTester extends UnitTester {
     transformValue(text) {
       var imports, jsCode;
       ({imports, jsCode} = cieloCodeToJS(text));

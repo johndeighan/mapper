@@ -5,8 +5,8 @@ var MathTester, simple, tester;
 import assert from 'assert';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -25,10 +25,10 @@ import {
   mathMapper
 } from '@jdeighan/mapper/math';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
-MathTester = class MathTester extends UnitTesterNoNorm {
+MathTester = class MathTester extends UnitTester {
   transformValue(str) {
     assert(isString(str), "MathTester: not a string");
     return mathMapper(str);

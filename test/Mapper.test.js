@@ -5,7 +5,7 @@ var MapperTester, dir, simple, tester;
 import assert from 'assert';
 
 import {
-  UnitTester
+  UnitTesterNorm
 } from '@jdeighan/unit-tester';
 
 import {
@@ -40,7 +40,7 @@ dir = mydir(import.meta.url);
 
 process.env.DIR_MARKDOWN = mkpath(dir, 'markdown');
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 /*
 	class Mapper should handle the following:
@@ -77,7 +77,7 @@ simple = new UnitTester();
 })();
 
 // ---------------------------------------------------------------------------
-MapperTester = class MapperTester extends UnitTester {
+MapperTester = class MapperTester extends UnitTesterNorm {
   transformValue(oInput) {
     assert(oInput instanceof Mapper, "oInput should be a Mapper object");
     return oInput.getBlock();
@@ -386,7 +386,7 @@ def`);
 // --- Test using getAll(), i.e. retrieving non-text
 (function() {
   var GatherTester2, TestMapper2, cmdRE, tester2;
-  GatherTester2 = class GatherTester2 extends UnitTester {
+  GatherTester2 = class GatherTester2 extends UnitTesterNorm {
     transformValue(oInput) {
       assert(oInput instanceof Mapper, "oInput should be a Mapper object");
       return oInput.getAll();

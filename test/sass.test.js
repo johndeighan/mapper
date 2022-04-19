@@ -3,7 +3,7 @@
 var SassTester, root, simple, tester;
 
 import {
-  UnitTester
+  UnitTesterNorm
 } from '@jdeighan/unit-tester';
 
 import {
@@ -28,12 +28,12 @@ root = process.env.DIR_ROOT = mydir(import.meta.url);
 
 process.env.DIR_DATA = `${root}/data process.env.DIR_MARKDOWN = `;
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 convertSASS(false);
 
 // ---------------------------------------------------------------------------
-SassTester = class SassTester extends UnitTester {
+SassTester = class SassTester extends UnitTesterNorm {
   transformValue(text) {
     return sassify(text);
   }

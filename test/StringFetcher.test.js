@@ -3,8 +3,8 @@
 var FetcherTester, simple, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -33,7 +33,7 @@ import {
   StringFetcher
 } from '@jdeighan/mapper';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 /*
 	class StringFetcher should handle the following:
@@ -64,7 +64,7 @@ simple = new UnitTester();
 })();
 
 // ---------------------------------------------------------------------------
-FetcherTester = class FetcherTester extends UnitTesterNoNorm {
+FetcherTester = class FetcherTester extends UnitTester {
   transformValue(block) {
     var fetcher, lLines, line;
     fetcher = new StringFetcher(block);

@@ -3,8 +3,8 @@
 var simple;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -40,12 +40,12 @@ import {
   minifyJS
 } from '@jdeighan/mapper/coffee';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 (function() {
   var CoffeeTester, tester;
-  CoffeeTester = class CoffeeTester extends UnitTesterNoNorm {
+  CoffeeTester = class CoffeeTester extends UnitTester {
     transformValue(code) {
       return coffeeCodeToJS(code);
     }

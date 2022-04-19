@@ -3,7 +3,7 @@
 import assert from 'assert'
 import CoffeeScript from 'coffeescript'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef, words} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {LOG} from '@jdeighan/coffee-utils/log'
@@ -13,12 +13,12 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {taml} from '@jdeighan/mapper/taml'
 import {ASTWalker, TreeStringifier} from '@jdeighan/mapper/walker'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 
 (() ->
 
-	class TreeTester extends UnitTesterNoNorm
+	class TreeTester extends UnitTester
 
 		transformValue: (tree) ->
 			stringifier = new TreeStringifier(tree, {node: undef})
@@ -115,7 +115,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 
 (() ->
 
-	class ASTTester extends UnitTester
+	class ASTTester extends UnitTesterNorm
 
 		transformValue: (code) ->
 

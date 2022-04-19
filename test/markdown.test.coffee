@@ -1,15 +1,15 @@
 # markdown.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {convertMarkdown, markdownify} from '@jdeighan/mapper/markdown'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-class MarkdownTester extends UnitTester
+class MarkdownTester extends UnitTesterNorm
 
 	transformValue: (text) ->
 

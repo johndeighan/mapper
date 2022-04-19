@@ -5,8 +5,8 @@ var GatherTester, simple, tester;
 import assert from 'assert';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -28,10 +28,10 @@ import {
   TreeMapper
 } from '@jdeighan/mapper/tree';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
-GatherTester = class GatherTester extends UnitTesterNoNorm {
+GatherTester = class GatherTester extends UnitTester {
   transformValue(oInput) {
     assert(oInput instanceof TreeMapper, "oInput should be a TreeMapper object");
     return oInput.getAll();

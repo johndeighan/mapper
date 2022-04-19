@@ -3,8 +3,8 @@
 var HereDocReplacer, HereDocTester, replacer, simple, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -45,7 +45,7 @@ import {
 
 addHereDocType(new TAMLHereDoc());
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 simple.truthy(18, isTAML("---\n- first\n- second"));
@@ -109,7 +109,7 @@ second: "Hello to you", Mike said`, {
 });
 
 // ---------------------------------------------------------------------------
-HereDocTester = class HereDocTester extends UnitTesterNoNorm {
+HereDocTester = class HereDocTester extends UnitTester {
   transformValue(block) {
     return mapHereDoc(block).str;
   }
@@ -142,7 +142,7 @@ tester.equal(91, `---
 	url: /books`, '[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]');
 
 // ---------------------------------------------------------------------------
-HereDocReplacer = class HereDocReplacer extends UnitTesterNoNorm {
+HereDocReplacer = class HereDocReplacer extends UnitTester {
   transformValue(block) {
     var lNewParts, part, result;
     lNewParts = (function() {

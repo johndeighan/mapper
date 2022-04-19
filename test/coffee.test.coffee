@@ -1,6 +1,6 @@
 # coffee.test.coffee
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -11,12 +11,12 @@ import {
 	coffeeExprToJS, coffeeCodeToJS, convertCoffee, cleanJS, minifyJS,
 	} from '@jdeighan/mapper/coffee'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
 (() ->
-	class CoffeeTester extends UnitTesterNoNorm
+	class CoffeeTester extends UnitTester
 
 		transformValue: (code) ->
 			return coffeeCodeToJS(code)

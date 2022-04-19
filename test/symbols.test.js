@@ -3,8 +3,8 @@
 var SymbolsTester, dir, simple, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -35,7 +35,7 @@ dir = mydir(import.meta.url);
 
 setSymbolsRootDir(dir);
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 simple.equal(18, symbolsRootDir, dir);
@@ -89,7 +89,7 @@ simple.equal(34, getAvailSymbols(), {
 });
 
 // ---------------------------------------------------------------------------
-SymbolsTester = class SymbolsTester extends UnitTesterNoNorm {
+SymbolsTester = class SymbolsTester extends UnitTester {
   transformValue(text) {
     return getNeededSymbols(text);
   }

@@ -7,8 +7,8 @@ import assert from 'assert';
 import CoffeeScript from 'coffeescript';
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -43,13 +43,13 @@ import {
   TreeStringifier
 } from '@jdeighan/mapper/walker';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
 (function() {
   var TreeTester, tester, tree, tree2;
-  TreeTester = class TreeTester extends UnitTesterNoNorm {
+  TreeTester = class TreeTester extends UnitTester {
     transformValue(tree) {
       var stringifier;
       stringifier = new TreeStringifier(tree, {
@@ -130,7 +130,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 
 (function() {
   var ASTTester, tester;
-  ASTTester = class ASTTester extends UnitTester {
+  ASTTester = class ASTTester extends UnitTesterNorm {
     transformValue(code) {
       var ast, hSymbols, walker;
       ast = CoffeeScript.compile(code, {

@@ -2,13 +2,13 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNoNorm} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 
 import {CieloMapper, doMap} from '@jdeighan/mapper'
 
-simple = new UnitTester()
+simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 # By default, a CieloMapper:
@@ -21,7 +21,7 @@ simple = new UnitTester()
 #    7. handles HEREDOCs
 # ---------------------------------------------------------------------------
 
-class MapTester extends UnitTesterNoNorm
+class MapTester extends UnitTester
 
 	transformValue: ([myClass, text]) ->
 		return doMap(myClass, text)

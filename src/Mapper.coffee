@@ -20,7 +20,6 @@ import {
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
-
 import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
@@ -289,9 +288,6 @@ export class Mapper extends StringFetcher
 
 	mapLine: (line, level) ->
 
-		debug "enter Mapper.mapLine()"
-		assert line? && isString(line), "Mapper.mapLine(): not a string"
-		debug "return #{OL(line)}, #{level} from Mapper.mapLine()"
 		return line
 
 	# ..........................................................
@@ -313,6 +309,7 @@ export class Mapper extends StringFetcher
 			return undef
 
 		[level, str] = splitLine(line)
+		assert str? && isString(str), "Mapper.get(): not a string"
 		result = @mapLine(str, level)
 		debug "MAP: '#{str}' => #{OL(result)}"
 

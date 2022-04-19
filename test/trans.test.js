@@ -3,8 +3,8 @@
 var DictionaryTester, dictPath, dir, lPhrases, simple, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -28,10 +28,10 @@ dir = mydir(import.meta.url);
 
 dictPath = mkpath(dir, 'dictionary.taml');
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
-DictionaryTester = class DictionaryTester extends UnitTester {
+DictionaryTester = class DictionaryTester extends UnitTesterNorm {
   constructor() {
     super();
     this.dict = new Translator(dictPath);

@@ -323,9 +323,6 @@ export var Mapper = class Mapper extends StringFetcher {
   // --- designed to override with a mapping method
   //     which can map to any valid JavaScript value
   mapLine(line, level) {
-    debug("enter Mapper.mapLine()");
-    assert((line != null) && isString(line), "Mapper.mapLine(): not a string");
-    debug(`return ${OL(line)}, ${level} from Mapper.mapLine()`);
     return line;
   }
 
@@ -346,6 +343,7 @@ export var Mapper = class Mapper extends StringFetcher {
       return undef;
     }
     [level, str] = splitLine(line);
+    assert((str != null) && isString(str), "Mapper.get(): not a string");
     result = this.mapLine(str, level);
     debug(`MAP: '${str}' => ${OL(result)}`);
     while ((result == null) && (this.lBuffer.length > 0)) {

@@ -3,8 +3,8 @@
 var HereDocTester, MatrixHereDoc, UCHereDoc, simple, tester;
 
 import {
-  UnitTester,
-  UnitTesterNoNorm
+  UnitTesterNorm,
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -38,7 +38,7 @@ import {
   addHereDocType
 } from '@jdeighan/mapper/heredoc';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 simple.equal(20, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
@@ -54,7 +54,7 @@ simple.equal(48, lineToParts('<<<'), ['<<<']);
 simple.equal(52, lineToParts('<<<<<<'), ['<<<', '<<<']);
 
 // ---------------------------------------------------------------------------
-HereDocTester = class HereDocTester extends UnitTesterNoNorm {
+HereDocTester = class HereDocTester extends UnitTester {
   transformValue(block) {
     return mapHereDoc(block).str;
   }

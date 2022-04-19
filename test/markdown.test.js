@@ -3,7 +3,7 @@
 var MarkdownTester, simple, tester;
 
 import {
-  UnitTester
+  UnitTesterNorm
 } from '@jdeighan/unit-tester';
 
 import {
@@ -19,10 +19,10 @@ import {
   markdownify
 } from '@jdeighan/mapper/markdown';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
-MarkdownTester = class MarkdownTester extends UnitTester {
+MarkdownTester = class MarkdownTester extends UnitTesterNorm {
   transformValue(text) {
     return markdownify(text);
   }

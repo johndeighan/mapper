@@ -5,7 +5,7 @@ var simple;
 import assert from 'assert';
 
 import {
-  UnitTester
+  UnitTesterNorm
 } from '@jdeighan/unit-tester';
 
 import {
@@ -19,7 +19,7 @@ import {
   Getter
 } from '@jdeighan/mapper/get';
 
-simple = new UnitTester();
+simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 (function() {

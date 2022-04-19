@@ -73,19 +73,18 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 		else
 			jsPreCode = cieloCode
 		if postmapper
-			jsPostCode = doMap(postmapper, jsPreCode, source)
-			if jsPostCode != jsPreCode
-				debug "post mapped", jsPostCode
+			jsCode = doMap(postmapper, jsPreCode, source)
+			if jsCode != jsPreCode
+				debug "post mapped", jsCode
 		else
-			jsPostCode = jsPreCode
+			jsCode = jsPreCode
 	catch err
 		croak err, "Original Code", cieloCode
-	hResult = {
-		jsCode: jsPostCode
-		imports: buildImportList(lNeededSymbols).join("\n")
-		}
-	debug "return from cieloCodeToJS()", hResult
-	return hResult
+
+	imports = buildImportList(lNeededSymbols).join("\n")
+	debug "imports", imports
+	debug "return from cieloCodeToJS()", jsCode
+	return {jsCode, imports}
 
 # ---------------------------------------------------------------------------
 

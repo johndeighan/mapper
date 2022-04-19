@@ -73,7 +73,7 @@ export var convertCielo = function(flag) {
 
 // ---------------------------------------------------------------------------
 export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
-  var coffeeCode, err, hResult, jsPostCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
+  var coffeeCode, err, imports, jsCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
   // --- cielo => js
   //     Valid Options:
   //        premapper:  CieloMapper or subclass
@@ -107,23 +107,21 @@ export var cieloCodeToJS = function(cieloCode, hOptions = {}) {
       jsPreCode = cieloCode;
     }
     if (postmapper) {
-      jsPostCode = doMap(postmapper, jsPreCode, source);
-      if (jsPostCode !== jsPreCode) {
-        debug("post mapped", jsPostCode);
+      jsCode = doMap(postmapper, jsPreCode, source);
+      if (jsCode !== jsPreCode) {
+        debug("post mapped", jsCode);
       }
     } else {
-      jsPostCode = jsPreCode;
+      jsCode = jsPreCode;
     }
   } catch (error) {
     err = error;
     croak(err, "Original Code", cieloCode);
   }
-  hResult = {
-    jsCode: jsPostCode,
-    imports: buildImportList(lNeededSymbols).join("\n")
-  };
-  debug("return from cieloCodeToJS()", hResult);
-  return hResult;
+  imports = buildImportList(lNeededSymbols).join("\n");
+  debug("imports", imports);
+  debug("return from cieloCodeToJS()", jsCode);
+  return {jsCode, imports};
 };
 
 // ---------------------------------------------------------------------------

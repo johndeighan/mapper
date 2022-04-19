@@ -46,18 +46,18 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   var ast, err, hSymbolInfo, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
-  //     NOTE: array returned will always be unique
-  debug("enter getNeededSymbols()");
+  //     NOTE: items in array returned will always be unique
+  debug("enter getNeededSymbols()", coffeeCode);
   assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
   try {
-    debug("COMPILE CODE", coffeeCode);
     ast = CoffeeScript.compile(coffeeCode, {
       ast: true
     });
     assert(ast != null, "getNeededSymbols(): ast is empty");
   } catch (error) {
     err = error;
-    croak(err, 'CODE (in getNeededSymbols)', coffeeCode);
+    LOG('CODE (in getNeededSymbols)', coffeeCode);
+    croak(err);
   }
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.getSymbols();

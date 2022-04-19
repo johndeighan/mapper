@@ -27,16 +27,16 @@ export setSymbolsRootDir = (dir) ->
 export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	# --- Valid options:
 	#        dumpfile: <filepath>   - where to dump ast
-	#     NOTE: array returned will always be unique
+	#     NOTE: items in array returned will always be unique
 
-	debug "enter getNeededSymbols()"
+	debug "enter getNeededSymbols()", coffeeCode
 	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
 	try
-		debug "COMPILE CODE", coffeeCode
 		ast = CoffeeScript.compile coffeeCode, {ast: true}
 		assert ast?, "getNeededSymbols(): ast is empty"
 	catch err
-		croak err, 'CODE (in getNeededSymbols)', coffeeCode
+		LOG 'CODE (in getNeededSymbols)', coffeeCode
+		croak err
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.getSymbols()

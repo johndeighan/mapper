@@ -5,6 +5,7 @@ import {
   assert,
   croak,
   isString,
+  isHash,
   uniq
 } from '@jdeighan/coffee-utils';
 

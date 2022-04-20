@@ -1,7 +1,7 @@
 # cielo.coffee
 
 import {
-	undef, assert, croak, isString, uniq,
+	undef, assert, croak, isString, isHash, uniq,
 	} from '@jdeighan/coffee-utils'
 import {log, DEBUG} from '@jdeighan/coffee-utils/log'
 import {indentLevel} from '@jdeighan/coffee-utils/indent'

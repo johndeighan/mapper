@@ -13,7 +13,8 @@ import {
   undef,
   error,
   warn,
-  croak
+  croak,
+  isString
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -32,8 +33,15 @@ simple = new UnitTesterNorm();
 
 // ---------------------------------------------------------------------------
 GatherTester = class GatherTester extends UnitTester {
-  transformValue(oInput) {
-    assert(oInput instanceof TreeMapper, "oInput should be a TreeMapper object");
+  transformValue(input) {
+    var oInput;
+    if (isString(input)) {
+      oInput = new TreeMapper(input, import.meta.url);
+    } else if (input instanceof TreeMapper) {
+      oInput = input;
+    } else {
+      croak(`GatherTester(): Invalid input ${typeof input}`);
+    }
     return oInput.getAll();
   }
 
@@ -42,14 +50,14 @@ GatherTester = class GatherTester extends UnitTester {
 tester = new GatherTester();
 
 // ---------------------------------------------------------------------------
-tester.equal(31, new TreeMapper(`line 1
+tester.equal(31, `line 1
 line 2
-	line 3`), [[0, 1, 'line 1'], [0, 2, 'line 2'], [1, 3, 'line 3']]);
+	line 3`, [[0, 1, 'line 1'], [0, 2, 'line 2'], [1, 3, 'line 3']]);
 
 // ---------------------------------------------------------------------------
-tester.equal(43, new TreeMapper(`line 1
+tester.equal(43, `line 1
 	line 2
-		line 3`), [[0, 1, 'line 1'], [1, 2, 'line 2'], [2, 3, 'line 3']]);
+		line 3`, [[0, 1, 'line 1'], [1, 2, 'line 2'], [2, 3, 'line 3']]);
 
 // ---------------------------------------------------------------------------
 // Test extending TreeMapper
@@ -70,7 +78,7 @@ tester.equal(43, new TreeMapper(`line 1
   parser = new EnvMapper(`name = John
 	last = Deighan
 age = 68
-town = Blacksburg`);
+town = Blacksburg`, import.meta.url);
   tree = parser.getTree();
   return simple.equal(84, tree, [
     {
@@ -120,7 +128,7 @@ town = Blacksburg`);
   parser = new EnvMapper(`name = John
 	last = Deighan
 age = 68
-town = Blacksburg`);
+town = Blacksburg`, import.meta.url);
   tree = parser.getTree();
   return simple.equal(127, tree, [
     {

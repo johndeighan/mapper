@@ -35,9 +35,9 @@ export var SassMapper = class SassMapper extends Mapper {
 };
 
 // ---------------------------------------------------------------------------
-export var sassify = function(block) {
+export var sassify = function(block, source) {
   var newblock, oInput, result;
-  oInput = new SassMapper(block);
+  oInput = new SassMapper(block, source);
   newblock = oInput.getBlock();
   if (!convert) {
     return newblock;

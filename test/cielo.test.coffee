@@ -8,15 +8,10 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {doMap, CieloMapper} from '@jdeighan/mapper'
-import {setSymbolsRootDir} from '@jdeighan/mapper/symbols'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
 import {cieloCodeToJS} from '@jdeighan/mapper/cielo'
 
-rootDir = mydir(`import.meta.url`)
-source = mkpath(rootDir, 'cielo.test.coffee')
-setSymbolsRootDir rootDir
-
-simple = new UnitTesterNorm('cielo.test.coffee')
+simple = new UnitTesterNorm(import.meta.url)
 convertCoffee false
 
 # ---------------------------------------------------------------------------
@@ -34,13 +29,13 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (code) ->
-			{imports, jsCode} = cieloCodeToJS(code, {source: @source})
+			{imports, jsCode} = cieloCodeToJS(code, import.meta.url)
 			if isEmpty(imports)
 				return jsCode
 			else
 				return [imports, jsCode].join("\n")
 
-	tester = new CieloTester('cielo.test.coffee')
+	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 	# --- test retaining comments
@@ -108,7 +103,6 @@ convertCoffee false
 
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
-	#     source = "c:/Users/johnd/string-input/test/cielo.test.coffee"
 
 	tester.equal 113, """
 			x = 23
@@ -116,7 +110,7 @@ convertCoffee false
 			+ 5
 			""", """
 			x = 23
-			y = "line 2 in cielo.test.coffee"
+			y = "line 2 in cielo.test.js"
 			+ 5
 			"""
 
@@ -262,7 +256,7 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
-			return doMap(CieloMapper, text)
+			return doMap(CieloMapper, text, import.meta.url)
 
 	tester = new CieloTester('cielo.test')
 

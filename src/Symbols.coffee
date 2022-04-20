@@ -3,25 +3,16 @@
 import CoffeeScript from 'coffeescript'
 
 import {
-	assert, undef, isString, isArray, croak, uniq, words,
+	assert, undef, isString, isArray, croak, uniq, words, escapeStr,
 	} from '@jdeighan/coffee-utils'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {
-	barf, slurp, pathTo, mkpath,
+	barf, slurp, pathTo, mkpath, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {Mapper, CieloMapper} from '@jdeighan/mapper'
 import {ASTWalker} from '@jdeighan/mapper/walker'
-
-export symbolsRootDir = mkpath(process.cwd())
-
-# ---------------------------------------------------------------------------
-
-export setSymbolsRootDir = (dir) ->
-
-	symbolsRootDir = dir
-	return
 
 # ---------------------------------------------------------------------------
 
@@ -48,12 +39,9 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 
 # ---------------------------------------------------------------------------
 
-export buildImportList = (lNeededSymbols, hOptions={}) ->
-	# --- Valid options:
-	#     recurse - search upward for .symbols files
+export buildImportList = (lNeededSymbols, source) ->
 
-	debug "enter buildImportList()"
-	debug "lNeededSymbols", lNeededSymbols
+	debug "enter buildImportList('#{escapeStr(source)}')", lNeededSymbols
 
 	if !lNeededSymbols || (lNeededSymbols.length == 0)
 		debug "return from buildImportList() - no needed symbols"
@@ -63,7 +51,7 @@ export buildImportList = (lNeededSymbols, hOptions={}) ->
 	lImports = []
 
 	# --- { <sym>: {lib: <lib>, src: <name> }}
-	hAvailSymbols = getAvailSymbols()
+	hAvailSymbols = getAvailSymbols(source)
 
 	for symbol in lNeededSymbols
 		hSymbol = hAvailSymbols[symbol]
@@ -95,20 +83,21 @@ export buildImportList = (lNeededSymbols, hOptions={}) ->
 # ---------------------------------------------------------------------------
 # export only to allow unit testing
 
-export getAvailSymbols = () ->
+export getAvailSymbols = (source) ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
 
-	debug "enter getAvailSymbols()"
-	assert symbolsRootDir, "empty symbolsRootDir"
-	debug "search for .symbols from '#{symbolsRootDir}'"
-	filepath = pathTo('.symbols', symbolsRootDir, 'up')
+	debug "enter getAvailSymbols('#{escapeStr(source)}')"
+	hSourceInfo = parseSource(source)
+	searchDir = hSourceInfo.dir
+	debug "search for .symbols from '#{searchDir}'"
+	filepath = pathTo('.symbols', searchDir, 'up')
 	if ! filepath?
 		debug "return from getAvailSymbols() - no .symbols file found"
 		return {}
 
 	hSymbols = getAvailSymbolsFrom(filepath)
 	debug "hSymbols", hSymbols
-	debug "return from getAvailSymbols()"
+	debug "return from getAvailSymbols()", hSymbols
 	return hSymbols
 
 # ---------------------------------------------------------------------------
@@ -120,7 +109,7 @@ getAvailSymbolsFrom = (filepath) ->
 
 	contents = slurp(filepath)
 	debug 'Contents of .symbols', contents
-	parser = new SymbolParser(contents)
+	parser = new SymbolParser(contents, filepath)
 	hSymbols = parser.getSymbols()
 	debug "hSymbols", hSymbols
 	debug "return from getAvailSymbolsFrom()"
@@ -132,9 +121,9 @@ getAvailSymbolsFrom = (filepath) ->
 class SymbolParser extends CieloMapper
 	# --- Parse a .symbols file
 
-	constructor: (content) ->
+	constructor: (content, source) ->
 
-		super content
+		super content, source
 		@curLib = undef
 		@hSymbols = {}
 

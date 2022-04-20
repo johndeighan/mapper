@@ -29,9 +29,9 @@ export class SassMapper extends Mapper
 
 # ---------------------------------------------------------------------------
 
-export sassify = (block) ->
+export sassify = (block, source) ->
 
-	oInput = new SassMapper(block)
+	oInput = new SassMapper(block, source)
 	newblock = oInput.getBlock()
 	if ! convert
 		return newblock

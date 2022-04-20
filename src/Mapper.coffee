@@ -30,12 +30,9 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 export class StringFetcher
 
-	constructor: (content, source=undef) ->
+	constructor: (content, source) ->
 
-		if isEmpty(source)
-			@setContent content, 'unit test'
-		else
-			@setContent content, source
+		@setContent content, source
 
 		# --- for handling #include
 		@altInput = undef
@@ -49,8 +46,8 @@ export class StringFetcher
 		debug "enter setContent()", content
 
 		# --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
-		#     If source is 'unit test', just has:
-		#     { filename: 'unit test', stub: 'unit test'}
+		#     source may be a URL, e.g. import.meta.url
+
 		@hSourceInfo = parseSource(source)
 		@filename = @hSourceInfo.filename
 		assert @filename, "StringFetcher: parseSource returned no filename"
@@ -706,7 +703,7 @@ export class CieloMapper extends Mapper
 
 # ===========================================================================
 
-export doMap = (inputClass, text, source='unit test') ->
+export doMap = (inputClass, text, source) ->
 
 	if lMatches = inputClass.toString().match(/class\s+(\w+)/)
 		className = lMatches[1]

@@ -70,7 +70,7 @@ addHereDocType(new FuncHereDoc()); // --- CoffeeScript function
   var HereDocMapper, tester;
   HereDocMapper = class HereDocMapper extends UnitTesterNorm {
     transformValue(block) {
-      return doMap(CieloMapper, block);
+      return doMap(CieloMapper, block, import.meta.url);
     }
 
   };

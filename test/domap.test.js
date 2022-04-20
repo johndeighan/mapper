@@ -36,7 +36,7 @@ simple = new UnitTesterNorm();
 // ---------------------------------------------------------------------------
 MapTester = class MapTester extends UnitTester {
   transformValue([myClass, text]) {
-    return doMap(myClass, text);
+    return doMap(myClass, text, import.meta.url);
   }
 
 };

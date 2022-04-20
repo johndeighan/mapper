@@ -54,7 +54,7 @@ class SmartTester extends UnitTester
 	transformValue: (oInput) ->
 		if isString(oInput)
 			str = oInput
-			oInput = new CieloMapper(str)
+			oInput = new CieloMapper(str, import.meta.url)
 		assert oInput instanceof CieloMapper,
 			"oInput should be a CieloMapper object"
 		return oInput.getBlock()
@@ -258,11 +258,10 @@ tester.equal 256, """
 		ok
 		exiting file __FILE__
 		""", """
-		in file unit test
+		in file CieloMapper.test.js
 		ok
-		exiting file unit test
+		exiting file CieloMapper.test.js
 		"""
-
 
 # ---------------------------------------------------------------------------
 # --- Test patching line number
@@ -292,7 +291,7 @@ tester.equal 283, """
 # ---------------------------------------------------------------------------
 # --- test overriding handling of comments and empty lines
 
-class CustomInput extends CieloMapper
+class CustomMapper extends CieloMapper
 
 	handleEmptyLine: () ->
 
@@ -304,12 +303,12 @@ class CustomInput extends CieloMapper
 		debug "in new handleComment()"
 		return "line #{@lineNum} is a comment"
 
-tester.equal 307, new CustomInput("""
+tester.equal 307, new CustomMapper("""
 		abc
 
 		# --- a comment
 		def
-		"""), """
+		""", import.meta.url), """
 		abc
 		line 2 is empty
 		line 3 is a comment

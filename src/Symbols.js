@@ -11,7 +11,8 @@ import {
   isArray,
   croak,
   uniq,
-  words
+  words,
+  escapeStr
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -23,7 +24,8 @@ import {
   barf,
   slurp,
   pathTo,
-  mkpath
+  mkpath,
+  parseSource
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -38,13 +40,6 @@ import {
 import {
   ASTWalker
 } from '@jdeighan/mapper/walker';
-
-export var symbolsRootDir = mkpath(process.cwd());
-
-// ---------------------------------------------------------------------------
-export var setSymbolsRootDir = function(dir) {
-  symbolsRootDir = dir;
-};
 
 // ---------------------------------------------------------------------------
 export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
@@ -74,12 +69,9 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
 };
 
 // ---------------------------------------------------------------------------
-export var buildImportList = function(lNeededSymbols, hOptions = {}) {
+export var buildImportList = function(lNeededSymbols, source) {
   var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
-  // --- Valid options:
-  //     recurse - search upward for .symbols files
-  debug("enter buildImportList()");
-  debug("lNeededSymbols", lNeededSymbols);
+  debug(`enter buildImportList('${escapeStr(source)}')`, lNeededSymbols);
   if (!lNeededSymbols || (lNeededSymbols.length === 0)) {
     debug("return from buildImportList() - no needed symbols");
     return [];
@@ -87,7 +79,7 @@ export var buildImportList = function(lNeededSymbols, hOptions = {}) {
   hLibs = {}; // { <lib>: [<symbol>, ... ], ... }
   lImports = [];
   // --- { <sym>: {lib: <lib>, src: <name> }}
-  hAvailSymbols = getAvailSymbols();
+  hAvailSymbols = getAvailSymbols(source);
   for (j = 0, len = lNeededSymbols.length; j < len; j++) {
     symbol = lNeededSymbols[j];
     hSymbol = hAvailSymbols[symbol];
@@ -124,20 +116,21 @@ export var buildImportList = function(lNeededSymbols, hOptions = {}) {
 
 // ---------------------------------------------------------------------------
 // export only to allow unit testing
-export var getAvailSymbols = function() {
-  var filepath, hSymbols;
+export var getAvailSymbols = function(source) {
+  var filepath, hSourceInfo, hSymbols, searchDir;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
-  debug("enter getAvailSymbols()");
-  assert(symbolsRootDir, "empty symbolsRootDir");
-  debug(`search for .symbols from '${symbolsRootDir}'`);
-  filepath = pathTo('.symbols', symbolsRootDir, 'up');
+  debug(`enter getAvailSymbols('${escapeStr(source)}')`);
+  hSourceInfo = parseSource(source);
+  searchDir = hSourceInfo.dir;
+  debug(`search for .symbols from '${searchDir}'`);
+  filepath = pathTo('.symbols', searchDir, 'up');
   if (filepath == null) {
     debug("return from getAvailSymbols() - no .symbols file found");
     return {};
   }
   hSymbols = getAvailSymbolsFrom(filepath);
   debug("hSymbols", hSymbols);
-  debug("return from getAvailSymbols()");
+  debug("return from getAvailSymbols()", hSymbols);
   return hSymbols;
 };
 
@@ -148,7 +141,7 @@ getAvailSymbolsFrom = function(filepath) {
   debug(`enter getAvailSymbolsFrom('${filepath}')`);
   contents = slurp(filepath);
   debug('Contents of .symbols', contents);
-  parser = new SymbolParser(contents);
+  parser = new SymbolParser(contents, filepath);
   hSymbols = parser.getSymbols();
   debug("hSymbols", hSymbols);
   debug("return from getAvailSymbolsFrom()");
@@ -158,8 +151,8 @@ getAvailSymbolsFrom = function(filepath) {
 // ---------------------------------------------------------------------------
 SymbolParser = class SymbolParser extends CieloMapper {
   // --- Parse a .symbols file
-  constructor(content) {
-    super(content);
+  constructor(content, source) {
+    super(content, source);
     this.curLib = undef;
     this.hSymbols = {};
   }

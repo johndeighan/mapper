@@ -71,12 +71,8 @@ import {
 //          __END__
 //          #include
 export var StringFetcher = class StringFetcher {
-  constructor(content, source = undef) {
-    if (isEmpty(source)) {
-      this.setContent(content, 'unit test');
-    } else {
-      this.setContent(content, source);
-    }
+  constructor(content, source) {
+    this.setContent(content, source);
     // --- for handling #include
     this.altInput = undef;
     this.altLevel = undef; // indentation added to lines from alt
@@ -87,8 +83,7 @@ export var StringFetcher = class StringFetcher {
   setContent(content, source) {
     debug("enter setContent()", content);
     // --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
-    //     If source is 'unit test', just has:
-    //     { filename: 'unit test', stub: 'unit test'}
+    //     source may be a URL, e.g. import.meta.url
     this.hSourceInfo = parseSource(source);
     this.filename = this.hSourceInfo.filename;
     assert(this.filename, "StringFetcher: parseSource returned no filename");
@@ -737,7 +732,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
 };
 
 // ===========================================================================
-export var doMap = function(inputClass, text, source = 'unit test') {
+export var doMap = function(inputClass, text, source) {
   var className, lMatches, oInput, result;
   if (lMatches = inputClass.toString().match(/class\s+(\w+)/)) {
     className = lMatches[1];

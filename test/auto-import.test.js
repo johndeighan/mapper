@@ -40,12 +40,9 @@ import {
 } from '@jdeighan/mapper/cielo';
 
 import {
-  setSymbolsRootDir,
   buildImportList,
   getAvailSymbols
 } from '@jdeighan/mapper/symbols';
-
-setSymbolsRootDir(mydir(import.meta.url));
 
 simple = new UnitTesterNorm();
 
@@ -55,7 +52,7 @@ convertCielo(false);
 
 // ----------------------------------------------------------------------------
 // --- make sure it's using the testing .symbols file
-hSymbols = getAvailSymbols();
+hSymbols = getAvailSymbols(import.meta.url);
 
 simple.equal(27, hSymbols, {
   fs: {
@@ -108,7 +105,7 @@ say "Answer is 42"`);
 (function() {
   var lNeeded;
   lNeeded = words('say undef logger slurp barf fs');
-  return simple.equal(65, buildImportList(lNeeded), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+  return simple.equal(65, buildImportList(lNeeded, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
 })();
 
 // ----------------------------------------------------------------------------
@@ -117,7 +114,7 @@ say "Answer is 42"`);
   cieloCode = `# --- temp.cielo
 if fs.existsSync('file.txt')
 	logger "file exists"`;
-  ({imports, jsCode} = cieloCodeToJS(cieloCode));
+  ({imports, jsCode} = cieloCodeToJS(cieloCode, import.meta.url));
   simple.equal(84, imports, `import fs from 'fs'
 import {log as logger} from '@jdeighan/coffee-utils/log'`);
   return simple.equal(89, jsCode, `# --- temp.cielo
@@ -131,7 +128,7 @@ if fs.existsSync('file.txt')
   CieloTester = class CieloTester extends UnitTester {
     transformValue(text) {
       var imports, jsCode;
-      ({imports, jsCode} = cieloCodeToJS(text));
+      ({imports, jsCode} = cieloCodeToJS(text, import.meta.url));
       if (isEmpty(imports)) {
         return jsCode;
       } else {

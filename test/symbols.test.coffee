@@ -6,16 +6,10 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
-	setSymbolsRootDir, symbolsRootDir, getAvailSymbols, getNeededSymbols,
+	getAvailSymbols, getNeededSymbols,
 	} from '@jdeighan/mapper/symbols'
 
-dir = mydir(import.meta.url)
-setSymbolsRootDir dir
 simple = new UnitTesterNorm()
-
-# ---------------------------------------------------------------------------
-
-simple.equal 18, symbolsRootDir, dir
 
 # ---------------------------------------------------------------------------
 # Contents of .symbols:
@@ -31,7 +25,7 @@ simple.equal 18, symbolsRootDir, dir
 # @jdeighan/coffee-utils/log
 #    log (as logger)
 
-simple.equal 34, getAvailSymbols(), {
+simple.equal 28, getAvailSymbols(import.meta.url), {
 	barf: {
 		lib: '@jdeighan/coffee-utils/fs',
 		},
@@ -77,33 +71,33 @@ tester = new SymbolsTester()
 
 # ---------------------------------------------------------------------------
 
-simple.equal 71, getNeededSymbols("""
+simple.equal 74, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-simple.equal 76, getNeededSymbols("""
+simple.equal 79, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-simple.equal 81, getNeededSymbols("""
+simple.equal 84, getNeededSymbols("""
 	x = z
 	y = x + 5
 	"""), ['z']
 
-simple.equal 86, getNeededSymbols("""
+simple.equal 89, getNeededSymbols("""
 	x = myfunc(4)
 	y = x + 5
 	"""), ['myfunc']
 
-simple.equal 91, getNeededSymbols("""
+simple.equal 94, getNeededSymbols("""
 	import {z} from 'somewhere'
 	x = z
 	y = x + 5
 	"""), []
 
-simple.equal 97, getNeededSymbols("""
+simple.equal 100, getNeededSymbols("""
 	import {myfunc} from 'somewhere'
 	x = myfunc(4)
 	y = x + 5

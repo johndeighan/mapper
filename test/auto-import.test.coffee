@@ -11,11 +11,8 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	cieloCodeToJS, convertCielo,
 	} from '@jdeighan/mapper/cielo'
-import {
-	setSymbolsRootDir, buildImportList, getAvailSymbols,
-	} from '@jdeighan/mapper/symbols'
+import {buildImportList, getAvailSymbols} from '@jdeighan/mapper/symbols'
 
-setSymbolsRootDir mydir(`import.meta.url`)
 simple = new UnitTesterNorm()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 convertCielo false
@@ -23,7 +20,7 @@ convertCielo false
 # ----------------------------------------------------------------------------
 # --- make sure it's using the testing .symbols file
 
-hSymbols = getAvailSymbols()
+hSymbols = getAvailSymbols(import.meta.url)
 simple.equal 27, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
@@ -62,7 +59,7 @@ simple.equal 27, hSymbols, {
 
 (() ->
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 65, buildImportList(lNeeded), [
+	simple.equal 65, buildImportList(lNeeded, import.meta.url), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
@@ -79,7 +76,7 @@ simple.equal 27, hSymbols, {
 				logger "file exists"
 			"""
 
-	{imports, jsCode} = cieloCodeToJS(cieloCode)
+	{imports, jsCode} = cieloCodeToJS(cieloCode, import.meta.url)
 
 	simple.equal 84, imports, """
 			import fs from 'fs'
@@ -100,7 +97,7 @@ simple.equal 27, hSymbols, {
 	class CieloTester extends UnitTester
 
 		transformValue: (text) ->
-			{imports, jsCode} = cieloCodeToJS(text)
+			{imports, jsCode} = cieloCodeToJS(text, import.meta.url)
 			if isEmpty(imports)
 				return jsCode
 			else

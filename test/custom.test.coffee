@@ -13,7 +13,7 @@ import {addHereDocType} from '@jdeighan/mapper/heredoc'
 class SmartTester extends UnitTester
 
 	transformValue: (block) ->
-		oInput = new CieloMapper(block)
+		oInput = new CieloMapper(block, import.meta.url)
 		return oInput.getBlock()
 
 tester = new SmartTester()

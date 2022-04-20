@@ -4,7 +4,7 @@ import assert from 'assert'
 
 import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
-	undef, error, warn, croak,
+	undef, error, warn, croak, isString,
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
@@ -16,20 +16,24 @@ simple = new UnitTesterNorm()
 
 class GatherTester extends UnitTester
 
-	transformValue: (oInput) ->
-		assert oInput instanceof TreeMapper,
-			"oInput should be a TreeMapper object"
+	transformValue: (input) ->
+		if isString(input)
+			oInput = new TreeMapper(input, import.meta.url)
+		else if input instanceof TreeMapper
+			oInput = input
+		else
+			croak "GatherTester(): Invalid input #{typeof input}"
 		return oInput.getAll()
 
 tester = new GatherTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 31, new TreeMapper("""
+tester.equal 31, """
 		line 1
 		line 2
 			line 3
-		"""), [
+		""", [
 		[0, 1, 'line 1']
 		[0, 2, 'line 2']
 		[1, 3, 'line 3']
@@ -37,11 +41,11 @@ tester.equal 31, new TreeMapper("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 43, new TreeMapper("""
+tester.equal 43, """
 		line 1
 			line 2
 				line 3
-		"""), [
+		""", [
 		[0, 1, 'line 1']
 		[1, 2, 'line 2']
 		[2, 3, 'line 3']
@@ -74,7 +78,7 @@ tester.equal 43, new TreeMapper("""
 				last = Deighan
 			age = 68
 			town = Blacksburg
-			""")
+			""", import.meta.url)
 
 	tree = parser.getTree()
 
@@ -117,7 +121,7 @@ tester.equal 43, new TreeMapper("""
 				last = Deighan
 			age = 68
 			town = Blacksburg
-			""")
+			""", import.meta.url)
 
 	tree = parser.getTree()
 

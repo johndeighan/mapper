@@ -47,27 +47,27 @@ simple = new UnitTesterNorm();
   var input, line;
   input = new StringFetcher(`abc
 	def
-		ghi`);
+		ghi`, import.meta.url);
   line = input.fetch();
-  simple.equal(30, line, 'abc');
-  simple.equal(32, input.filename, 'unit test');
-  simple.equal(33, input.lineNum, 1);
+  simple.equal(32, line, 'abc');
+  simple.equal(34, input.filename, 'StringFetcher.test.js');
+  simple.equal(35, input.lineNum, 1);
   line = input.fetch();
-  simple.equal(36, line, '\tdef');
+  simple.equal(38, line, '\tdef');
   input.unfetch(line); // make available again
   line = input.fetch();
-  simple.equal(40, line, '\tdef');
+  simple.equal(42, line, '\tdef');
   line = input.fetch();
-  simple.equal(43, line, '\t\tghi');
+  simple.equal(45, line, '\t\tghi');
   line = input.fetch();
-  return simple.equal(46, line, undef);
+  return simple.equal(48, line, undef);
 })();
 
 // ---------------------------------------------------------------------------
 FetcherTester = class FetcherTester extends UnitTester {
   transformValue(block) {
     var fetcher, lLines, line;
-    fetcher = new StringFetcher(block);
+    fetcher = new StringFetcher(block, import.meta.url);
     lLines = [];
     while ((line = fetcher.fetch()) != null) {
       lLines.push(line);
@@ -81,11 +81,11 @@ tester = new FetcherTester();
 
 // ---------------------------------------------------------------------------
 // --- Test basic reading till EOF
-tester.equal(65, `abc
+tester.equal(68, `abc
 def`, `abc
 def`);
 
-tester.equal(73, `abc
+tester.equal(76, `abc
 
 def`, `abc
 
@@ -93,11 +93,11 @@ def`);
 
 // ---------------------------------------------------------------------------
 // --- Test __END__
-tester.equal(86, `abc
+tester.equal(89, `abc
 __END__
 def`, `abc`);
 
-tester.equal(94, `abc
+tester.equal(97, `abc
 	def
 	__END__
 ghi`, `abc
@@ -113,7 +113,7 @@ ghi`);
 	abc
 	def
 */
-tester.equal(117, `first line
+tester.equal(120, `first line
 
 	#include file.txt
 last line`, `first line
@@ -131,7 +131,7 @@ abc
 __END__
 def
 */
-tester.equal(141, `first line
+tester.equal(144, `first line
 
 	#include file2.txt
 last line`, `first line

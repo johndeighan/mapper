@@ -26,26 +26,26 @@ simple = new UnitTesterNorm()
 			abc
 				def
 					ghi
-			""")
+			""", import.meta.url)
 
 	line = input.fetch()
-	simple.equal 30, line, 'abc'
+	simple.equal 32, line, 'abc'
 
-	simple.equal 32, input.filename, 'unit test'
-	simple.equal 33, input.lineNum, 1
+	simple.equal 34, input.filename, 'StringFetcher.test.js'
+	simple.equal 35, input.lineNum, 1
 
 	line = input.fetch()
-	simple.equal 36, line, '\tdef'
+	simple.equal 38, line, '\tdef'
 	input.unfetch(line)            # make available again
 
 	line = input.fetch()
-	simple.equal 40, line, '\tdef'
+	simple.equal 42, line, '\tdef'
 
 	line = input.fetch()
-	simple.equal 43, line, '\t\tghi'
+	simple.equal 45, line, '\t\tghi'
 
 	line = input.fetch()
-	simple.equal 46, line, undef
+	simple.equal 48, line, undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ class FetcherTester extends UnitTester
 
 	transformValue: (block) ->
 
-		fetcher = new StringFetcher(block)
+		fetcher = new StringFetcher(block, import.meta.url)
 		lLines = []
 		while (line = fetcher.fetch())?
 			lLines.push line
@@ -65,7 +65,7 @@ tester = new FetcherTester()
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 65, """
+tester.equal 68, """
 		abc
 		def
 		""", """
@@ -73,7 +73,7 @@ tester.equal 65, """
 		def
 		"""
 
-tester.equal 73, """
+tester.equal 76, """
 		abc
 
 		def
@@ -86,7 +86,7 @@ tester.equal 73, """
 # ---------------------------------------------------------------------------
 # --- Test __END__
 
-tester.equal 86, """
+tester.equal 89, """
 		abc
 		__END__
 		def
@@ -94,7 +94,7 @@ tester.equal 86, """
 		abc
 		"""
 
-tester.equal 94, """
+tester.equal 97, """
 		abc
 			def
 			__END__
@@ -117,7 +117,7 @@ tester.equal 94, """
 	def
 ###
 
-tester.equal 117, """
+tester.equal 120, """
 		first line
 
 			#include file.txt
@@ -141,7 +141,7 @@ __END__
 def
 ###
 
-tester.equal 141, """
+tester.equal 144, """
 		first line
 
 			#include file2.txt

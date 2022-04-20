@@ -34,7 +34,7 @@ export convertCielo = (flag) ->
 
 # ---------------------------------------------------------------------------
 
-export cieloCodeToJS = (cieloCode, hOptions={}) ->
+export cieloCodeToJS = (cieloCode, hOptions) ->
 	# --- cielo => js
 	#     Valid Options:
 	#        premapper:  CieloMapper or subclass
@@ -52,9 +52,17 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 
 	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indentation"
 
-	premapper = hOptions.premapper || CieloMapper
-	postmapper = hOptions.postmapper   # may be undef
-	source = hOptions.source
+	if isString(hOptions)
+		source = hOptions
+		premapper = CieloMapper
+		postmapper = undef
+	else if isHash(hOptions)
+		premapper = hOptions.premapper || CieloMapper
+		postmapper = hOptions.postmapper   # may be undef
+		source = hOptions.source
+	else
+		croak "cieloCodeToJS(): Invalid 2nd parm: #{typeof hOptions}"
+	assert source?, "cieloCodeToJS(): Missing source"
 
 	# --- Even if no premapper is defined, this will handle
 	#     continuation lines, HEREDOCs, etc.
@@ -81,7 +89,7 @@ export cieloCodeToJS = (cieloCode, hOptions={}) ->
 	catch err
 		croak err, "Original Code", cieloCode
 
-	imports = buildImportList(lNeededSymbols).join("\n")
+	imports = buildImportList(lNeededSymbols, source).join("\n")
 	debug "imports", imports
 	debug "return from cieloCodeToJS()", jsCode
 	return {jsCode, imports}

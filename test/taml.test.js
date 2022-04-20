@@ -102,7 +102,8 @@ simple.equal(50, slurpTAML('./test/data_structure.taml'), [
 simple.equal(58, taml(`---
 first: "Hi", Sally said
 second: "Hello to you", Mike said`, {
-  premapper: StoryMapper
+  premapper: StoryMapper,
+  source: import.meta.url
 }), {
   first: '"Hi", Sally said',
   second: '"Hello to you", Mike said'

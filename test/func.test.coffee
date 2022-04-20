@@ -81,7 +81,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 	class HereDocMapper extends UnitTesterNorm
 
 		transformValue: (block) ->
-			return doMap(CieloMapper, block)
+			return doMap(CieloMapper, block, import.meta.url)
 
 	tester = new HereDocMapper()
 

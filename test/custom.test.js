@@ -34,7 +34,7 @@ import {
 SmartTester = class SmartTester extends UnitTester {
   transformValue(block) {
     var oInput;
-    oInput = new CieloMapper(block);
+    oInput = new CieloMapper(block, import.meta.url);
     return oInput.getBlock();
   }
 

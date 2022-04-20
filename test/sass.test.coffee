@@ -6,9 +6,6 @@ import {mydir} from '@jdeighan/coffee-utils/fs'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {sassify, convertSASS} from '@jdeighan/mapper/sass'
 
-root = process.env.DIR_ROOT = mydir(`import.meta.url`)
-process.env.DIR_DATA = "#{root}/data
-process.env.DIR_MARKDOWN = "#{root}/markdown
 simple = new UnitTesterNorm()
 
 convertSASS false
@@ -18,7 +15,7 @@ convertSASS false
 class SassTester extends UnitTesterNorm
 
 	transformValue: (text) ->
-		return sassify(text)
+		return sassify(text, import.meta.url)
 
 tester = new SassTester()
 

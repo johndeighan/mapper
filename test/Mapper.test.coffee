@@ -2,9 +2,9 @@
 
 import assert from 'assert'
 
-import {UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {
-	undef, pass, isEmpty, isComment,
+	undef, pass, isEmpty, isComment, isString,
 	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel, undented, splitLine, indented,
@@ -13,10 +13,7 @@ import {
 	debug, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {Mapper} from '@jdeighan/mapper'
-
-dir = mydir(`import.meta.url`)
-process.env.DIR_MARKDOWN = mkpath(dir, 'markdown')
+import {Mapper, doMap} from '@jdeighan/mapper'
 
 simple = new UnitTesterNorm()
 
@@ -36,67 +33,69 @@ simple = new UnitTesterNorm()
 			abc
 				def
 					ghi
-			""")
+			""", import.meta.url)
 
 	# --- lPair is [item, level]
 
 	lPair = input.peek()
-	simple.equal 44, lPair, ['abc', 0]
+	simple.equal 41, lPair, ['abc', 0]
 
 	lPair = input.peek()
+	simple.equal 44, lPair, ['abc', 0]
+
+	lPair = input.get()
 	simple.equal 47, lPair, ['abc', 0]
 
 	lPair = input.get()
-	simple.equal 50, lPair, ['abc', 0]
-
-	lPair = input.get()
-	simple.equal 53, lPair, ['def', 1]
+	simple.equal 50, lPair, ['def', 1]
 
 	input.unget(lPair)
 	lPair = input.get()
-	simple.equal 57, lPair, ['def', 1]
+	simple.equal 54, lPair, ['def', 1]
 
 	lPair = input.get()
-	simple.equal 60, lPair, ['ghi', 2]
+	simple.equal 57, lPair, ['ghi', 2]
 	input.unget(lPair)
 
 	input.skip()
 	pair = input.get()
-	simple.equal 65, pair, undef
+	simple.equal 62, pair, undef
 
 	)()
 
 # ---------------------------------------------------------------------------
 
-class MapperTester extends UnitTesterNorm
+class MapperTester extends UnitTester
 
-	transformValue: (oInput) ->
+	transformValue: (input) ->
+		# --- input may be a string or a Mapper or subclass
 
-		assert oInput instanceof Mapper,
-			"oInput should be a Mapper object"
+		if isString(input)
+			oInput = new Mapper(input, import.meta.url)
+		else
+			assert input instanceof Mapper,
+				"input should be a Mapper object"
+			oInput = input
 		return oInput.getBlock()
-
-	normalize: (str) ->
-		return str
 
 tester = new MapperTester()
 
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 87, new Mapper("""
+tester.equal 86, """
 		abc
 		def
-		"""), """
+		""", """
 		abc
 		def
 		"""
 
-tester.equal 95, new Mapper("""
+tester.equal 94, """
 		abc
 
 		def
-		"""), """
+		""", """
 		abc
 
 		def
@@ -112,11 +111,18 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 115, new TestMapper("""
+	str = """
 			abc
 
 			def
-			"""), """
+			"""
+
+	tester.equal 120, new TestMapper(str, import.meta.url), """
+			abc
+			def
+			"""
+
+	simple.equal 125, doMap(TestMapper, str, import.meta.url), """
 			abc
 			def
 			"""
@@ -135,11 +141,11 @@ tester.equal 95, new Mapper("""
 			else
 				return 'x'
 
-	tester.equal 138, new TestMapper("""
+	tester.equal 144, new TestMapper("""
 			abc
 
 			def
-			"""), """
+			""", import.meta.url), """
 			x
 			x
 			"""
@@ -161,12 +167,12 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 164, new TestMapper("""
+	tester.equal 170, new TestMapper("""
 			abc
 
 			def
 			ghi
-			"""), """
+			""", import.meta.url), """
 			abc
 			ghi
 			"""
@@ -190,7 +196,7 @@ tester.equal 95, new Mapper("""
 				line += ' ' + undented(next)
 			return line
 
-	tester.equal 193, new TestMapper("""
+	tester.equal 199, new TestMapper("""
 			str = compare(
 					"abcde",
 					expected
@@ -201,7 +207,7 @@ tester.equal 95, new Mapper("""
 					long parameters
 
 			# --- DONE ---
-			"""), """
+			""", import.meta.url), """
 			str = compare( "abcde", expected )
 			call func with multiple long parameters
 			"""
@@ -226,11 +232,11 @@ tester.equal 95, new Mapper("""
 			else
 				return line
 
-	tester.equal 229, new TestMapper("""
+	tester.equal 235, new TestMapper("""
 			abc
 
 			def
-			"""), """
+			""", import.meta.url), """
 			123
 			456
 			"""
@@ -240,11 +246,11 @@ tester.equal 95, new Mapper("""
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 243, new Mapper("""
+tester.equal 249, """
 		abc
 			#include title.md
 		def
-		"""), """
+		""", """
 		abc
 			title
 			=====
@@ -277,12 +283,12 @@ tester.equal 243, new Mapper("""
 			else
 				return line
 
-	tester.equal 280, new TestMapper("""
+	tester.equal 286, new TestMapper("""
 			abc
 			myvar    <==     2 * 3
 
 			def
-			"""), """
+			""", import.meta.url), """
 			abc
 			`$:{
 			myvar = 2 * 3
@@ -309,12 +315,12 @@ tester.equal 243, new Mapper("""
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser(text)
+	oInput = new TestParser(text, import.meta.url)
 	lPair = oInput.get()
-	simple.equal 314, lPair[0], 'p a paragraph'
+	simple.equal 320, lPair[0], 'p a paragraph'
 	lPair = oInput.get()
-	simple.equal 316, lPair[0], 'div:markdown'
-	simple.equal 317, block, '\ttitle\n\t====='
+	simple.equal 322, lPair[0], 'div:markdown'
+	simple.equal 323, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -336,12 +342,12 @@ tester.equal 243, new Mapper("""
 				line 1
 
 				line 3
-			""")
+			""", import.meta.url)
 	lPair = oInput.get()
-	simple.equal 341, lPair[0], 'p a paragraph'
+	simple.equal 347, lPair[0], 'p a paragraph'
 	lPair = oInput.get()
-	simple.equal 343, lPair[0], 'div:markdown'
-	simple.equal 344, block, """
+	simple.equal 349, lPair[0], 'div:markdown'
+	simple.equal 350, block, """
 			line 1
 
 			line 3
@@ -365,14 +371,14 @@ tester.equal 243, new Mapper("""
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser(text)
+	oInput = new TestParser(text, import.meta.url)
 	lPair = oInput.get()
-	simple.equal 370, lPair[0], 'p a paragraph'
+	simple.equal 376, lPair[0], 'p a paragraph'
 
 	lPair = oInput.get()
-	simple.equal 373, lPair[0], 'div:markdown'
+	simple.equal 379, lPair[0], 'div:markdown'
 
-	simple.equal 375, block, '\ttitle\n\t====='
+	simple.equal 381, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -398,9 +404,7 @@ tester.equal 243, new Mapper("""
 		```
 	###
 
-	oInput = new Mapper(text)
-
-	tester.equal 403, oInput, """
+	tester.equal 409, text, """
 		p a paragraph
 		div:markdown
 			header
@@ -414,13 +418,13 @@ tester.equal 243, new Mapper("""
 # ---------------------------------------------------------------------------
 # --- Test comment
 
-tester.equal 417, new Mapper("""
+tester.equal 423, """
 		abc
 
 		# --- this is a comment
 
 		def
-		"""), """
+		""", """
 		abc
 
 		# --- this is a comment
@@ -459,13 +463,13 @@ tester.equal 417, new Mapper("""
 			else
 				return line
 
-	tester2.equal 474, new TestMapper2("""
+	tester2.equal 468, new TestMapper2("""
 			abc
 			#if x==y
 				def
 			#else
 				ghi
-			"""), [
+			""", import.meta.url), [
 			['abc', 0],
 			[{ cmd: 'if', argstr: 'x==y' }, 0],
 			['def', 1],

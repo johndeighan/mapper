@@ -18,6 +18,10 @@ import {
   CieloMapper
 } from '@jdeighan/mapper';
 
+import {
+  TreeWalker
+} from '@jdeighan/mapper/walker';
+
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // --- To derive a class from this:
@@ -93,6 +97,46 @@ export var TreeMapper = class TreeMapper extends CieloMapper {
     debug("return from getTree()", tree);
     return tree;
   }
+
+  // ..........................................................
+  walk() {
+    var MyTreeWalker, mapper, tree, walker;
+    tree = this.getTree();
+    // --- We need this to access our visit() and endVisit()
+    //     methods from inside this new class
+    mapper = this;
+    // --- Create a subclass of TreeWalker that
+    //     uses our instances of visit() and endVisit()
+    MyTreeWalker = class MyTreeWalker extends TreeWalker {
+      visit(node, hInfo, level) {
+        return mapper.visit(node, hInfo, level);
+      }
+
+      endVisit(node, hInfo, level) {
+        return mapper.visit(node, hInfo, level);
+      }
+
+      getResult() {
+        return mapper.getResult();
+      }
+
+    };
+    // --- Create an instance of our new class, then walk()
+    walker = new MyTreeWalker(tree);
+    return walker.walk();
+  }
+
+  // ..........................................................
+  getResult() {
+    return undef;
+  }
+
+  // ..........................................................
+  visit(node, hInfo, level) {}
+
+  // ..........................................................
+  // --- called after all subtrees have been visited
+  endVisit(node, hInfo, level) {}
 
 };
 

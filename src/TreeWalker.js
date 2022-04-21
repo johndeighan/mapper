@@ -53,10 +53,20 @@ export var TreeWalker = class TreeWalker {
   }
 
   // ..........................................................
+  // --- Called after walk() completes
+  //     Override to have walk() return some result
+  getResult() {
+    return undef;
+  }
+
+  // ..........................................................
   walk() {
+    var result;
     debug("enter TreeWalker.walk()");
     this.walkNodes(this.tree, 0);
-    debug("return from TreeWalker.walk()");
+    result = this.getResult();
+    debug("return from TreeWalker.walk()", result);
+    return result;
   }
 
   // ..........................................................

@@ -41,13 +41,22 @@ export class TreeWalker
 		debug "return from TreeWalker()", @hStdKeys
 
 	# ..........................................................
+	# --- Called after walk() completes
+	#     Override to have walk() return some result
+
+	getResult: () ->
+
+		return undef
+
+	# ..........................................................
 
 	walk: () ->
 
 		debug "enter TreeWalker.walk()"
 		@walkNodes @tree, 0
-		debug "return from TreeWalker.walk()"
-		return
+		result = @getResult()
+		debug "return from TreeWalker.walk()", result
+		return result
 
 	# ..........................................................
 

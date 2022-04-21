@@ -6,6 +6,7 @@ import {
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {CieloMapper} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/walker'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -82,6 +83,50 @@ export class TreeMapper extends CieloMapper
 		@tree = tree
 		debug "return from getTree()", tree
 		return tree
+
+	# ..........................................................
+
+	walk: () ->
+
+		tree = @getTree()
+
+		# --- We need this to access our visit() and endVisit()
+		#     methods from inside this new class
+		mapper = this
+
+		# --- Create a subclass of TreeWalker that
+		#     uses our instances of visit() and endVisit()
+
+		class MyTreeWalker extends TreeWalker
+			visit: (node, hInfo, level) ->
+				return mapper.visit(node, hInfo, level)
+			endVisit: (node, hInfo, level) ->
+				return mapper.visit(node, hInfo, level)
+			getResult: () ->
+				return mapper.getResult()
+
+		# --- Create an instance of our new class, then walk()
+		walker = new MyTreeWalker(tree)
+		return walker.walk()
+
+	# ..........................................................
+
+	getResult: () ->
+
+		return undef
+
+	# ..........................................................
+
+	visit: (node, hInfo, level) ->
+
+		return
+
+	# ..........................................................
+	# --- called after all subtrees have been visited
+
+	endVisit: (node, hInfo, level) ->
+
+		return
 
 # ---------------------------------------------------------------------------
 # Utility function to get a tree from text,

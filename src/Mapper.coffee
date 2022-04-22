@@ -214,12 +214,12 @@ export class StringFetcher
 
 	getBlock: () ->
 
-		debug "enter getBlock()"
+		debug "enter StringFetcher.getBlock()"
 		lLines = while line = @fetch()
 			assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
 			line
 		block = arrayToBlock(lLines)
-		debug "return from getBlock()", block
+		debug "return from StringFetcher.getBlock()", block
 		return block
 
 # ===========================================================================
@@ -318,12 +318,9 @@ export class Mapper extends StringFetcher
 			result = @mapLine(str, level)
 			debug "MAP: '#{str}' => #{OL(result)}"
 
-		if result?
-			debug "return [#{OL(result)}, #{level}] from Mapper.get()"
-			return [result, level]
-		else
-			debug "return undef from Mapper.get()"
-			return undef
+		lResult = [result, level]
+		debug "return from Mapper.get()", lResult
+		return lResult
 
 	# ..........................................................
 	# --- Fetch a block of text at level or greater than 'level'
@@ -385,10 +382,16 @@ export class Mapper extends StringFetcher
 
 	getBlock: () ->
 
-		lLines = for [line, level] in @getAll()
-			assert isString(line), "getBlock(): got non-string"
-			indented(line, level)
-		return arrayToBlock(lLines)
+		debug "enter Mapper.getBlock()"
+		lLines = []
+		for lResult in @getAll()
+			[line, level] = lResult
+			if line?
+				assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
+				lLines.push indented(line, level)
+		block = arrayToBlock(lLines)
+		debug "return from Mapper.getBlock()", block
+		return block
 
 # ===========================================================================
 

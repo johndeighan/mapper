@@ -65,6 +65,7 @@ export var TreeMapper = class TreeMapper extends CieloMapper {
     // --- This returns a list of pairs, but
     //     we don't need the level anymore since it's
     //     also stored in the node
+    debug("enter TreeMapper.getAll()");
     lPairs = super.getAll();
     debug("lPairs", lPairs);
     lItems = (function() {
@@ -76,7 +77,7 @@ export var TreeMapper = class TreeMapper extends CieloMapper {
       }
       return results;
     })();
-    debug("lItems", lItems);
+    debug("return from TreeMapper.getAll()", lItems);
     return lItems;
   }
 
@@ -89,6 +90,7 @@ export var TreeMapper = class TreeMapper extends CieloMapper {
       return this.tree;
     }
     lItems = this.getAll();
+    debug("from getAll()", lItems);
     assert(lItems != null, "lItems is undef");
     assert(isArray(lItems), "getTree(): lItems is not an array");
     // --- treeify will consume its input, so we'll first

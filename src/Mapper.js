@@ -242,7 +242,7 @@ export var StringFetcher = class StringFetcher {
   // ..........................................................
   getBlock() {
     var block, lLines, line;
-    debug("enter getBlock()");
+    debug("enter StringFetcher.getBlock()");
     lLines = (function() {
       var results;
       results = [];
@@ -253,7 +253,7 @@ export var StringFetcher = class StringFetcher {
       return results;
     }).call(this);
     block = arrayToBlock(lLines);
-    debug("return from getBlock()", block);
+    debug("return from StringFetcher.getBlock()", block);
     return block;
   }
 
@@ -323,7 +323,7 @@ export var Mapper = class Mapper extends StringFetcher {
 
   // ..........................................................
   get() {
-    var level, line, result, saved, str;
+    var lResult, level, line, result, saved, str;
     debug(`enter Mapper.get() - from ${this.filename}`);
     if (this.lookahead != null) {
       saved = this.lookahead;
@@ -347,13 +347,9 @@ export var Mapper = class Mapper extends StringFetcher {
       result = this.mapLine(str, level);
       debug(`MAP: '${str}' => ${OL(result)}`);
     }
-    if (result != null) {
-      debug(`return [${OL(result)}, ${level}] from Mapper.get()`);
-      return [result, level];
-    } else {
-      debug("return undef from Mapper.get()");
-      return undef;
-    }
+    lResult = [result, level];
+    debug("return from Mapper.get()", lResult);
+    return lResult;
   }
 
   // ..........................................................
@@ -414,19 +410,21 @@ export var Mapper = class Mapper extends StringFetcher {
 
   // ..........................................................
   getBlock() {
-    var lLines, level, line;
-    lLines = (function() {
-      var i, len, ref, results;
-      ref = this.getAll();
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        [line, level] = ref[i];
-        assert(isString(line), "getBlock(): got non-string");
-        results.push(indented(line, level));
+    var block, i, lLines, lResult, len, level, line, ref;
+    debug("enter Mapper.getBlock()");
+    lLines = [];
+    ref = this.getAll();
+    for (i = 0, len = ref.length; i < len; i++) {
+      lResult = ref[i];
+      [line, level] = lResult;
+      if (line != null) {
+        assert(isString(line), `getBlock(): got non-string '${OL(line)}'`);
+        lLines.push(indented(line, level));
       }
-      return results;
-    }).call(this);
-    return arrayToBlock(lLines);
+    }
+    block = arrayToBlock(lLines);
+    debug("return from Mapper.getBlock()", block);
+    return block;
   }
 
 };

@@ -395,20 +395,20 @@ export var Mapper = class Mapper extends StringFetcher {
   // ..........................................................
   getAll() {
     var lPair, lPairs;
-    debug("enter Mapper.getAll()");
+    debug("enter Mapper.getAll()", this.lBuffer);
     if (this.lAllPairs != null) {
       debug("return cached lAllPairs from Mapper.getAll()");
       return this.lAllPairs;
     }
-    lPairs = [];
     // --- Each pair is [<result>, <level>],
     //     where <result> can be anything
+    lPairs = [];
     while ((lPair = this.get()) != null) {
+      debug("GOT PAIR", lPair);
       lPairs.push(lPair);
     }
-    this.lAllPairs = lPairs;
-    debug("lAllPairs", this.lAllPairs);
-    debug(`return ${lPairs.length} pairs from Mapper.getAll()`);
+    this.lAllPairs = lPairs; // cache
+    debug("return from Mapper.getAll()", lPairs);
     return lPairs;
   }
 
@@ -484,7 +484,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // --- designed to override with a mapping method
   //     NOTE: line does not include the indentation
   mapLine(line, level) {
-    var cmd, hResult, lContLines, lParts, longline, orgLineNum, replaced, result, tail, verylongline;
+    var cmd, hResult, handled, lContLines, lParts, longline, orgLineNum, replaced, result, tail, verylongline;
     debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);
     assert(line != null, "mapLine(): line is undef");
     assert(isString(line), `mapLine(): ${OL(line)} not a string`);
@@ -498,9 +498,13 @@ export var CieloMapper = class CieloMapper extends Mapper {
     if (lParts) {
       debug("found command", lParts);
       [cmd, tail] = lParts;
-      result = this.handleCommand(cmd, tail, level);
-      debug(`return ${OL(result)} from CieloMapper.mapLine() - command handled`);
-      return result;
+      [handled, result] = this.handleCommand(cmd, tail, level);
+      if (handled) {
+        debug("return from CieloMapper.mapLine()", result);
+        return result;
+      } else {
+        croak(`Unknown command: '${line}'`);
+      }
     }
     if (isComment(line)) {
       result = this.handleComment(line, level);
@@ -566,6 +570,8 @@ export var CieloMapper = class CieloMapper extends Mapper {
   }
 
   // ..........................................................
+  // --- handleCommand must return a pair:
+  //        [handled:boolean, result:any]
   handleCommand(cmd, argstr, level) {
     var _, lMatches, name, prefix, tail;
     debug(`enter handleCommand ${cmd} '${argstr}', ${level}`);
@@ -582,13 +588,15 @@ export var CieloMapper = class CieloMapper extends Mapper {
             this.setVariable(name, tail);
           }
         }
+        debug("return undef from handleCommand() - handled #define");
+        return [true, undef];
+      default:
+        debug("return undef from handleCommand() - not handled");
+        return [false, undef];
     }
-    debug("return undef from handleCommand()");
-    return undef; // return value added to output if not undef
   }
 
-  
-    // ..........................................................
+  // ..........................................................
   setVariable(name, value) {
     debug(`enter setVariable('${name}')`, value);
     assert(isString(name), "name is not a string");

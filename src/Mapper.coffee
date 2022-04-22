@@ -366,19 +366,19 @@ export class Mapper extends StringFetcher
 
 	getAll: () ->
 
-		debug "enter Mapper.getAll()"
+		debug "enter Mapper.getAll()", @lBuffer
 		if @lAllPairs?
 			debug "return cached lAllPairs from Mapper.getAll()"
 			return @lAllPairs
-		lPairs = []
 
 		# --- Each pair is [<result>, <level>],
 		#     where <result> can be anything
+		lPairs = []
 		while (lPair = @get())?
+			debug "GOT PAIR", lPair
 			lPairs.push(lPair)
-		@lAllPairs = lPairs
-		debug "lAllPairs", @lAllPairs
-		debug "return #{lPairs.length} pairs from Mapper.getAll()"
+		@lAllPairs = lPairs   # cache
+		debug "return from Mapper.getAll()", lPairs
 		return lPairs
 
 	# ..........................................................
@@ -465,9 +465,12 @@ export class CieloMapper extends Mapper
 		if lParts
 			debug "found command", lParts
 			[cmd, tail] = lParts
-			result = @handleCommand cmd, tail, level
-			debug "return #{OL(result)} from CieloMapper.mapLine() - command handled"
-			return result
+			[handled, result] = @handleCommand cmd, tail, level
+			if handled
+				debug "return from CieloMapper.mapLine()", result
+				return result
+			else
+				croak "Unknown command: '#{line}'"
 
 		if isComment(line)
 			result = @handleComment(line, level)
@@ -538,6 +541,8 @@ export class CieloMapper extends Mapper
 			return undef
 
 	# ..........................................................
+	# --- handleCommand must return a pair:
+	#        [handled:boolean, result:any]
 
 	handleCommand: (cmd, argstr, level) ->
 
@@ -557,9 +562,11 @@ export class CieloMapper extends Mapper
 					else
 						debug "set var #{name} to '#{tail}'"
 						@setVariable name, tail
-
-		debug "return undef from handleCommand()"
-		return undef   # return value added to output if not undef
+				debug "return undef from handleCommand() - handled #define"
+				return [true, undef]
+			else
+				debug "return undef from handleCommand() - not handled"
+				return [false, undef]
 
 	# ..........................................................
 

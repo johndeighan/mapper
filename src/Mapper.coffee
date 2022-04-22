@@ -457,10 +457,14 @@ export class CieloMapper extends Mapper
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
 			result = @handleEmptyLine(@curLevel)
-			debug "return #{OL(result)} from CieloMapper.mapLine() - empty line"
+			debug "return from CieloMapper.mapLine() - empty line", result
 			return result
 
-		debug "line is not empty, checking for command"
+		if isComment(line)
+			result = @handleComment(line, level)
+			debug "return from CieloMapper.mapLine() - comment", result
+			return result
+
 		lParts = @splitCommand(line)
 		if lParts
 			debug "found command", lParts
@@ -471,11 +475,6 @@ export class CieloMapper extends Mapper
 				return result
 			else
 				croak "Unknown command: '#{line}'"
-
-		if isComment(line)
-			result = @handleComment(line, level)
-			debug "return #{OL(result)} from CieloMapper.mapLine() - comment"
-			return result
 
 		debug "hVars", @hVars
 		replaced = replaceVars(line, @hVars)

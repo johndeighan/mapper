@@ -33,9 +33,11 @@ import {
 //           HEREDOC lines into the original string
 export var TreeMapper = class TreeMapper extends CieloMapper {
   constructor(content, source) {
+    debug("enter TreeMapper()");
     super(content, source);
     // --- Cached tree, in case getTree() is called multiple times
     this.tree = undef;
+    debug("return from TreeMapper()");
   }
 
   // ..........................................................

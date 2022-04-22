@@ -429,8 +429,9 @@ export class CieloMapper extends Mapper
 	# - handles #define <name> <value> and __<name>__ substitution
 
 	constructor: (content, source) ->
-		super content, source
+
 		debug "enter CieloMapper(source='#{source}')", content
+		super content, source
 
 		@hVars = {
 			FILE: @filename
@@ -467,9 +468,14 @@ export class CieloMapper extends Mapper
 
 		lParts = @splitCommand(line)
 		if lParts
-			debug "found command", lParts
-			[cmd, tail] = lParts
-			[handled, result] = @handleCommand cmd, tail, level
+			debug "COMMAND", lParts
+			[cmd, argstr] = lParts
+
+			lResult = @handleCommand cmd, argstr, level
+			debug "handleCommand() returned #{OL(lResult)}"
+			assert isArray(lResult), "handleCommand() failed to return array"
+
+			[handled, result] = lResult
 			if handled
 				debug "return from CieloMapper.mapLine()", result
 				return result
@@ -545,7 +551,7 @@ export class CieloMapper extends Mapper
 
 	handleCommand: (cmd, argstr, level) ->
 
-		debug "enter handleCommand #{cmd} '#{argstr}', #{level}"
+		debug "enter CieloMapper.handleCommand #{cmd} '#{argstr}', #{level}"
 		switch cmd
 			when 'define'
 				if lMatches = argstr.match(///^
@@ -561,11 +567,11 @@ export class CieloMapper extends Mapper
 					else
 						debug "set var #{name} to '#{tail}'"
 						@setVariable name, tail
-				debug "return undef from handleCommand() - handled #define"
-				return [true, undef]
+				result = [true, undef]
 			else
-				debug "return undef from handleCommand() - not handled"
-				return [false, undef]
+				result = [false, undef]
+		debug "return from CieloMapper.handleCommand()", result
+		return result
 
 	# ..........................................................
 

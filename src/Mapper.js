@@ -465,8 +465,8 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // - handles HEREDOCs
   // - handles #define <name> <value> and __<name>__ substitution
   constructor(content, source) {
-    super(content, source);
     debug(`enter CieloMapper(source='${source}')`, content);
+    super(content, source);
     this.hVars = {
       FILE: this.filename,
       DIR: this.hSourceInfo.dir,
@@ -484,7 +484,7 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // --- designed to override with a mapping method
   //     NOTE: line does not include the indentation
   mapLine(line, level) {
-    var cmd, hResult, handled, lContLines, lParts, longline, orgLineNum, replaced, result, tail, verylongline;
+    var argstr, cmd, hResult, handled, lContLines, lParts, lResult, longline, orgLineNum, replaced, result, verylongline;
     debug(`enter CieloMapper.mapLine(${OL(line)}, ${level})`);
     assert(line != null, "mapLine(): line is undef");
     assert(isString(line), `mapLine(): ${OL(line)} not a string`);
@@ -500,9 +500,12 @@ export var CieloMapper = class CieloMapper extends Mapper {
     }
     lParts = this.splitCommand(line);
     if (lParts) {
-      debug("found command", lParts);
-      [cmd, tail] = lParts;
-      [handled, result] = this.handleCommand(cmd, tail, level);
+      debug("COMMAND", lParts);
+      [cmd, argstr] = lParts;
+      lResult = this.handleCommand(cmd, argstr, level);
+      debug(`handleCommand() returned ${OL(lResult)}`);
+      assert(isArray(lResult), "handleCommand() failed to return array");
+      [handled, result] = lResult;
       if (handled) {
         debug("return from CieloMapper.mapLine()", result);
         return result;
@@ -572,8 +575,8 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // --- handleCommand must return a pair:
   //        [handled:boolean, result:any]
   handleCommand(cmd, argstr, level) {
-    var _, lMatches, name, prefix, tail;
-    debug(`enter handleCommand ${cmd} '${argstr}', ${level}`);
+    var _, lMatches, name, prefix, result, tail;
+    debug(`enter CieloMapper.handleCommand ${cmd} '${argstr}', ${level}`);
     switch (cmd) {
       case 'define':
         if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
@@ -587,12 +590,13 @@ export var CieloMapper = class CieloMapper extends Mapper {
             this.setVariable(name, tail);
           }
         }
-        debug("return undef from handleCommand() - handled #define");
-        return [true, undef];
+        result = [true, undef];
+        break;
       default:
-        debug("return undef from handleCommand() - not handled");
-        return [false, undef];
+        result = [false, undef];
     }
+    debug("return from CieloMapper.handleCommand()", result);
+    return result;
   }
 
   // ..........................................................

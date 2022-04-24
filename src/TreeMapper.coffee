@@ -50,20 +50,20 @@ export class TreeMapper extends CieloMapper
 
 	# ..........................................................
 
-	getAll: () ->
+	getAllPairs: () ->
 
 		# --- This returns a list of pairs, but
 		#     we don't need the level anymore since it's
 		#     also stored in the node
 
-		debug "enter TreeMapper.getAll()"
+		debug "enter TreeMapper.getAllPairs()"
 
 		lPairs = super()
 		debug "lPairs", lPairs
 
 		lItems = for pair in lPairs
 			pair[0]
-		debug "return from TreeMapper.getAll()", lItems
+		debug "return from TreeMapper.getAllPairs()", lItems
 		return lItems
 
 	# ..........................................................
@@ -75,8 +75,8 @@ export class TreeMapper extends CieloMapper
 			debug "return cached tree from getTree()"
 			return @tree
 
-		lItems = @getAll()
-		debug "from getAll()", lItems
+		lItems = @getAllPairs()
+		debug "from getAllPairs()", lItems
 
 		assert lItems?, "lItems is undef"
 		assert isArray(lItems), "getTree(): lItems is not an array"

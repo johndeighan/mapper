@@ -14,7 +14,6 @@ simple = new UnitTesterNorm()
 ###
 	class StringFetcher should handle the following:
 		- #include <file> statements
-		- replace __LINE, __DIR, __FILE
 		- end file at __END__
 ###
 
@@ -29,23 +28,23 @@ simple = new UnitTesterNorm()
 			""", import.meta.url)
 
 	line = input.fetch()
-	simple.equal 32, line, 'abc'
+	simple.equal 31, line, 'abc'
 
-	simple.equal 34, input.filename, 'StringFetcher.test.js'
-	simple.equal 35, input.lineNum, 1
+	simple.equal 33, input.filename, 'StringFetcher.test.js'
+	simple.equal 34, input.lineNum, 1
 
 	line = input.fetch()
-	simple.equal 38, line, '\tdef'
+	simple.equal 37, line, '\tdef'
 	input.unfetch(line)            # make available again
 
 	line = input.fetch()
-	simple.equal 42, line, '\tdef'
+	simple.equal 41, line, '\tdef'
 
 	line = input.fetch()
-	simple.equal 45, line, '\t\tghi'
+	simple.equal 44, line, '\t\tghi'
 
 	line = input.fetch()
-	simple.equal 48, line, undef
+	simple.equal 47, line, undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -53,19 +52,14 @@ simple = new UnitTesterNorm()
 class FetcherTester extends UnitTester
 
 	transformValue: (block) ->
-
-		fetcher = new StringFetcher(block, import.meta.url)
-		lLines = []
-		while (line = fetcher.fetch())?
-			lLines.push line
-		return arrayToBlock(lLines)
+		return new StringFetcher(block, import.meta.url).getBlock()
 
 tester = new FetcherTester()
 
 # ---------------------------------------------------------------------------
 # --- Test basic reading till EOF
 
-tester.equal 68, """
+tester.equal 62, """
 		abc
 		def
 		""", """
@@ -73,7 +67,7 @@ tester.equal 68, """
 		def
 		"""
 
-tester.equal 76, """
+tester.equal 70, """
 		abc
 
 		def
@@ -86,7 +80,7 @@ tester.equal 76, """
 # ---------------------------------------------------------------------------
 # --- Test __END__
 
-tester.equal 89, """
+tester.equal 83, """
 		abc
 		__END__
 		def
@@ -94,7 +88,9 @@ tester.equal 89, """
 		abc
 		"""
 
-tester.equal 97, """
+# --- Indented __END__ doesn't end the file
+
+tester.equal 93, """
 		abc
 			def
 			__END__
@@ -111,13 +107,13 @@ tester.equal 97, """
 # --- Test #include
 
 ###
-	Contents of file test/data/file.txt:
+Contents of file test/data/file.txt:
 
-	abc
-	def
+abc
+def
 ###
 
-tester.equal 120, """
+tester.equal 116, """
 		first line
 
 			#include file.txt
@@ -127,6 +123,30 @@ tester.equal 120, """
 
 			def
 			ghi
+		last line
+		"""
+
+# ---------------------------------------------------------------------------
+# --- Test #include with 2 levels
+
+###
+Contents of file test/data/file3.txt:
+
+abc
+	def
+	#include file.txt
+###
+
+tester.equal 140, """
+		test this
+			#include file3.txt
+		last line
+		""", """
+		test this
+			abc
+				def
+				def
+				ghi
 		last line
 		"""
 
@@ -141,7 +161,7 @@ __END__
 def
 ###
 
-tester.equal 144, """
+tester.equal 164, """
 		first line
 
 			#include file2.txt

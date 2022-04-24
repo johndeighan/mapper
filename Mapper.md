@@ -2,7 +2,7 @@ class Mapper
 =================
 
 A Mapper object is a subclass of StringFetcher, and is therefore
-constructed from a block (i.e. a multi-line string) and an optional source.
+constructed from a block (i.e. a multi-line string) and a source.
 It has the following features:
 
 1. Methods get(), unget(), peek() and skip(), which deal with

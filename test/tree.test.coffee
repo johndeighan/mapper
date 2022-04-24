@@ -23,7 +23,7 @@ class GatherTester extends UnitTester
 			oInput = input
 		else
 			croak "GatherTester(): Invalid input #{typeof input}"
-		return oInput.getAll()
+		return oInput.getAllPairs()
 
 tester = new GatherTester()
 

@@ -9,6 +9,7 @@
 	"main": "./StringInput.js",
 	"exports": {
 		".": "./src/Mapper.js",
+		"./utils": "./src/utils.js",
 		"./taml": "./src/taml.js",
 		"./markdown": "./src/markdown.js",
 		"./sass": "./src/sass.js",
@@ -48,10 +49,10 @@
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
 		"@jdeighan/unit-tester": "^2.0.0",
-		"coffeescript": "^2.6.1"
+		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^7.0.23",
+		"@jdeighan/coffee-utils": "^7.0.24",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.14",
 		"sass": "^1.50.1"

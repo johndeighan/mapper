@@ -14,8 +14,9 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 
 import {
-	CieloMapper, stdSplitCommand, stdIsComment,
-	} from '@jdeighan/mapper'
+	stdSplitCommand, stdIsComment,
+	} from '@jdeighan/mapper/utils'
+import {CieloMapper} from '@jdeighan/mapper'
 import {addHereDocType} from '@jdeighan/mapper/heredoc'
 import {FuncHereDoc} from '@jdeighan/mapper/func'
 import {TAMLHereDoc} from '@jdeighan/mapper/taml'

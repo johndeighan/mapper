@@ -433,7 +433,7 @@ tester.equal 423, """
 		"""
 
 # ---------------------------------------------------------------------------
-# --- Test using getAll(), i.e. retrieving non-text
+# --- Test using getAllPairs(), i.e. retrieving non-text
 
 (()->
 
@@ -443,7 +443,7 @@ tester.equal 423, """
 
 			assert oInput instanceof Mapper,
 				"oInput should be a Mapper object"
-			return oInput.getAll()
+			return oInput.getAllPairs()
 
 	tester2 = new GatherTester2()
 

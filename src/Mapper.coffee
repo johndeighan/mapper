@@ -5,21 +5,23 @@ import pathlib from 'path'
 
 import {
 	assert, error, undef, pass, croak, isString, isEmpty, nonEmpty,
-	escapeStr, isComment, isArray, isHash, isInteger, deepCopy,
-	OL, CWS, replaceVars,
+	escapeStr, isComment, isArray, isHash, isInteger, isBoolean,
+	deepCopy, OL, CWS, replaceVars,
 	} from '@jdeighan/coffee-utils'
 import {
 	blockToArray, arrayToBlock, firstLine, remainingLines,
 	} from '@jdeighan/coffee-utils/block'
 import {log} from '@jdeighan/coffee-utils/log'
 import {
-	slurp, pathTo, mydir, parseSource, mkpath, isDir,
+	slurp, pathTo, mydir, parseSource, mkpath, isDir, isSimpleFileName,
 	} from '@jdeighan/coffee-utils/fs'
 import {
 	splitLine, indented, undented, indentLevel,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
+
+import {stdSplitCommand, stdIsComment} from '@jdeighan/mapper/utils'
 import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ---------------------------------------------------------------------------
@@ -49,6 +51,7 @@ export class StringFetcher
 		#     source may be a URL, e.g. import.meta.url
 
 		@hSourceInfo = parseSource(source)
+		assert @hSourceInfo.filename?, "setContent(): no filename set"
 		@filename = @hSourceInfo.filename
 		assert @filename, "StringFetcher: parseSource returned no filename"
 		if ! content?
@@ -65,7 +68,7 @@ export class StringFetcher
 			# -- make a deep copy
 			@lBuffer = deepCopy(content)
 		else
-			croak "StringFetcher(): content must be a string",
+			croak "StringFetcher(): content must be a string or arrayS",
 					"CONTENT", content
 
 		@lineNum = 0
@@ -95,8 +98,8 @@ export class StringFetcher
 		debug "enter getIncludeFileFullPath('#{fname}')"
 
 		# --- Make sure we have a simple file name
-		{root, dir, base, ext} = pathlib.parse(fname)
-		assert ! dir, "getIncludeFileFullPath(): not a simple file name"
+		assert isSimpleFileName(fname), \
+				"getIncludeFileFullPath(): not a simple file name"
 
 		# --- Decide which directory to search for file
 		dir = @hSourceInfo.dir
@@ -136,7 +139,6 @@ export class StringFetcher
 		#               just return it as is
 
 		debug "enter fetch(literal=#{literal}) from #{@filename}"
-		# --- @checkBuffer "in fetch()"
 		if @altInput
 			assert @altLevel?, "fetch(): alt input without alt level"
 			line = @altInput.fetch(literal)
@@ -215,7 +217,7 @@ export class StringFetcher
 	getBlock: () ->
 
 		debug "enter StringFetcher.getBlock()"
-		lLines = while line = @fetch()
+		lLines = while (line = @fetch())?
 			assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
 			line
 		block = arrayToBlock(lLines)
@@ -234,9 +236,44 @@ export class Mapper extends StringFetcher
 		super content, source
 		@lookahead = undef   # --- lookahead token, placed by unget
 
-		# --- cache in case getAll() is called multiple times
+		# --- cache in case getAllPairs() is called multiple times
 		#     each pair is [<mapped str>, <level>]
 		@lAllPairs = undef
+
+	# ..........................................................
+
+	get: () ->
+
+		debug "enter Mapper.get() - from #{@filename}"
+		if @lookahead?
+			saved = @lookahead
+			@lookahead = undef
+			debug "return lookahead pair from Mapper.get()"
+			return saved
+
+		line = @fetch()    # will handle #include
+		debug "LINE", line
+
+		if ! line?
+			debug "return undef from Mapper.get() at EOF"
+			return undef
+
+		[level, str] = splitLine(line)
+		assert str? && isString(str), "Mapper.get(): not a string"
+		result = @mapLine(str, level)
+		debug "MAP: '#{str}' => #{OL(result)}"
+
+		# --- if mapLine() returns undef, we skip that line
+
+		while ! result? && (@lBuffer.length > 0)
+			line = @fetch()
+			[level, str] = splitLine(line)
+			result = @mapLine(str, level)
+			debug "MAP: '#{str}' => #{OL(result)}"
+
+		lResult = [result, level]
+		debug "return from Mapper.get()", lResult
+		return lResult
 
 	# ..........................................................
 
@@ -288,41 +325,6 @@ export class Mapper extends StringFetcher
 		return line
 
 	# ..........................................................
-
-	get: () ->
-
-		debug "enter Mapper.get() - from #{@filename}"
-		if @lookahead?
-			saved = @lookahead
-			@lookahead = undef
-			debug "return lookahead pair from Mapper.get()"
-			return saved
-
-		line = @fetch()    # will handle #include
-		debug "LINE", line
-
-		if ! line?
-			debug "return undef from Mapper.get() at EOF"
-			return undef
-
-		[level, str] = splitLine(line)
-		assert str? && isString(str), "Mapper.get(): not a string"
-		result = @mapLine(str, level)
-		debug "MAP: '#{str}' => #{OL(result)}"
-
-		# --- if mapLine() returns undef, we skip that line
-
-		while ! result? && (@lBuffer.length > 0)
-			line = @fetch()
-			[level, str] = splitLine(line)
-			result = @mapLine(str, level)
-			debug "MAP: '#{str}' => #{OL(result)}"
-
-		lResult = [result, level]
-		debug "return from Mapper.get()", lResult
-		return lResult
-
-	# ..........................................................
 	# --- Fetch a block of text at level or greater than 'level'
 	#     as one long string
 	# --- Designed to use in mapLine()
@@ -331,10 +333,6 @@ export class Mapper extends StringFetcher
 
 		debug "enter fetchBlock(#{atLevel})"
 		lLines = []
-
-		# --- NOTE: I absolutely hate using a backslash for line continuation
-		#           but CoffeeScript doesn't continue while there is an
-		#           open parenthesis like Python does :-(
 
 		line = undef
 		while (line = @fetch())?
@@ -355,17 +353,17 @@ export class Mapper extends StringFetcher
 			debug "RESULT", result
 			lLines.push result
 
-		retval = lLines.join('\n')
-		debug "return from fetchBlock with", retval
-		return retval
+		block = lLines.join('\n')
+		debug "return from fetchBlock with", block
+		return block
 
 	# ..........................................................
 
-	getAll: () ->
+	getAllPairs: () ->
 
-		debug "enter Mapper.getAll()", @lBuffer
+		debug "enter Mapper.getAllPairs()", @lBuffer
 		if @lAllPairs?
-			debug "return cached lAllPairs from Mapper.getAll()"
+			debug "return cached lAllPairs from Mapper.getAllPairs()"
 			return @lAllPairs
 
 		# --- Each pair is [<result>, <level>],
@@ -375,7 +373,7 @@ export class Mapper extends StringFetcher
 			debug "GOT PAIR", lPair
 			lPairs.push(lPair)
 		@lAllPairs = lPairs   # cache
-		debug "return from Mapper.getAll()", lPairs
+		debug "return from Mapper.getAllPairs()", lPairs
 		return lPairs
 
 	# ..........................................................
@@ -384,45 +382,17 @@ export class Mapper extends StringFetcher
 
 		debug "enter Mapper.getBlock()"
 		lLines = []
-		for lResult in @getAll()
+		for lResult in @getAllPairs()
 			[line, level] = lResult
 			if line?
-				assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
+				assert isString(line),
+						"getBlock(): got non-string '#{OL(line)}'"
 				lLines.push indented(line, level)
 		block = arrayToBlock(lLines)
 		debug "return from Mapper.getBlock()", block
 		return block
 
 # ===========================================================================
-
-export stdSplitCommand = (line, level) ->
-
-	if lMatches = line.match(///^
-			\#
-			([A-Za-z_]\w*)   # name of the command
-			\s*
-			(.*)             # argstr for command
-			$///)
-		[_, cmd, argstr] = lMatches
-		return [cmd, argstr]
-	else
-		return undef      # not a command
-
-# ---------------------------------------------------------------------------
-
-export stdIsComment = (line, level) ->
-
-	lMatches = line.match(///^
-			(\#+)     # one or more # characters
-			(.|$)     # following character, if any
-			///)
-	if lMatches
-		[_, hashes, ch] = lMatches
-		return (hashes.length > 1) || (ch in [' ','\t',''])
-	else
-		return false
-
-# ---------------------------------------------------------------------------
 
 export class CieloMapper extends Mapper
 	# - removes blank lines (but can be overridden)
@@ -450,6 +420,14 @@ export class CieloMapper extends Mapper
 		debug "return from CieloMapper()"
 
 	# ..........................................................
+	# --- override to keep variable LINE updated
+
+	incLineNum: (inc) ->
+		super inc    # adjusts property @lineNum
+		@hVars.LINE = @lineNum
+		return
+
+	# ..........................................................
 	# --- designed to override with a mapping method
 	#     NOTE: line does not include the indentation
 
@@ -469,7 +447,7 @@ export class CieloMapper extends Mapper
 			debug "return from CieloMapper.mapLine() - comment", result
 			return result
 
-		lParts = @splitCommand(line)
+		lParts = @isCommand(line)
 		if lParts
 			debug "COMMAND", lParts
 			[cmd, argstr] = lParts
@@ -479,42 +457,43 @@ export class CieloMapper extends Mapper
 			assert isArray(lResult), "handleCommand() failed to return array"
 
 			[handled, result] = lResult
+			assert isBoolean(handled),
+					"1st arg in handleCommand() result isn't boolean"
 			if handled
 				debug "return from CieloMapper.mapLine()", result
 				return result
 			else
 				croak "Unknown command: '#{line}'"
 
-		debug "hVars", @hVars
-		replaced = replaceVars(line, @hVars)
-		if replaced != line
-			debug "replaced", replaced
-
-		orgLineNum = @lineNum
-		@curLevel = level
-
 		# --- Merge in any continuation lines
 		debug "check for continuation lines"
 		lContLines = @getContLines(level)
 		if isEmpty(lContLines)
 			debug "no continuation lines found"
-			longline = replaced
 		else
 			debug "#{lContLines.length} continuation lines found"
-			longline = @joinContLines(replaced, lContLines)
-			debug "line becomes #{OL(longline)}"
+			line = @joinContLines(line, lContLines)
+			debug "line becomes #{OL(line)}"
+
+		debug "hVars", @hVars
+		debug 'line', line
+		newline = replaceVars(line, @hVars)
+		if newline != line
+			line = newline
+			debug "line becomes #{OL(line)}"
+
+		orgLineNum = @lineNum
+		@curLevel = level
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
-		if (line.indexOf('<<<') == -1)
-			verylongline = longline
-		else
-			hResult = @handleHereDoc(longline, level)
-			verylongline = hResult.line
-			debug "line becomes #{OL(verylongline)}"
+		if (line.indexOf('<<<') > -1)
+			hResult = @handleHereDoc(line, level)
+			line = hResult.line
+			debug "line becomes #{OL(line)}"
 
 		debug "mapping string"
-		result = @mapString(verylongline, level)
+		result = @mapString(line, level)
 		debug "return #{OL(result)} from CieloMapper.mapLine()"
 		return result
 
@@ -530,9 +509,23 @@ export class CieloMapper extends Mapper
 
 	# ..........................................................
 
-	splitCommand: (line, level) ->
+	isComment: (line, level) ->
 
-		debug "enter CieloMapper.splitCommand()"
+		debug "in CieloMapper.isComment()"
+		return stdIsComment(line, level)
+
+	# ..........................................................
+
+	handleComment: (line, level) ->
+
+		debug "in CieloMapper.handleComment()"
+		return line      # keep comments by default
+
+	# ..........................................................
+
+	isCommand: (line, level) ->
+
+		debug "enter CieloMapper.isCommand()"
 		if lMatches = line.match(///^
 				\#
 				([A-Za-z_]\w*)   # name of the command
@@ -541,11 +534,11 @@ export class CieloMapper extends Mapper
 				$///)
 			[_, cmd, argstr] = lMatches
 			lResult = [cmd, argstr]
-			debug "return from CieloMapper.splitCommand()", lResult
+			debug "return from CieloMapper.isCommand()", lResult
 			return lResult
 		else
 			# --- not a command
-			debug "return undef from CieloMapper.splitCommand()"
+			debug "return undef from CieloMapper.isCommand()"
 			return undef
 
 	# ..........................................................
@@ -579,90 +572,23 @@ export class CieloMapper extends Mapper
 	# ..........................................................
 
 	setVariable: (name, value) ->
+		# --- value can be a non-string
+		#     if so, when replacement occurs, it will be JSON stringified
 
 		debug "enter setVariable('#{name}')", value
 		assert isString(name), "name is not a string"
-		assert isString(value), "value is not a string"
-		assert (name not in ['DIR','FILE','LINE','END']),\
-				"Bad var name '#{name}'"
+		if isString(value)
+			assert (name not in ['DIR','FILE','LINE','END']),
+					"Bad var name '#{name}'"
 		@hVars[name] = value
 		debug "return from setVariable()"
 		return
 
 	# ..........................................................
-	# --- override to keep variable LINE updated
-
-	incLineNum: (inc) ->
-		super inc    # adjusts property @lineNum
-		@hVars.LINE = @lineNum
-		return
-
-	# ..........................................................
-
-	getContLines: (curlevel) ->
-
-		lLines = []
-		while (nextLine = @fetch(true))? \
-				&& (nonEmpty(nextLine)) \
-				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
-				&& (nextLevel >= curlevel+2)
-			lLines.push(nextStr)
-		if nextLine?
-			# --- we fetched a line we didn't want
-			@unfetch nextLine
-		return lLines
-
-	# ..........................................................
-
-	joinContLines: (line, lContLines) ->
-
-		for contLine in lContLines
-			if lMatches = line.match(/\s*\\$/)
-				n = lMatches[0].length
-				line = line.substr(0, line.length - n)
-			line += ' ' + contLine
-		return line
-
-	# ..........................................................
-
-	isComment: (line, level) ->
-
-		debug "in CieloMapper.isComment()"
-		return stdIsComment(line, level)
-
-	# ..........................................................
-
-	handleComment: (line, level) ->
-
-		debug "in CieloMapper.handleComment()"
-		return line      # keep comments by default
-
-	# ..........................................................
-
-	mapString: (line, level) ->
-		# --- NOTE: line has indentation removed
-		#     when overriding, may return anything
-		#     return undef to generate nothing
-
-		assert isString(line),
-				"default mapString(): #{OL(line)} is not a string"
-		return line
-
-	# ..........................................................
-
-	mapHereDoc: (block) ->
-		# --- A method you can override
-		#     Distinct from the mapHereDoc() function found in /heredoc
-
-		hResult = mapHereDoc(block)
-		assert isHash(hResult), "mapHereDoc(): hResult not a hash"
-		return hResult
-
-	# ..........................................................
 
 	handleHereDoc: (line, level) ->
 		# --- Indentation has been removed from line
-		# --- Find each '<<<' and replace with result of mapHereDoc()
+		# --- Find each '<<<' and replace with result of replaceHereDoc()
 
 		assert isString(line), "handleHereDoc(): not a string"
 		debug "enter handleHereDoc(#{OL(line)})"
@@ -671,7 +597,7 @@ export class CieloMapper extends Mapper
 		lNewParts = for part in lParts
 			if part == '<<<'
 				lLines = @getHereDocLines(level+1)
-				hResult = @mapHereDoc(arrayToBlock(lLines))
+				hResult = @replaceHereDoc(arrayToBlock(lLines))
 				lObjects.push hResult.obj
 				hResult.str
 			else
@@ -684,6 +610,15 @@ export class CieloMapper extends Mapper
 			}
 
 		debug "return from handleHereDoc", hResult
+		return hResult
+
+	# ..........................................................
+
+	replaceHereDoc: (block) ->
+		# --- A method you can override
+
+		hResult = mapHereDoc(block)
+		assert isHash(hResult), "replaceHereDoc(): hResult not a hash"
 		return hResult
 
 	# ..........................................................
@@ -715,6 +650,44 @@ export class CieloMapper extends Mapper
 			return ''           # interpret '.' as blank line
 		else
 			return line
+
+	# ..........................................................
+
+	getContLines: (curlevel) ->
+
+		lLines = []
+		while (nextLine = @fetch(true))? \
+				&& (nonEmpty(nextLine)) \
+				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
+				&& (nextLevel >= curlevel+2)
+			lLines.push(nextStr)
+		if nextLine?
+			# --- we fetched a line we didn't want
+			@unfetch nextLine
+		return lLines
+
+	# ..........................................................
+
+	joinContLines: (line, lContLines) ->
+
+		for contLine in lContLines
+			if lMatches = line.match(/\s*\\$/)
+				n = lMatches[0].length
+				line = line.substr(0, line.length - n)
+			line += ' ' + contLine
+		return line
+
+	# ..........................................................
+	# ..........................................................
+
+	mapString: (line, level) ->
+		# --- NOTE: line has indentation removed
+		#     when overriding, may return anything
+		#     return undef to generate nothing
+
+		assert isString(line),
+				"default mapString(): #{OL(line)} is not a string"
+		return line
 
 # ===========================================================================
 

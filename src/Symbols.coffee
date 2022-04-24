@@ -140,13 +140,19 @@ class SymbolParser extends CieloMapper
 				symbol = src = undef
 
 				# --- set variables symbol and possibly src
-				if lMatches = word.match(/^(\*?)([A-Za-z_][A-Za-z0-9_]*)$/)
+				if lMatches = word.match(///^
+						(\*?)
+						([A-Za-z_][A-Za-z0-9_]*)
+						$///)
 					[_, isDefault, symbol] = lMatches
-					# --- word is an identifier (skip words that contain '(' or ')')
+					# --- word is an identifier (skip words that contain ( or ))
 					if (i+2 < numWords)
 						nextWord = lWords[i+1]
 						if (nextWord == '(as')
-							lMatches = lWords[i+2].match(/^([A-Za-z_][A-Za-z0-9_]*)\)$/)
+							lMatches = lWords[i+2].match(///^
+									([A-Za-z_][A-Za-z0-9_]*)
+									\)
+									$///)
 							if lMatches
 								src = symbol
 								symbol = lMatches[1]
@@ -166,7 +172,7 @@ class SymbolParser extends CieloMapper
 
 	getSymbols: () ->
 
-		@getAll()
+		@getAllPairs()
 		return @hSymbols
 
 # ---------------------------------------------------------------------------

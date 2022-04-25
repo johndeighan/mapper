@@ -4,7 +4,8 @@ import {
   assert,
   undef,
   pass,
-  croak
+  croak,
+  isFunction
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -13,80 +14,109 @@ import {
 
 // ---------------------------------------------------------------------------
 //   class Getter - get(), unget(), peek(), eof()
-//   TODO: Currently works with arrays - make it work with any iterable!
 export var Getter = class Getter {
-  constructor(lItems) {
-    this.lItems = lItems;
-    this.lookahead = undef;
-    this.pos = 0;
-    this.len = this.lItems.length;
-    debug("Construct a Getter");
+  constructor(obj) {
+    debug("enter Getter()");
+    this.iterator = obj[Symbol.iterator]();
+    assert(this.iterator.next != null, "Getter(): Not an iterator");
+    assert(isFunction(this.iterator.next), "Getter(): next not a function");
+    this.lLookAhead = [];
+    debug("return from Getter()");
   }
 
+  // ..........................................................
+  hasLookAhead() {
+    return this.lLookAhead.length > 0;
+  }
+
+  // ..........................................................
+  lookahead() {
+    if (this.hasLookAhead()) {
+      return this.lLookAhead[this.lLookAhead.length - 1];
+    } else {
+      return undef;
+    }
+  }
+
+  // ..........................................................
   get() {
-    var item, saved;
-    debug("enter get()");
-    if (this.lookahead != null) {
-      saved = this.lookahead;
-      this.lookahead = undef;
-      debug("return from get() with lookahead token:", saved);
-      return saved;
+    var done, item, value;
+    debug("enter Getter.get()");
+    if (this.hasLookAhead()) {
+      item = this.lLookAhead.shift();
+      debug("return from Getter.get() with lookahead:", item);
+      return item;
     }
-    if (this.pos === this.len) {
-      debug("return undef from get() - pos == len", saved);
+    ({value, done} = this.iterator.next());
+    if (done) {
+      debug("return undef from Getter.get() - done == true");
       return undef;
     }
-    item = this.lItems[this.pos];
-    this.pos += 1;
-    debug("return from get() with:", item);
-    return item;
+    debug("return from Getter.get()", value);
+    return value;
   }
 
-  unget(item) {
-    debug(`enter unget(${item})`);
-    if (this.lookahead != null) {
-      debug("return FAILURE from unget() - lookahead exists");
-      croak("Getter.unget(): lookahead exists");
-    }
-    this.lookahead = item;
-    debug("return from unget()");
+  // ..........................................................
+  unget(value) {
+    debug("enter Getter.unget()", value);
+    assert(value != null, "unget(): value must be defined");
+    this.lLookAhead.unshift(value);
+    debug("return from Getter.unget()");
   }
 
+  // ..........................................................
   peek() {
-    var item;
-    debug('enter peek():');
-    if (this.lookahead != null) {
-      debug("return lookahead token from peek()", this.lookahead);
-      return this.lookahead;
+    var done, value;
+    debug('enter Getter.peek():');
+    if (this.hasLookAhead()) {
+      value = this.lookahead();
+      debug('lLookAhead', this.lLookAhead);
+      debug("return lookahead from Getter.peek()", value);
+      return value;
     }
-    item = this.get();
-    if (item == null) {
-      debug("return undef from peek()");
+    debug("no lookahead");
+    ({value, done} = this.iterator.next());
+    debug("from next()", {value, done});
+    if (done) {
+      debug('lLookAhead', this.lLookAhead);
+      debug("return undef from Getter.peek()");
       return undef;
     }
-    this.unget(item);
-    debug('return from peek() with:', item);
-    return item;
+    this.unget(value);
+    debug('lLookAhead', this.lLookAhead);
+    debug('return from Getter.peek()', value);
+    return value;
   }
 
+  // ..........................................................
   skip() {
-    var item;
-    debug('enter skip():');
-    if (this.lookahead != null) {
-      this.lookahead = undef;
-      debug("return from skip(): clear lookahead token");
+    debug('enter Getter.skip():');
+    if (this.hasLookAhead()) {
+      this.lLookAhead.shift();
+      debug("return from Getter.skip(): clear lookahead");
       return;
     }
-    item = this.get();
-    debug('return from skip()');
+    this.iterator.next();
+    debug('return from Getter.skip()');
   }
 
+  // ..........................................................
   eof() {
-    var atEnd;
-    debug("enter eof()");
-    atEnd = (this.pos === this.len) && (this.lookahead == null);
-    debug(`return ${atEnd} from eof()`);
-    return atEnd;
+    var done, value;
+    debug("enter Getter.eof()");
+    if (this.hasLookAhead()) {
+      debug("return false from Getter.eof() - lookahead exists");
+      return false;
+    }
+    ({value, done} = this.iterator.next());
+    debug("from next()", {value, done});
+    if (done) {
+      debug("return true from Getter.eof()");
+      return true;
+    }
+    this.unget(value);
+    debug("return false from Getter.eof()");
+    return false;
   }
 
 };

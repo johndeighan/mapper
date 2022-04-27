@@ -16,7 +16,7 @@ import {
 
 import {
   CieloMapper
-} from '@jdeighan/mapper';
+} from '@jdeighan/mapper/cielomapper';
 
 import {
   TreeWalker

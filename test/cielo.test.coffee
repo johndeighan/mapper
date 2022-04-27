@@ -7,7 +7,8 @@ import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {doMap, CieloMapper} from '@jdeighan/mapper'
+import {doMap} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
 import {cieloCodeToJS} from '@jdeighan/mapper/cielo'
 

@@ -6,9 +6,12 @@ import sass from 'sass';
 
 import {
   assert,
-  undef,
-  isComment
+  undef
 } from '@jdeighan/coffee-utils';
+
+import {
+  isComment
+} from '@jdeighan/mapper/utils';
 
 import {
   Mapper

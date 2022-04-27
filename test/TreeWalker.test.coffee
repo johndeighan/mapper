@@ -1,4 +1,4 @@
-# walker.test.coffee
+# TreeWalker.test.coffee
 
 import assert from 'assert'
 import CoffeeScript from 'coffeescript'

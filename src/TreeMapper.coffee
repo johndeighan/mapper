@@ -5,7 +5,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {CieloMapper} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 import {TreeWalker} from '@jdeighan/mapper/walker'
 
 # ---------------------------------------------------------------------------

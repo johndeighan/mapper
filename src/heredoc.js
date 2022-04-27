@@ -108,10 +108,9 @@ export var mapHereDoc = function(block) {
 export var addHereDocType = function(obj) {
   var name;
   name = obj.myName();
-  if (indexOf.call(lAllHereDocNames, name) < 0) {
-    lAllHereDocNames.unshift(name);
-    lAllHereDocs.unshift(obj);
-  }
+  assert(indexOf.call(lAllHereDocNames, name) < 0, `'${name}' is already a HEREDOC type`);
+  lAllHereDocNames.unshift(name);
+  lAllHereDocs.unshift(obj);
 };
 
 // ---------------------------------------------------------------------------

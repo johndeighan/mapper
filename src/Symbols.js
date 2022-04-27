@@ -33,9 +33,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  Mapper,
   CieloMapper
-} from '@jdeighan/mapper';
+} from '@jdeighan/mapper/cielomapper';
 
 import {
   ASTWalker

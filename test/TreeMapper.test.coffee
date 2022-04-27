@@ -1,4 +1,4 @@
-# tree.test.coffee
+# TreeMapper.test.coffee
 
 import assert from 'assert'
 
@@ -8,6 +8,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {log} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
+
 import {TreeMapper} from '@jdeighan/mapper/tree'
 
 simple = new UnitTesterNorm()

@@ -1,14 +1,10 @@
-# func.test.coffee
+# FuncHereDoc.test.coffee
 
 import {UnitTesterNorm} from '@jdeighan/unit-tester'
 
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {debugStack} from '@jdeighan/coffee-utils/stack'
 
-import {CieloMapper, doMap} from '@jdeighan/mapper'
-import {
-	mapHereDoc, doDebugHereDoc, addHereDocType,
-	} from '@jdeighan/mapper/heredoc'
+import {mapHereDoc, addHereDocType} from '@jdeighan/mapper/heredoc'
 import {FuncHereDoc} from '@jdeighan/mapper/func'
 
 addHereDocType new FuncHereDoc()    # --- CoffeeScript function
@@ -26,7 +22,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 29, """
+	tester.equal 28, """
 			(evt) ->
 				log 'click'
 			""",
@@ -39,7 +35,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 	# ------------------------------------------------------------------------
 	# Function block, with no name or parameters
 
-	tester.equal 42, """
+	tester.equal 41, """
 			() ->
 				return true
 			""", """
@@ -51,7 +47,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 54, """
+	tester.equal 53, """
 			(evt) ->
 				console.log 'click'
 			""", """
@@ -63,7 +59,7 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 66, """
+	tester.equal 65, """
 			(  evt  )     ->
 				log 'click'
 			""", """
@@ -73,43 +69,3 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 			"""
 	)()
 
-
-# ---------------------------------------------------------------------------
-
-(() ->
-
-	class HereDocMapper extends UnitTesterNorm
-
-		transformValue: (block) ->
-			return doMap(CieloMapper, block, import.meta.url)
-
-	tester = new HereDocMapper()
-
-	# ------------------------------------------------------------------------
-
-	tester.equal 90, """
-			input on:click={<<<}
-				(event) ->
-					console.log 'click'
-
-			""", """
-			input on:click={(function(event) {
-				return console.log('click');
-				});}
-			"""
-
-	# ------------------------------------------------------------------------
-
-	tester.equal 103, """
-			input on:click={<<<}
-				(event) ->
-					callme(x)
-					console.log('click')
-
-			""", """
-			input on:click={(function(event) {
-				callme(x);
-				return console.log('click');
-				});}
-			"""
-	)()

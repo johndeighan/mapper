@@ -4,7 +4,7 @@ import assert from 'assert'
 
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {
-	undef, pass, isEmpty, isComment, isString,
+	undef, pass, isEmpty, isString,
 	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel, undented, splitLine, indented,
@@ -13,20 +13,22 @@ import {
 	debug, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+
 import {Mapper, doMap} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 
 simple = new UnitTesterNorm()
 
 ###
 	class Mapper should handle the following:
 		- #include <file> statements
-		- get(), peek(), unget(), skip()
+		- getPair(), peekPair(), ungetPair(), skipPair()
 		- overriding of mapLine() to return alternate strings or objects
 		- fetch() and fetchBlock() inside mapLine()
 ###
 
 # ---------------------------------------------------------------------------
-# --- test get(), peek(), unget(), skip()
+# --- test getPair(), peekPair(), ungetPair(), skipPair()
 
 (() ->
 	input = new Mapper("""
@@ -37,28 +39,28 @@ simple = new UnitTesterNorm()
 
 	# --- lPair is [item, level]
 
-	lPair = input.peek()
+	lPair = input.peekPair()
 	simple.equal 41, lPair, ['abc', 0]
 
-	lPair = input.peek()
+	lPair = input.peekPair()
 	simple.equal 44, lPair, ['abc', 0]
 
-	lPair = input.get()
+	lPair = input.getPair()
 	simple.equal 47, lPair, ['abc', 0]
 
-	lPair = input.get()
+	lPair = input.getPair()
 	simple.equal 50, lPair, ['def', 1]
 
-	input.unget(lPair)
-	lPair = input.get()
+	input.ungetPair(lPair)
+	lPair = input.getPair()
 	simple.equal 54, lPair, ['def', 1]
 
-	lPair = input.get()
+	lPair = input.getPair()
 	simple.equal 57, lPair, ['ghi', 2]
-	input.unget(lPair)
+	input.ungetPair(lPair)
 
-	input.skip()
-	pair = input.get()
+	input.skipPair()
+	pair = input.getPair()
 	simple.equal 62, pair, undef
 
 	)()
@@ -187,16 +189,17 @@ tester.equal 94, """
 
 		mapLine: (line, level) ->
 
-			if line == '' || isComment(line)
+			debug "enter mapLine('#{line}', #{level})"
+			if line == '' || line.match(/^\s*\#($|\s)/)
+				debug "return undef from mapLine()"
 				return undef     # skip comments and blank lines
 
-			while (@lBuffer.length > 0) \
-					&& (indentLevel(@lBuffer[0]) >= level+2)
-				next = @lBuffer.shift()
-				line += ' ' + undented(next)
+			while (str = @fetch())? && (indentLevel(str) >= level+2)
+				line += ' ' + undented(str)
+			debug "return from mapLine()", line
 			return line
 
-	tester.equal 199, new TestMapper("""
+	tester.equal 200, new TestMapper("""
 			str = compare(
 					"abcde",
 					expected
@@ -232,7 +235,7 @@ tester.equal 94, """
 			else
 				return line
 
-	tester.equal 235, new TestMapper("""
+	tester.equal 236, new TestMapper("""
 			abc
 
 			def
@@ -246,7 +249,7 @@ tester.equal 94, """
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 249, """
+tester.equal 250, """
 		abc
 			#include title.md
 		def
@@ -259,7 +262,7 @@ tester.equal 249, """
 
 # ---------------------------------------------------------------------------
 # --- Test advanced use of mapping function
-#        - skip comments and blank lines
+#        - skipPair comments and blank lines
 #        - replace reactive statements
 
 (()->
@@ -283,7 +286,7 @@ tester.equal 249, """
 			else
 				return line
 
-	tester.equal 286, new TestMapper("""
+	tester.equal 287, new TestMapper("""
 			abc
 			myvar    <==     2 * 3
 
@@ -316,11 +319,11 @@ tester.equal 249, """
 			return line
 
 	oInput = new TestParser(text, import.meta.url)
-	lPair = oInput.get()
-	simple.equal 320, lPair[0], 'p a paragraph'
-	lPair = oInput.get()
-	simple.equal 322, lPair[0], 'div:markdown'
-	simple.equal 323, block, '\ttitle\n\t====='
+	lPair = oInput.getPair()
+	simple.equal 321, lPair[0], 'p a paragraph'
+	lPair = oInput.getPair()
+	simple.equal 323, lPair[0], 'div:markdown'
+	simple.equal 324, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -343,11 +346,11 @@ tester.equal 249, """
 
 				line 3
 			""", import.meta.url)
-	lPair = oInput.get()
-	simple.equal 347, lPair[0], 'p a paragraph'
-	lPair = oInput.get()
-	simple.equal 349, lPair[0], 'div:markdown'
-	simple.equal 350, block, """
+	lPair = oInput.getPair()
+	simple.equal 348, lPair[0], 'p a paragraph'
+	lPair = oInput.getPair()
+	simple.equal 350, lPair[0], 'div:markdown'
+	simple.equal 351, block, """
 			line 1
 
 			line 3
@@ -372,13 +375,13 @@ tester.equal 249, """
 			return line
 
 	oInput = new TestParser(text, import.meta.url)
-	lPair = oInput.get()
-	simple.equal 376, lPair[0], 'p a paragraph'
+	lPair = oInput.getPair()
+	simple.equal 377, lPair[0], 'p a paragraph'
 
-	lPair = oInput.get()
-	simple.equal 379, lPair[0], 'div:markdown'
+	lPair = oInput.getPair()
+	simple.equal 380, lPair[0], 'div:markdown'
 
-	simple.equal 381, block, '\ttitle\n\t====='
+	simple.equal 382, block, '\ttitle\n\t====='
 	)()
 
 # ---------------------------------------------------------------------------
@@ -404,7 +407,7 @@ tester.equal 249, """
 		```
 	###
 
-	tester.equal 409, text, """
+	tester.equal 408, text, """
 		p a paragraph
 		div:markdown
 			header
@@ -418,7 +421,7 @@ tester.equal 249, """
 # ---------------------------------------------------------------------------
 # --- Test comment
 
-tester.equal 423, """
+tester.equal 422, """
 		abc
 
 		# --- this is a comment
@@ -448,7 +451,7 @@ tester.equal 423, """
 	tester2 = new GatherTester2()
 
 	cmdRE = ///^
-			\s*                # skip leading whitespace
+			\s*                # skipPair leading whitespace
 			\# ([a-z][a-z_]*)  # command name
 			\s*                # skipwhitespace following command
 			(.*)               # command arguments
@@ -463,7 +466,7 @@ tester.equal 423, """
 			else
 				return line
 
-	tester2.equal 468, new TestMapper2("""
+	tester2.equal 467, new TestMapper2("""
 			abc
 			#if x==y
 				def
@@ -476,4 +479,103 @@ tester.equal 423, """
 			[{ cmd: 'else', argstr: '' }, 0],
 			['ghi', 1],
 			]
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	# ---------------------------------------------------------------------------
+
+	class MapTester extends UnitTester
+
+		transformValue: ([myClass, text]) ->
+			return doMap(myClass, text, import.meta.url)
+
+	tester = new MapTester()
+
+	# ---------------------------------------------------------------------------
+	# --- by default, DO NOT remove comments
+
+	class MyInput extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+	tester.equal 33, [MyInput, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			# --- a comment
+			ABC
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# --- DO remove comments
+
+	class MyInput extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleComment: (level) ->
+			return undef
+
+	tester.equal 55, [MyInput, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			ABC
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# Retain empty lines
+
+	class MyInput extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleEmptyLine: (level) ->
+			return ''
+
+	tester.equal 76, [MyInput, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			# --- a comment
+			ABC
+
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# Join continuation lines
+
+	class MyInput extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleEmptyLine: (level) ->
+			return ''
+
+	tester.equal 99, [MyInput, """
+			# --- a comment
+			abc
+					def
+			"""], """
+			# --- a comment
+			ABC DEF
+			"""
+
+
 	)()

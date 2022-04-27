@@ -1,11 +1,11 @@
-# trans.test.coffee
+# LanguageTranslator.test.coffee
 
 import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 
-import {Translator} from '@jdeighan/mapper/trans'
+import {LanguageTranslator} from '@jdeighan/mapper/langtrans'
 
 dir = mydir(import.meta.url)
 dictPath = mkpath(dir, 'dictionary.taml')
@@ -18,7 +18,7 @@ class DictionaryTester extends UnitTesterNorm
 
 	constructor: () ->
 		super()
-		@dict = new Translator(dictPath)
+		@dict = new LanguageTranslator(dictPath)
 
 	transformValue: ([sent, lPhrases]) ->
 		return @dict.findWords(sent, lPhrases)

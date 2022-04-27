@@ -6,17 +6,20 @@ import {
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 # ---------------------------------------------------------------------------
-#   class Getter - get(), unget(), peek(), eof()
+#   class Getter - get(), unget(item), peek(), eof()
 
 export class Getter
 
 	constructor: (obj) ->
 
+		# --- obj must be an iterator
 		debug "enter Getter()"
+		assert obj[Symbol.iterator], "Getter(): Not an iterator"
 		@iterator = obj[Symbol.iterator]()
-		assert @iterator.next?, "Getter(): Not an iterator"
+		assert @iterator.next?, "Getter(): func, but not an iterator"
 		assert isFunction(@iterator.next), "Getter(): next not a function"
 		@lLookAhead = []
+		@atEOF = false
 		debug "return from Getter()"
 
 	# ..........................................................
@@ -36,6 +39,13 @@ export class Getter
 
 	# ..........................................................
 
+	forceEOF: () ->
+
+		@atEOF = true
+		return
+
+	# ..........................................................
+
 	get: () ->
 
 		debug "enter Getter.get()"
@@ -43,8 +53,12 @@ export class Getter
 			item = @lLookAhead.shift()
 			debug "return from Getter.get() with lookahead:", item
 			return item
+		if @atEOF
+			debug "return undef from Getter.get() - at EOF"
+			return undef
 		{value, done} = @iterator.next()
 		if done
+			@atEOF = true
 			debug "return undef from Getter.get() - done == true"
 			return undef
 		debug "return from Getter.get()", value
@@ -70,6 +84,9 @@ export class Getter
 			debug 'lLookAhead', @lLookAhead
 			debug "return lookahead from Getter.peek()", value
 			return value
+		if @atEOF
+			debug "return undef from Getter.peek() - at EOF"
+			return undef
 		debug "no lookahead"
 		{value, done} = @iterator.next()
 		debug "from next()", {value, done}
@@ -103,6 +120,9 @@ export class Getter
 		if @hasLookAhead()
 			debug "return false from Getter.eof() - lookahead exists"
 			return false
+		if @atEOF
+			debug "return true from Getter.eof() - at EOF"
+			return true
 		{value, done} = @iterator.next()
 		debug "from next()", {value, done}
 		if done

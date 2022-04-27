@@ -3,12 +3,14 @@
 import {marked} from 'marked'
 
 import {
-	assert, OL, nonEmpty, isComment,
+	assert, OL, nonEmpty,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
+
+import {isComment} from '@jdeighan/mapper/utils'
 
 convert = true
 

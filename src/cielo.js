@@ -4,23 +4,23 @@ import {
   undef,
   assert,
   croak,
+  OL,
+  replaceVars,
+  isEmpty,
+  nonEmpty,
   isString,
-  isHash,
-  uniq
+  isHash
 } from '@jdeighan/coffee-utils';
 
 import {
-  log,
+  LOG,
   DEBUG
 } from '@jdeighan/coffee-utils/log';
 
 import {
-  indentLevel
+  indentLevel,
+  splitLine
 } from '@jdeighan/coffee-utils/indent';
-
-import {
-  joinBlocks
-} from '@jdeighan/coffee-utils/block';
 
 import {
   debug
@@ -35,31 +35,36 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  doMap,
-  Mapper,
-  CieloMapper
-} from '@jdeighan/mapper';
-
-import {
-  addHereDocType
-} from '@jdeighan/mapper/heredoc';
-
-import {
   getNeededSymbols,
   buildImportList
 } from '@jdeighan/mapper/symbols';
 
 import {
-  coffeeCodeToJS
-} from '@jdeighan/mapper/coffee';
+  TAMLHereDoc
+} from '@jdeighan/mapper/taml';
+
+import {
+  addHereDocType,
+  lineToParts,
+  mapHereDoc
+} from '@jdeighan/mapper/heredoc';
+
+import {
+  doMap,
+  Mapper
+} from '@jdeighan/mapper';
 
 import {
   FuncHereDoc
 } from '@jdeighan/mapper/func';
 
 import {
-  TAMLHereDoc
-} from '@jdeighan/mapper/taml';
+  coffeeCodeToJS
+} from '@jdeighan/mapper/coffee';
+
+import {
+  CieloMapper
+} from '@jdeighan/mapper/cielomapper';
 
 addHereDocType(new FuncHereDoc());
 

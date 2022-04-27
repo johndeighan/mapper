@@ -1,13 +1,9 @@
 # FuncHereDoc.coffee
 
-import {
-	undef, isArray,
-	} from '@jdeighan/coffee-utils'
+import {undef, isArray} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {DEBUG} from '@jdeighan/coffee-utils/log'
-import {
-	indented, undented,
-	} from '@jdeighan/coffee-utils/indent'
+import {indented, undented} from '@jdeighan/coffee-utils/indent'
 
 import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
 

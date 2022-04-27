@@ -1,240 +1,29 @@
 # Mapper.coffee
 
-import fs from 'fs'
-import pathlib from 'path'
-
 import {
-	assert, error, undef, pass, croak, isString, isEmpty, nonEmpty,
-	escapeStr, isComment, isArray, isHash, isInteger, isBoolean,
-	deepCopy, OL, CWS, replaceVars,
+	assert, undef, croak, isString, isEmpty, nonEmpty, OL,
 	} from '@jdeighan/coffee-utils'
+import {arrayToBlock} from '@jdeighan/coffee-utils/block'
+import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
-	blockToArray, arrayToBlock, firstLine, remainingLines,
-	} from '@jdeighan/coffee-utils/block'
-import {log} from '@jdeighan/coffee-utils/log'
-import {
-	slurp, pathTo, mydir, parseSource, mkpath, isDir, isSimpleFileName,
-	} from '@jdeighan/coffee-utils/fs'
-import {
-	splitLine, indented, undented, indentLevel,
+	splitLine, indented, indentLevel,
 	} from '@jdeighan/coffee-utils/indent'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
-import {joinBlocks} from '@jdeighan/coffee-utils/block'
+import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {stdSplitCommand, stdIsComment} from '@jdeighan/mapper/utils'
-import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
-
-# ---------------------------------------------------------------------------
-#   class StringFetcher - stream in lines from a string
-#       handles:
-#          __END__
-#          #include
-
-export class StringFetcher
-
-	constructor: (content, source) ->
-
-		@setContent content, source
-
-		# --- for handling #include
-		@altInput = undef
-		@altLevel = undef    # indentation added to lines from alt
-		@checkBuffer "StringFetcher constructor end"
-
-	# ..........................................................
-
-	setContent: (content, source) ->
-
-		debug "enter setContent()", content
-
-		# --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
-		#     source may be a URL, e.g. import.meta.url
-
-		@hSourceInfo = parseSource(source)
-		assert @hSourceInfo.filename?, "setContent(): no filename set"
-		@filename = @hSourceInfo.filename
-		assert @filename, "StringFetcher: parseSource returned no filename"
-		if ! content?
-			if @hSourceInfo.fullpath
-				content = slurp(@hSourceInfo.fullpath)
-				@lBuffer = blockToArray(content)
-			else
-				croak "StringFetcher: no source or fullpath"
-		else if isEmpty(content)
-			@lBuffer = []
-		else if isString(content)
-			@lBuffer = blockToArray(content)
-		else if isArray(content)
-			# -- make a deep copy
-			@lBuffer = deepCopy(content)
-		else
-			croak "StringFetcher(): content must be a string or arrayS",
-					"CONTENT", content
-
-		@lineNum = 0
-		debug "return from setContent()", @lBuffer
-		return
-
-	# ..........................................................
-
-	checkBuffer: (where="unknown") ->
-
-		for str in @lBuffer
-			if str == undef
-				log "undef value in lBuffer in #{where}"
-				croak "A string in lBuffer is undef"
-			else if str.match(/\r/)
-				log "string has a carriage return"
-				croak "A string in lBuffer has a carriage return"
-			else if str.match(/\n/)
-				log "string has newline"
-				croak "A string in lBuffer has a newline"
-		return
-
-	# ..........................................................
-
-	getIncludeFileFullPath: (fname) ->
-
-		debug "enter getIncludeFileFullPath('#{fname}')"
-
-		# --- Make sure we have a simple file name
-		assert isSimpleFileName(fname), \
-				"getIncludeFileFullPath(): not a simple file name"
-
-		# --- Decide which directory to search for file
-		dir = @hSourceInfo.dir
-		if ! dir || ! isDir(dir)
-			# --- Use current directory
-			dir = process.cwd()
-
-		path = pathTo(fname, dir)
-		debug "path", path
-		if path
-			assert fs.existsSync(path), "path does not exist"
-			debug "return from getIncludeFileFullPath()"
-			return path
-		else
-			debug "return from getIncludeFileFullPath() - file not found"
-			return undef
-
-	# ..........................................................
-
-	debugBuffer: () ->
-
-		debug 'BUFFER', @lBuffer
-		return
-
-	# ..........................................................
-	# --- Can override to add additional functionality
-
-	incLineNum: (inc) ->
-
-		@lineNum += inc
-		return
-
-	# ..........................................................
-
-	fetch: (literal=false) ->
-		# --- literal = true means don't handle #include,
-		#               just return it as is
-
-		debug "enter fetch(literal=#{literal}) from #{@filename}"
-		if @altInput
-			assert @altLevel?, "fetch(): alt input without alt level"
-			line = @altInput.fetch(literal)
-			if line?
-				result = indented(line, @altLevel)
-				@incLineNum(1)
-				debug "return #{OL(result)} from fetch() - alt"
-				return result
-			else
-				# alternate input is exhausted
-				@altInput = undef
-
-		if (@lBuffer.length == 0)
-			debug "return undef from fetch() - empty buffer"
-			return undef
-
-		# --- @lBuffer is not empty here
-		line = @lBuffer.shift()
-		if line == '__END__'
-			@lBuffer = []
-			debug "return from fetch() - __END__ seen"
-			return undef
-		@incLineNum(1)
-
-		if ! literal && lMatches = line.match(///^
-				(\s*)
-				\# include
-				\s+
-				(\S.*)
-				$///)
-			[_, prefix, fname] = lMatches
-			fname = fname.trim()
-			debug "#include #{fname} with prefix #{OL(prefix)}"
-			assert ! @altInput, "fetch(): altInput already set"
-			includePath = @getIncludeFileFullPath(fname)
-			if ! includePath?
-				croak "Can't find include file #{fname} anywhere"
-
-			contents = slurp(includePath)
-			@altInput = new StringFetcher(contents, fname)
-			@altLevel = indentLevel(prefix)
-			debug "alt input created with prefix #{OL(prefix)}"
-			line = @altInput.fetch()
-
-			debug "first #include line found = '#{escapeStr(line)}'"
-			@altInput.debugBuffer()
-
-			if line?
-				result = indented(line, @altLevel)
-			else
-				result = @fetch()    # recursive call
-			debug "return #{OL(result)} from fetch()"
-			return result
-		else
-			debug "return #{OL(line)} from fetch()"
-			return line
-
-	# ..........................................................
-	# --- Put a line back into lBuffer, to be fetched later
-
-	unfetch: (line) ->
-
-		debug "enter unfetch(#{OL(line)})"
-		assert isString(line), "unfetch(): not a string"
-		if @altInput
-			assert line?, "unfetch(): line is undef"
-			@altInput.unfetch undented(line, @altLevel)
-		else
-			@lBuffer.unshift line
-			@incLineNum(-1)
-		debug 'return from unfetch()'
-		return
-
-	# ..........................................................
-
-	getBlock: () ->
-
-		debug "enter StringFetcher.getBlock()"
-		lLines = while (line = @fetch())?
-			assert isString(line), "getBlock(): got non-string '#{OL(line)}'"
-			line
-		block = arrayToBlock(lLines)
-		debug "return from StringFetcher.getBlock()", block
-		return block
+import {LineFetcher} from '@jdeighan/mapper/fetcher'
 
 # ===========================================================================
 #   class Mapper
 #      - keep track of indentation
 #      - allow mapping of lines, including skipping lines
-#      - implement look ahead via peek()
+#      - implement look ahead via peekPair()
 
-export class Mapper extends StringFetcher
+export class Mapper extends LineFetcher
 
 	constructor: (content, source) ->
+
 		super content, source
-		@lookahead = undef   # --- lookahead token, placed by unget
+		@lLookAhead = []
 
 		# --- cache in case getAllPairs() is called multiple times
 		#     each pair is [<mapped str>, <level>]
@@ -242,78 +31,79 @@ export class Mapper extends StringFetcher
 
 	# ..........................................................
 
-	get: () ->
+	getPair: () ->
 
-		debug "enter Mapper.get() - from #{@filename}"
-		if @lookahead?
-			saved = @lookahead
-			@lookahead = undef
-			debug "return lookahead pair from Mapper.get()"
-			return saved
+		debug "enter Mapper.getPair() - from #{@filename}"
+		if @lLookAhead.length > 0
+			pair = @lLookAhead.shift()
+			debug "return lookahead pair from Mapper.getPair()", pair
+			return pair
 
 		line = @fetch()    # will handle #include
-		debug "LINE", line
+		debug "FETCH LINE", line
 
 		if ! line?
-			debug "return undef from Mapper.get() at EOF"
+			debug "return undef from Mapper.getPair() - at EOF"
 			return undef
 
 		[level, str] = splitLine(line)
-		assert str? && isString(str), "Mapper.get(): not a string"
+		assert indentLevel(str)==0, "splitLine() returned indented str"
+		assert str? && isString(str), "Mapper.getPair(): not a string"
 		result = @mapLine(str, level)
 		debug "MAP: '#{str}' => #{OL(result)}"
 
 		# --- if mapLine() returns undef, we skip that line
 
-		while ! result? && (@lBuffer.length > 0)
+		while ! result? && ! @eof()
 			line = @fetch()
 			[level, str] = splitLine(line)
+			assert indentLevel(str)==0, "splitLine() returned indented str"
 			result = @mapLine(str, level)
 			debug "MAP: '#{str}' => #{OL(result)}"
 
 		lResult = [result, level]
-		debug "return from Mapper.get()", lResult
+		debug "return from Mapper.getPair()", lResult
 		return lResult
 
 	# ..........................................................
 
-	unget: (lPair) ->
+	ungetPair: (lPair) ->
 		# --- lPair will always be [<item>, <level>]
 		#     <item> can be anything - i.e. it's been mapped
 
-		debug 'enter unget() with', lPair
-		assert ! @lookahead?, "unget(): there's already a lookahead"
-		@lookahead = lPair
-		debug 'return from unget()'
+		debug 'enter ungetPair()', lPair
+		@lLookAhead.unshift lPair
+		debug 'return from ungetPair()'
 		return
 
 	# ..........................................................
 
-	peek: () ->
+	peekPair: () ->
 
-		debug 'enter peek():'
-		if @lookahead?
-			debug "return lookahead from peek"
-			return @lookahead
-		lPair = @get()
+		debug 'enter peekPair():'
+		if @lLookAhead.length > 0
+			pair = @lLookAhead[0]
+			debug "return lookahead from peekPair()", pair
+			return pair
+		lPair = @getPair()
 		if ! lPair?
-			debug "return undef from peek()"
+			debug "return undef from peekPair() - getPair() returned undef"
 			return undef
-		@unget(lPair)
-		debug "return #{OL(lPair)} from peek"
+		@ungetPair(lPair)
+		debug "return #{OL(lPair)} from peekPair()"
 		return lPair
 
 	# ..........................................................
 
-	skip: () ->
+	skipPair: () ->
 
-		debug 'enter skip():'
-		if @lookahead?
-			@lookahead = undef
-			debug "return from skip: clear lookahead"
+		debug 'enter skipPair():'
+		if @lLookAhead.length > 0
+			@lLookAhead.shift()
+			debug "return from skipPair(): remove lookahead"
 			return
-		@get()
-		debug 'return from skip()'
+		@getPair()
+		debug 'return from skipPair()'
 		return
 
 	# ..........................................................
@@ -331,37 +121,40 @@ export class Mapper extends StringFetcher
 
 	fetchBlock: (atLevel) ->
 
-		debug "enter fetchBlock(#{atLevel})"
+		debug "enter Mapper.fetchBlock(#{atLevel})"
 		lLines = []
 
 		line = undef
 		while (line = @fetch())?
 			debug "LINE IS #{OL(line)}"
 			assert isString(line),
-				"Mapper.fetchBlock(#{atLevel}) - not a string: #{line}"
+				"Mapper.fetchBlock() - not a string: #{OL(line)}"
 			if isEmpty(line)
 				debug "empty line"
 				lLines.push ''
 				continue
 			[level, str] = splitLine(line)
+			assert indentLevel(str)==0,
+				"Mapper.fetchBlock(): splitLine() returned indented str"
 			debug "LOOP: level = #{level}, str = #{OL(str)}"
 			if (level < atLevel)
 				@unfetch(line)
 				debug "RESULT: unfetch the line"
 				break
+			assert level >= atLevel, "Mapper.fetchBlock(): bad level"
 			result = indented(str, level-atLevel)
 			debug "RESULT", result
 			lLines.push result
 
-		block = lLines.join('\n')
-		debug "return from fetchBlock with", block
+		block = arrayToBlock(lLines)
+		debug "return from Mapper.fetchBlock()", block
 		return block
 
 	# ..........................................................
 
 	getAllPairs: () ->
 
-		debug "enter Mapper.getAllPairs()", @lBuffer
+		debug "enter Mapper.getAllPairs()"
 		if @lAllPairs?
 			debug "return cached lAllPairs from Mapper.getAllPairs()"
 			return @lAllPairs
@@ -369,9 +162,9 @@ export class Mapper extends StringFetcher
 		# --- Each pair is [<result>, <level>],
 		#     where <result> can be anything
 		lPairs = []
-		while (lPair = @get())?
+		while (lPair = @getPair())?
 			debug "GOT PAIR", lPair
-			lPairs.push(lPair)
+			lPairs.push lPair
 		@lAllPairs = lPairs   # cache
 		debug "return from Mapper.getAllPairs()", lPairs
 		return lPairs
@@ -379,11 +172,12 @@ export class Mapper extends StringFetcher
 	# ..........................................................
 
 	getBlock: () ->
+		# --- You can only call getBlock() if mapLine() always
+		#     returns undef or a string
 
 		debug "enter Mapper.getBlock()"
 		lLines = []
-		for lResult in @getAllPairs()
-			[line, level] = lResult
+		for [line, level] in @getAllPairs()
 			if line?
 				assert isString(line),
 						"getBlock(): got non-string '#{OL(line)}'"
@@ -394,316 +188,17 @@ export class Mapper extends StringFetcher
 
 # ===========================================================================
 
-export class CieloMapper extends Mapper
-	# - removes blank lines (but can be overridden)
-	# - does NOT remove comments (but can be overridden)
-	# - joins continuation lines
-	# - handles HEREDOCs
-	# - handles #define <name> <value> and __<name>__ substitution
-
-	constructor: (content, source) ->
-
-		debug "enter CieloMapper(source='#{source}')", content
-		super content, source
-
-		@hVars = {
-			FILE: @filename
-			DIR:  @hSourceInfo.dir
-			LINE: 0
-			}
-
-		# --- This should only be used in mapLine(), where
-		#     it keeps track of the level we're at, to be passed
-		#     to handleEmptyLine() since the empty line itself
-		#     is always at level 0
-		@curLevel = 0
-		debug "return from CieloMapper()"
-
-	# ..........................................................
-	# --- override to keep variable LINE updated
-
-	incLineNum: (inc) ->
-		super inc    # adjusts property @lineNum
-		@hVars.LINE = @lineNum
-		return
-
-	# ..........................................................
-	# --- designed to override with a mapping method
-	#     NOTE: line does not include the indentation
-
-	mapLine: (line, level) ->
-
-		debug "enter CieloMapper.mapLine(#{OL(line)}, #{level})"
-
-		assert line?, "mapLine(): line is undef"
-		assert isString(line), "mapLine(): #{OL(line)} not a string"
-		if isEmpty(line)
-			result = @handleEmptyLine(@curLevel)
-			debug "return from CieloMapper.mapLine() - empty line", result
-			return result
-
-		if isComment(line)
-			result = @handleComment(line, level)
-			debug "return from CieloMapper.mapLine() - comment", result
-			return result
-
-		lParts = @isCommand(line)
-		if lParts
-			debug "COMMAND", lParts
-			[cmd, argstr] = lParts
-
-			lResult = @handleCommand cmd, argstr, level
-			debug "handleCommand() returned #{OL(lResult)}"
-			assert isArray(lResult), "handleCommand() failed to return array"
-
-			[handled, result] = lResult
-			assert isBoolean(handled),
-					"1st arg in handleCommand() result isn't boolean"
-			if handled
-				debug "return from CieloMapper.mapLine()", result
-				return result
-			else
-				croak "Unknown command: '#{line}'"
-
-		# --- Merge in any continuation lines
-		debug "check for continuation lines"
-		lContLines = @getContLines(level)
-		if isEmpty(lContLines)
-			debug "no continuation lines found"
-		else
-			debug "#{lContLines.length} continuation lines found"
-			line = @joinContLines(line, lContLines)
-			debug "line becomes #{OL(line)}"
-
-		debug "hVars", @hVars
-		debug 'line', line
-		newline = replaceVars(line, @hVars)
-		if newline != line
-			line = newline
-			debug "line becomes #{OL(line)}"
-
-		orgLineNum = @lineNum
-		@curLevel = level
-
-		# --- handle HEREDOCs
-		debug "check for HEREDOC"
-		if (line.indexOf('<<<') > -1)
-			hResult = @handleHereDoc(line, level)
-			line = hResult.line
-			debug "line becomes #{OL(line)}"
-
-		debug "mapping string"
-		result = @mapString(line, level)
-		debug "return #{OL(result)} from CieloMapper.mapLine()"
-		return result
-
-	# ..........................................................
-
-	handleEmptyLine: (level) ->
-
-		debug "in CieloMapper.handleEmptyLine()"
-
-		# --- remove blank lines by default
-		#     return '' to retain empty lines
-		return undef
-
-	# ..........................................................
-
-	isComment: (line, level) ->
-
-		debug "in CieloMapper.isComment()"
-		return stdIsComment(line, level)
-
-	# ..........................................................
-
-	handleComment: (line, level) ->
-
-		debug "in CieloMapper.handleComment()"
-		return line      # keep comments by default
-
-	# ..........................................................
-
-	isCommand: (line, level) ->
-
-		debug "enter CieloMapper.isCommand()"
-		if lMatches = line.match(///^
-				\#
-				([A-Za-z_]\w*)   # name of the command
-				\s*
-				(.*)             # argstr for command
-				$///)
-			[_, cmd, argstr] = lMatches
-			lResult = [cmd, argstr]
-			debug "return from CieloMapper.isCommand()", lResult
-			return lResult
-		else
-			# --- not a command
-			debug "return undef from CieloMapper.isCommand()"
-			return undef
-
-	# ..........................................................
-	# --- handleCommand must return a pair:
-	#        [handled:boolean, result:any]
-
-	handleCommand: (cmd, argstr, level) ->
-
-		debug "enter CieloMapper.handleCommand #{cmd} '#{argstr}', #{level}"
-		switch cmd
-			when 'define'
-				if lMatches = argstr.match(///^
-						(env\.)?
-						([A-Za-z_][\w\.]*)   # name of the variable
-						(.*)
-						$///)
-					[_, prefix, name, tail] = lMatches
-					tail = tail.trim()
-					if prefix
-						debug "set env var #{name} to '#{tail}'"
-						process.env[name] = tail
-					else
-						debug "set var #{name} to '#{tail}'"
-						@setVariable name, tail
-				result = [true, undef]
-			else
-				result = [false, undef]
-		debug "return from CieloMapper.handleCommand()", result
-		return result
-
-	# ..........................................................
-
-	setVariable: (name, value) ->
-		# --- value can be a non-string
-		#     if so, when replacement occurs, it will be JSON stringified
-
-		debug "enter setVariable('#{name}')", value
-		assert isString(name), "name is not a string"
-		if isString(value)
-			assert (name not in ['DIR','FILE','LINE','END']),
-					"Bad var name '#{name}'"
-		@hVars[name] = value
-		debug "return from setVariable()"
-		return
-
-	# ..........................................................
-
-	handleHereDoc: (line, level) ->
-		# --- Indentation has been removed from line
-		# --- Find each '<<<' and replace with result of replaceHereDoc()
-
-		assert isString(line), "handleHereDoc(): not a string"
-		debug "enter handleHereDoc(#{OL(line)})"
-		lParts = lineToParts(line)
-		lObjects = []
-		lNewParts = for part in lParts
-			if part == '<<<'
-				lLines = @getHereDocLines(level+1)
-				hResult = @replaceHereDoc(arrayToBlock(lLines))
-				lObjects.push hResult.obj
-				hResult.str
-			else
-				part    # keep as is
-
-		hResult = {
-			line: lNewParts.join('')
-			lParts: lParts
-			lObjects: lObjects
-			}
-
-		debug "return from handleHereDoc", hResult
-		return hResult
-
-	# ..........................................................
-
-	replaceHereDoc: (block) ->
-		# --- A method you can override
-
-		hResult = mapHereDoc(block)
-		assert isHash(hResult), "replaceHereDoc(): hResult not a hash"
-		return hResult
-
-	# ..........................................................
-
-	getHereDocLines: (atLevel) ->
-		# --- Get all lines until addHereDocLine() returns undef
-		#     atLevel will be one greater than the indent
-		#        of the line containing <<<
-
-		# --- NOTE: splitLine() removes trailing whitespace
-		debug "enter CieloMapper.getHereDocLines()"
-		lLines = []
-		while (line = @fetch())? \
-				&& (newline = @hereDocLine(undented(line, atLevel)))?
-			assert (indentLevel(line) >= atLevel),
-				"invalid indentation in HEREDOC section"
-			lLines.push newline
-		assert isArray(lLines), "getHereDocLines(): retval not an array"
-		debug "return from CieloMapper.getHereDocLines()", lLines
-		return lLines
-
-	# ..........................................................
-
-	hereDocLine: (line) ->
-
-		if isEmpty(line)
-			return undef        # end the HEREDOC section
-		else if (line == '.')
-			return ''           # interpret '.' as blank line
-		else
-			return line
-
-	# ..........................................................
-
-	getContLines: (curlevel) ->
-
-		lLines = []
-		while (nextLine = @fetch(true))? \
-				&& (nonEmpty(nextLine)) \
-				&& ([nextLevel, nextStr] = splitLine(nextLine)) \
-				&& (nextLevel >= curlevel+2)
-			lLines.push(nextStr)
-		if nextLine?
-			# --- we fetched a line we didn't want
-			@unfetch nextLine
-		return lLines
-
-	# ..........................................................
-
-	joinContLines: (line, lContLines) ->
-
-		for contLine in lContLines
-			if lMatches = line.match(/\s*\\$/)
-				n = lMatches[0].length
-				line = line.substr(0, line.length - n)
-			line += ' ' + contLine
-		return line
-
-	# ..........................................................
-	# ..........................................................
-
-	mapString: (line, level) ->
-		# --- NOTE: line has indentation removed
-		#     when overriding, may return anything
-		#     return undef to generate nothing
-
-		assert isString(line),
-				"default mapString(): #{OL(line)} is not a string"
-		return line
-
-# ===========================================================================
-
 export doMap = (inputClass, text, source) ->
 
+	assert inputClass?, "Missing input class"
 	if lMatches = inputClass.toString().match(/class\s+(\w+)/)
 		className = lMatches[1]
 	else
-		className = 'unknown'
+		croak "doMap(): Bad input class"
 	debug "enter doMap(#{className}) source='#{source}'"
-	if inputClass
-		oInput = new inputClass(text, source)
-		assert oInput instanceof Mapper,
-			"doMap() requires a Mapper or subclass"
-	else
-		oInput = new CieloMapper(text, source)
+	oInput = new inputClass(text, source)
+	assert oInput instanceof Mapper,
+		"doMap() requires a Mapper or subclass"
 	result = oInput.getBlock()
 	debug "return from doMap()", result
 	return result

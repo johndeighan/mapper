@@ -2,8 +2,9 @@
 
 import sass from 'sass'
 
-import {assert, undef, isComment} from '@jdeighan/coffee-utils'
+import {assert, undef} from '@jdeighan/coffee-utils'
 
+import {isComment} from '@jdeighan/mapper/utils'
 import {Mapper} from '@jdeighan/mapper'
 
 convert = true

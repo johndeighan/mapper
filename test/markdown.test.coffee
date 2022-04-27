@@ -49,7 +49,7 @@ tester = new MarkdownTester()
 			"""
 
 	tester.equal 51, """
-			## title
+			# title
 			text
 			""", """
 			<p>text</p>

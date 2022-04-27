@@ -26,7 +26,7 @@ import {
 
 import {
   Getter
-} from '@jdeighan/mapper/get';
+} from '@jdeighan/mapper/getter';
 
 simple = new UnitTester();
 

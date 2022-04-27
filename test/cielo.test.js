@@ -33,9 +33,12 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  doMap,
-  CieloMapper
+  doMap
 } from '@jdeighan/mapper';
+
+import {
+  CieloMapper
+} from '@jdeighan/mapper/cielomapper';
 
 import {
   convertCoffee

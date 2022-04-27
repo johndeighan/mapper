@@ -9,8 +9,7 @@ import {
 import {
   assert,
   OL,
-  nonEmpty,
-  isComment
+  nonEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -28,6 +27,10 @@ import {
 import {
   svelteHtmlEsc
 } from '@jdeighan/coffee-utils/svelte';
+
+import {
+  isComment
+} from '@jdeighan/mapper/utils';
 
 convert = true;
 

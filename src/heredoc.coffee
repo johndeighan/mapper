@@ -78,9 +78,9 @@ export mapHereDoc = (block) ->
 export addHereDocType = (obj) ->
 
 	name = obj.myName()
-	if name not in lAllHereDocNames
-		lAllHereDocNames.unshift name
-		lAllHereDocs.unshift obj
+	assert name not in lAllHereDocNames, "'#{name}' is already a HEREDOC type"
+	lAllHereDocNames.unshift name
+	lAllHereDocs.unshift obj
 	return
 
 # ---------------------------------------------------------------------------

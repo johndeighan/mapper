@@ -8,7 +8,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {Getter} from '@jdeighan/mapper/get'
+import {Getter} from '@jdeighan/mapper/getter'
 
 simple = new UnitTester()
 

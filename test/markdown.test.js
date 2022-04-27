@@ -44,7 +44,7 @@ text`, `<h2>title</h2>
   // --- Comments and blank lines are stripped
   tester.equal(44, `# title
 text`, `<p>text</p>`);
-  tester.equal(51, `## title
+  tester.equal(51, `# title
 text`, `<p>text</p>`);
   tester.equal(58, `this is **bold** text`, `<p>this is <strong>bold</strong> text</p>`);
   tester.equal(64, `\`\`\`javascript

@@ -1,4 +1,4 @@
-# Translator.coffee
+# LanguageTranslator.coffee
 
 import {undef, assert, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
@@ -8,16 +8,16 @@ import {slurpTAML} from '@jdeighan/mapper/taml'
 
 # ---------------------------------------------------------------------------
 
-export class Translator
+export class LanguageTranslator
 
 	constructor: (dictPath=undef) ->
 
-		debug "enter Translator()"
+		debug "enter LanguageTranslator()"
 		@hDict = {}
 		if dictPath
 			@load(dictPath)
 		@lFound = undef
-		debug "return from Translator()", @hDict
+		debug "return from LanguageTranslator()", @hDict
 
 	# ..........................................................
 

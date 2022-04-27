@@ -13,14 +13,17 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 // ---------------------------------------------------------------------------
-//   class Getter - get(), unget(), peek(), eof()
+//   class Getter - get(), unget(item), peek(), eof()
 export var Getter = class Getter {
   constructor(obj) {
+    // --- obj must be an iterator
     debug("enter Getter()");
+    assert(obj[Symbol.iterator], "Getter(): Not an iterator");
     this.iterator = obj[Symbol.iterator]();
-    assert(this.iterator.next != null, "Getter(): Not an iterator");
+    assert(this.iterator.next != null, "Getter(): func, but not an iterator");
     assert(isFunction(this.iterator.next), "Getter(): next not a function");
     this.lLookAhead = [];
+    this.atEOF = false;
     debug("return from Getter()");
   }
 
@@ -39,6 +42,11 @@ export var Getter = class Getter {
   }
 
   // ..........................................................
+  forceEOF() {
+    this.atEOF = true;
+  }
+
+  // ..........................................................
   get() {
     var done, item, value;
     debug("enter Getter.get()");
@@ -47,8 +55,13 @@ export var Getter = class Getter {
       debug("return from Getter.get() with lookahead:", item);
       return item;
     }
+    if (this.atEOF) {
+      debug("return undef from Getter.get() - at EOF");
+      return undef;
+    }
     ({value, done} = this.iterator.next());
     if (done) {
+      this.atEOF = true;
       debug("return undef from Getter.get() - done == true");
       return undef;
     }
@@ -73,6 +86,10 @@ export var Getter = class Getter {
       debug('lLookAhead', this.lLookAhead);
       debug("return lookahead from Getter.peek()", value);
       return value;
+    }
+    if (this.atEOF) {
+      debug("return undef from Getter.peek() - at EOF");
+      return undef;
     }
     debug("no lookahead");
     ({value, done} = this.iterator.next());
@@ -107,6 +124,10 @@ export var Getter = class Getter {
     if (this.hasLookAhead()) {
       debug("return false from Getter.eof() - lookahead exists");
       return false;
+    }
+    if (this.atEOF) {
+      debug("return true from Getter.eof() - at EOF");
+      return true;
     }
     ({value, done} = this.iterator.next());
     debug("from next()", {value, done});

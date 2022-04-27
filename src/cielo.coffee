@@ -1,24 +1,27 @@
 # cielo.coffee
 
 import {
-	undef, assert, croak, isString, isHash, uniq,
+	undef, assert, croak, OL, replaceVars,
+	isEmpty, nonEmpty, isString, isHash,
 	} from '@jdeighan/coffee-utils'
-import {log, DEBUG} from '@jdeighan/coffee-utils/log'
-import {indentLevel} from '@jdeighan/coffee-utils/indent'
-import {joinBlocks} from '@jdeighan/coffee-utils/block'
+import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
+import {indentLevel, splitLine} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
-import {doMap, Mapper, CieloMapper} from '@jdeighan/mapper'
-import {addHereDocType} from '@jdeighan/mapper/heredoc'
 import {
 	getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
-import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
-import {FuncHereDoc} from '@jdeighan/mapper/func'
 import {TAMLHereDoc} from '@jdeighan/mapper/taml'
+import {
+	addHereDocType, lineToParts, mapHereDoc,
+	} from '@jdeighan/mapper/heredoc'
+import {doMap, Mapper} from '@jdeighan/mapper'
+import {FuncHereDoc} from '@jdeighan/mapper/func'
+import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
+import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 
 addHereDocType new FuncHereDoc()
 addHereDocType new TAMLHereDoc()

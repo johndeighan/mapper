@@ -1,4 +1,4 @@
-# math.test.coffee
+# MathML.test.coffee
 
 import assert from 'assert'
 

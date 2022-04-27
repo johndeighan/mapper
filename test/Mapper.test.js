@@ -13,7 +13,6 @@ import {
   undef,
   pass,
   isEmpty,
-  isComment,
   isString
 } from '@jdeighan/coffee-utils';
 
@@ -39,39 +38,43 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
+import {
+  CieloMapper
+} from '@jdeighan/mapper/cielomapper';
+
 simple = new UnitTesterNorm();
 
 /*
 	class Mapper should handle the following:
 		- #include <file> statements
-		- get(), peek(), unget(), skip()
+		- getPair(), peekPair(), ungetPair(), skipPair()
 		- overriding of mapLine() to return alternate strings or objects
 		- fetch() and fetchBlock() inside mapLine()
 */
 // ---------------------------------------------------------------------------
-// --- test get(), peek(), unget(), skip()
+// --- test getPair(), peekPair(), ungetPair(), skipPair()
 (function() {
   var input, lPair, pair;
   input = new Mapper(`abc
 	def
 		ghi`, import.meta.url);
   // --- lPair is [item, level]
-  lPair = input.peek();
+  lPair = input.peekPair();
   simple.equal(41, lPair, ['abc', 0]);
-  lPair = input.peek();
+  lPair = input.peekPair();
   simple.equal(44, lPair, ['abc', 0]);
-  lPair = input.get();
+  lPair = input.getPair();
   simple.equal(47, lPair, ['abc', 0]);
-  lPair = input.get();
+  lPair = input.getPair();
   simple.equal(50, lPair, ['def', 1]);
-  input.unget(lPair);
-  lPair = input.get();
+  input.ungetPair(lPair);
+  lPair = input.getPair();
   simple.equal(54, lPair, ['def', 1]);
-  lPair = input.get();
+  lPair = input.getPair();
   simple.equal(57, lPair, ['ghi', 2]);
-  input.unget(lPair);
-  input.skip();
-  pair = input.get();
+  input.ungetPair(lPair);
+  input.skipPair();
+  pair = input.getPair();
   return simple.equal(62, pair, undef);
 })();
 
@@ -179,19 +182,21 @@ ghi`);
   var TestMapper;
   TestMapper = class TestMapper extends Mapper {
     mapLine(line, level) {
-      var next;
-      if (line === '' || isComment(line)) {
+      var str;
+      debug(`enter mapLine('${line}', ${level})`);
+      if (line === '' || line.match(/^\s*\#($|\s)/)) {
+        debug("return undef from mapLine()");
         return undef; // skip comments and blank lines
       }
-      while ((this.lBuffer.length > 0) && (indentLevel(this.lBuffer[0]) >= level + 2)) {
-        next = this.lBuffer.shift();
-        line += ' ' + undented(next);
+      while (((str = this.fetch()) != null) && (indentLevel(str) >= level + 2)) {
+        line += ' ' + undented(str);
       }
+      debug("return from mapLine()", line);
       return line;
     }
 
   };
-  return tester.equal(199, new TestMapper(`str = compare(
+  return tester.equal(200, new TestMapper(`str = compare(
 		"abcde",
 		expected
 		)
@@ -223,7 +228,7 @@ call func with multiple long parameters`);
     }
 
   };
-  return tester.equal(235, new TestMapper(`abc
+  return tester.equal(236, new TestMapper(`abc
 
 def`, import.meta.url), `123
 456`);
@@ -231,7 +236,7 @@ def`, import.meta.url), `123
 
 // ---------------------------------------------------------------------------
 // --- Test #include
-tester.equal(249, `abc
+tester.equal(250, `abc
 	#include title.md
 def`, `abc
 	title
@@ -240,7 +245,7 @@ def`);
 
 // ---------------------------------------------------------------------------
 // --- Test advanced use of mapping function
-//        - skip comments and blank lines
+//        - skipPair comments and blank lines
 //        - replace reactive statements
 (function() {
   var TestMapper;
@@ -259,7 +264,7 @@ def`);
     }
 
   };
-  return tester.equal(286, new TestMapper(`abc
+  return tester.equal(287, new TestMapper(`abc
 myvar    <==     2 * 3
 
 def`, import.meta.url), `abc
@@ -287,11 +292,11 @@ div:markdown
 
   };
   oInput = new TestParser(text, import.meta.url);
-  lPair = oInput.get();
-  simple.equal(320, lPair[0], 'p a paragraph');
-  lPair = oInput.get();
-  simple.equal(322, lPair[0], 'div:markdown');
-  return simple.equal(323, block, '\ttitle\n\t=====');
+  lPair = oInput.getPair();
+  simple.equal(321, lPair[0], 'p a paragraph');
+  lPair = oInput.getPair();
+  simple.equal(323, lPair[0], 'div:markdown');
+  return simple.equal(324, block, '\ttitle\n\t=====');
 })();
 
 // ---------------------------------------------------------------------------
@@ -313,11 +318,11 @@ div:markdown
 	line 1
 
 	line 3`, import.meta.url);
-  lPair = oInput.get();
-  simple.equal(347, lPair[0], 'p a paragraph');
-  lPair = oInput.get();
-  simple.equal(349, lPair[0], 'div:markdown');
-  return simple.equal(350, block, `line 1
+  lPair = oInput.getPair();
+  simple.equal(348, lPair[0], 'p a paragraph');
+  lPair = oInput.getPair();
+  simple.equal(350, lPair[0], 'div:markdown');
+  return simple.equal(351, block, `line 1
 
 line 3`);
 })();
@@ -339,11 +344,11 @@ div:markdown
 
   };
   oInput = new TestParser(text, import.meta.url);
-  lPair = oInput.get();
-  simple.equal(376, lPair[0], 'p a paragraph');
-  lPair = oInput.get();
-  simple.equal(379, lPair[0], 'div:markdown');
-  return simple.equal(381, block, '\ttitle\n\t=====');
+  lPair = oInput.getPair();
+  simple.equal(377, lPair[0], 'p a paragraph');
+  lPair = oInput.getPair();
+  simple.equal(380, lPair[0], 'div:markdown');
+  return simple.equal(382, block, '\ttitle\n\t=====');
 })();
 
 // ---------------------------------------------------------------------------
@@ -365,7 +370,7 @@ div:markdown
   	----
   	```
    */
-  return tester.equal(409, text, `p a paragraph
+  return tester.equal(408, text, `p a paragraph
 div:markdown
 	header
 	======
@@ -376,7 +381,7 @@ div:markdown
 
 // ---------------------------------------------------------------------------
 // --- Test comment
-tester.equal(423, `abc
+tester.equal(422, `abc
 
 # --- this is a comment
 
@@ -398,7 +403,7 @@ def`);
 
   };
   tester2 = new GatherTester2();
-  cmdRE = /^\s*\#([a-z][a-z_]*)\s*(.*)$/; // skip leading whitespace
+  cmdRE = /^\s*\#([a-z][a-z_]*)\s*(.*)$/; // skipPair leading whitespace
   // command name
   // skipwhitespace following command
   // command arguments
@@ -417,7 +422,7 @@ def`);
     }
 
   };
-  return tester2.equal(468, new TestMapper2(`abc
+  return tester2.equal(467, new TestMapper2(`abc
 #if x==y
 	def
 #else
@@ -443,4 +448,95 @@ def`);
     ['ghi',
     1]
   ]);
+})();
+
+// ---------------------------------------------------------------------------
+(function() {
+  var MapTester, MyInput;
+  // ---------------------------------------------------------------------------
+  MapTester = class MapTester extends UnitTester {
+    transformValue([myClass, text]) {
+      return doMap(myClass, text, import.meta.url);
+    }
+
+  };
+  tester = new MapTester();
+  // ---------------------------------------------------------------------------
+  // --- by default, DO NOT remove comments
+  MyInput = class MyInput extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+  };
+  tester.equal(33, [
+    MyInput,
+    `# --- a comment
+abc
+
+def`
+  ], `# --- a comment
+ABC
+DEF`);
+  // ---------------------------------------------------------------------------
+  // --- DO remove comments
+  MyInput = class MyInput extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleComment(level) {
+      return undef;
+    }
+
+  };
+  tester.equal(55, [
+    MyInput,
+    `# --- a comment
+abc
+
+def`
+  ], `ABC
+DEF`);
+  // ---------------------------------------------------------------------------
+  // Retain empty lines
+  MyInput = class MyInput extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleEmptyLine(level) {
+      return '';
+    }
+
+  };
+  tester.equal(76, [
+    MyInput,
+    `# --- a comment
+abc
+
+def`
+  ], `# --- a comment
+ABC
+
+DEF`);
+  // ---------------------------------------------------------------------------
+  // Join continuation lines
+  MyInput = class MyInput extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleEmptyLine(level) {
+      return '';
+    }
+
+  };
+  return tester.equal(99, [
+    MyInput,
+    `# --- a comment
+abc
+		def`
+  ], `# --- a comment
+ABC DEF`);
 })();

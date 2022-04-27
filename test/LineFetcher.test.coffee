@@ -1,18 +1,18 @@
-# StringFetcher.test.coffee
+# LineFetcher.test.coffee
 
 import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
-	assert, undef, pass, isEmpty, isComment,
+	assert, undef, pass, isEmpty,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {StringFetcher} from '@jdeighan/mapper'
+import {LineFetcher} from '@jdeighan/mapper/fetcher'
 
 simple = new UnitTesterNorm()
 
 ###
-	class StringFetcher should handle the following:
+	class LineFetcher should handle the following:
 		- #include <file> statements
 		- end file at __END__
 ###
@@ -21,7 +21,7 @@ simple = new UnitTesterNorm()
 # --- test fetch(), unfetch()
 
 (() ->
-	input = new StringFetcher("""
+	input = new LineFetcher("""
 			abc
 				def
 					ghi
@@ -30,7 +30,7 @@ simple = new UnitTesterNorm()
 	line = input.fetch()
 	simple.equal 31, line, 'abc'
 
-	simple.equal 33, input.filename, 'StringFetcher.test.js'
+	simple.equal 33, input.filename, 'LineFetcher.test.js'
 	simple.equal 34, input.lineNum, 1
 
 	line = input.fetch()
@@ -52,7 +52,7 @@ simple = new UnitTesterNorm()
 class FetcherTester extends UnitTester
 
 	transformValue: (block) ->
-		return new StringFetcher(block, import.meta.url).getBlock()
+		return new LineFetcher(block, import.meta.url).getBlock()
 
 tester = new FetcherTester()
 

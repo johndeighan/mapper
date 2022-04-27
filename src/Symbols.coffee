@@ -11,7 +11,7 @@ import {
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {Mapper, CieloMapper} from '@jdeighan/mapper'
+import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 import {ASTWalker} from '@jdeighan/mapper/walker'
 
 # ---------------------------------------------------------------------------

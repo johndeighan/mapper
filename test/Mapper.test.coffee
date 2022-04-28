@@ -15,7 +15,6 @@ import {
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
-import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 
 simple = new UnitTesterNorm()
 
@@ -119,7 +118,7 @@ tester.equal 94, """
 			def
 			"""
 
-	tester.equal 120, new TestMapper(str, import.meta.url), """
+	tester.equal 120, new TestMapper(import.meta.url, str), """
 			abc
 			def
 			"""
@@ -143,11 +142,11 @@ tester.equal 94, """
 			else
 				return 'x'
 
-	tester.equal 144, new TestMapper("""
+	tester.equal 144, new TestMapper(import.meta.url, """
 			abc
 
 			def
-			""", import.meta.url), """
+			"""), """
 			x
 			x
 			"""
@@ -169,12 +168,12 @@ tester.equal 94, """
 			else
 				return line
 
-	tester.equal 170, new TestMapper("""
+	tester.equal 170, new TestMapper(import.meta.url, """
 			abc
 
 			def
 			ghi
-			""", import.meta.url), """
+			"""), """
 			abc
 			ghi
 			"""
@@ -199,7 +198,7 @@ tester.equal 94, """
 			debug "return from mapLine()", line
 			return line
 
-	tester.equal 200, new TestMapper("""
+	tester.equal 200, new TestMapper(import.meta.url, """
 			str = compare(
 					"abcde",
 					expected
@@ -210,7 +209,7 @@ tester.equal 94, """
 					long parameters
 
 			# --- DONE ---
-			""", import.meta.url), """
+			"""), """
 			str = compare( "abcde", expected )
 			call func with multiple long parameters
 			"""
@@ -235,11 +234,11 @@ tester.equal 94, """
 			else
 				return line
 
-	tester.equal 236, new TestMapper("""
+	tester.equal 236, new TestMapper(import.meta.url, """
 			abc
 
 			def
-			""", import.meta.url), """
+			"""), """
 			123
 			456
 			"""
@@ -286,12 +285,12 @@ tester.equal 250, """
 			else
 				return line
 
-	tester.equal 287, new TestMapper("""
+	tester.equal 287, new TestMapper(import.meta.url, """
 			abc
 			myvar    <==     2 * 3
 
 			def
-			""", import.meta.url), """
+			"""), """
 			abc
 			`$:{
 			myvar = 2 * 3
@@ -318,7 +317,7 @@ tester.equal 250, """
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser(text, import.meta.url)
+	oInput = new TestParser(import.meta.url, text)
 	lPair = oInput.getPair()
 	simple.equal 321, lPair[0], 'p a paragraph'
 	lPair = oInput.getPair()
@@ -339,13 +338,13 @@ tester.equal 250, """
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser("""
+	oInput = new TestParser(import.meta.url, """
 			p a paragraph
 			div:markdown
 				line 1
 
 				line 3
-			""", import.meta.url)
+			""")
 	lPair = oInput.getPair()
 	simple.equal 348, lPair[0], 'p a paragraph'
 	lPair = oInput.getPair()
@@ -374,7 +373,7 @@ tester.equal 250, """
 				block = @fetchBlock(1)
 			return line
 
-	oInput = new TestParser(text, import.meta.url)
+	oInput = new TestParser(import.meta.url, text)
 	lPair = oInput.getPair()
 	simple.equal 377, lPair[0], 'p a paragraph'
 
@@ -466,116 +465,17 @@ tester.equal 422, """
 			else
 				return line
 
-	tester2.equal 467, new TestMapper2("""
+	tester2.equal 467, new TestMapper2(import.meta.url, """
 			abc
 			#if x==y
 				def
 			#else
 				ghi
-			""", import.meta.url), [
+			"""), [
 			['abc', 0],
 			[{ cmd: 'if', argstr: 'x==y' }, 0],
 			['def', 1],
 			[{ cmd: 'else', argstr: '' }, 0],
 			['ghi', 1],
 			]
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-
-	# ---------------------------------------------------------------------------
-
-	class MapTester extends UnitTester
-
-		transformValue: ([myClass, text]) ->
-			return doMap(myClass, import.meta.url, text)
-
-	tester = new MapTester()
-
-	# ---------------------------------------------------------------------------
-	# --- by default, DO NOT remove comments
-
-	class MyInput extends CieloMapper
-
-		mapString: (line, level) ->
-			return line.toUpperCase()
-
-	tester.equal 33, [MyInput, """
-			# --- a comment
-			abc
-
-			def
-			"""], """
-			# --- a comment
-			ABC
-			DEF
-			"""
-
-	# ---------------------------------------------------------------------------
-	# --- DO remove comments
-
-	class MyInput extends CieloMapper
-
-		mapString: (line, level) ->
-			return line.toUpperCase()
-
-		handleComment: (level) ->
-			return undef
-
-	tester.equal 55, [MyInput, """
-			# --- a comment
-			abc
-
-			def
-			"""], """
-			ABC
-			DEF
-			"""
-
-	# ---------------------------------------------------------------------------
-	# Retain empty lines
-
-	class MyInput extends CieloMapper
-
-		mapString: (line, level) ->
-			return line.toUpperCase()
-
-		handleEmptyLine: (level) ->
-			return ''
-
-	tester.equal 76, [MyInput, """
-			# --- a comment
-			abc
-
-			def
-			"""], """
-			# --- a comment
-			ABC
-
-			DEF
-			"""
-
-	# ---------------------------------------------------------------------------
-	# Join continuation lines
-
-	class MyInput extends CieloMapper
-
-		mapString: (line, level) ->
-			return line.toUpperCase()
-
-		handleEmptyLine: (level) ->
-			return ''
-
-	tester.equal 99, [MyInput, """
-			# --- a comment
-			abc
-					def
-			"""], """
-			# --- a comment
-			ABC DEF
-			"""
-
-
 	)()

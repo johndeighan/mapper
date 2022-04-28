@@ -38,10 +38,6 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
-import {
-  CieloMapper
-} from '@jdeighan/mapper/cielomapper';
-
 simple = new UnitTesterNorm();
 
 /*
@@ -124,7 +120,7 @@ def`);
   str = `abc
 
 def`;
-  tester.equal(120, new TestMapper(str, import.meta.url), `abc
+  tester.equal(120, new TestMapper(import.meta.url, str), `abc
 def`);
   return simple.equal(125, doMap(TestMapper, import.meta.url, str), `abc
 def`);
@@ -145,9 +141,9 @@ def`);
     }
 
   };
-  return tester.equal(144, new TestMapper(`abc
+  return tester.equal(144, new TestMapper(import.meta.url, `abc
 
-def`, import.meta.url), `x
+def`), `x
 x`);
 })();
 
@@ -169,10 +165,10 @@ x`);
     }
 
   };
-  return tester.equal(170, new TestMapper(`abc
+  return tester.equal(170, new TestMapper(import.meta.url, `abc
 
 def
-ghi`, import.meta.url), `abc
+ghi`), `abc
 ghi`);
 })();
 
@@ -196,7 +192,7 @@ ghi`);
     }
 
   };
-  return tester.equal(200, new TestMapper(`str = compare(
+  return tester.equal(200, new TestMapper(import.meta.url, `str = compare(
 		"abcde",
 		expected
 		)
@@ -205,7 +201,7 @@ call func
 		with multiple
 		long parameters
 
-# --- DONE ---`, import.meta.url), `str = compare( "abcde", expected )
+# --- DONE ---`), `str = compare( "abcde", expected )
 call func with multiple long parameters`);
 })();
 
@@ -228,9 +224,9 @@ call func with multiple long parameters`);
     }
 
   };
-  return tester.equal(236, new TestMapper(`abc
+  return tester.equal(236, new TestMapper(import.meta.url, `abc
 
-def`, import.meta.url), `123
+def`), `123
 456`);
 })();
 
@@ -264,10 +260,10 @@ def`);
     }
 
   };
-  return tester.equal(287, new TestMapper(`abc
+  return tester.equal(287, new TestMapper(import.meta.url, `abc
 myvar    <==     2 * 3
 
-def`, import.meta.url), `abc
+def`), `abc
 \`$:{
 myvar = 2 * 3
 }\`
@@ -291,7 +287,7 @@ div:markdown
     }
 
   };
-  oInput = new TestParser(text, import.meta.url);
+  oInput = new TestParser(import.meta.url, text);
   lPair = oInput.getPair();
   simple.equal(321, lPair[0], 'p a paragraph');
   lPair = oInput.getPair();
@@ -313,11 +309,11 @@ div:markdown
     }
 
   };
-  oInput = new TestParser(`p a paragraph
+  oInput = new TestParser(import.meta.url, `p a paragraph
 div:markdown
 	line 1
 
-	line 3`, import.meta.url);
+	line 3`);
   lPair = oInput.getPair();
   simple.equal(348, lPair[0], 'p a paragraph');
   lPair = oInput.getPair();
@@ -343,7 +339,7 @@ div:markdown
     }
 
   };
-  oInput = new TestParser(text, import.meta.url);
+  oInput = new TestParser(import.meta.url, text);
   lPair = oInput.getPair();
   simple.equal(377, lPair[0], 'p a paragraph');
   lPair = oInput.getPair();
@@ -422,11 +418,11 @@ def`);
     }
 
   };
-  return tester2.equal(467, new TestMapper2(`abc
+  return tester2.equal(467, new TestMapper2(import.meta.url, `abc
 #if x==y
 	def
 #else
-	ghi`, import.meta.url), [
+	ghi`), [
     ['abc',
     0],
     [
@@ -448,95 +444,4 @@ def`);
     ['ghi',
     1]
   ]);
-})();
-
-// ---------------------------------------------------------------------------
-(function() {
-  var MapTester, MyInput;
-  // ---------------------------------------------------------------------------
-  MapTester = class MapTester extends UnitTester {
-    transformValue([myClass, text]) {
-      return doMap(myClass, import.meta.url, text);
-    }
-
-  };
-  tester = new MapTester();
-  // ---------------------------------------------------------------------------
-  // --- by default, DO NOT remove comments
-  MyInput = class MyInput extends CieloMapper {
-    mapString(line, level) {
-      return line.toUpperCase();
-    }
-
-  };
-  tester.equal(33, [
-    MyInput,
-    `# --- a comment
-abc
-
-def`
-  ], `# --- a comment
-ABC
-DEF`);
-  // ---------------------------------------------------------------------------
-  // --- DO remove comments
-  MyInput = class MyInput extends CieloMapper {
-    mapString(line, level) {
-      return line.toUpperCase();
-    }
-
-    handleComment(level) {
-      return undef;
-    }
-
-  };
-  tester.equal(55, [
-    MyInput,
-    `# --- a comment
-abc
-
-def`
-  ], `ABC
-DEF`);
-  // ---------------------------------------------------------------------------
-  // Retain empty lines
-  MyInput = class MyInput extends CieloMapper {
-    mapString(line, level) {
-      return line.toUpperCase();
-    }
-
-    handleEmptyLine(level) {
-      return '';
-    }
-
-  };
-  tester.equal(76, [
-    MyInput,
-    `# --- a comment
-abc
-
-def`
-  ], `# --- a comment
-ABC
-
-DEF`);
-  // ---------------------------------------------------------------------------
-  // Join continuation lines
-  MyInput = class MyInput extends CieloMapper {
-    mapString(line, level) {
-      return line.toUpperCase();
-    }
-
-    handleEmptyLine(level) {
-      return '';
-    }
-
-  };
-  return tester.equal(99, [
-    MyInput,
-    `# --- a comment
-abc
-		def`
-  ], `# --- a comment
-ABC DEF`);
 })();

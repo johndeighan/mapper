@@ -37,7 +37,7 @@ export taml = (text, hOptions={}) ->
 	# --- If a premapper is provided, use it to map the text
 	if hOptions.premapper
 		assert hOptions.source, "taml(): premapper without source"
-		text = doMap(hOptions.premapper, text, hOptions.source)
+		text = doMap(hOptions.premapper, hOptions.source, text)
 
 	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"
 	debug "return from taml()"

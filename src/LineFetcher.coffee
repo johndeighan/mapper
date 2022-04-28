@@ -28,7 +28,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 export class LineFetcher
 
-	constructor: (source, content) ->
+	constructor: (source, content=undef) ->
 
 		@setContent source, content
 

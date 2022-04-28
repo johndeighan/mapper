@@ -168,7 +168,7 @@ simple.equal 53, lineToParts('<<<<<<'), [
 	class SmartTester extends UnitTester
 
 		transformValue: (block) ->
-			oInput = new CieloMapper(block, import.meta.url)
+			oInput = new CieloMapper(import.meta.url, block)
 			return oInput.getBlock()
 
 	tester = new SmartTester()

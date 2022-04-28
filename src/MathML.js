@@ -52,11 +52,11 @@ export var isCommand = function(str) {
 };
 
 // ---------------------------------------------------------------------------
-export var mathMapper = function(line) {
+export var mapMath = function(line) {
   var cmd, hNode, lWords;
-  debug(`enter mathMapper('${escapeStr(line)}')`);
+  debug(`enter mapMath('${escapeStr(line)}')`);
   if (isEmpty(line)) {
-    debug("return undef from mathMapper() - empty string");
+    debug("return undef from mapMath() - empty string");
     return undef;
   }
   // --- These should not be needed
@@ -73,7 +73,7 @@ export var mathMapper = function(line) {
     debug("expression found");
     hNode = getNode('expr', lWords);
   }
-  debug("return from mathMapper()", hNode);
+  debug("return from mapMath()", hNode);
   return hNode;
 };
 

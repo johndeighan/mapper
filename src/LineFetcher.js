@@ -52,7 +52,7 @@ import {
 //          __END__
 //          #include
 export var LineFetcher = class LineFetcher {
-  constructor(source, content) {
+  constructor(source, content = undef) {
     this.setContent(source, content);
     // --- for handling #include
     this.altInput = undef;

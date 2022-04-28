@@ -20,10 +20,10 @@ import {TreeWalker} from '@jdeighan/mapper/walker'
 
 export class TreeMapper extends CieloMapper
 
-	constructor: (content, source) ->
+	constructor: (source, content=undef) ->
 
 		debug "enter TreeMapper()"
-		super content, source
+		super source, content
 
 		# --- Cached tree, in case getTree() is called multiple times
 		@tree = undef

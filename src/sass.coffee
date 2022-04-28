@@ -32,7 +32,7 @@ export class SassMapper extends Mapper
 
 export sassify = (block, source) ->
 
-	oInput = new SassMapper(block, source)
+	oInput = new SassMapper(source, block)
 	newblock = oInput.getBlock()
 	if ! convert
 		return newblock

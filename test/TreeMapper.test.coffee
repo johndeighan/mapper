@@ -19,7 +19,7 @@ class GatherTester extends UnitTester
 
 	transformValue: (input) ->
 		if isString(input)
-			oInput = new TreeMapper(input, import.meta.url)
+			oInput = new TreeMapper(import.meta.url, input)
 		else if input instanceof TreeMapper
 			oInput = input
 		else
@@ -74,12 +74,12 @@ tester.equal 43, """
 			else
 				croak "Bad line in EnvMapper"
 
-	parser = new EnvMapper("""
+	parser = new EnvMapper(import.meta.url, """
 			name = John
 				last = Deighan
 			age = 68
 			town = Blacksburg
-			""", import.meta.url)
+			""")
 
 	tree = parser.getTree()
 
@@ -117,12 +117,12 @@ tester.equal 43, """
 			else
 				croak "Bad line in EnvMapper"
 
-	parser = new EnvMapper("""
+	parser = new EnvMapper(import.meta.url, """
 			name = John
 				last = Deighan
 			age = 68
 			town = Blacksburg
-			""", import.meta.url)
+			""")
 
 	tree = parser.getTree()
 

@@ -149,7 +149,7 @@ block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
   SmartTester = class SmartTester extends UnitTester {
     transformValue(block) {
       var oInput;
-      oInput = new CieloMapper(block, import.meta.url);
+      oInput = new CieloMapper(import.meta.url, block);
       return oInput.getBlock();
     }
 

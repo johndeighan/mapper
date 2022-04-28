@@ -22,7 +22,7 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  mathMapper
+  mapMath
 } from '@jdeighan/mapper/math';
 
 simple = new UnitTesterNorm();
@@ -31,7 +31,7 @@ simple = new UnitTesterNorm();
 MathTester = class MathTester extends UnitTester {
   transformValue(str) {
     assert(isString(str), "MathTester: not a string");
-    return mathMapper(str);
+    return mapMath(str);
   }
 
 };

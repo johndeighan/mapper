@@ -109,7 +109,7 @@ getAvailSymbolsFrom = (filepath) ->
 
 	contents = slurp(filepath)
 	debug 'Contents of .symbols', contents
-	parser = new SymbolParser(contents, filepath)
+	parser = new SymbolParser(filepath, contents)
 	hSymbols = parser.getSymbols()
 	debug "hSymbols", hSymbols
 	debug "return from getAvailSymbolsFrom()"

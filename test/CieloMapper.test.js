@@ -78,10 +78,10 @@ simple = new UnitTesterNorm();
   var CustomMapper, SmartTester, tester;
   SmartTester = class SmartTester extends UnitTester {
     transformValue(oInput) {
-      var str;
+      var block;
       if (isString(oInput)) {
-        str = oInput;
-        oInput = new CieloMapper(str, import.meta.url);
+        block = oInput;
+        oInput = new CieloMapper(import.meta.url, block);
       }
       assert(oInput instanceof CieloMapper, "oInput should be a CieloMapper object");
       return oInput.getBlock();
@@ -91,7 +91,7 @@ simple = new UnitTesterNorm();
   tester = new SmartTester();
   // ------------------------------------------------------------------------
   // --- test removing comments and empty lines
-  tester.equal(67, `abc
+  tester.equal(55, `abc
 
 # --- a comment
 def`, `abc
@@ -99,7 +99,7 @@ def`, `abc
 def`);
   // ------------------------------------------------------------------------
   // --- test continuation lines
-  tester.equal(81, `h1 color=blue
+  tester.equal(69, `h1 color=blue
 		This is
 		a title
 
@@ -109,7 +109,7 @@ p the end`, `h1 color=blue This is a title
 p the end`);
   // ------------------------------------------------------------------------
   // --- test trailing backslash
-  tester.equal(97, `h1 color=blue \\
+  tester.equal(85, `h1 color=blue \\
 		This is \\
 		a title
 
@@ -119,7 +119,7 @@ p the end`, `h1 color=blue This is a title
 p the end`);
   // ------------------------------------------------------------------------
   // --- test trailing backslash
-  tester.equal(113, `h1 color=blue \\
+  tester.equal(101, `h1 color=blue \\
 	This is \\
 	a title
 
@@ -131,7 +131,7 @@ p the end`, `h1 color=blue \\
 p the end`);
   // ------------------------------------------------------------------------
   // --- test HEREDOC
-  tester.equal(131, `h1 color=<<<
+  tester.equal(119, `h1 color=<<<
 	magenta
 
 # --- a comment
@@ -140,7 +140,7 @@ p the end`, `h1 color="magenta"
 p the end`);
   // ------------------------------------------------------------------------
   // --- test HEREDOC with continuation lines
-  tester.equal(146, `h1 color=<<<
+  tester.equal(134, `h1 color=<<<
 		This is a title
 	magenta
 
@@ -150,7 +150,7 @@ p the end`, `h1 color="magenta" This is a title
 p the end`);
   // ------------------------------------------------------------------------
   // --- test using '.' in a HEREDOC
-  tester.equal(162, `h1 color=<<<
+  tester.equal(150, `h1 color=<<<
 	...color
 	.
 	magenta
@@ -163,30 +163,30 @@ p the end`);
   //    Test various types of HEREDOC sections
   // ------------------------------------------------------------------------
   // --- test empty HEREDOC section
-  tester.equal(181, `h1 name=<<<
+  tester.equal(169, `h1 name=<<<
 
 p the end`, `h1 name=""
 p the end`);
   // ------------------------------------------------------------------------
   // --- test ending HEREDOC with EOF instead of a blank line
-  tester.equal(193, `h1 name=<<<`, `h1 name=""`);
+  tester.equal(181, `h1 name=<<<`, `h1 name=""`);
   // ------------------------------------------------------------------------
   // --- test TAML
-  tester.equal(202, `h1 lItems=<<<
+  tester.equal(190, `h1 lItems=<<<
 	---
 	- abc
 	- def
 `, `h1 lItems=["abc","def"]`);
   // ------------------------------------------------------------------------
   // --- test one liner
-  tester.equal(215, `error message=<<<
+  tester.equal(203, `error message=<<<
 	...an error
 	occurred in
 	your program
 `, `error message="an error occurred in your program"`);
   // ------------------------------------------------------------------------
   // --- test forcing a literal block
-  tester.equal(228, `TAML looks like: <<<
+  tester.equal(216, `TAML looks like: <<<
 	===
 	---
 	- abc
@@ -194,7 +194,7 @@ p the end`);
 `, `TAML looks like: "---\\n- abc\\n- def"`);
   // ------------------------------------------------------------------------
   // --- test ordinary block
-  tester.equal(242, `lRecords = db.fetch(<<<)
+  tester.equal(230, `lRecords = db.fetch(<<<)
 	select ID,Name
 	from Users
 
@@ -202,21 +202,21 @@ console.dir lRecords`, `lRecords = db.fetch("select ID,Name\\nfrom Users")
 console.dir lRecords`);
   // ------------------------------------------------------------------------
   // --- Test patching file name
-  tester.equal(256, `in file __FILE__
+  tester.equal(244, `in file __FILE__
 ok
 exiting file __FILE__`, `in file CieloMapper.test.js
 ok
 exiting file CieloMapper.test.js`);
   // ------------------------------------------------------------------------
   // --- Test patching line number
-  tester.equal(270, `on line __LINE__
+  tester.equal(257, `on line __LINE__
 ok
 on line __LINE__`, `on line 1
 ok
 on line 3`);
   // ------------------------------------------------------------------------
   // --- Test #define and replacement strings
-  tester.equal(283, `abc
+  tester.equal(270, `abc
 #define X 42
 var y = __X__`, `abc
 var y = 42`);
@@ -234,10 +234,10 @@ var y = 42`);
     }
 
   };
-  return tester.equal(307, new CustomMapper(`abc
+  return tester.equal(294, new CustomMapper(import.meta.url, `abc
 
 # --- a comment
-def`, import.meta.url), `abc
+def`), `abc
 line 2 is empty
 line 3 is a comment
 def`);
@@ -245,23 +245,23 @@ def`);
 
 // ---------------------------------------------------------------------------
 (function() {
-  var HereDocMapper, tester;
-  HereDocMapper = class HereDocMapper extends UnitTesterNorm {
+  var HereDocTester, tester;
+  HereDocTester = class HereDocTester extends UnitTesterNorm {
     transformValue(block) {
-      return doMap(CieloMapper, block, import.meta.url);
+      return doMap(CieloMapper, import.meta.url, block);
     }
 
   };
-  tester = new HereDocMapper();
+  tester = new HereDocTester();
   // ------------------------------------------------------------------------
-  tester.equal(89, `input on:click={<<<}
+  tester.equal(320, `input on:click={<<<}
 	(event) ->
 		console.log 'click'
 `, `input on:click={(function(event) {
 	return console.log('click');
 	});}`);
   // ------------------------------------------------------------------------
-  return tester.equal(102, `input on:click={<<<}
+  return tester.equal(333, `input on:click={<<<}
 	(event) ->
 		callme(x)
 		console.log('click')
@@ -269,4 +269,95 @@ def`);
 	callme(x);
 	return console.log('click');
 	});}`);
+})();
+
+// ---------------------------------------------------------------------------
+(function() {
+  var MapTester, MyMapper, tester;
+  // ---------------------------------------------------------------------------
+  MapTester = class MapTester extends UnitTester {
+    transformValue([myClass, block]) {
+      return doMap(myClass, import.meta.url, block);
+    }
+
+  };
+  tester = new MapTester();
+  // ---------------------------------------------------------------------------
+  // --- by default, DO NOT remove comments
+  MyMapper = class MyMapper extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+  };
+  tester.equal(368, [
+    MyMapper,
+    `# --- a comment
+abc
+
+def`
+  ], `# --- a comment
+ABC
+DEF`);
+  // ---------------------------------------------------------------------------
+  // --- DO remove comments
+  MyMapper = class MyMapper extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleComment(level) {
+      return undef;
+    }
+
+  };
+  tester.equal(390, [
+    MyMapper,
+    `# --- a comment
+abc
+
+def`
+  ], `ABC
+DEF`);
+  // ---------------------------------------------------------------------------
+  // Retain empty lines
+  MyMapper = class MyMapper extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleEmptyLine(level) {
+      return '';
+    }
+
+  };
+  tester.equal(411, [
+    MyMapper,
+    `# --- a comment
+abc
+
+def`
+  ], `# --- a comment
+ABC
+
+DEF`);
+  // ---------------------------------------------------------------------------
+  // Join continuation lines
+  MyMapper = class MyMapper extends CieloMapper {
+    mapString(line, level) {
+      return line.toUpperCase();
+    }
+
+    handleEmptyLine(level) {
+      return '';
+    }
+
+  };
+  return tester.equal(434, [
+    MyMapper,
+    `# --- a comment
+abc
+		def`
+  ], `# --- a comment
+ABC DEF`);
 })();

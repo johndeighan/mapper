@@ -20,7 +20,7 @@ import {LineFetcher} from '@jdeighan/mapper/fetcher'
 
 export class Mapper extends LineFetcher
 
-	constructor: (source, content) ->
+	constructor: (source, content=undef) ->
 
 		super source, content
 		@lLookAhead = []

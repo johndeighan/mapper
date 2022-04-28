@@ -26,11 +26,11 @@ export isCommand = (str) -> hCommands[str]?
 
 # ---------------------------------------------------------------------------
 
-export mathMapper = (line) ->
+export mapMath = (line) ->
 
-	debug "enter mathMapper('#{escapeStr(line)}')"
+	debug "enter mapMath('#{escapeStr(line)}')"
 	if isEmpty(line)
-		debug "return undef from mathMapper() - empty string"
+		debug "return undef from mapMath() - empty string"
 		return undef
 
 	# --- These should not be needed
@@ -49,7 +49,7 @@ export mathMapper = (line) ->
 		debug "expression found"
 		hNode = getNode('expr', lWords)
 
-	debug "return from mathMapper()", hNode
+	debug "return from mapMath()", hNode
 	return hNode
 
 # ---------------------------------------------------------------------------

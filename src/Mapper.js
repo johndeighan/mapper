@@ -39,7 +39,7 @@ import {
 //      - allow mapping of lines, including skipping lines
 //      - implement look ahead via peekPair()
 export var Mapper = class Mapper extends LineFetcher {
-  constructor(source, content) {
+  constructor(source, content = undef) {
     super(source, content);
     this.lLookAhead = [];
     // --- cache in case getAllPairs() is called multiple times

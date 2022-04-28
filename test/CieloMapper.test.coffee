@@ -41,8 +41,8 @@ simple = new UnitTesterNorm()
 
 		transformValue: (oInput) ->
 			if isString(oInput)
-				str = oInput
-				oInput = new CieloMapper(str, import.meta.url)
+				block = oInput
+				oInput = new CieloMapper(import.meta.url, block)
 			assert oInput instanceof CieloMapper,
 				"oInput should be a CieloMapper object"
 			return oInput.getBlock()
@@ -52,7 +52,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test removing comments and empty lines
 
-	tester.equal 67, """
+	tester.equal 55, """
 			abc
 
 			# --- a comment
@@ -66,7 +66,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 81, """
+	tester.equal 69, """
 			h1 color=blue
 					This is
 					a title
@@ -82,7 +82,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test trailing backslash
 
-	tester.equal 97, """
+	tester.equal 85, """
 			h1 color=blue \\
 					This is \\
 					a title
@@ -98,7 +98,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test trailing backslash
 
-	tester.equal 113, """
+	tester.equal 101, """
 			h1 color=blue \\
 				This is \\
 				a title
@@ -116,7 +116,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test HEREDOC
 
-	tester.equal 131, """
+	tester.equal 119, """
 			h1 color=<<<
 				magenta
 
@@ -131,7 +131,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test HEREDOC with continuation lines
 
-	tester.equal 146, """
+	tester.equal 134, """
 			h1 color=<<<
 					This is a title
 				magenta
@@ -147,7 +147,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test using '.' in a HEREDOC
 
-	tester.equal 162, """
+	tester.equal 150, """
 			h1 color=<<<
 				...color
 				.
@@ -166,7 +166,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test empty HEREDOC section
 
-	tester.equal 181, """
+	tester.equal 169, """
 			h1 name=<<<
 
 			p the end
@@ -178,7 +178,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test ending HEREDOC with EOF instead of a blank line
 
-	tester.equal 193, """
+	tester.equal 181, """
 			h1 name=<<<
 			""", """
 			h1 name=""
@@ -187,7 +187,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test TAML
 
-	tester.equal 202, """
+	tester.equal 190, """
 			h1 lItems=<<<
 				---
 				- abc
@@ -200,7 +200,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test one liner
 
-	tester.equal 215, """
+	tester.equal 203, """
 			error message=<<<
 				...an error
 				occurred in
@@ -213,7 +213,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test forcing a literal block
 
-	tester.equal 228, """
+	tester.equal 216, """
 			TAML looks like: <<<
 				===
 				---
@@ -227,7 +227,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- test ordinary block
 
-	tester.equal 242, """
+	tester.equal 230, """
 			lRecords = db.fetch(<<<)
 				select ID,Name
 				from Users
@@ -241,7 +241,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- Test patching file name
 
-	tester.equal 256, """
+	tester.equal 244, """
 			in file __FILE__
 			ok
 			exiting file __FILE__
@@ -254,7 +254,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- Test patching line number
 
-	tester.equal 270, """
+	tester.equal 257, """
 			on line __LINE__
 			ok
 			on line __LINE__
@@ -267,7 +267,7 @@ simple = new UnitTesterNorm()
 	# ------------------------------------------------------------------------
 	# --- Test #define and replacement strings
 
-	tester.equal 283, """
+	tester.equal 270, """
 			abc
 			#define X 42
 			var y = __X__
@@ -291,12 +291,12 @@ simple = new UnitTesterNorm()
 			debug "in new handleComment()"
 			return "line #{@lineNum} is a comment"
 
-	tester.equal 307, new CustomMapper("""
+	tester.equal 294, new CustomMapper(import.meta.url, """
 			abc
 
 			# --- a comment
 			def
-			""", import.meta.url), """
+			"""), """
 			abc
 			line 2 is empty
 			line 3 is a comment
@@ -308,16 +308,16 @@ simple = new UnitTesterNorm()
 
 (() ->
 
-	class HereDocMapper extends UnitTesterNorm
+	class HereDocTester extends UnitTesterNorm
 
 		transformValue: (block) ->
-			return doMap(CieloMapper, block, import.meta.url)
+			return doMap(CieloMapper, import.meta.url, block)
 
-	tester = new HereDocMapper()
+	tester = new HereDocTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 89, """
+	tester.equal 320, """
 			input on:click={<<<}
 				(event) ->
 					console.log 'click'
@@ -330,7 +330,7 @@ simple = new UnitTesterNorm()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 102, """
+	tester.equal 333, """
 			input on:click={<<<}
 				(event) ->
 					callme(x)
@@ -341,5 +341,102 @@ simple = new UnitTesterNorm()
 				callme(x);
 				return console.log('click');
 				});}
+			"""
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	# ---------------------------------------------------------------------------
+
+	class MapTester extends UnitTester
+
+		transformValue: ([myClass, block]) ->
+			return doMap(myClass, import.meta.url, block)
+
+	tester = new MapTester()
+
+	# ---------------------------------------------------------------------------
+	# --- by default, DO NOT remove comments
+
+	class MyMapper extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+	tester.equal 368, [MyMapper, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			# --- a comment
+			ABC
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# --- DO remove comments
+
+	class MyMapper extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleComment: (level) ->
+			return undef
+
+	tester.equal 390, [MyMapper, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			ABC
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# Retain empty lines
+
+	class MyMapper extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleEmptyLine: (level) ->
+			return ''
+
+	tester.equal 411, [MyMapper, """
+			# --- a comment
+			abc
+
+			def
+			"""], """
+			# --- a comment
+			ABC
+
+			DEF
+			"""
+
+	# ---------------------------------------------------------------------------
+	# Join continuation lines
+
+	class MyMapper extends CieloMapper
+
+		mapString: (line, level) ->
+			return line.toUpperCase()
+
+		handleEmptyLine: (level) ->
+			return ''
+
+	tester.equal 434, [MyMapper, """
+			# --- a comment
+			abc
+					def
+			"""], """
+			# --- a comment
+			ABC DEF
 			"""
 	)()

@@ -40,7 +40,7 @@ export var SassMapper = class SassMapper extends Mapper {
 // ---------------------------------------------------------------------------
 export var sassify = function(block, source) {
   var newblock, oInput, result;
-  oInput = new SassMapper(block, source);
+  oInput = new SassMapper(source, block);
   newblock = oInput.getBlock();
   if (!convert) {
     return newblock;

@@ -7,7 +7,7 @@ import {
 	undef, pass, isEmpty, isArray, isString,
 	} from '@jdeighan/coffee-utils'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {mathMapper} from '@jdeighan/mapper/math'
+import {mapMath} from '@jdeighan/mapper/math'
 
 simple = new UnitTesterNorm()
 
@@ -17,7 +17,7 @@ class MathTester extends UnitTester
 
 	transformValue: (str) ->
 		assert isString(str), "MathTester: not a string"
-		return mathMapper(str)
+		return mapMath(str)
 
 tester = new MathTester()
 

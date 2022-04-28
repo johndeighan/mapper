@@ -44,9 +44,9 @@ export var CieloMapper = class CieloMapper extends Mapper {
   // - joins continuation lines
   // - handles HEREDOCs
   // - handles #define <name> <value> and __<name>__ substitution
-  constructor(content, source) {
+  constructor(source, content = undef) {
     debug(`enter CieloMapper(source='${source}')`, content);
-    super(content, source);
+    super(source, content);
     this.hVars = {
       FILE: this.filename,
       DIR: this.hSourceInfo.dir,

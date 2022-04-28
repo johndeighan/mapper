@@ -36,7 +36,7 @@ GatherTester = class GatherTester extends UnitTester {
   transformValue(input) {
     var oInput;
     if (isString(input)) {
-      oInput = new TreeMapper(input, import.meta.url);
+      oInput = new TreeMapper(import.meta.url, input);
     } else if (input instanceof TreeMapper) {
       oInput = input;
     } else {
@@ -75,10 +75,10 @@ tester.equal(43, `line 1
     }
 
   };
-  parser = new EnvMapper(`name = John
+  parser = new EnvMapper(import.meta.url, `name = John
 	last = Deighan
 age = 68
-town = Blacksburg`, import.meta.url);
+town = Blacksburg`);
   tree = parser.getTree();
   return simple.equal(84, tree, [
     {
@@ -125,10 +125,10 @@ town = Blacksburg`, import.meta.url);
     }
 
   };
-  parser = new EnvMapper(`name = John
+  parser = new EnvMapper(import.meta.url, `name = John
 	last = Deighan
 age = 68
-town = Blacksburg`, import.meta.url);
+town = Blacksburg`);
   tree = parser.getTree();
   return simple.equal(127, tree, [
     {

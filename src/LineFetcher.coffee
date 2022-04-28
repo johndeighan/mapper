@@ -28,9 +28,9 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 export class LineFetcher
 
-	constructor: (content, source) ->
+	constructor: (source, content) ->
 
-		@setContent content, source
+		@setContent source, content
 
 		# --- for handling #include
 		@altInput = undef
@@ -38,7 +38,10 @@ export class LineFetcher
 
 	# ..........................................................
 
-	setContent: (content, source) ->
+	setContent: (source, content) ->
+		# --- source should be a file path or a URL
+		#     content should be block or a generator
+		#     if content is empty, it will be read in using source
 
 		debug "enter setContent(source='#{source}')", content
 
@@ -157,7 +160,7 @@ export class LineFetcher
 				croak "Can't find include file #{fname} anywhere"
 
 			contents = slurp(includePath)
-			@altInput = new LineFetcher(contents, fname)
+			@altInput = new LineFetcher(fname, contents)
 			@altLevel = indentLevel(prefix)
 			debug "alt input created with prefix #{OL(prefix)}"
 			line = @altInput.fetch()

@@ -1,16 +1,22 @@
-class StringFetcher
+class LineFetcher
 =================
 
-A StringFetcher object allows you to fetch one line at a time
-from a **block**, i.e. a multi-line string. You must tell the
-constructor where the text came from. For example:
+A LineFetcher object allows you to fetch one line at a time
+from a source, such as:
+
+	1. A **block**, i.e. multi-line string
+	2. A file - given the file's full path or URL
+	3. A generator
+
+For example:
 
 ```coffeescript
-fetcher = new StringFetcher("""
+path = "c:/Users/johnd/temp.txt"
+fetcher = new LineFetcher(path, """
 	abc
 	def
 	ghi
-	""", "c:/Users/johnd/temp.txt")
+	""")
 
 while line = fetcher.fetch()
 	console.log "LINE #{fetcher.lineNum}: <<<#{line}>>>"
@@ -25,11 +31,23 @@ LINE 3: <<<ghi>>>
 3 total lines
 ```
 
-unfetch()
----------
-There is also a method named unfetch() where you can provide
+Look-ahead
+----------
+
+To enable look-ahead in the stream, you can utilize one or more
+of the following additional methods:
+
+**unfetch(str)** - you can provide
 a string, which will then be returned by the next call
 to fetch()
+
+**peek()** - you can examine the next string in the stream
+without actually consuming it.
+
+**eof()** - determine whether you're at the end of the stream.
+Note that if you reach the end of the stream, but then call
+unfetch(), eof() will return false until you actually fetch
+that string.
 
 #include
 --------
@@ -45,10 +63,11 @@ exists anywhere within directory c:/Users/johnd or inside any
 subdirectory of c:/Users/johnd, then:
 
 ```coffeescript
-fetcher = new StringFetcher("""
+path = "c:/Users/johnd/source.txt"
+fetcher = new LineFetcher(path, """
 	abc
 		#include file.txt
-	""", "c:/Users/johnd/source.txt")
+	""")
 
 while line = fetcher.fetch()
 	console.log "#{fetcher.lineNum}: #{line}"
@@ -77,6 +96,6 @@ line containing `__END__`, nor any following lines were present
 `getBlock()`
 ------------
 
-The method getBlock() will fetch all lines from a StringFetcher,
+The method getBlock() will fetch all lines from a LineFetcher,
 maintaining indentation, and return a **block**, i.e. a string
 with lines joined using newline characters.

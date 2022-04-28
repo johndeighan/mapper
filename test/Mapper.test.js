@@ -55,9 +55,9 @@ simple = new UnitTesterNorm();
 // --- test getPair(), peekPair(), ungetPair(), skipPair()
 (function() {
   var input, lPair, pair;
-  input = new Mapper(`abc
+  input = new Mapper(import.meta.url, `abc
 	def
-		ghi`, import.meta.url);
+		ghi`);
   // --- lPair is [item, level]
   lPair = input.peekPair();
   simple.equal(41, lPair, ['abc', 0]);
@@ -84,7 +84,7 @@ MapperTester = class MapperTester extends UnitTester {
     var oInput;
     // --- input may be a string or a Mapper or subclass
     if (isString(input)) {
-      oInput = new Mapper(input, import.meta.url);
+      oInput = new Mapper(import.meta.url, input);
     } else {
       assert(input instanceof Mapper, "input should be a Mapper object");
       oInput = input;
@@ -126,7 +126,7 @@ def`);
 def`;
   tester.equal(120, new TestMapper(str, import.meta.url), `abc
 def`);
-  return simple.equal(125, doMap(TestMapper, str, import.meta.url), `abc
+  return simple.equal(125, doMap(TestMapper, import.meta.url, str), `abc
 def`);
 })();
 
@@ -456,7 +456,7 @@ def`);
   // ---------------------------------------------------------------------------
   MapTester = class MapTester extends UnitTester {
     transformValue([myClass, text]) {
-      return doMap(myClass, text, import.meta.url);
+      return doMap(myClass, import.meta.url, text);
     }
 
   };

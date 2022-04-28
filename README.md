@@ -49,7 +49,7 @@ replace '=' characters with '-' characters for a level 2 heading
 
 This library provides 4 classes of increasing complexity:
 
-1. [StringFetcher](./StringFetcher.md)
+1. [LineFetcher](./LineFetcher.md)
 2. [Mapper](./Mapper.md)
 3. [CieloMapper](./CieloMapper.md)
 

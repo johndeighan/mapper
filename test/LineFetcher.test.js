@@ -43,9 +43,9 @@ simple = new UnitTesterNorm();
 // --- test fetch(), unfetch()
 (function() {
   var input, line;
-  input = new LineFetcher(`abc
+  input = new LineFetcher(import.meta.url, `abc
 	def
-		ghi`, import.meta.url);
+		ghi`);
   line = input.fetch();
   simple.equal(31, line, 'abc');
   simple.equal(33, input.filename, 'LineFetcher.test.js');
@@ -64,7 +64,7 @@ simple = new UnitTesterNorm();
 // ---------------------------------------------------------------------------
 FetcherTester = class FetcherTester extends UnitTester {
   transformValue(block) {
-    return new LineFetcher(block, import.meta.url).getBlock();
+    return new LineFetcher(import.meta.url, block).getBlock();
   }
 
 };

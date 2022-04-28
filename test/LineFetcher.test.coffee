@@ -21,11 +21,11 @@ simple = new UnitTesterNorm()
 # --- test fetch(), unfetch()
 
 (() ->
-	input = new LineFetcher("""
+	input = new LineFetcher(import.meta.url, """
 			abc
 				def
 					ghi
-			""", import.meta.url)
+			""")
 
 	line = input.fetch()
 	simple.equal 31, line, 'abc'
@@ -52,7 +52,7 @@ simple = new UnitTesterNorm()
 class FetcherTester extends UnitTester
 
 	transformValue: (block) ->
-		return new LineFetcher(block, import.meta.url).getBlock()
+		return new LineFetcher(import.meta.url, block).getBlock()
 
 tester = new FetcherTester()
 

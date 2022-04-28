@@ -20,9 +20,9 @@ import {LineFetcher} from '@jdeighan/mapper/fetcher'
 
 export class Mapper extends LineFetcher
 
-	constructor: (content, source) ->
+	constructor: (source, content) ->
 
-		super content, source
+		super source, content
 		@lLookAhead = []
 
 		# --- cache in case getAllPairs() is called multiple times
@@ -188,7 +188,7 @@ export class Mapper extends LineFetcher
 
 # ===========================================================================
 
-export doMap = (inputClass, text, source) ->
+export doMap = (inputClass, source, text) ->
 
 	assert inputClass?, "Missing input class"
 	if lMatches = inputClass.toString().match(/class\s+(\w+)/)
@@ -196,7 +196,7 @@ export doMap = (inputClass, text, source) ->
 	else
 		croak "doMap(): Bad input class"
 	debug "enter doMap(#{className}) source='#{source}'"
-	oInput = new inputClass(text, source)
+	oInput = new inputClass(source, text)
 	assert oInput instanceof Mapper,
 		"doMap() requires a Mapper or subclass"
 	result = oInput.getBlock()

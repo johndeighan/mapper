@@ -39,8 +39,8 @@ import {
 //      - allow mapping of lines, including skipping lines
 //      - implement look ahead via peekPair()
 export var Mapper = class Mapper extends LineFetcher {
-  constructor(content, source) {
-    super(content, source);
+  constructor(source, content) {
+    super(source, content);
     this.lLookAhead = [];
     // --- cache in case getAllPairs() is called multiple times
     //     each pair is [<mapped str>, <level>]
@@ -204,7 +204,7 @@ export var Mapper = class Mapper extends LineFetcher {
 };
 
 // ===========================================================================
-export var doMap = function(inputClass, text, source) {
+export var doMap = function(inputClass, source, text) {
   var className, lMatches, oInput, result;
   assert(inputClass != null, "Missing input class");
   if (lMatches = inputClass.toString().match(/class\s+(\w+)/)) {
@@ -213,7 +213,7 @@ export var doMap = function(inputClass, text, source) {
     croak("doMap(): Bad input class");
   }
   debug(`enter doMap(${className}) source='${source}'`);
-  oInput = new inputClass(text, source);
+  oInput = new inputClass(source, text);
   assert(oInput instanceof Mapper, "doMap() requires a Mapper or subclass");
   result = oInput.getBlock();
   debug("return from doMap()", result);

@@ -52,8 +52,8 @@ import {
 //          __END__
 //          #include
 export var LineFetcher = class LineFetcher {
-  constructor(content, source) {
-    this.setContent(content, source);
+  constructor(source, content) {
+    this.setContent(source, content);
     // --- for handling #include
     this.altInput = undef;
     this.altLevel = undef; // indentation added to lines from alt
@@ -61,7 +61,10 @@ export var LineFetcher = class LineFetcher {
 
   
     // ..........................................................
-  setContent(content, source) {
+  setContent(source, content) {
+    // --- source should be a file path or a URL
+    //     content should be block or a generator
+    //     if content is empty, it will be read in using source
     debug(`enter setContent(source='${source}')`, content);
     // --- @hSourceInfo has keys: dir, filename, stub, ext, fullpath
     //     source may be a URL, e.g. import.meta.url
@@ -178,7 +181,7 @@ export var LineFetcher = class LineFetcher {
         croak(`Can't find include file ${fname} anywhere`);
       }
       contents = slurp(includePath);
-      this.altInput = new LineFetcher(contents, fname);
+      this.altInput = new LineFetcher(fname, contents);
       this.altLevel = indentLevel(prefix);
       debug(`alt input created with prefix ${OL(prefix)}`);
       line = this.altInput.fetch();

@@ -31,11 +31,11 @@ simple = new UnitTesterNorm()
 # --- test getPair(), peekPair(), ungetPair(), skipPair()
 
 (() ->
-	input = new Mapper("""
+	input = new Mapper(import.meta.url, """
 			abc
 				def
 					ghi
-			""", import.meta.url)
+			""")
 
 	# --- lPair is [item, level]
 
@@ -73,7 +73,7 @@ class MapperTester extends UnitTester
 		# --- input may be a string or a Mapper or subclass
 
 		if isString(input)
-			oInput = new Mapper(input, import.meta.url)
+			oInput = new Mapper(import.meta.url, input)
 		else
 			assert input instanceof Mapper,
 				"input should be a Mapper object"
@@ -124,7 +124,7 @@ tester.equal 94, """
 			def
 			"""
 
-	simple.equal 125, doMap(TestMapper, str, import.meta.url), """
+	simple.equal 125, doMap(TestMapper, import.meta.url, str), """
 			abc
 			def
 			"""
@@ -490,7 +490,7 @@ tester.equal 422, """
 	class MapTester extends UnitTester
 
 		transformValue: ([myClass, text]) ->
-			return doMap(myClass, text, import.meta.url)
+			return doMap(myClass, import.meta.url, text)
 
 	tester = new MapTester()
 

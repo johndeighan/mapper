@@ -10,7 +10,7 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {doMap} from '@jdeighan/mapper'
 import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
-import {cieloCodeToJS} from '@jdeighan/mapper/cielo'
+import {cieloCodeToJS, convertCielo} from '@jdeighan/mapper/cielo'
 
 simple = new UnitTesterNorm(import.meta.url)
 convertCoffee false
@@ -30,18 +30,14 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (code) ->
-			{imports, jsCode} = cieloCodeToJS(code, import.meta.url)
-			if isEmpty(imports)
-				return jsCode
-			else
-				return [imports, jsCode].join("\n")
+			return cieloCodeToJS(code, import.meta.url)
 
 	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 	# --- test retaining comments
 
-	tester.equal 48, """
+	tester.equal 44, """
 			# --- a comment
 			y = x
 			""", """
@@ -52,7 +48,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 59, """
+	tester.equal 55, """
 			# --- a comment
 
 			y = x
@@ -67,7 +63,7 @@ convertCoffee false
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 74, """
+	tester.equal 70, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -80,7 +76,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 87, """
+	tester.equal 83, """
 			x = 23
 			y = x
 					+ 5
@@ -92,7 +88,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test use of backslash continuation lines
 
-	tester.equal 99, """
+	tester.equal 95, """
 			x = 23
 			y = x \
 			+ 5
@@ -105,7 +101,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 113, """
+	tester.equal 108, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -115,7 +111,7 @@ convertCoffee false
 			+ 5
 			"""
 
-	tester.equal 123, """
+	tester.equal 118, """
 			str = <<<
 				abc
 				def
@@ -126,7 +122,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 134, """
+	tester.equal 129, """
 			str = <<<
 				===
 				abc
@@ -138,7 +134,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 146, """
+	tester.equal 141, """
 			str = <<<
 				...this is a
 					long line
@@ -146,7 +142,7 @@ convertCoffee false
 			str = "this is a long line"
 			"""
 
-	tester.equal 154, """
+	tester.equal 149, """
 			lItems = <<<
 				---
 				- a
@@ -155,7 +151,7 @@ convertCoffee false
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 163, """
+	tester.equal 158, """
 			hItems = <<<
 				---
 				a: 13
@@ -164,7 +160,7 @@ convertCoffee false
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 172, """
+	tester.equal 167, """
 			lItems = <<<
 				---
 				-
@@ -177,7 +173,7 @@ convertCoffee false
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 185, """
+	tester.equal 180, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -193,7 +189,7 @@ convertCoffee false
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 201, """
+	tester.equal 196, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -206,7 +202,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 214, """
+	tester.equal 209, """
 			str = \"\"\"
 				this is a
 				long string
@@ -220,7 +216,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 228, '''
+	tester.equal 223, '''
 			str = """
 				this is a
 				long string
@@ -234,7 +230,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 242, """
+	tester.equal 237, """
 			str = '''
 				this is a
 				long string
@@ -257,14 +253,14 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
-			return doMap(CieloMapper, text, import.meta.url)
+			return doMap(CieloMapper, import.meta.url, text)
 
 	tester = new CieloTester('cielo.test')
 
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 272, """
+	tester.equal 267, """
 			handler = <<<
 				() ->
 					return 42
@@ -274,7 +270,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 282, """
+	tester.equal 277, """
 			handler = <<<
 				() -> return 42
 			""", """
@@ -283,7 +279,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 291, """
+	tester.equal 286, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -293,4 +289,25 @@ convertCoffee false
 				});
 			"""
 
+	)()
+
+# ----------------------------------------------------------------------------
+
+(() ->
+	cieloCode = """
+			# --- temp.cielo
+			if fs.existsSync('file.txt')
+				logger "file exists"
+			"""
+
+	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
+
+	simple.equal 314, jsCode, """
+			import fs from 'fs';
+			import {log as logger} from '@jdeighan/coffee-utils/log';
+			// --- temp.cielo
+			if (fs.existsSync('file.txt')) {
+				logger("file exists");
+			}
+			"""
 	)()

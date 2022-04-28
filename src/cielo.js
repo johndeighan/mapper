@@ -9,7 +9,8 @@ import {
   isEmpty,
   nonEmpty,
   isString,
-  isHash
+  isHash,
+  isArray
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -25,6 +26,10 @@ import {
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
+
+import {
+  joinBlocks
+} from '@jdeighan/coffee-utils/block';
 
 import {
   withExt,
@@ -79,7 +84,7 @@ export var convertCielo = function(flag) {
 
 // ---------------------------------------------------------------------------
 export var cieloCodeToJS = function(cieloCode, hOptions) {
-  var coffeeCode, err, imports, jsCode, jsPreCode, lNeededSymbols, postmapper, premapper, source;
+  var coffeeCode, err, jsCode, jsPreCode, lImports, lNeededSymbols, postmapper, premapper, source, stmt;
   // --- cielo => js
   //     Valid Options:
   //        premapper:  CieloMapper or subclass
@@ -89,9 +94,9 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
   //           default:
   //              bare: true
   //              header: false
-  debug('hOptions', hOptions);
   debug("enter cieloCodeToJS()");
   debug("cieloCode", cieloCode);
+  debug('hOptions', hOptions);
   assert(indentLevel(cieloCode) === 0, "cieloCodeToJS(): has indentation");
   if (isString(hOptions)) {
     source = hOptions;
@@ -107,7 +112,7 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
   assert(source != null, "cieloCodeToJS(): Missing source");
   // --- Even if no premapper is defined, this will handle
   //     continuation lines, HEREDOCs, etc.
-  coffeeCode = doMap(premapper, cieloCode, source);
+  coffeeCode = doMap(premapper, source, cieloCode);
   if (coffeeCode !== cieloCode) {
     debug("coffeeCode", coffeeCode);
   }
@@ -122,7 +127,7 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
       jsPreCode = cieloCode;
     }
     if (postmapper) {
-      jsCode = doMap(postmapper, jsPreCode, source);
+      jsCode = doMap(postmapper, source, jsPreCode);
       if (jsCode !== jsPreCode) {
         debug("post mapped", jsCode);
       }
@@ -133,15 +138,31 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
     err = error;
     croak(err, "Original Code", cieloCode);
   }
-  imports = buildImportList(lNeededSymbols, source).join("\n");
-  debug("imports", imports);
+  // --- Prepend needed imports
+  lImports = buildImportList(lNeededSymbols, source);
+  debug("lImports", lImports);
+  assert(isArray(lImports), "cieloCodeToJS(): lImports is not an array");
+  if (convertingCielo) {
+    // --- append ';' to import statements
+    lImports = (function() {
+      var i, len, results;
+      results = [];
+      for (i = 0, len = lImports.length; i < len; i++) {
+        stmt = lImports[i];
+        results.push(stmt + ';');
+      }
+      return results;
+    })();
+  }
+  // --- joinBlocks() flattens all its arguments to array of strings
+  jsCode = joinBlocks(lImports, jsCode);
   debug("return from cieloCodeToJS()", jsCode);
-  return {jsCode, imports};
+  return jsCode;
 };
 
 // ---------------------------------------------------------------------------
 export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
-  var cieloCode, dumpfile, i, imports, jsCode, lNeeded, len, n, sym, word;
+  var cieloCode, dumpfile, i, jsCode, lNeeded, len, n, sym, word;
   if (destPath == null) {
     destPath = withExt(srcPath, '.js', {
       removeLeadingUnderScore: true
@@ -164,7 +185,7 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
         }
       }
     }
-    ({imports, jsCode} = cieloCodeToJS(cieloCode, hOptions));
-    barf(destPath, [imports, jsCode]);
+    jsCode = cieloCodeToJS(cieloCode, hOptions);
+    barf(destPath, jsCode);
   }
 };

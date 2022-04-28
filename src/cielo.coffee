@@ -2,11 +2,12 @@
 
 import {
 	undef, assert, croak, OL, replaceVars,
-	isEmpty, nonEmpty, isString, isHash,
+	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {indentLevel, splitLine} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
@@ -48,10 +49,9 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 	#              bare: true
 	#              header: false
 
-	debug 'hOptions', hOptions
-
 	debug "enter cieloCodeToJS()"
 	debug "cieloCode", cieloCode
+	debug 'hOptions', hOptions
 
 	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indentation"
 
@@ -69,7 +69,7 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 
 	# --- Even if no premapper is defined, this will handle
 	#     continuation lines, HEREDOCs, etc.
-	coffeeCode = doMap(premapper, cieloCode, source)
+	coffeeCode = doMap(premapper, source, cieloCode)
 	if coffeeCode != cieloCode
 		debug "coffeeCode", coffeeCode
 
@@ -84,7 +84,7 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 		else
 			jsPreCode = cieloCode
 		if postmapper
-			jsCode = doMap(postmapper, jsPreCode, source)
+			jsCode = doMap(postmapper, source, jsPreCode)
 			if jsCode != jsPreCode
 				debug "post mapped", jsCode
 		else
@@ -92,10 +92,19 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 	catch err
 		croak err, "Original Code", cieloCode
 
-	imports = buildImportList(lNeededSymbols, source).join("\n")
-	debug "imports", imports
+	# --- Prepend needed imports
+	lImports = buildImportList(lNeededSymbols, source)
+	debug "lImports", lImports
+	assert isArray(lImports), "cieloCodeToJS(): lImports is not an array"
+	if convertingCielo
+		# --- append ';' to import statements
+		lImports = for stmt in lImports
+			stmt + ';'
+
+	# --- joinBlocks() flattens all its arguments to array of strings
+	jsCode = joinBlocks(lImports, jsCode)
 	debug "return from cieloCodeToJS()", jsCode
-	return {jsCode, imports}
+	return jsCode
 
 # ---------------------------------------------------------------------------
 
@@ -122,6 +131,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		{imports, jsCode} = cieloCodeToJS(cieloCode, hOptions)
-		barf destPath, [imports, jsCode]
+		jsCode = cieloCodeToJS(cieloCode, hOptions)
+		barf destPath, jsCode
 	return

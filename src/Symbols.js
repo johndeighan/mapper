@@ -109,6 +109,7 @@ export var buildImportList = function(lNeededSymbols, source) {
     strSymbols = hLibs[lib].join(',');
     lImports.push(`import {${strSymbols}} from '${lib}'`);
   }
+  assert(isArray(lImports), "lImports is not an array!");
   debug("return from buildImportList()", lImports);
   return lImports;
 };
@@ -140,7 +141,7 @@ getAvailSymbolsFrom = function(filepath) {
   debug(`enter getAvailSymbolsFrom('${filepath}')`);
   contents = slurp(filepath);
   debug('Contents of .symbols', contents);
-  parser = new SymbolParser(contents, filepath);
+  parser = new SymbolParser(filepath, contents);
   hSymbols = parser.getSymbols();
   debug("hSymbols", hSymbols);
   debug("return from getAvailSymbolsFrom()");

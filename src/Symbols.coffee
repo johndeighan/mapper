@@ -77,6 +77,7 @@ export buildImportList = (lNeededSymbols, source) ->
 	for lib in Object.keys(hLibs).sort()
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
+	assert isArray(lImports), "lImports is not an array!"
 	debug "return from buildImportList()", lImports
 	return lImports
 

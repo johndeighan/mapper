@@ -10,13 +10,9 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	getAvailSymbols, getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
-import {
-	cieloCodeToJS, convertCielo,
-	} from '@jdeighan/mapper/cielo'
 
 simple = new UnitTesterNorm()
 dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
-convertCielo false
 
 # ---------------------------------------------------------------------------
 # Contents of .symbols:
@@ -162,98 +158,4 @@ simple.equal 114, hSymbols, {
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
 		"import {log as logger} from '@jdeighan/coffee-utils/log'"
 		]
-	)()
-
-# ----------------------------------------------------------------------------
-
-(() ->
-	cieloCode = """
-			# --- temp.cielo
-			if fs.existsSync('file.txt')
-				logger "file exists"
-			"""
-
-	{imports, jsCode} = cieloCodeToJS(cieloCode, import.meta.url)
-
-	simple.equal 171, imports, """
-			import fs from 'fs'
-			import {log as logger} from '@jdeighan/coffee-utils/log'
-			"""
-
-	simple.equal 176, jsCode, """
-			# --- temp.cielo
-			if fs.existsSync('file.txt')
-				logger "file exists"
-			"""
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-
-	class CieloTester extends UnitTester
-
-		transformValue: (text) ->
-			{imports, jsCode} = cieloCodeToJS(text, import.meta.url)
-			if isEmpty(imports)
-				return jsCode
-			else
-				return [imports, jsCode].join("\n")
-
-	tester = new CieloTester('cielo.test')
-
-	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
-
-	tester.equal 200, """
-			dir = mydir(import.meta.url)
-			filepath = mkpath(dir, 'test.txt')
-			""", """
-			import {mydir,mkpath} from '@jdeighan/coffee-utils/fs'
-			dir = mydir(import.meta.url)
-			filepath = mkpath(dir, 'test.txt')
-			"""
-
-	# --- But not if we're already importing them
-
-	tester.equal 211, """
-			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
-			dir = mydir(import.meta.url)
-			filepath = mkpath(dir, 'test.txt')
-			""", """
-			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
-			dir = mydir(import.meta.url)
-			filepath = mkpath(dir, 'test.txt')
-			"""
-
-	tester.equal 221, """
-			x = undef
-			""",
-		"""
-			import {undef} from '@jdeighan/coffee-utils'
-			x = undef
-			"""
-
-	tester.equal 229, """
-			x = undef
-			contents = 'this is a file'
-			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
-			""",
-		"""
-			import fs from 'fs'
-			import {undef} from '@jdeighan/coffee-utils'
-			x = undef
-			contents = 'this is a file'
-			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
-			"""
-
-	tester.equal 242, """
-			x = 23
-			logger x
-			""",
-		"""
-			import {log as logger} from '@jdeighan/coffee-utils/log'
-			x = 23
-			logger x
-			"""
-
 	)()

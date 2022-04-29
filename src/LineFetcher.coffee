@@ -36,6 +36,10 @@ export class LineFetcher
 		@altInput = undef
 		@altLevel = undef    # indentation added to lines from alt
 
+		# --- unfetch() puts things in here
+		#     fetch() checks first if something is available here
+		@lookahead = new Getter()
+
 	# ..........................................................
 
 	setContent: (source, content) ->
@@ -72,13 +76,6 @@ export class LineFetcher
 		@lineNum = 0
 		debug "return from setContent()"
 		return
-
-	# ..........................................................
-
-	get:   ()     -> return @getter.get()
-	unget: (item) -> return @getter.unget(item)
-	peek:  ()     -> return @getter.peek()
-	eof:   ()     -> return @getter.eof()
 
 	# ..........................................................
 
@@ -121,6 +118,13 @@ export class LineFetcher
 		#               just return it as is
 
 		debug "enter fetch(literal=#{literal}) from #{@filename}"
+
+		if ! @lookahead.eof()
+			result = @lookahead.get()
+			@incLineNum(1)
+			debug "return #{OL(result)} from fetch() - lookahead"
+			return result
+
 		if @altInput
 			assert @altLevel?, "fetch(): alt input without alt level"
 			line = @altInput.fetch(literal)
@@ -133,12 +137,12 @@ export class LineFetcher
 				# --- alternate input is exhausted
 				@altInput = undef
 
-		if (@eof())
+		if (@getter.eof())
 			debug "return undef from fetch() - at EOF"
 			return undef
 
 		# --- Not at EOF
-		line = @get()
+		line = @getter.get()
 		if line == '__END__'
 			@getter.forceEOF()
 			debug "return from fetch() - __END__ seen"
@@ -184,11 +188,8 @@ export class LineFetcher
 
 		debug "enter unfetch(#{OL(line)})"
 		assert isString(line), "unfetch(): not a string"
-		if @altInput
-			@altInput.unget undented(line, @altLevel)
-		else
-			@unget line
-			@incLineNum(-1)
+		@lookahead.unget line
+		@incLineNum(-1)
 		debug 'return from unfetch()'
 		return
 

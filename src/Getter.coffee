@@ -10,7 +10,7 @@ import {debug} from '@jdeighan/coffee-utils/debug'
 
 export class Getter
 
-	constructor: (obj) ->
+	constructor: (obj=[]) ->
 
 		# --- obj must be an iterator
 		debug "enter Getter()"

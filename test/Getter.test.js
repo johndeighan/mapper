@@ -71,29 +71,40 @@ simple = new UnitTester();
   };
   // --- You can pass any iterator to the Getter() constructor
   getter = new Getter(generator());
-  simple.equal(21, getter.peek(), 1);
-  simple.equal(22, getter.peek(), 1);
-  simple.falsy(23, getter.eof());
-  simple.equal(24, getter.get(), 1);
-  simple.equal(25, getter.get(), 2);
-  simple.falsy(27, getter.eof());
-  simple.succeeds(28, function() {
+  simple.equal(58, getter.peek(), 1);
+  simple.equal(59, getter.peek(), 1);
+  simple.falsy(60, getter.eof());
+  simple.equal(61, getter.get(), 1);
+  simple.equal(62, getter.get(), 2);
+  simple.falsy(64, getter.eof());
+  simple.succeeds(65, function() {
     return getter.unget(5);
   });
-  simple.succeeds(29, function() {
+  simple.succeeds(66, function() {
     return getter.unget(6);
   });
-  simple.equal(30, getter.get(), 6);
-  simple.equal(31, getter.get(), 5);
-  simple.falsy(32, getter.eof());
-  simple.equal(34, getter.get(), 3);
-  simple.truthy(35, getter.eof());
-  simple.succeeds(36, function() {
+  simple.equal(67, getter.get(), 6);
+  simple.equal(68, getter.get(), 5);
+  simple.falsy(69, getter.eof());
+  simple.equal(71, getter.get(), 3);
+  simple.truthy(72, getter.eof());
+  simple.succeeds(73, function() {
     return getter.unget(13);
   });
-  simple.falsy(37, getter.eof());
-  simple.equal(38, getter.get(), 13);
-  return simple.truthy(39, getter.eof());
+  simple.falsy(74, getter.eof());
+  simple.equal(75, getter.get(), 13);
+  return simple.truthy(76, getter.eof());
 })();
 
 // ---------------------------------------------------------------------------
+(function() {
+  var getter, str;
+  // --- We should be able to create an empty getter
+  getter = new Getter();
+  simple.equal(85, getter.eof(), true);
+  getter.unget('abc');
+  simple.equal(87, getter.eof(), false);
+  str = getter.get();
+  simple.equal(89, str, 'abc');
+  return simple.equal(90, getter.eof(), true);
+})();

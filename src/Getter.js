@@ -15,7 +15,7 @@ import {
 // ---------------------------------------------------------------------------
 //   class Getter - get(), unget(item), peek(), eof()
 export var Getter = class Getter {
-  constructor(obj) {
+  constructor(obj = []) {
     // --- obj must be an iterator
     debug("enter Getter()");
     assert(obj[Symbol.iterator], "Getter(): Not an iterator");

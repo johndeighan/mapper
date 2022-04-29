@@ -57,10 +57,13 @@ export var LineFetcher = class LineFetcher {
     // --- for handling #include
     this.altInput = undef;
     this.altLevel = undef; // indentation added to lines from alt
+    
+    // --- unfetch() puts things in here
+    //     fetch() checks first if something is available here
+    this.lookahead = new Getter();
   }
 
-  
-    // ..........................................................
+  // ..........................................................
   setContent(source, content) {
     // --- source should be a file path or a URL
     //     content should be block or a generator
@@ -91,23 +94,6 @@ export var LineFetcher = class LineFetcher {
     }
     this.lineNum = 0;
     debug("return from setContent()");
-  }
-
-  // ..........................................................
-  get() {
-    return this.getter.get();
-  }
-
-  unget(item) {
-    return this.getter.unget(item);
-  }
-
-  peek() {
-    return this.getter.peek();
-  }
-
-  eof() {
-    return this.getter.eof();
   }
 
   // ..........................................................
@@ -146,6 +132,12 @@ export var LineFetcher = class LineFetcher {
     // --- literal = true means don't handle #include,
     //               just return it as is
     debug(`enter fetch(literal=${literal}) from ${this.filename}`);
+    if (!this.lookahead.eof()) {
+      result = this.lookahead.get();
+      this.incLineNum(1);
+      debug(`return ${OL(result)} from fetch() - lookahead`);
+      return result;
+    }
     if (this.altInput) {
       assert(this.altLevel != null, "fetch(): alt input without alt level");
       line = this.altInput.fetch(literal);
@@ -159,12 +151,12 @@ export var LineFetcher = class LineFetcher {
         this.altInput = undef;
       }
     }
-    if (this.eof()) {
+    if (this.getter.eof()) {
       debug("return undef from fetch() - at EOF");
       return undef;
     }
     // --- Not at EOF
-    line = this.get();
+    line = this.getter.get();
     if (line === '__END__') {
       this.getter.forceEOF();
       debug("return from fetch() - __END__ seen");
@@ -204,12 +196,8 @@ export var LineFetcher = class LineFetcher {
   unfetch(line) {
     debug(`enter unfetch(${OL(line)})`);
     assert(isString(line), "unfetch(): not a string");
-    if (this.altInput) {
-      this.altInput.unget(undented(line, this.altLevel));
-    } else {
-      this.unget(line);
-      this.incLineNum(-1);
-    }
+    this.lookahead.unget(line);
+    this.incLineNum(-1);
     debug('return from unfetch()');
   }
 

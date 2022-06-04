@@ -5,7 +5,9 @@ import {
 	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {indentLevel, splitLine} from '@jdeighan/coffee-utils/indent'
+import {
+	indentLevel, isUndented, splitLine,
+	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
@@ -54,7 +56,7 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 	debug "cieloCode", cieloCode
 	debug 'hOptions', hOptions
 
-	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indent"
+	assert isUndented(cieloCode), "cieloCodeToJS(): has indent"
 
 	if isString(hOptions)
 		source = hOptions

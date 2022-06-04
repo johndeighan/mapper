@@ -7,7 +7,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {indentLevel} from '@jdeighan/coffee-utils/indent'
+import {indentLevel, isUndented} from '@jdeighan/coffee-utils/indent'
 
 export convertingCoffee = true
 
@@ -22,7 +22,7 @@ export convertCoffee = (flag) ->
 
 export coffeeExprToJS = (coffeeExpr) ->
 
-	assert (indentLevel(coffeeExpr)==0), "coffeeExprToJS(): has indentation"
+	assert isUndented(coffeeExpr), "has indentation"
 	debug "enter coffeeExprToJS()"
 
 	if ! convertingCoffee
@@ -55,7 +55,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 
 export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
-	assert (indentLevel(coffeeCode)==0), "coffeeCodeToJS(): has indentation"
+	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToJS()", coffeeCode
 
 	if ! convertingCoffee
@@ -83,12 +83,12 @@ export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
 export coffeeCodeToAST = (coffeeCode) ->
 
-	assert (indentLevel(coffeeCode)==0), "coffeeCodeToAST(): has indentation"
+	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToAST()", coffeeCode
 
 	try
 		ast = CoffeeScript.compile coffeeCode, {ast: true}
-		assert ast?, "coffeeCodeToAST(): ast is empty"
+		assert ast?, "ast is empty"
 	catch err
 		croak err, "in coffeeCodeToAST", coffeeCode
 

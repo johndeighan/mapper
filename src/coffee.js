@@ -20,7 +20,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  indentLevel
+  indentLevel,
+  isUndented
 } from '@jdeighan/coffee-utils/indent';
 
 export var convertingCoffee = true;
@@ -33,7 +34,7 @@ export var convertCoffee = function(flag) {
 // ---------------------------------------------------------------------------
 export var coffeeExprToJS = function(coffeeExpr) {
   var err, jsExpr, pos;
-  assert(indentLevel(coffeeExpr) === 0, "coffeeExprToJS(): has indentation");
+  assert(isUndented(coffeeExpr), "has indentation");
   debug("enter coffeeExprToJS()");
   if (!convertingCoffee) {
     debug("return from coffeeExprToJS() not converting", coffeeExpr);
@@ -68,7 +69,7 @@ export var coffeeExprToJS = function(coffeeExpr) {
 // ---------------------------------------------------------------------------
 export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
   var err, hCoffeeOptions, jsCode;
-  assert(indentLevel(coffeeCode) === 0, "coffeeCodeToJS(): has indentation");
+  assert(isUndented(coffeeCode), "has indentation");
   debug("enter coffeeCodeToJS()", coffeeCode);
   if (!convertingCoffee) {
     debug("return from coffeeCodeToJS() not converting", coffeeCode);
@@ -97,13 +98,13 @@ export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
 // ---------------------------------------------------------------------------
 export var coffeeCodeToAST = function(coffeeCode) {
   var ast, err;
-  assert(indentLevel(coffeeCode) === 0, "coffeeCodeToAST(): has indentation");
+  assert(isUndented(coffeeCode), "has indentation");
   debug("enter coffeeCodeToAST()", coffeeCode);
   try {
     ast = CoffeeScript.compile(coffeeCode, {
       ast: true
     });
-    assert(ast != null, "coffeeCodeToAST(): ast is empty");
+    assert(ast != null, "ast is empty");
   } catch (error) {
     err = error;
     croak(err, "in coffeeCodeToAST", coffeeCode);

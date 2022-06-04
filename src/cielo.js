@@ -21,6 +21,7 @@ import {
 
 import {
   indentLevel,
+  isUndented,
   splitLine
 } from '@jdeighan/coffee-utils/indent';
 
@@ -99,7 +100,7 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
   debug("enter cieloCodeToJS()");
   debug("cieloCode", cieloCode);
   debug('hOptions', hOptions);
-  assert(indentLevel(cieloCode) === 0, "cieloCodeToJS(): has indent");
+  assert(isUndented(cieloCode), "cieloCodeToJS(): has indent");
   if (isString(hOptions)) {
     source = hOptions;
     premapper = TreeWalker;

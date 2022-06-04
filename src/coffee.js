@@ -69,7 +69,7 @@ export var coffeeExprToJS = function(coffeeExpr) {
 export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
   var err, hCoffeeOptions, jsCode;
   assert(indentLevel(coffeeCode) === 0, "coffeeCodeToJS(): has indentation");
-  debug("enter coffeeCodeToJS()");
+  debug("enter coffeeCodeToJS()", coffeeCode);
   if (!convertingCoffee) {
     debug("return from coffeeCodeToJS() not converting", coffeeCode);
     return coffeeCode;
@@ -92,6 +92,24 @@ export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
   }
   debug("return from coffeeCodeToJS()", jsCode);
   return jsCode;
+};
+
+// ---------------------------------------------------------------------------
+export var coffeeCodeToAST = function(coffeeCode) {
+  var ast, err;
+  assert(indentLevel(coffeeCode) === 0, "coffeeCodeToAST(): has indentation");
+  debug("enter coffeeCodeToAST()", coffeeCode);
+  try {
+    ast = CoffeeScript.compile(coffeeCode, {
+      ast: true
+    });
+    assert(ast != null, "coffeeCodeToAST(): ast is empty");
+  } catch (error) {
+    err = error;
+    croak(err, "in coffeeCodeToAST", coffeeCode);
+  }
+  debug("return from coffeeCodeToAST()", ast);
+  return ast;
 };
 
 // ---------------------------------------------------------------------------

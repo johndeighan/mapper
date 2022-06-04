@@ -12,13 +12,16 @@ import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 import {
 	lineToParts, mapHereDoc, addHereDocType,
 	} from '@jdeighan/mapper/heredoc'
-import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 
 simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-simple.equal 21, lineToParts('this <<< is <<< heredoc'), [
+simple.equal 20, lineToParts('this is not a heredoc'), [
+	'this is not a heredoc'
+	]
+
+simple.equal 24, lineToParts('this <<< is <<< heredoc'), [
 	'this '
 	'<<<'
 	' is '
@@ -26,185 +29,212 @@ simple.equal 21, lineToParts('this <<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-simple.equal 29, lineToParts('<<< is <<< heredoc'), [
+simple.equal 32, lineToParts('<<< is <<< heredoc'), [
+	''
 	'<<<'
 	' is '
 	'<<<'
 	' heredoc'
 	]
 
-simple.equal 36, lineToParts('this <<< is <<<'), [
+simple.equal 40, lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
 	'<<<'
+	''
 	]
 
-simple.equal 43, lineToParts('<<< is <<<'), [
+simple.equal 48, lineToParts('<<< is <<<'), [
+	''
 	'<<<'
 	' is '
 	'<<<'
+	''
 	]
 
-simple.equal 49, lineToParts('<<<'), [
+simple.equal 56, lineToParts('<<<'), [
+	''
 	'<<<'
+	''
 	]
 
-simple.equal 53, lineToParts('<<<<<<'), [
+simple.equal 62, lineToParts('<<<<<<'), [
+	''
 	'<<<'
+	''
 	'<<<'
+	''
 	]
 
 # ---------------------------------------------------------------------------
 
-(() ->
-
-	class HereDocTester extends UnitTester
-
-		transformValue: (block) ->
-			return mapHereDoc(block).str
-
-	tester = new HereDocTester()
-
-	# ------------------------------------------------------------------------
-	# Default heredoc type is a block
-
-	tester.equal 72, """
-			this is a
-			block of text
-			""",
-			'"this is a\\nblock of text"'
-
-	# ------------------------------------------------------------------------
-	# Make explicit that the heredoc type is a block
-
-	tester.equal 81, """
-			===
-			this is a
-			block of text
-			""",
-			'"this is a\\nblock of text"'
-
-	# ------------------------------------------------------------------------
-	# One Line block
-
-	tester.equal 91, """
-			...this is a
-			line of text
-			""",
-			'"this is a line of text"'
-
-	# ------------------------------------------------------------------------
-	# One Line block
-
-	tester.equal 100, """
-			...
-			this is a
-			line of text
-			""",
-			'"this is a line of text"'
-
-	# ---------------------------------------------------------------------------
-	# Test creating a new heredoc type
-
-	class MatrixHereDoc
-
-		myName: () ->
-			return 'matrix'
-
-		isMyHereDoc: (block) ->
-			# --- if block starts with a digit
-			return block.match(/^\s*\d/)
-
-		map: (block) ->
-			lArray = []
-			for line in blockToArray(block)
-				lArray.push extractMatches(line, /\d+/g, parseInt)
-			return {
-				obj: lArray
-				str: JSON.stringify(lArray)
-				}
-
-	addHereDocType new MatrixHereDoc()
-
-	tester.equal 130, """
-			1 2 3
-			2 4 6
-			""",
-			'[[1,2,3],[2,4,6]]'
-
-	# ------------------------------------------------------------------------
-	# Test creating a new heredoc type by overriding mapToString
-
-	class UCHereDoc
-
-		myName: () ->
-			return 'upper case'
-
-		isMyHereDoc: (block) ->
-			return block.indexOf('^^^') == 0
-
-		map: (block) ->
-			block = block.substring(4).toUpperCase()
-			return {
-				obj: block
-				str: JSON.stringify(block)
-				}
-
-	addHereDocType new UCHereDoc()
-
-	tester.equal 156, """
-			^^^
-			This is a
-			block of text
-			""",
-			'"THIS IS A\\nBLOCK OF TEXT"'
-	)()
+simple.equal 72, mapHereDoc("""
+		abc
+		def
+		"""), {
+			str: '"abc\\ndef"'
+			obj: "abc\ndef"
+			type: 'string'
+			}
 
 # ---------------------------------------------------------------------------
 
-(() ->
+simple.equal 83, mapHereDoc("""
+		===
+		abc
+		def
+		"""), {
+			str: '"abc\\ndef"'
+			obj: "abc\ndef"
+			type: 'string'
+			}
 
-	class SmartTester extends UnitTester
+# ---------------------------------------------------------------------------
 
-		transformValue: (block) ->
-			oInput = new CieloMapper(import.meta.url, block)
-			return oInput.getBlock()
+simple.equal 95, mapHereDoc("""
+		...
+		abc
+		def
+		"""), {
+			str: '"abc def"'
+			obj: "abc def"
+			type: 'string'
+			}
 
-	tester = new SmartTester()
+# ---------------------------------------------------------------------------
 
-	# ---------------------------------------------------------------------------
-	# --- test creating a custom HEREDOC section
-	#
-	#     e.g. with header line ***,
-	#     we'll create an upper-cased single line string
+class HereDocTester extends UnitTester
 
-	class UCHereDoc2
+	transformValue: (block) ->
+		return mapHereDoc(block).str
 
-		myName: () ->
-			return 'upper case 2'
+tester = new HereDocTester()
 
-		isMyHereDoc: (block) ->
-			return firstLine(block) == '***'
+# ------------------------------------------------------------------------
+# Default heredoc type is a block
 
-		map: (block) ->
-			str = CWS(remainingLines(block).toUpperCase())
-			return {
-				str: JSON.stringify(str)
-				obj: str
-				}
+tester.equal 117, """
+		this is a
+		block of text
+		""",
+		'"this is a\\nblock of text"'
 
-	addHereDocType new UCHereDoc2()
+# ------------------------------------------------------------------------
+# Make explicit that the heredoc type is a block
 
-	# ---------------------------------------------------------------------------
+tester.equal 126, """
+		===
+		this is a
+		block of text
+		""",
+		'"this is a\\nblock of text"'
 
-	tester.equal 200, """
-			str = <<<
-				***
-				select ID,Name
-				from Users
+# ------------------------------------------------------------------------
+# One Line block
 
-			""", """
-			str = "SELECT ID,NAME FROM USERS"
-			"""
-	)()
+tester.equal 136, """
+		...this is a
+		line of text
+		""",
+		'"this is a line of text"'
+
+# ------------------------------------------------------------------------
+# One Line block
+
+tester.equal 145, """
+		...
+		this is a
+		line of text
+		""",
+		'"this is a line of text"'
+
+# ---------------------------------------------------------------------------
+# Test creating new heredoc types
+
+class MatrixHereDoc
+
+	myName: () ->
+		return 'matrix'
+
+	isMyHereDoc: (block) ->
+		# --- if block starts with a digit
+		return block.match(/^\s*\d/)
+
+	map: (block) ->
+		lArray = []
+		for line in blockToArray(block)
+			lArray.push extractMatches(line, /\d+/g, parseInt)
+		return {
+			obj: lArray
+			str: JSON.stringify(lArray)
+			}
+
+addHereDocType new MatrixHereDoc()
+
+tester.equal 175, """
+		1 2 3
+		2 4 6
+		""",
+		'[[1,2,3],[2,4,6]]'
+
+# ------------------------------------------------------------------------
+# Test creating a new heredoc type by overriding mapToString
+
+class UCHereDoc
+
+	myName: () ->
+		return 'upper case'
+
+	isMyHereDoc: (block) ->
+		return block.indexOf('^^^') == 0
+
+	map: (block) ->
+		block = block.substring(4).toUpperCase()
+		return {
+			obj: block
+			str: JSON.stringify(block)
+			}
+
+addHereDocType new UCHereDoc()
+
+tester.equal 201, """
+		^^^
+		This is a
+		block of text
+		""",
+		'"THIS IS A\\nBLOCK OF TEXT"'
+
+# ---------------------------------------------------------------------------
+# --- test creating a custom HEREDOC section
+#
+#     e.g. with header line ***,
+#     we'll create an upper-cased single line string
+
+class UCHereDoc2
+
+	myName: () ->
+		return 'upper case 2'
+
+	isMyHereDoc: (block) ->
+		return (firstLine(block) == '***')
+
+	map: (block) ->
+		block = remainingLines(block).toUpperCase()
+		str = CWS(block)
+		return {
+			str: JSON.stringify(str)
+			obj: str
+			type: 'string'
+			}
+
+addHereDocType new UCHereDoc2()
+
+# ---------------------------------------------------------------------------
+
+tester.equal 235, """
+		***
+		select ID,Name
+		from Users
+		""",
+		'"SELECT ID,NAME FROM USERS"'

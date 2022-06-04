@@ -1,202 +1,202 @@
 # Mapper.coffee
 
 import {
-	assert, undef, croak, isString, isEmpty, nonEmpty, OL,
+	assert, undef, pass, croak, OL, rtrim, defined, escapeStr, className,
+	isString, isHash, isArray, isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
-import {arrayToBlock} from '@jdeighan/coffee-utils/block'
-import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {
-	splitLine, indented, indentLevel,
-	} from '@jdeighan/coffee-utils/indent'
+import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {LineFetcher} from '@jdeighan/mapper/fetcher'
+import {Getter} from '@jdeighan/mapper/getter'
 
-# ===========================================================================
+# ---------------------------------------------------------------------------
 #   class Mapper
-#      - keep track of indentation
-#      - allow mapping of lines, including skipping lines
-#      - implement look ahead via peekPair()
+#       handles:
+#          #define
+#          variable substitution
+#          getLineType(), handleLineType()
 
-export class Mapper extends LineFetcher
+export class Mapper extends Getter
 
-	constructor: (source, content=undef) ->
+	constructor: (source=undef, collection=undef, hOptions={}) ->
 
-		super source, content
-		@lLookAhead = []
+		debug "enter Mapper()"
+		super source, collection, hOptions
 
-		# --- cache in case getAllPairs() is called multiple times
-		#     each pair is [<mapped str>, <level>]
-		@lAllPairs = undef
-
-	# ..........................................................
-
-	getPair: () ->
-
-		debug "enter Mapper.getPair() - from #{@filename}"
-		if @lLookAhead.length > 0
-			pair = @lLookAhead.shift()
-			debug "return lookahead pair from Mapper.getPair()", pair
-			return pair
-
-		line = @fetch()    # will handle #include
-		debug "FETCH LINE", line
-
-		if ! line?
-			debug "return undef from Mapper.getPair() - at EOF"
-			return undef
-
-		[level, str] = splitLine(line)
-		assert indentLevel(str)==0, "splitLine() returned indented str"
-		assert str? && isString(str), "Mapper.getPair(): not a string"
-		result = @mapLine(str, level)
-		debug "MAP: '#{str}' => #{OL(result)}"
-
-		# --- if mapLine() returns undef, we skip that line
-
-		while ! result? && ! @eof()
-			line = @fetch()
-			[level, str] = splitLine(line)
-			assert indentLevel(str)==0, "splitLine() returned indented str"
-			result = @mapLine(str, level)
-			debug "MAP: '#{str}' => #{OL(result)}"
-
-		lResult = [result, level]
-		debug "return from Mapper.getPair()", lResult
-		return lResult
+		@setVar 'FILE', @filename
+		@setVar 'DIR', @hSourceInfo.dir
+		@setVar 'LINE', @lineNum
+		debug "return from Mapper()"
 
 	# ..........................................................
+	# --- override to keep variable LINE updated
 
-	ungetPair: (lPair) ->
-		# --- lPair will always be [<item>, <level>]
-		#     <item> can be anything - i.e. it's been mapped
+	incLineNum: (inc=1) ->
 
-		debug 'enter ungetPair()', lPair
-		@lLookAhead.unshift lPair
-		debug 'return from ungetPair()'
+		debug "enter incLineNum(#{inc})"
+		super inc
+		@setVar 'LINE', @lineNum
+		debug "return from incLineNum()"
 		return
 
 	# ..........................................................
+	# --- override
 
-	peekPair: () ->
+	getItemType: (item) ->
 
-		debug 'enter peekPair():'
-		if @lLookAhead.length > 0
-			pair = @lLookAhead[0]
-			debug "return lookahead from peekPair()", pair
-			return pair
-		lPair = @getPair()
-		if ! lPair?
-			debug "return undef from peekPair() - getPair() returned undef"
-			return undef
-		@ungetPair(lPair)
-		debug "return #{OL(lPair)} from peekPair()"
-		return lPair
+		debug "enter Mapper.getItemType()", item
+
+		# --- only strings may have an item type
+		if isString(item)
+
+			# --- check for empty item
+			if @isEmptyLine(item)
+				result = ['empty', undef]
+
+			# --- check for comment
+			if @isComment(item)
+				result = ['comment', undef]
+
+			# --- check for cmd
+			if defined(h = @isCmd(item))
+				assert isHash(h, ['cmd','argstr','prefix']),
+						"isCmd() returned non-hash #{OL(h)}"
+				result = ['cmd', h]
+
+		debug "return from Mapper.getItemType()", result
+		return result
+
+	# ..........................................................
+	# --- override
+
+	handleItemType: (type, item, h) ->
+
+		debug "enter Mapper.handleItemType(#{OL(type)})", item
+
+		switch type
+			when 'empty'
+				result = @handleEmptyLine()
+			when 'comment'
+				result = @handleComment(item)
+			when 'cmd'
+				result = @handleCmd(h)
+			else
+				croak "Unknown item type: #{OL(type)}"
+
+		debug "return from Mapper.handleItemType()", result
+		return result
 
 	# ..........................................................
 
-	skipPair: () ->
+	isEmptyLine: (line) ->
 
-		debug 'enter skipPair():'
-		if @lLookAhead.length > 0
-			@lLookAhead.shift()
-			debug "return from skipPair(): remove lookahead"
-			return
-		@getPair()
-		debug 'return from skipPair()'
-		return
+		return isEmpty(line)
 
 	# ..........................................................
-	# --- designed to override with a mapping method
-	#     which can map to any valid JavaScript value
 
-	mapLine: (line, level) ->
+	handleEmptyLine: (line) ->
+		# --- can override
+		#     line may contain whitespace
 
+		# --- return undef to remove empty lines
+		return ''
+
+	# ..........................................................
+
+	isComment: (line) ->
+
+		if (lMatches = line.match(///^
+				\s*
+				\#      # a # character
+				(.|$)   # following character, if any
+				///))
+			ch = lMatches[1]
+			return (ch == undef) || (ch in [' ','\t',''])
+		else
+			return false
+
+	# ..........................................................
+
+	handleComment: (line) ->
+
+		debug "in Mapper.handleComment()"
+
+		# --- return undef to remove empty lines
 		return line
 
 	# ..........................................................
-	# --- Fetch a block of text at level or greater than 'level'
-	#     as one long string
-	# --- Designed to use in mapLine()
 
-	fetchBlock: (atLevel) ->
+	isCmd: (line) ->
+		# --- Must return either undef or {prefix, cmd, argstr}
 
-		debug "enter Mapper.fetchBlock(#{atLevel})"
-		lLines = []
+		debug "enter Mapper.isCmd()"
+		if lMatches = line.match(///^
+				(\s*)
+				\#
+				([A-Za-z_]\w*)   # name of the command
+				\s*
+				(.*)             # argstr for command
+				$///)
+			[_, prefix, cmd, argstr] = lMatches
+			hResult = {
+				prefix: prefix || ''
+				cmd
+				argstr: if argstr then argstr.trim() else ''
+				}
+			debug "return from Mapper.isCmd()", hResult
+			return hResult
 
-		line = undef
-		while (line = @fetch())?
-			debug "LINE IS #{OL(line)}"
-			assert isString(line),
-				"Mapper.fetchBlock() - not a string: #{OL(line)}"
-			if isEmpty(line)
-				debug "empty line"
-				lLines.push ''
-				continue
-			[level, str] = splitLine(line)
-			assert indentLevel(str)==0,
-				"Mapper.fetchBlock(): splitLine() returned indented str"
-			debug "LOOP: level = #{level}, str = #{OL(str)}"
-			if (level < atLevel)
-				@unfetch(line)
-				debug "RESULT: unfetch the line"
-				break
-			assert level >= atLevel, "Mapper.fetchBlock(): bad level"
-			result = indented(str, level-atLevel)
-			debug "RESULT", result
-			lLines.push result
-
-		block = arrayToBlock(lLines)
-		debug "return from Mapper.fetchBlock()", block
-		return block
+		# --- not a command
+		debug "return undef from Mapper.isCmd()"
+		return undef
 
 	# ..........................................................
+	# --- handleCmd must return a pair:
+	#        [handled:boolean, result:any]
+	# Override must 1st handle it's own commands, then call this
 
-	getAllPairs: () ->
+	handleCmd: (h) ->
 
-		debug "enter Mapper.getAllPairs()"
-		if @lAllPairs?
-			debug "return cached lAllPairs from Mapper.getAllPairs()"
-			return @lAllPairs
+		{cmd, argstr, prefix} = h
+		debug "enter Mapper.handleCmd ##{cmd} '#{argstr}'"
+		if (prefix.length > 0)
+			debug "   prefix = '#{escapeStr(prefix)}'"
 
-		# --- Each pair is [<result>, <level>],
-		#     where <result> can be anything
-		lPairs = []
-		while (lPair = @getPair())?
-			debug "GOT PAIR", lPair
-			lPairs.push lPair
-		@lAllPairs = lPairs   # cache
-		debug "return from Mapper.getAllPairs()", lPairs
-		return lPairs
+		# --- Each case should return
+		switch cmd
 
-	# ..........................................................
+			when 'define'
+				if lMatches = argstr.match(///^
+						(env\.)?
+						([A-Za-z_][\w\.]*)   # name of the variable
+						(.*)
+						$///)
+					[_, isEnv, name, tail] = lMatches
+					if tail
+						tail = tail.trim()
+					if isEnv
+						debug "set env var #{name} to '#{tail}'"
+						process.env[name] = tail
+					else
+						debug "set var #{name} to '#{tail}'"
+						@setVar name, tail
 
-	getBlock: () ->
-		# --- You can only call getBlock() if mapLine() always
-		#     returns undef or a string
+				debug "return undef from Mapper.handleCmd()"
+				return undef
 
-		debug "enter Mapper.getBlock()"
-		lLines = []
-		for [line, level] in @getAllPairs()
-			if line?
-				assert isString(line),
-						"getBlock(): got non-string '#{OL(line)}'"
-				lLines.push indented(line, level)
-		block = arrayToBlock(lLines)
-		debug "return from Mapper.getBlock()", block
-		return block
+			else
+				croak "Unknown command: ##{cmd}"
+
+		croak "Not all cases return"
 
 # ===========================================================================
 
-export doMap = (inputClass, source, text) ->
+export doMap = (inputClass, source, content=undef) ->
 
 	assert inputClass?, "Missing input class"
-	if lMatches = inputClass.toString().match(/class\s+(\w+)/)
-		className = lMatches[1]
-	else
-		croak "doMap(): Bad input class"
-	debug "enter doMap(#{className}) source='#{source}'"
-	oInput = new inputClass(source, text)
+	name = className(inputClass)
+	debug "enter doMap(#{name}) source='#{source}'", content
+	oInput = new inputClass(source, content)
 	assert oInput instanceof Mapper,
 		"doMap() requires a Mapper or subclass"
 	result = oInput.getBlock()

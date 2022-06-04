@@ -53,7 +53,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt";
 //    mydir mkpath slurp barf
 
 // @jdeighan/coffee-utils/log
-//    log (as logger)
+//    log/logger
 simple.equal(28, getAvailSymbols(import.meta.url), {
   barf: {
     lib: '@jdeighan/coffee-utils/fs'

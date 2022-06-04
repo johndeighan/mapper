@@ -1,27 +1,29 @@
 # markdown.test.coffee
 
-import {UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
-import {convertMarkdown, markdownify} from '@jdeighan/mapper/markdown'
+import {
+	convertMarkdown, markdownify, SimpleMarkDownMapper,
+	} from '@jdeighan/mapper/markdown'
 
 simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
-class MarkdownTester extends UnitTesterNorm
-
-	transformValue: (text) ->
-
-		return markdownify(text)
-
-tester = new MarkdownTester()
-
-# ---------------------------------------------------------------------------
-
 (() ->
 
-	tester.equal 24, """
+	class MarkdownTester extends UnitTesterNorm
+
+		transformValue: (text) ->
+
+			return markdownify(text)
+
+	tester = new MarkdownTester()
+
+	# ..........................................................
+
+	tester.equal 26, """
 			title
 			=====
 			text
@@ -30,7 +32,7 @@ tester = new MarkdownTester()
 			<p>text</p>
 			"""
 
-	tester.equal 33, """
+	tester.equal 35, """
 			title
 			-----
 			text
@@ -41,27 +43,27 @@ tester = new MarkdownTester()
 
 	# --- Comments and blank lines are stripped
 
-	tester.equal 44, """
+	tester.equal 46, """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	tester.equal 51, """
+	tester.equal 53, """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	tester.equal 58, """
+	tester.equal 60, """
 		this is **bold** text
 		""", """
 		<p>this is <strong>bold</strong> text</p>
 		"""
 
-	tester.equal 64, """
+	tester.equal 66, """
 		```javascript
 				adapter: adapter({
 					pages: 'build',
@@ -80,7 +82,7 @@ tester = new MarkdownTester()
 
 	convertMarkdown false
 
-	tester.equal 83, """
+	tester.equal 85, """
 			title
 			=====
 			text
@@ -89,4 +91,54 @@ tester = new MarkdownTester()
 			=====
 			text
 			"""
+	)()
+
+# ---------------------------------------------------------------------------
+# Test SimpleMarkDownMapper
+
+(() ->
+
+	class MarkdownTester extends UnitTester
+
+		transformValue: (block) ->
+
+			getter = new SimpleMarkDownMapper(import.meta.url, block)
+			return getter.getBlock()
+
+	tester = new MarkdownTester()
+
+	# ..........................................................
+
+	tester.equal 112, """
+		A title
+		=======
+
+		some text
+
+		""", """
+		<h1>A title</h1>
+		<p>some text</p>
+		"""
+
+	tester.equal 125, """
+		=======
+
+		some text
+
+		""", """
+		<p>=======</p>
+		<p>some text</p>
+		"""
+
+	tester.equal 133, """
+		A title
+		=======
+		# this is a comment
+		some text
+
+		""", """
+		<h1>A title</h1>
+		<p>some text</p>
+		"""
+
 	)()

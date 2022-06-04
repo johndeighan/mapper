@@ -34,7 +34,7 @@ import {
 
 import {
   TreeWalker
-} from '@jdeighan/mapper/walker';
+} from '@jdeighan/mapper/tree';
 
 // --- commands, with allowed # of args, allowed # of children
 hCommands = {

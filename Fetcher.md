@@ -31,23 +31,58 @@ LINE 3: <<<ghi>>>
 3 total lines
 ```
 
+Interface
+---------
+
+The full interface to a Fetcher object is:
+
+```text
+fetcher = Fetcher(
+		source: string
+		collection: block | iterator
+		hOptions: hash
+		)
+	# --- one or both of source and collection must be provided
+	#     source (if defined) must be a file name, file path or URL
+	#     collection (if defined) can be a block or iterator
+	#     if collection is undef, text is read from source
+	#     hOptions may include key 'prefix', which will be
+	#        prepended to each line returned
+
+line = @fetch()
+
+@unfetch(line)
+
+@lineNum
+
+@filename    # --- "<unknown>" if not known
+
+hInfo = @getSourceInfo()
+	# --- returns {filename, dir, fullpath, stub, ext, purpose, lineNum, prefix}
+
+@all()   - a generator for all lines in input
+@fetchAll() - a function returning array of all lines
+@fetchUntil(endStr) - a function returning array of all lines
+	until (but not including) the line matching endStr
+@fetchBlock() - returns block corresponding to fetchAll()
+```
+
+- trailing whitespace is removed from each line
+- #include <filename> is handled
+- __END__ denotes end of input
+- unfetch() may be called multiple times
+- fetch() returns undef at end of input
+
+
 Look-ahead
 ----------
 
-To enable look-ahead in the stream, you can utilize one or more
-of the following additional methods:
+To enable look-ahead in the stream, you can utilize
+the following additional method:
 
 **unfetch(str)** - you can provide
 a string, which will then be returned by the next call
 to fetch()
-
-**peek()** - you can examine the next string in the stream
-without actually consuming it.
-
-**eof()** - determine whether you're at the end of the stream.
-Note that if you reach the end of the stream, but then call
-unfetch(), eof() will return false until you actually fetch
-that string.
 
 #include
 --------

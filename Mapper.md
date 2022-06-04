@@ -1,30 +1,20 @@
 class Mapper
 =================
 
-A Mapper object is a subclass of StringFetcher, and is therefore
-constructed from a block (i.e. a multi-line string) and a source.
+A Mapper object is a subclass of Getter, and is therefore
+constructed from a block (i.e. a multi-line string) and an optional source.
+
 It has the following features:
 
-1. Methods get(), unget(), peek() and skip(), which deal with
-	pairs `[<item>, <level>]` instead of only pure strings. `<level>` is the
-	level of indentation in the line (by default, number of TAB characters)
-	while `<item>` will not include that indentation.
-
-2. Although `<item>` is by default the string following the indentation,
-	you can override the method mapLine() to return a modified string,
-	return undef to indicate that the line should be ignored, or even
-	return anything you wish, e.g. a hash or object.
-
-3. Additionally, the mapLine() function can fetch additional lines from
-	the input while constructing the item to return. The method fetchBlock()
-	is particularly useful here.
-
-In summary, commonly used methods of this class include:
-
-	get()
-	unget()
-	peek()
-	skip()
-	fetchBlock(atLevel)
-	getAll()
-	getAllText()
+- sets/maintains variables DIR, FILE, LINE
+- treats these as "special" items:
+	- empty lines, i.e. where isEmpty(line) returns true
+	- comments, i.e. \s* # (end of line | whitespace char)
+	- commands, i.e. \s* # <identifier>
+- provides overridable methods:
+	- isEmptyLine(line) - defaults to isEmpty(line)
+	- handleEmptyLine() - by default, retains empty lines as ''
+	- isComment(line) - default as above
+	- handleComment(line) - by default, retains comments as is
+	- isCmd(line) - default as above
+	- handleCmd(h) - handles #define, else croaks

@@ -4,8 +4,8 @@ import sass from 'sass'
 
 import {assert, undef} from '@jdeighan/coffee-utils'
 
-import {isComment} from '@jdeighan/mapper/utils'
-import {Mapper} from '@jdeighan/mapper'
+import {isHashComment} from '@jdeighan/mapper/utils'
+import {Mapper, doMap} from '@jdeighan/mapper'
 
 convert = true
 
@@ -21,19 +21,15 @@ export convertSASS = (flag) ->
 export class SassMapper extends Mapper
 	# --- only removes comments
 
-	mapLine: (line, level) ->
+	handleComment: () ->
 
-		if isComment(line)
-			return undef
-		else
-			return line
+		return undef
 
 # ---------------------------------------------------------------------------
 
 export sassify = (block, source) ->
 
-	oInput = new SassMapper(source, block)
-	newblock = oInput.getBlock()
+	newblock = doMap(SassMapper, source, block)
 	if ! convert
 		return newblock
 	result = sass.renderSync({

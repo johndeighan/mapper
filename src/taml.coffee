@@ -46,10 +46,10 @@ export taml = (text, hOptions={}) ->
 # ---------------------------------------------------------------------------
 #   slurpTAML - read TAML from a file
 
-export slurpTAML = (filepath) ->
+export slurpTAML = (filepath, hOptions=undef) ->
 
-	contents = slurp(filepath)
-	return taml(contents)
+	text = slurp(filepath)
+	return taml(text, hOptions)
 
 # ---------------------------------------------------------------------------
 # --- Plugin for a TAML HEREDOC type
@@ -68,31 +68,3 @@ export class TAMLHereDoc
 			obj
 			str: JSON.stringify(obj)
 			}
-# ---------------------------------------------------------------------------
-# A Mapper useful for stories
-
-export class StoryMapper extends Mapper
-
-	mapLine: (line, level) ->
-		if lMatches = line.match(///
-				([A-Za-z_][A-Za-z0-9_]*)  # identifier
-				\:                        # colon
-				\s*                       # optional whitespace
-				(.+)                      # a non-empty string
-				$///)
-			[_, ident, str] = lMatches
-
-			if str.match(///
-					\d+
-					(?:
-						\.
-						\d*
-						)?
-					$///)
-				return line
-			else
-				# --- surround with single quotes, double internal single quotes
-				str = "'" + str.replace(/\'/g, "''") + "'"
-				return "#{ident}: #{str}"
-		else
-			return line

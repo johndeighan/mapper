@@ -1,29 +1,19 @@
 # CieloMapper.coffee
 
-import {
-	undef, assert, croak, OL, replaceVars,
-	isString, isEmpty, nonEmpty, isArray, isHash, isBoolean,
-	} from '@jdeighan/coffee-utils'
-import {arrayToBlock} from '@jdeighan/coffee-utils/block'
-import {undented, splitLine, indentLevel} from '@jdeighan/coffee-utils/indent'
-import {debug} from '@jdeighan/coffee-utils/debug'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
-import {Mapper} from '@jdeighan/mapper'
-import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
+# ---------------------------------------------------------------------------
 
-# ===========================================================================
-
-export class CieloMapper extends Mapper
+export class CieloMapper extends TreeWalker
 	# - removes blank lines (but can be overridden)
 	# - does NOT remove comments (but can be overridden)
 	# - joins continuation lines
 	# - handles HEREDOCs
 	# - handles #define <name> <value> and __<name>__ substitution
 
-	constructor: (source, content=undef) ->
-
+	constructor: (content, source) ->
+		super content, source
 		debug "enter CieloMapper(source='#{source}')", content
-		super source, content
 
 		@hVars = {
 			FILE: @filename
@@ -39,15 +29,6 @@ export class CieloMapper extends Mapper
 		debug "return from CieloMapper()"
 
 	# ..........................................................
-	# --- override to keep variable LINE updated
-
-	incLineNum: (inc) ->
-
-		super inc    # adjusts property @lineNum
-		@hVars.LINE = @lineNum
-		return
-
-	# ..........................................................
 	# --- designed to override with a mapping method
 	#     NOTE: line does not include the indentation
 
@@ -59,61 +40,53 @@ export class CieloMapper extends Mapper
 		assert isString(line), "mapLine(): #{OL(line)} not a string"
 		if isEmpty(line)
 			result = @handleEmptyLine(@curLevel)
-			debug "return from CieloMapper.mapLine() - empty line", result
+			debug "return #{OL(result)} from CieloMapper.mapLine() - empty line"
 			return result
 
-		if @isComment(line)
-			result = @handleComment(line, level)
-			debug "return from CieloMapper.mapLine() - comment", result
-			return result
-
-		lParts = @isCommand(line)
+		debug "line is not empty, checking for command"
+		lParts = @splitCommand(line)
 		if lParts
-			debug "COMMAND", lParts
-			[cmd, argstr] = lParts
+			debug "found command", lParts
+			[cmd, tail] = lParts
+			result = @handleCommand cmd, tail, level
+			debug "return #{OL(result)} from CieloMapper.mapLine() - command handled"
+			return result
 
-			lResult = @handleCommand(cmd, argstr, level)
-			debug "handleCommand() returned #{OL(lResult)}"
-			assert isArray(lResult), "handleCommand() failed to return array"
+		if isComment(line)
+			result = @handleComment(line, level)
+			debug "return #{OL(result)} from CieloMapper.mapLine() - comment"
+			return result
 
-			[handled, result] = lResult
-			assert isBoolean(handled),
-					"1st arg in handleCommand() result isn't boolean"
-			if handled
-				debug "return from CieloMapper.mapLine()", result
-				return result
-			else
-				croak "Unknown command: '#{line}'"
+		debug "hVars", @hVars
+		replaced = replaceVars(line, @hVars)
+		if replaced != line
+			debug "replaced", replaced
+
+		orgLineNum = @lineNum
+		@curLevel = level
 
 		# --- Merge in any continuation lines
 		debug "check for continuation lines"
 		lContLines = @getContLines(level)
 		if isEmpty(lContLines)
 			debug "no continuation lines found"
+			longline = replaced
 		else
 			debug "#{lContLines.length} continuation lines found"
-			line = @joinContLines(line, lContLines)
-			debug "line becomes #{OL(line)}"
-
-		debug "hVars", @hVars
-		debug 'line', line
-		newline = replaceVars(line, @hVars)
-		if newline != line
-			line = newline
-			debug "line becomes #{OL(line)}"
-
-		orgLineNum = @lineNum
-		@curLevel = level
+			longline = @joinContLines(replaced, lContLines)
+			debug "line becomes #{OL(longline)}"
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
-		if (line.indexOf('<<<') > -1)
-			hResult = @handleHereDoc(line, level)
-			line = hResult.line
-			debug "line becomes #{OL(line)}"
+		if (line.indexOf('<<<') == -1)
+			verylongline = longline
+		else
+			hResult = @handleHereDoc(longline, level)
+			verylongline = hResult.line
+			debug "line becomes #{OL(verylongline)}"
 
 		debug "mapping string"
-		result = @mapString(line, level)
+		result = @mapString(verylongline, level)
 		debug "return #{OL(result)} from CieloMapper.mapLine()"
 		return result
 
@@ -129,30 +102,9 @@ export class CieloMapper extends Mapper
 
 	# ..........................................................
 
-	isComment: (line, level) ->
+	splitCommand: (line, level) ->
 
-		lMatches = line.match(///^
-				(\#+)     # one or more # characters
-				(.|$)     # following character, if any
-				///)
-		if lMatches
-			[_, hashes, ch] = lMatches
-			return (hashes.length > 1) || (ch in [' ','\t',''])
-		else
-			return false
-
-	# ..........................................................
-
-	handleComment: (line, level) ->
-
-		debug "in CieloMapper.handleComment()"
-		return line      # keep comments by default
-
-	# ..........................................................
-
-	isCommand: (line, level) ->
-
-		debug "enter CieloMapper.isCommand()"
+		debug "enter CieloMapper.splitCommand()"
 		if lMatches = line.match(///^
 				\#
 				([A-Za-z_]\w*)   # name of the command
@@ -161,20 +113,18 @@ export class CieloMapper extends Mapper
 				$///)
 			[_, cmd, argstr] = lMatches
 			lResult = [cmd, argstr]
-			debug "return from CieloMapper.isCommand()", lResult
+			debug "return from CieloMapper.splitCommand()", lResult
 			return lResult
 		else
 			# --- not a command
-			debug "return undef from CieloMapper.isCommand()"
+			debug "return undef from CieloMapper.splitCommand()"
 			return undef
 
 	# ..........................................................
-	# --- handleCommand must return a pair:
-	#        [handled:boolean, result:any]
 
 	handleCommand: (cmd, argstr, level) ->
 
-		debug "enter CieloMapper.handleCommand #{cmd} '#{argstr}', #{level}"
+		debug "enter handleCommand #{cmd} '#{argstr}', #{level}"
 		switch cmd
 			when 'define'
 				if lMatches = argstr.match(///^
@@ -190,93 +140,30 @@ export class CieloMapper extends Mapper
 					else
 						debug "set var #{name} to '#{tail}'"
 						@setVariable name, tail
-				result = [true, undef]
-			else
-				result = [false, undef]
-		debug "return from CieloMapper.handleCommand()", result
-		return result
+
+		debug "return undef from handleCommand()"
+		return undef   # return value added to output if not undef
 
 	# ..........................................................
 
 	setVariable: (name, value) ->
-		# --- value can be a non-string
-		#     if so, when replacement occurs, it will be JSON stringified
 
 		debug "enter setVariable('#{name}')", value
 		assert isString(name), "name is not a string"
-		if isString(value)
-			assert (name not in ['DIR','FILE','LINE','END']),
-					"Bad var name '#{name}'"
+		assert isString(value), "value is not a string"
+		assert (name not in ['DIR','FILE','LINE','END']),\
+				"Bad var name '#{name}'"
 		@hVars[name] = value
 		debug "return from setVariable()"
 		return
 
 	# ..........................................................
+	# --- override to keep variable LINE updated
 
-	handleHereDoc: (line, level) ->
-		# --- Indentation has been removed from line
-		# --- Find each '<<<' and replace with result of replaceHereDoc()
-
-		assert isString(line), "handleHereDoc(): not a string"
-		debug "enter handleHereDoc(#{OL(line)})"
-		lParts = lineToParts(line)
-		lObjects = []
-		lNewParts = for part in lParts
-			if part == '<<<'
-				lLines = @getHereDocLines(level+1)
-				hResult = @replaceHereDoc(arrayToBlock(lLines))
-				lObjects.push hResult.obj
-				hResult.str
-			else
-				part    # keep as is
-
-		hResult = {
-			line: lNewParts.join('')
-			lParts: lParts
-			lObjects: lObjects
-			}
-
-		debug "return from handleHereDoc", hResult
-		return hResult
-
-	# ..........................................................
-
-	replaceHereDoc: (block) ->
-		# --- A method you can override
-
-		hResult = mapHereDoc(block)
-		assert isHash(hResult), "replaceHereDoc(): hResult not a hash"
-		return hResult
-
-	# ..........................................................
-
-	getHereDocLines: (atLevel) ->
-		# --- Get all lines until addHereDocLine() returns undef
-		#     atLevel will be one greater than the indent
-		#        of the line containing <<<
-
-		# --- NOTE: splitLine() removes trailing whitespace
-		debug "enter CieloMapper.getHereDocLines()"
-		lLines = []
-		while (line = @fetch())? \
-				&& (line2 = @hereDocLine(undented(line, atLevel)))?
-			assert (indentLevel(line) >= atLevel),
-				"invalid indentation in HEREDOC section"
-			lLines.push line2
-		assert isArray(lLines), "getHereDocLines(): retval not an array"
-		debug "return from CieloMapper.getHereDocLines()", lLines
-		return lLines
-
-	# ..........................................................
-
-	hereDocLine: (line) ->
-
-		if isEmpty(line)
-			return undef        # end the HEREDOC section
-		else if (line == '.')
-			return ''           # interpret '.' as blank line
-		else
-			return line
+	incLineNum: (inc) ->
+		super inc    # adjusts property @lineNum
+		@hVars.LINE = @lineNum
+		return
 
 	# ..........................................................
 
@@ -305,6 +192,19 @@ export class CieloMapper extends Mapper
 		return line
 
 	# ..........................................................
+
+	isComment: (line, level) ->
+
+		debug "in CieloMapper.isComment()"
+		return stdIsComment(line, level)
+
+	# ..........................................................
+
+	handleComment: (line, level) ->
+
+		debug "in CieloMapper.handleComment()"
+		return line      # keep comments by default
+
 	# ..........................................................
 
 	mapString: (line, level) ->
@@ -315,3 +215,71 @@ export class CieloMapper extends Mapper
 		assert isString(line),
 				"default mapString(): #{OL(line)} is not a string"
 		return line
+
+	# ..........................................................
+
+	mapHereDoc: (block) ->
+		# --- A method you can override
+		#     Distinct from the mapHereDoc() function found in /heredoc
+
+		hResult = mapHereDoc(block)
+		assert isHash(hResult), "mapHereDoc(): hResult not a hash"
+		return hResult
+
+	# ..........................................................
+
+	handleHereDoc: (line, level) ->
+		# --- Indentation has been removed from line
+		# --- Find each '<<<' and replace with result of mapHereDoc()
+
+		assert isString(line), "handleHereDoc(): not a string"
+		debug "enter handleHereDoc(#{OL(line)})"
+		lParts = lineToParts(line)
+		lObjects = []
+		lNewParts = for part in lParts
+			if part == '<<<'
+				lLines = @getHereDocLines(level+1)
+				hResult = @mapHereDoc(arrayToBlock(lLines))
+				lObjects.push hResult.obj
+				hResult.str
+			else
+				part    # keep as is
+
+		hResult = {
+			line: lNewParts.join('')
+			lParts: lParts
+			lObjects: lObjects
+			}
+
+		debug "return from handleHereDoc", hResult
+		return hResult
+
+	# ..........................................................
+
+	getHereDocLines: (atLevel) ->
+		# --- Get all lines until addHereDocLine() returns undef
+		#     atLevel will be one greater than the indent
+		#        of the line containing <<<
+
+		# --- NOTE: splitLine() removes trailing whitespace
+		debug "enter CieloMapper.getHereDocLines()"
+		lLines = []
+		while (line = @fetch())? \
+				&& (newline = @hereDocLine(undented(line, atLevel)))?
+			assert (indentLevel(line) >= atLevel),
+				"invalid indentation in HEREDOC section"
+			lLines.push newline
+		assert isArray(lLines), "getHereDocLines(): retval not an array"
+		debug "return from CieloMapper.getHereDocLines()", lLines
+		return lLines
+
+	# ..........................................................
+
+	hereDocLine: (line) ->
+
+		if isEmpty(line)
+			return undef        # end the HEREDOC section
+		else if (line == '.')
+			return ''           # interpret '.' as blank line
+		else
+			return line

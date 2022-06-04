@@ -8,4 +8,4 @@ fs
 	mydir mkpath slurp barf
 
 @jdeighan/coffee-utils/log
-	log (as logger)
+	log/logger

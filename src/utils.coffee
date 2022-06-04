@@ -2,7 +2,7 @@
 
 # ---------------------------------------------------------------------------
 
-export isComment = (line) ->
+export isHashComment = (line) ->
 
 	return line.match(/^\s*\#($|\s)/)
 

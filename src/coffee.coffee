@@ -56,7 +56,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
 	assert (indentLevel(coffeeCode)==0), "coffeeCodeToJS(): has indentation"
-	debug "enter coffeeCodeToJS()"
+	debug "enter coffeeCodeToJS()", coffeeCode
 
 	if ! convertingCoffee
 		debug "return from coffeeCodeToJS() not converting", coffeeCode
@@ -78,6 +78,22 @@ export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
 	debug "return from coffeeCodeToJS()", jsCode
 	return jsCode
+
+# ---------------------------------------------------------------------------
+
+export coffeeCodeToAST = (coffeeCode) ->
+
+	assert (indentLevel(coffeeCode)==0), "coffeeCodeToAST(): has indentation"
+	debug "enter coffeeCodeToAST()", coffeeCode
+
+	try
+		ast = CoffeeScript.compile coffeeCode, {ast: true}
+		assert ast?, "coffeeCodeToAST(): ast is empty"
+	catch err
+		croak err, "in coffeeCodeToAST", coffeeCode
+
+	debug "return from coffeeCodeToAST()", ast
+	return ast
 
 # ---------------------------------------------------------------------------
 

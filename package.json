@@ -8,24 +8,23 @@
 	"description": "A class to help parse text files",
 	"main": "./StringInput.js",
 	"exports": {
+		"./fetcher": "./src/Fetcher.js",
+		"./getter": "./src/Getter.js",
 		".": "./src/Mapper.js",
-		"./fetcher": "./src/LineFetcher.js",
+		"./tree": "./src/TreeWalker.js",
+		"./ast": "./src/ASTWalker.js",
 		"./taml": "./src/taml.js",
 		"./markdown": "./src/markdown.js",
 		"./sass": "./src/sass.js",
 		"./builtins": "./src/builtins.js",
-		"./getter": "./src/Getter.js",
 		"./heredoc": "./src/heredoc.js",
 		"./func": "./src/FuncHereDoc.js",
-		"./tree": "./src/TreeMapper.js",
 		"./walker": "./src/TreeWalker.js",
 		"./symbols": "./src/Symbols.js",
 		"./coffee": "./src/coffee.js",
-		"./cielomapper": "./src/CieloMapper.js",
 		"./cielo": "./src/cielo.js",
 		"./parsetag": "./src/parsetag.js",
 		"./math": "./src/MathML.js",
-		"./langtrans": "./src/LanguageTranslator.js",
 		"./utils": "./src/utils.js",
 		"./package.json": "./package.json"
 	},
@@ -50,13 +49,13 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^2.0.0",
+		"@jdeighan/unit-tester": "^2.0.2",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^7.0.26",
+		"@jdeighan/coffee-utils": "^7.0.46",
 		"cross-env": "^7.0.3",
-		"marked": "^4.0.14",
-		"sass": "^1.51.0"
+		"marked": "^4.0.16",
+		"sass": "^1.52.1"
 	}
 }

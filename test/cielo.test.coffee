@@ -8,9 +8,9 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {doMap} from '@jdeighan/mapper'
-import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
 import {cieloCodeToJS, convertCielo} from '@jdeighan/mapper/cielo'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
 simple = new UnitTesterNorm(import.meta.url)
 convertCoffee false
@@ -37,7 +37,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test retaining comments
 
-	tester.equal 44, """
+	tester.equal 40, """
 			# --- a comment
 			y = x
 			""", """
@@ -48,7 +48,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 55, """
+	tester.equal 51, """
 			# --- a comment
 
 			y = x
@@ -63,7 +63,7 @@ convertCoffee false
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 70, """
+	tester.equal 66, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -76,7 +76,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 83, """
+	tester.equal 79, """
 			x = 23
 			y = x
 					+ 5
@@ -88,7 +88,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test use of backslash continuation lines
 
-	tester.equal 95, """
+	tester.equal 91, """
 			x = 23
 			y = x \
 			+ 5
@@ -101,7 +101,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 108, """
+	tester.equal 104, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -111,7 +111,7 @@ convertCoffee false
 			+ 5
 			"""
 
-	tester.equal 118, """
+	tester.equal 114, """
 			str = <<<
 				abc
 				def
@@ -122,7 +122,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 129, """
+	tester.equal 125, """
 			str = <<<
 				===
 				abc
@@ -134,7 +134,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 141, """
+	tester.equal 137, """
 			str = <<<
 				...this is a
 					long line
@@ -142,7 +142,7 @@ convertCoffee false
 			str = "this is a long line"
 			"""
 
-	tester.equal 149, """
+	tester.equal 145, """
 			lItems = <<<
 				---
 				- a
@@ -151,7 +151,7 @@ convertCoffee false
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 158, """
+	tester.equal 154, """
 			hItems = <<<
 				---
 				a: 13
@@ -160,7 +160,7 @@ convertCoffee false
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 167, """
+	tester.equal 163, """
 			lItems = <<<
 				---
 				-
@@ -173,7 +173,7 @@ convertCoffee false
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 180, """
+	tester.equal 176, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -189,7 +189,7 @@ convertCoffee false
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 196, """
+	tester.equal 192, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -202,7 +202,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 209, """
+	tester.equal 205, """
 			str = \"\"\"
 				this is a
 				long string
@@ -216,7 +216,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 223, '''
+	tester.equal 219, '''
 			str = """
 				this is a
 				long string
@@ -230,7 +230,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 237, """
+	tester.equal 233, """
 			str = '''
 				this is a
 				long string
@@ -253,14 +253,14 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
-			return doMap(CieloMapper, import.meta.url, text)
+			return doMap(TreeWalker, import.meta.url, text)
 
 	tester = new CieloTester('cielo.test')
 
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 267, """
+	tester.equal 263, """
 			handler = <<<
 				() ->
 					return 42
@@ -270,7 +270,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 277, """
+	tester.equal 273, """
 			handler = <<<
 				() -> return 42
 			""", """
@@ -279,7 +279,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 286, """
+	tester.equal 282, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -302,7 +302,7 @@ convertCoffee false
 
 	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
 
-	simple.equal 314, jsCode, """
+	simple.equal 305, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
@@ -310,4 +310,80 @@ convertCoffee false
 				logger("file exists");
 			}
 			"""
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	convertCoffee true
+
+	class CieloTester extends UnitTesterNorm
+
+		transformValue: (text) ->
+			return cieloCodeToJS(text, import.meta.url)
+
+	tester = new CieloTester('cielo.test')
+
+	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
+
+	tester.equal 330, """
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			""", """
+			import {mydir,mkpath} from '@jdeighan/coffee-utils/fs';
+			var dir, filepath;
+			dir = mydir(import.meta.url);
+			filepath = mkpath(dir, 'test.txt');
+			"""
+
+	# --- But not if we're already importing them
+
+	tester.equal 342, """
+			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+			dir = mydir(import.meta.url)
+			filepath = mkpath(dir, 'test.txt')
+			""", """
+			var dir, filepath;
+			import {
+				mkpath,
+				mydir
+				} from '@jdeighan/coffee-utils/fs';
+			dir = mydir(import.meta.url);
+			filepath = mkpath(dir, 'test.txt');
+			"""
+
+	tester.equal 356, """
+			x = undef
+			""", """
+			import {undef} from '@jdeighan/coffee-utils';
+			var x;
+			x = undef;
+			"""
+
+	tester.equal 364, """
+			x = undef
+			contents = 'this is a file'
+			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
+			""", """
+			import fs from 'fs';
+			import {undef} from '@jdeighan/coffee-utils';
+			var contents, x;
+			x = undef;
+			contents = 'this is a file';
+			fs.writeFileSync('temp.txt', contents, {
+				encoding: 'utf8'
+				});
+			"""
+
+	tester.equal 379, """
+			x = 23
+			logger x
+			""", """
+			import {log as logger} from '@jdeighan/coffee-utils/log';
+			var x;
+			x = 23;
+			logger(x);
+			"""
+
 	)()

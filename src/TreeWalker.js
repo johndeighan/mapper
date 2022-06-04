@@ -3,415 +3,375 @@
 import {
   assert,
   undef,
-  pass,
   croak,
+  defined,
+  OL,
+  rtrim,
+  isString,
+  isNumber,
+  isEmpty,
+  nonEmpty,
   isArray,
-  isHash,
-  isArrayOfHashes
+  isHash
 } from '@jdeighan/coffee-utils';
+
+import {
+  arrayToBlock
+} from '@jdeighan/coffee-utils/block';
+
+import {
+  LOG,
+  DEBUG
+} from '@jdeighan/coffee-utils/log';
+
+import {
+  splitLine,
+  indentLevel,
+  indented,
+  undented
+} from '@jdeighan/coffee-utils/indent';
 
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  indented
-} from '@jdeighan/coffee-utils/indent';
+  Mapper
+} from '@jdeighan/mapper';
 
 import {
-  isBuiltin
-} from '@jdeighan/mapper/builtins';
+  lineToParts,
+  mapHereDoc
+} from '@jdeighan/mapper/heredoc';
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-export var TreeWalker = class TreeWalker {
-  constructor(tree1, hStdKeys = {}) {
-    this.tree = tree1;
-    debug("enter TreeWalker()", hStdKeys);
-    // --- tree can be a hash or array of hashes
-    if (isHash(this.tree)) {
-      debug("tree was hash - constructing list from it");
-      this.tree = [this.tree];
+// ===========================================================================
+//   class TreeWalker
+//      - map() returns {uobj, level, lineNum} or undef
+//   to use, override:
+//      mapStr(str, level) - returns user object, default returns str
+//      handleCmd()
+//      beginWalk() -
+//      visit(uobj, level, lineNum) -
+//      endVisit(uobj, level, lineNum) -
+//      endWalk() -
+export var TreeWalker = class TreeWalker extends Mapper {
+  // ..........................................................
+  // --- Should always return either:
+  //        undef
+  //        object with {uobj, level, lineNum}
+  // --- Will only receive non-special lines
+  map(line) {
+    var hResult, lExtLines, level, lineNum, result, str, uobj;
+    debug("enter TreeWalker.map()", line);
+    // --- a TreeWalker makes no sense unless items are strings
+    assert(isString(line), `non-string: ${OL(line)}`);
+    lineNum = this.lineNum; // so extension lines aren't counted
+    [level, str] = splitLine(line);
+    debug(`split: str = ${OL(str)}, level = ${level}`);
+    assert(nonEmpty(str), "empty string should be special");
+    // --- check for extension lines
+    debug("check for extension lines");
+    lExtLines = this.fetchLinesAtLevel(level + 2);
+    assert(isArray(lExtLines), "lExtLines not an array");
+    str = this.joinExtensionLines(str, lExtLines);
+    debug("call super");
+    str = super.map(str); // performs variable replacement
+    debug("from super", str);
+    // --- handle HEREDOCs
+    debug("check for HEREDOC");
+    if (str.indexOf('<<<') >= 0) {
+      hResult = this.handleHereDoc(str, level);
+      if (hResult.line !== str) {
+        str = hResult.line;
+        debug(`line becomes ${OL(str)}`);
+      }
     }
-    assert(isArrayOfHashes(this.tree), "new TreeWalker: Bad tree");
-    // --- @hStdKeys allows you to provide an alternate name for 'subtree'
-    //     Ditto for 'node', but if the 'node' key exists, but is
-    //        set to undef, the tree is assumed to NOT use user nodes
-    this.hStdKeys = {};
-    if (hStdKeys.subtree != null) {
-      assert(hStdKeys.subtree, "empty subtree key");
-      this.hStdKeys.subtree = hStdKeys.subtree;
+    // --- NOTE: mapStr() may return undef, meaning to ignore
+    uobj = this.mapStr(str, level);
+    if (defined(uobj)) {
+      result = {uobj, level, lineNum};
+      debug("return from TreeWalker.map()", result);
+      return result;
     } else {
-      this.hStdKeys.subtree = 'subtree';
+      debug("return undef from TreeWalker.map()");
+      return undef;
     }
-    if (hStdKeys.node != null) {
-      this.hStdKeys.node = hStdKeys.node;
-    } else {
-      this.hStdKeys.node = 'node'; // --- if set to undef, leave it alone
-    }
-    debug("return from TreeWalker()", this.hStdKeys);
   }
 
   // ..........................................................
-  // --- Called after walk() completes
-  //     Override to have walk() return some result
-  getResult() {
+  joinExtensionLines(line, lExtLines) {
+    var contLine, i, len;
+// --- There might be empty lines in lExtLines
+//     but we'll skip them here
+    for (i = 0, len = lExtLines.length; i < len; i++) {
+      contLine = lExtLines[i];
+      if (nonEmpty(contLine)) {
+        line += ' ' + contLine.trim();
+      }
+    }
+    return line;
+  }
+
+  // ..........................................................
+  handleHereDoc(line, level) {
+    var hResult, lLines, lNewParts, lObjects, lParts, part;
+    // --- Indentation has been removed from line
+    // --- Find each '<<<' and replace with result of mapHereDoc()
+    debug(`enter handleHereDoc(level=${OL(level)})`, line);
+    assert(isString(line), "not a string");
+    lParts = lineToParts(line);
+    debug('lParts', lParts);
+    lObjects = [];
+    lNewParts = (function() {
+      var i, len, results;
+      results = [];
+      for (i = 0, len = lParts.length; i < len; i++) {
+        part = lParts[i];
+        if (part === '<<<') {
+          lLines = this.getHereDocLines(level + 1);
+          debug('lLines', lLines);
+          hResult = mapHereDoc(arrayToBlock(lLines));
+          debug('hResult', hResult);
+          lObjects.push(hResult.obj);
+          results.push(hResult.str);
+        } else {
+          results.push(part); // keep as is
+        }
+      }
+      return results;
+    }).call(this);
+    hResult = {
+      line: lNewParts.join(''),
+      lParts: lParts,
+      lObjects: lObjects
+    };
+    debug("return from handleHereDoc", hResult);
+    return hResult;
+  }
+
+  // ..........................................................
+  getHereDocLines(atLevel) {
+    var lLines, result;
+    // --- Get all lines until addHereDocLine() returns undef
+    //     atLevel will be one greater than the indent
+    //        of the line containing <<<
+    debug("enter TreeWalker.getHereDocLines()");
+    assert(atLevel > 0, `atLevel = ${OL(atLevel)}, should not be 0`);
+    lLines = this.fetchLinesAtLevel(atLevel, ''); // stop on blank line
+    assert(isArray(lLines), "lLines not an array");
+    result = undented(lLines, atLevel);
+    debug("return from TreeWalker.getHereDocLines()", result);
+    return result;
+  }
+
+  // ..........................................................
+  extSep(str, nextStr) {
+    return ' ';
+  }
+
+  // ..........................................................
+  isEmptyHereDocLine(str) {
+    return str === '.';
+  }
+
+  // ..........................................................
+  // --- designed to override
+  mapStr(str, level) {
+    return str;
+  }
+
+  // ..........................................................
+  unmap(h) {
+    return croak("TreeWalker.unmap() called!");
+  }
+
+  // ..........................................................
+  handleEmptyLine(line) {
+    return undef; // remove empty lines
+  }
+
+  
+    // ..........................................................
+  handleComment(line) {
+    var level, uobj;
+    // --- line includes any indentation
+    [level, uobj] = splitLine(line);
+    return {
+      uobj,
+      level,
+      lineNum: this.lineNum
+    };
+  }
+
+  // ..........................................................
+  // --- We don't define any new commands, but
+  //     we need to determine level from indentation
+  handleCmd(h) {
+    var level, result, uobj;
+    debug("enter TreeWalker.handleCmd()");
+    result = super.handleCmd(h);
+    if (result === undef) {
+      debug("return undef from TreeWalker.handleCmd() - super undef");
+      return undef;
+    }
+    assert(isString(result), `TreeWalker non-string ${OL(result)}`);
+    [level, uobj] = splitLine(result);
+    result = {
+      uobj,
+      level,
+      lineNum: this.lineNum
+    };
+    debug("return from TreeWalker.handleCmd()", result);
+    return result;
+  }
+
+  // ..........................................................
+  fetchLinesAtLevel(atLevel, stopOn = undef) {
+    var item, lLines;
+    // --- Does NOT remove any indentation
+    debug(`enter TreeWalker.fetchLinesAtLevel(${OL(atLevel)}, ${OL(stopOn)})`);
+    assert(atLevel > 0, "atLevel is 0");
+    lLines = [];
+    while (defined(item = this.fetch()) && debug(`item = ${OL(item)}`) && isString(item) && ((stopOn === undef) || (item !== stopOn)) && debug("OK") && (isEmpty(item) || (indentLevel(item) >= atLevel))) {
+      debug(`push ${OL(item)}`);
+      lLines.push(item);
+    }
+    // --- Cases:                            unfetch?
+    //        1. item is undef                 NO
+    //        2. item not a string             YES
+    //        3. item == stopOn (& defined)    NO
+    //        4. item nonEmpty and undented    YES
+    if ((item === undef) || (item === stopOn)) {
+      debug("don't unfetch");
+    } else {
+      debug("do unfetch");
+      this.unfetch(item);
+    }
+    debug("return from TreeWalker.fetchLinesAtLevel()", lLines);
+    return lLines;
+  }
+
+  // ..........................................................
+  fetchBlockAtLevel(atLevel, stopOn = undef) {
+    var lLines, result;
+    debug(`enter TreeWalker.fetchBlockAtLevel(${OL(atLevel)})`);
+    lLines = this.fetchLinesAtLevel(atLevel, stopOn);
+    debug('lLines', lLines);
+    lLines = undented(lLines, atLevel);
+    debug("undented lLines", lLines);
+    result = arrayToBlock(lLines);
+    debug("return from TreeWalker.fetchBlockAtLevel()", result);
+    return result;
+  }
+
+  // ..........................................................
+  // --- override these for tree walking
+  beginWalk() {
     return undef;
+  }
+
+  // ..........................................................
+  visit(uobj, level, lineNum) {
+    return indented(uobj, level);
+  }
+
+  // ..........................................................
+  endVisit(uobj, level, lineNum) {
+    return undef;
+  }
+
+  // ..........................................................
+  endWalk() {
+    return undef;
+  }
+
+  // ..........................................................
+  addLine(line) {
+    if (line === undef) {
+      return;
+    }
+    if (isArray(line)) {
+      this.lLines.push(...line);
+    } else {
+      this.lLines.push(line);
+    }
   }
 
   // ..........................................................
   walk() {
-    var result;
-    debug("enter TreeWalker.walk()");
-    this.walkNodes(this.tree, 0);
-    result = this.getResult();
-    debug("return from TreeWalker.walk()", result);
-    return result;
-  }
-
-  // ..........................................................
-  walkNodes(lNodes, level) {
-    var i, len, node;
-    debug("enter walkNodes()", lNodes);
-    for (i = 0, len = lNodes.length; i < len; i++) {
-      node = lNodes[i];
-      this.walkNode(node, level);
-    }
-    debug("return from walkNodes()");
-  }
-
-  // ..........................................................
-  walkSubTrees(lSubTrees, level) {
-    var i, len, subtree;
-    if ((lSubTrees == null) || (lSubTrees.length === 0)) {
-      return;
-    }
-    for (i = 0, len = lSubTrees.length; i < len; i++) {
-      subtree = lSubTrees[i];
-      if (subtree != null) {
-        if (isArray(subtree)) {
-          this.walkNodes(subtree, level);
-        } else if (isHash(subtree)) {
-          this.walkNode(subtree, level);
-        } else {
-          croak("Invalid subtree", 'SUBTREE', subtree);
-        }
-      }
-    }
-  }
-
-  // ..........................................................
-  walkNode(superNode, level) {
-    var key, lSubTrees, node, subkey;
-    debug("enter walkNode()");
-    key = this.hStdKeys.node;
-    subkey = this.hStdKeys.subtree;
-    debug(`KEYS: '${key}', '${subkey}'`);
-    node = superNode;
-    if (key && (superNode[key] != null)) {
-      debug(`found node under key '${key}'`);
-      node = superNode[key];
-    }
-    // --- give visit() method chance to provide list of subtrees
-    lSubTrees = this.visit(node, superNode, level);
-    if (lSubTrees != null) {
-      debug("visit() returned subtrees", lSubTrees);
-      this.walkSubTrees(lSubTrees, level + 1);
-    } else {
-      this.walkSubTrees(superNode[subkey], level + 1);
-    }
-    this.endVisit(node, superNode, level);
-    debug("return from walkNode()");
-  }
-
-  // ..........................................................
-  // --- return lSubTrees, if any
-  visit(node, hInfo, level) {
-    debug("enter visit() - std");
-    // --- automatically visit subtree if it exists
-    debug("return from visit() - std");
-    return undef;
-  }
-
-  // ..........................................................
-  // --- called after all subtrees have been visited
-  endVisit(node, hInfo, level) {}
-
-};
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-export var TreeStringifier = class TreeStringifier extends TreeWalker {
-  constructor(tree, hStdKeys = {}) {
-    debug("enter TreeStringifier()", tree);
-    super(tree, hStdKeys); // sets @tree
+    var hInfo, lStack, level, lineNum, node, ref, result, uobj;
+    debug("enter walk()");
+    // --- stack of {
+    //        node: {uobj, level, lineNum},
+    //        userhash: {}
+    //        }
+    lStack = [];
+    // --- resulting lines
     this.lLines = [];
-    debug("return from TreeStringifier()");
-  }
-
-  // ..........................................................
-  visit(node, hInfo, level) {
-    var str;
-    assert(node != null, "TreeStringifier.visit(): empty node");
-    debug("enter TreeStringifier.visit()");
-    str = indented(this.stringify(node), level);
-    debug(`stringified: '${str}'`);
-    this.lLines.push(str);
-    debug("return from TreeStringifier.visit()");
-    return undef;
-  }
-
-  // ..........................................................
-  get() {
-    var result;
-    debug("enter TreeStringifier.get()");
-    this.walk();
-    result = this.lLines.join('\n');
-    debug("return from TreeStringifier.get()");
+    this.addLine(this.beginWalk());
+    ref = this.allMapped();
+    for (node of ref) {
+      while (lStack.length > node.level) {
+        hInfo = lStack.pop();
+        ({uobj, level, lineNum} = hInfo.node);
+        this.addLine(this.endVisit(uobj, level, lineNum, hInfo.userhash));
+      }
+      hInfo = {
+        node,
+        userhash: {}
+      };
+      ({uobj, level, lineNum} = node);
+      this.addLine(this.visit(uobj, level, lineNum, hInfo.userhash));
+      lStack.push(hInfo);
+    }
+    while (lStack.length > 0) {
+      hInfo = lStack.pop();
+      ({uobj, level, lineNum} = hInfo.node);
+      this.addLine(this.endVisit(uobj, level, lineNum, hInfo.userhash));
+    }
+    this.addLine(this.endWalk());
+    result = arrayToBlock(this.lLines);
+    debug("return from walk()", result);
     return result;
   }
 
   // ..........................................................
-  excludeKey(key) {
-    return key === this.hStdKeys.subtree;
-  }
-
-  // ..........................................................
-  // --- override this
-  stringify(node) {
-    var key, newnode, value;
-    assert(isHash(node), `TreeStringifier.stringify(): node '${node}' is not a hash`);
-    newnode = {};
-    for (key in node) {
-      value = node[key];
-      if (!this.excludeKey(key)) {
-        newnode[key] = node[key];
-      }
-    }
-    return JSON.stringify(newnode);
+  getBlock() {
+    var result;
+    debug("enter getBlock()");
+    result = this.walk();
+    debug("return from getBlock()", result);
+    return result;
   }
 
 };
 
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-export var ASTWalker = class ASTWalker extends TreeWalker {
-  constructor(ast) {
-    super(ast.program, {
-      subtree: 'body',
-      node: undef
-    });
-    this.ast = ast.program;
-    this.lImportedSymbols = [];
-    this.lUsedSymbols = [];
-    // --- subarrays start out as list of formal parameters
-    //     to which are added locally assigned variables
-    this.lLocalSymbols = [[]];
+export var TraceWalker = class TraceWalker extends TreeWalker {
+  // ..........................................................
+  //     builds a trace of the tree
+  //        which is returned by endWalk()
+  beginWalk() {
+    this.lTrace = ["begin"]; // an array of strings
   }
 
   // ..........................................................
-  isLocalSymbol(name) {
-    var i, len, ref, subarray;
-    ref = this.lLocalSymbols;
-    for (i = 0, len = ref.length; i < len; i++) {
-      subarray = ref[i];
-      if (subarray.includes(name)) {
-        return true;
-      }
-    }
-    return false;
+  visit(uobj, level, lineNum) {
+    this.lTrace.push("|.".repeat(level) + `> ${OL(uobj)}`);
   }
 
   // ..........................................................
-  addImport(name, lib) {
-    assert(name, "addImport: empty name");
-    if (this.lImportedSymbols.includes(name)) {
-      croak(`Duplicate import: ${name}`);
-    } else {
-      this.lImportedSymbols.push(name);
-    }
+  endVisit(uobj, level, lineNum) {
+    this.lTrace.push("|.".repeat(level) + `< ${OL(uobj)}`);
   }
 
   // ..........................................................
-  addUsedSymbol(name, value = {}) {
-    assert(name, "addUsedSymbol(): empty name");
-    if (!this.isLocalSymbol(name) && !this.lUsedSymbols.includes(name)) {
-      this.lUsedSymbols.push(name);
-    }
-  }
-
-  // ..........................................................
-  addLocalSymbol(name) {
-    var lSymbols;
-    assert(this.lLocalSymbols.length > 0, "no lLocalSymbols");
-    lSymbols = this.lLocalSymbols[this.lLocalSymbols.length - 1];
-    lSymbols.push(name);
-  }
-
-  // ..........................................................
-  visit(node, hInfo, level) {
-    var add, hSpec, i, importKind, imported, j, lNames, lSubTrees, len, len1, lib, local, name, param, parm, ref, source, specifiers, type;
-    // --- add to local vars & formal params, where appropriate
-    switch (node.type) {
-      case 'Identifier':
-        // --- Identifiers that are not local vars or formal params
-        //     are symbols that should be imported
-        name = node.name;
-        if (!this.isLocalSymbol(name)) {
-          this.addUsedSymbol(name);
-        }
-        return;
-      case 'ImportDeclaration':
-        ({specifiers, source, importKind} = node);
-        if ((importKind === 'value') && (source.type === 'StringLiteral')) {
-          lib = source.value; // e.g. '@jdeighan/coffee-utils'
-          for (i = 0, len = specifiers.length; i < len; i++) {
-            hSpec = specifiers[i];
-            ({type, imported, local, importKind} = hSpec);
-            if ((type === 'ImportSpecifier') && (imported != null) && (imported.type === 'Identifier')) {
-              this.addImport(imported.name, lib);
-            }
-          }
-        }
-        return;
-      case 'CatchClause':
-        param = node.param;
-        if ((param != null) && param.type === 'Identifier') {
-          this.lLocalSymbols.push(param.name);
-        }
-        break;
-      case 'FunctionExpression':
-        lNames = [];
-        ref = node.params;
-        for (j = 0, len1 = ref.length; j < len1; j++) {
-          parm = ref[j];
-          if (parm.type === 'Identifier') {
-            lNames.push(parm.name);
-          }
-        }
-        this.lLocalSymbols.push(lNames);
-        break;
-      case 'For':
-        lNames = [];
-        if ((node.name != null) && (node.name.type === 'Identifier')) {
-          lNames.push(node.name.name);
-        }
-        if ((node.index != null) && (node.name.type === 'Identifier')) {
-          lNames.push(node.index.name);
-        }
-        this.lLocalSymbols.push(lNames);
-        break;
-      case 'AssignmentExpression':
-        if (node.left.type === 'Identifier') {
-          this.addLocalSymbol(node.left.name);
-        }
-        break;
-      case 'AssignmentPattern':
-        if (node.left.type === 'Identifier') {
-          this.addLocalSymbol(node.left.name);
-        }
-    }
-    // --- Build and return array of subtrees
-    lSubTrees = [];
-    add = function(...subtrees) {
-      return lSubTrees.push(...subtrees);
-    };
-    switch (node.type) {
-      case 'AssignmentExpression':
-        add(node.left, node.right);
-        break;
-      case 'AssignmentPattern':
-        add(node.left, node.right);
-        break;
-      case 'BinaryExpression':
-        add(node.left, node.right);
-        break;
-      case 'BlockStatement':
-        add(node.body);
-        break;
-      case 'CallExpression':
-        add(node.callee, node.arguments);
-        break;
-      case 'CatchClause':
-        add(node.body);
-        break;
-      case 'ClassDeclaration':
-        add(node.body);
-        break;
-      case 'ClassBody':
-        add(node.body);
-        break;
-      case 'ClassMethod':
-        add(node.body);
-        break;
-      case 'ExpressionStatement':
-        add(node.expression);
-        break;
-      case 'For':
-        add(node.body, node.source);
-        break;
-      case 'FunctionExpression':
-        add(node.params, node.body);
-        break;
-      case 'IfStatement':
-        add(node.test, node.consequent);
-        break;
-      case 'MemberExpression':
-        add(node.object);
-        break;
-      case 'Program':
-        add(node.body);
-        break;
-      case 'SwitchCase':
-        add(node.test, node.consequent);
-        break;
-      case 'SwitchStatement':
-        add(node.cases);
-        break;
-      case 'TryStatement':
-        add(node.block, node.handler, node.finalizer);
-        break;
-      case 'WhileStatement':
-        add(node.test, node.body);
-    }
-    return lSubTrees;
-  }
-
-  // ..........................................................
-  endVisit(node, level) {
-    // --- Called after the node's entire subtree has been walked
-    switch (node.type) {
-      case 'FunctionExpression':
-      case 'For':
-      case 'CatchClause':
-        this.lLocalSymbols.pop();
-    }
-  }
-
-  // ..........................................................
-  getSymbols() {
-    var hResult, i, lNeededSymbols, len, name, ref;
-    debug("enter CodeWalker.getSymbols()");
-    this.lImportedSymbols = []; // filled in during walking
-    this.lUsedSymbols = []; // filled in during walking
-    debug("walking");
-    this.walk();
-    debug("done walking");
-    lNeededSymbols = [];
-    ref = this.lUsedSymbols;
-    for (i = 0, len = ref.length; i < len; i++) {
-      name = ref[i];
-      if (!this.lImportedSymbols.includes(name) && !isBuiltin(name)) {
-        lNeededSymbols.push(name);
-      }
-    }
-    hResult = {
-      lImported: this.lImportedSymbols,
-      lUsed: this.lUsedSymbols,
-      lNeeded: lNeededSymbols
-    };
-    debug("return from CodeWalker.getSymbols()", hResult);
-    return hResult;
+  endWalk() {
+    var block;
+    this.lTrace.push("end");
+    block = arrayToBlock(this.lTrace);
+    this.lTrace = undef;
+    return block;
   }
 
 };

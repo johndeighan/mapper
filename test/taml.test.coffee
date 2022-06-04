@@ -11,7 +11,7 @@ import {
 	addHereDocType, mapHereDoc, lineToParts,
 	} from '@jdeighan/mapper/heredoc'
 import {
-	isTAML, taml, slurpTAML, StoryMapper, TAMLHereDoc,
+	isTAML, taml, slurpTAML, TAMLHereDoc,
 	} from '@jdeighan/mapper/taml'
 
 addHereDocType new TAMLHereDoc()
@@ -58,6 +58,32 @@ simple.equal 50, slurpTAML('./test/data_structure.taml'), [
 	]
 
 # --- Test providing a premapper
+
+class StoryMapper extends Mapper
+
+	map: (line, level) ->
+		if lMatches = line.match(///
+				([A-Za-z_][A-Za-z0-9_]*)  # identifier
+				\:                        # colon
+				\s*                       # optional whitespace
+				(.+)                      # a non-empty string
+				$///)
+			[_, ident, str] = lMatches
+
+			if str.match(///
+					\d+
+					(?:
+						\.
+						\d*
+						)?
+					$///)
+				return line
+			else
+				# --- surround with single quotes, double internal single quotes
+				str = "'" + str.replace(/\'/g, "''") + "'"
+				return "#{ident}: #{str}"
+		else
+			return line
 
 simple.equal 58, taml("""
 		---

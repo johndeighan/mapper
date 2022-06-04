@@ -3,217 +3,204 @@
 import {
   assert,
   undef,
+  pass,
   croak,
+  OL,
+  rtrim,
+  defined,
+  escapeStr,
+  className,
   isString,
+  isHash,
+  isArray,
+  isFunction,
+  isIterable,
   isEmpty,
-  nonEmpty,
-  OL
+  nonEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
-  arrayToBlock
-} from '@jdeighan/coffee-utils/block';
-
-import {
-  LOG,
-  DEBUG
+  LOG
 } from '@jdeighan/coffee-utils/log';
-
-import {
-  splitLine,
-  indented,
-  indentLevel
-} from '@jdeighan/coffee-utils/indent';
 
 import {
   debug
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  LineFetcher
-} from '@jdeighan/mapper/fetcher';
+  Getter
+} from '@jdeighan/mapper/getter';
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 //   class Mapper
-//      - keep track of indentation
-//      - allow mapping of lines, including skipping lines
-//      - implement look ahead via peekPair()
-export var Mapper = class Mapper extends LineFetcher {
-  constructor(source, content = undef) {
-    super(source, content);
-    this.lLookAhead = [];
-    // --- cache in case getAllPairs() is called multiple times
-    //     each pair is [<mapped str>, <level>]
-    this.lAllPairs = undef;
+//       handles:
+//          #define
+//          variable substitution
+//          getLineType(), handleLineType()
+export var Mapper = class Mapper extends Getter {
+  constructor(source = undef, collection = undef, hOptions = {}) {
+    debug("enter Mapper()");
+    super(source, collection, hOptions);
+    this.setVar('FILE', this.filename);
+    this.setVar('DIR', this.hSourceInfo.dir);
+    this.setVar('LINE', this.lineNum);
+    debug("return from Mapper()");
   }
 
   // ..........................................................
-  getPair() {
-    var lResult, level, line, pair, result, str;
-    debug(`enter Mapper.getPair() - from ${this.filename}`);
-    if (this.lLookAhead.length > 0) {
-      pair = this.lLookAhead.shift();
-      debug("return lookahead pair from Mapper.getPair()", pair);
-      return pair;
-    }
-    line = this.fetch(); // will handle #include
-    debug("FETCH LINE", line);
-    if (line == null) {
-      debug("return undef from Mapper.getPair() - at EOF");
-      return undef;
-    }
-    [level, str] = splitLine(line);
-    assert(indentLevel(str) === 0, "splitLine() returned indented str");
-    assert((str != null) && isString(str), "Mapper.getPair(): not a string");
-    result = this.mapLine(str, level);
-    debug(`MAP: '${str}' => ${OL(result)}`);
-    while ((result == null) && !this.eof()) {
-      line = this.fetch();
-      [level, str] = splitLine(line);
-      assert(indentLevel(str) === 0, "splitLine() returned indented str");
-      result = this.mapLine(str, level);
-      debug(`MAP: '${str}' => ${OL(result)}`);
-    }
-    lResult = [result, level];
-    debug("return from Mapper.getPair()", lResult);
-    return lResult;
+  // --- override to keep variable LINE updated
+  incLineNum(inc = 1) {
+    debug(`enter incLineNum(${inc})`);
+    super.incLineNum(inc);
+    this.setVar('LINE', this.lineNum);
+    debug("return from incLineNum()");
   }
 
   // ..........................................................
-  ungetPair(lPair) {
-    // --- lPair will always be [<item>, <level>]
-    //     <item> can be anything - i.e. it's been mapped
-    debug('enter ungetPair()', lPair);
-    this.lLookAhead.unshift(lPair);
-    debug('return from ungetPair()');
+  // --- override
+  getItemType(item) {
+    var h, result;
+    debug("enter Mapper.getItemType()", item);
+    // --- only strings may have an item type
+    if (isString(item)) {
+      // --- check for empty item
+      if (this.isEmptyLine(item)) {
+        result = ['empty', undef];
+      }
+      // --- check for comment
+      if (this.isComment(item)) {
+        result = ['comment', undef];
+      }
+      // --- check for cmd
+      if (defined(h = this.isCmd(item))) {
+        assert(isHash(h, ['cmd', 'argstr', 'prefix']), `isCmd() returned non-hash ${OL(h)}`);
+        result = ['cmd', h];
+      }
+    }
+    debug("return from Mapper.getItemType()", result);
+    return result;
   }
 
   // ..........................................................
-  peekPair() {
-    var lPair, pair;
-    debug('enter peekPair():');
-    if (this.lLookAhead.length > 0) {
-      pair = this.lLookAhead[0];
-      debug("return lookahead from peekPair()", pair);
-      return pair;
+  // --- override
+  handleItemType(type, item, h) {
+    var result;
+    debug(`enter Mapper.handleItemType(${OL(type)})`, item);
+    switch (type) {
+      case 'empty':
+        result = this.handleEmptyLine();
+        break;
+      case 'comment':
+        result = this.handleComment(item);
+        break;
+      case 'cmd':
+        result = this.handleCmd(h);
+        break;
+      default:
+        croak(`Unknown item type: ${OL(type)}`);
     }
-    lPair = this.getPair();
-    if (lPair == null) {
-      debug("return undef from peekPair() - getPair() returned undef");
-      return undef;
-    }
-    this.ungetPair(lPair);
-    debug(`return ${OL(lPair)} from peekPair()`);
-    return lPair;
+    debug("return from Mapper.handleItemType()", result);
+    return result;
   }
 
   // ..........................................................
-  skipPair() {
-    debug('enter skipPair():');
-    if (this.lLookAhead.length > 0) {
-      this.lLookAhead.shift();
-      debug("return from skipPair(): remove lookahead");
-      return;
-    }
-    this.getPair();
-    debug('return from skipPair()');
+  isEmptyLine(line) {
+    return isEmpty(line);
   }
 
   // ..........................................................
-  // --- designed to override with a mapping method
-  //     which can map to any valid JavaScript value
-  mapLine(line, level) {
+  handleEmptyLine(line) {
+    // --- can override
+    //     line may contain whitespace
+
+    // --- return undef to remove empty lines
+    return '';
+  }
+
+  // ..........................................................
+  isComment(line) {
+    var ch, lMatches;
+    if ((lMatches = line.match(/^\s*\#(.|$)/))) { // a # character
+      // following character, if any
+      ch = lMatches[1];
+      return (ch === undef) || (ch === ' ' || ch === '\t' || ch === '');
+    } else {
+      return false;
+    }
+  }
+
+  // ..........................................................
+  handleComment(line) {
+    debug("in Mapper.handleComment()");
+    // --- return undef to remove empty lines
     return line;
   }
 
   // ..........................................................
-  // --- Fetch a block of text at level or greater than 'level'
-  //     as one long string
-  // --- Designed to use in mapLine()
-  fetchBlock(atLevel) {
-    var block, lLines, level, line, result, str;
-    debug(`enter Mapper.fetchBlock(${atLevel})`);
-    lLines = [];
-    line = undef;
-    while ((line = this.fetch()) != null) {
-      debug(`LINE IS ${OL(line)}`);
-      assert(isString(line), `Mapper.fetchBlock() - not a string: ${OL(line)}`);
-      if (isEmpty(line)) {
-        debug("empty line");
-        lLines.push('');
-        continue;
-      }
-      [level, str] = splitLine(line);
-      assert(indentLevel(str) === 0, "Mapper.fetchBlock(): splitLine() returned indented str");
-      debug(`LOOP: level = ${level}, str = ${OL(str)}`);
-      if (level < atLevel) {
-        this.unfetch(line);
-        debug("RESULT: unfetch the line");
-        break;
-      }
-      assert(level >= atLevel, "Mapper.fetchBlock(): bad level");
-      result = indented(str, level - atLevel);
-      debug("RESULT", result);
-      lLines.push(result);
+  isCmd(line) {
+    var _, argstr, cmd, hResult, lMatches, prefix;
+    // --- Must return either undef or {prefix, cmd, argstr}
+    debug("enter Mapper.isCmd()");
+    if (lMatches = line.match(/^(\s*)\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
+      // argstr for command
+      [_, prefix, cmd, argstr] = lMatches;
+      hResult = {
+        prefix: prefix || '',
+        cmd,
+        argstr: argstr ? argstr.trim() : ''
+      };
+      debug("return from Mapper.isCmd()", hResult);
+      return hResult;
     }
-    block = arrayToBlock(lLines);
-    debug("return from Mapper.fetchBlock()", block);
-    return block;
+    // --- not a command
+    debug("return undef from Mapper.isCmd()");
+    return undef;
   }
 
   // ..........................................................
-  getAllPairs() {
-    var lPair, lPairs;
-    debug("enter Mapper.getAllPairs()");
-    if (this.lAllPairs != null) {
-      debug("return cached lAllPairs from Mapper.getAllPairs()");
-      return this.lAllPairs;
+  // --- handleCmd must return a pair:
+  //        [handled:boolean, result:any]
+  // Override must 1st handle it's own commands, then call this
+  handleCmd(h) {
+    var _, argstr, cmd, isEnv, lMatches, name, prefix, tail;
+    ({cmd, argstr, prefix} = h);
+    debug(`enter Mapper.handleCmd #${cmd} '${argstr}'`);
+    if (prefix.length > 0) {
+      debug(`   prefix = '${escapeStr(prefix)}'`);
     }
-    // --- Each pair is [<result>, <level>],
-    //     where <result> can be anything
-    lPairs = [];
-    while ((lPair = this.getPair()) != null) {
-      debug("GOT PAIR", lPair);
-      lPairs.push(lPair);
+    // --- Each case should return
+    switch (cmd) {
+      case 'define':
+        if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
+          [_, isEnv, name, tail] = lMatches;
+          if (tail) {
+            tail = tail.trim();
+          }
+          if (isEnv) {
+            debug(`set env var ${name} to '${tail}'`);
+            process.env[name] = tail;
+          } else {
+            debug(`set var ${name} to '${tail}'`);
+            this.setVar(name, tail);
+          }
+        }
+        debug("return undef from Mapper.handleCmd()");
+        return undef;
+      default:
+        croak(`Unknown command: #${cmd}`);
     }
-    this.lAllPairs = lPairs; // cache
-    debug("return from Mapper.getAllPairs()", lPairs);
-    return lPairs;
-  }
-
-  // ..........................................................
-  getBlock() {
-    var block, i, lLines, len, level, line, ref;
-    // --- You can only call getBlock() if mapLine() always
-    //     returns undef or a string
-    debug("enter Mapper.getBlock()");
-    lLines = [];
-    ref = this.getAllPairs();
-    for (i = 0, len = ref.length; i < len; i++) {
-      [line, level] = ref[i];
-      if (line != null) {
-        assert(isString(line), `getBlock(): got non-string '${OL(line)}'`);
-        lLines.push(indented(line, level));
-      }
-    }
-    block = arrayToBlock(lLines);
-    debug("return from Mapper.getBlock()", block);
-    return block;
+    return croak("Not all cases return");
   }
 
 };
 
 // ===========================================================================
-export var doMap = function(inputClass, source, text) {
-  var className, lMatches, oInput, result;
+export var doMap = function(inputClass, source, content = undef) {
+  var name, oInput, result;
   assert(inputClass != null, "Missing input class");
-  if (lMatches = inputClass.toString().match(/class\s+(\w+)/)) {
-    className = lMatches[1];
-  } else {
-    croak("doMap(): Bad input class");
-  }
-  debug(`enter doMap(${className}) source='${source}'`);
-  oInput = new inputClass(source, text);
+  name = className(inputClass);
+  debug(`enter doMap(${name}) source='${source}'`, content);
+  oInput = new inputClass(source, content);
   assert(oInput instanceof Mapper, "doMap() requires a Mapper or subclass");
   result = oInput.getBlock();
   debug("return from doMap()", result);

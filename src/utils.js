@@ -2,6 +2,6 @@
 // utils.coffee
 
 // ---------------------------------------------------------------------------
-export var isComment = function(line) {
+export var isHashComment = function(line) {
   return line.match(/^\s*\#($|\s)/);
 };

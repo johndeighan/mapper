@@ -10,11 +10,12 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  isComment
+  isHashComment
 } from '@jdeighan/mapper/utils';
 
 import {
-  Mapper
+  Mapper,
+  doMap
 } from '@jdeighan/mapper';
 
 convert = true;
@@ -27,21 +28,16 @@ export var convertSASS = function(flag) {
 // ---------------------------------------------------------------------------
 export var SassMapper = class SassMapper extends Mapper {
   // --- only removes comments
-  mapLine(line, level) {
-    if (isComment(line)) {
-      return undef;
-    } else {
-      return line;
-    }
+  handleComment() {
+    return undef;
   }
 
 };
 
 // ---------------------------------------------------------------------------
 export var sassify = function(block, source) {
-  var newblock, oInput, result;
-  oInput = new SassMapper(source, block);
-  newblock = oInput.getBlock();
+  var newblock, result;
+  newblock = doMap(SassMapper, source, block);
   if (!convert) {
     return newblock;
   }

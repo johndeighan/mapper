@@ -2,17 +2,19 @@
 // Symbols.coffee
 var SymbolParser, getAvailSymbolsFrom;
 
-import CoffeeScript from 'coffeescript';
-
 import {
   assert,
   undef,
+  defined,
   isString,
   isArray,
+  isEmpty,
+  nonEmpty,
   croak,
   uniq,
   words,
-  escapeStr
+  escapeStr,
+  OL
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -33,31 +35,30 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  CieloMapper
-} from '@jdeighan/mapper/cielomapper';
+  splitLine
+} from '@jdeighan/coffee-utils/indent';
+
+import {
+  Mapper
+} from '@jdeighan/mapper';
+
+import {
+  coffeeCodeToAST
+} from '@jdeighan/mapper/coffee';
 
 import {
   ASTWalker
-} from '@jdeighan/mapper/walker';
+} from '@jdeighan/mapper/ast';
 
 // ---------------------------------------------------------------------------
 export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
-  var ast, err, hSymbolInfo, walker;
+  var ast, hSymbolInfo, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //     NOTE: items in array returned will always be unique
   debug("enter getNeededSymbols()", coffeeCode);
   assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
-  try {
-    ast = CoffeeScript.compile(coffeeCode, {
-      ast: true
-    });
-    assert(ast != null, "getNeededSymbols(): ast is empty");
-  } catch (error) {
-    err = error;
-    LOG('CODE (in getNeededSymbols)', coffeeCode);
-    croak(err);
-  }
+  ast = coffeeCodeToAST(coffeeCode);
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.getSymbols();
   if (hOptions.dumpfile) {
@@ -136,20 +137,20 @@ export var getAvailSymbols = function(source) {
 
 // ---------------------------------------------------------------------------
 getAvailSymbolsFrom = function(filepath) {
-  var contents, hSymbols, parser;
+  var contents, hAvailSymbols, parser;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
   debug(`enter getAvailSymbolsFrom('${filepath}')`);
   contents = slurp(filepath);
   debug('Contents of .symbols', contents);
   parser = new SymbolParser(filepath, contents);
-  hSymbols = parser.getSymbols();
-  debug("hSymbols", hSymbols);
+  hAvailSymbols = parser.getAvailSymbols();
+  debug("hAvailSymbols", hAvailSymbols);
   debug("return from getAvailSymbolsFrom()");
-  return hSymbols;
+  return hAvailSymbols;
 };
 
 // ---------------------------------------------------------------------------
-SymbolParser = class SymbolParser extends CieloMapper {
+SymbolParser = class SymbolParser extends Mapper {
   // --- Parse a .symbols file
   constructor(content, source) {
     super(content, source);
@@ -157,45 +158,47 @@ SymbolParser = class SymbolParser extends CieloMapper {
     this.hSymbols = {};
   }
 
-  mapString(line, level) {
-    var _, hDesc, i, isDefault, j, lMatches, lWords, len, nextWord, numWords, src, symbol, word;
+  // ..........................................................
+  // ignore empty lines and comments
+  handleEmptyLine(line) {
+    return undef;
+  }
+
+  handleComment(line) {
+    return undef;
+  }
+
+  // ..........................................................
+  map(full_line) {
+    var _, alt, hDesc, i, isDefault, j, lMatches, lWords, len, level, line, numWords, src, symbol, word;
+    [level, line] = splitLine(full_line);
     if (level === 0) {
-      this.curLib = line;
+      this.curLib = line.trim();
     } else if (level === 1) {
       assert(this.curLib != null, "mapString(): curLib not defined");
       lWords = words(line);
       numWords = lWords.length;
       for (i = j = 0, len = lWords.length; j < len; i = ++j) {
         word = lWords[i];
-        symbol = src = undef;
-        // --- set variables symbol and possibly src
-        if (lMatches = word.match(/^(\*?)([A-Za-z_][A-Za-z0-9_]*)$/)) {
-          [_, isDefault, symbol] = lMatches;
-          // --- word is an identifier (skip words that contain ( or ))
-          if (i + 2 < numWords) {
-            nextWord = lWords[i + 1];
-            if (nextWord === '(as') {
-              lMatches = lWords[i + 2].match(/^([A-Za-z_][A-Za-z0-9_]*)\)$/);
-              if (lMatches) {
-                src = symbol;
-                symbol = lMatches[1];
-              }
-            }
-          }
+        lMatches = word.match(/^(\*?)([A-Za-z_][A-Za-z0-9_]*)(?:\/([A-Za-z_][A-Za-z0-9_]*))?$/);
+        assert(defined(lMatches), `Bad word: ${OL(word)}`);
+        [_, isDefault, symbol, alt] = lMatches;
+        if (nonEmpty(alt)) {
+          src = symbol;
+          symbol = alt;
         }
-        if (symbol != null) {
-          assert(this.hSymbols[symbol] == null, `SymbolParser: duplicate symbol ${symbol}`);
-          hDesc = {
-            lib: this.curLib
-          };
-          if (src != null) {
-            hDesc.src = src;
-          }
-          if (isDefault) {
-            hDesc.isDefault = true;
-          }
-          this.hSymbols[symbol] = hDesc;
+        assert(nonEmpty(symbol), `Bad word: ${OL(word)}`);
+        assert(this.hSymbols[symbol] == null, `SymbolParser: duplicate symbol ${symbol}`);
+        hDesc = {
+          lib: this.curLib
+        };
+        if (src != null) {
+          hDesc.src = src;
         }
+        if (isDefault) {
+          hDesc.isDefault = true;
+        }
+        this.hSymbols[symbol] = hDesc;
       }
     } else {
       croak(`Bad .symbols file - level = ${level}`);
@@ -203,8 +206,8 @@ SymbolParser = class SymbolParser extends CieloMapper {
     return undef; // doesn't matter what we return
   }
 
-  getSymbols() {
-    this.getAllPairs();
+  getAvailSymbols() {
+    this.getBlock();
     return this.hSymbols;
   }
 

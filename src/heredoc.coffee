@@ -25,16 +25,16 @@ export doDebugHereDoc = (flag=true) ->
 # ---------------------------------------------------------------------------
 
 export lineToParts = (line) ->
+	# --- Always returns an odd number of parts
+	#     Odd numbered parts are '<<<', Even numbered parts are not '<<<'
 
-	lParts = []     # joined at the end
+	lParts = []
 	pos = 0
 	while ((start = line.indexOf('<<<', pos)) != -1)
-		if (start > pos)
-			lParts.push line.substring(pos, start)
+		lParts.push line.substring(pos, start)
 		lParts.push '<<<'
 		pos = start + 3
-	if (line.length > pos)
-		lParts.push line.substring(pos)
+	lParts.push line.substring(pos)
 	return lParts
 
 # ---------------------------------------------------------------------------

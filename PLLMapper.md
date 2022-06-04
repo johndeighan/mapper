@@ -1,9 +1,32 @@
-class SmartMapper
+class TreeWalker
 =================
 
-A SmartMapper object is a subclass of StringInput, and is therefore
-constructed from a block (i.e. a multi-line string) and an optional source.
+A TreeWalker object is a subclass of Mapper
+
+To create a subclass of PLLMapper:
+
+1. override @mapStr() to map a line (minus indent) to anything
+2. override @unmapObj() to map anything to a string
+3. To allow doMap() to construct a block, override:
+	beginWalk()
+	visit(uobj)
+	endVisit(uobj)
+	endWalk()
+
+
 It has the following features:
+
+- removes empty lines
+- retains comments as is
+- handles extension lines
+- handles HEREDOCs
+- provides method walk() to walk the tree
+
+
+Additionally:
+- to handle empty lines differently, override handleEmptyLine()
+- to handle comments differently, override handleComment()
+- to define new commands, override handleCmd()
 
 1. Removes blank lines from the block by default, but this
 	behavior can be modified by overriding method handleEmptyLine()
@@ -42,6 +65,33 @@ It has the following features:
 
 NOTE: You can add new types of HEREDOC sections by defining a new class
 	that includes these methods:
+
+```text
+myName() - provide the name of the new type (must be unique)
+isMyHereDoc(block) - return true if this class should handle it
+map(block, result) - return the object you want to replace '<<<'
+	- this should return a hash with keys `obj` and `str`, where obj
+		is the actual object, and str is a string which will directly
+		replace the '<<<' and should compile to the same object
+```
+
+- If isMyHereDoc returns a true value, then that value will be passed
+	as the 2nd parameter to map() - it can be any true value, not just
+	a boolean
+
+Once the class has been defined, you can enable that type of HEREDOC with:
+
+```coffeescript
+addHereDocType new HereDocClass()
+```
+
+7. Handles HEREDOCs automatically. When a line contains one or more "<<<"
+	strings, for each one it fetches all following lines at a greater level
+	(but remember #2 above, which is done first), then interprets that block
+	as a HEREDOC section, which results in "<<<" being replaced by a string
+	that generates that object (if it's a string, it will be surrounded by
+	quote marks).
+
 
 ```text
 myName() - provide the name of the new type (must be unique)

@@ -1,7 +1,7 @@
 # cielo.coffee
 
 import {
-	undef, assert, croak, OL, replaceVars,
+	undef, assert, croak, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
@@ -12,17 +12,17 @@ import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
+import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
+import {FuncHereDoc} from '@jdeighan/mapper/func'
 import {
 	getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
 import {TAMLHereDoc} from '@jdeighan/mapper/taml'
+import {doMap, Mapper} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 import {
 	addHereDocType, lineToParts, mapHereDoc,
 	} from '@jdeighan/mapper/heredoc'
-import {doMap, Mapper} from '@jdeighan/mapper'
-import {FuncHereDoc} from '@jdeighan/mapper/func'
-import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
-import {CieloMapper} from '@jdeighan/mapper/cielomapper'
 
 addHereDocType new FuncHereDoc()
 addHereDocType new TAMLHereDoc()
@@ -41,41 +41,43 @@ export convertCielo = (flag) ->
 export cieloCodeToJS = (cieloCode, hOptions) ->
 	# --- cielo => js
 	#     Valid Options:
-	#        premapper:  CieloMapper or subclass
-	#        postmapper: CieloMapper or subclass
+	#        premapper:  Mapper or subclass
+	#        postmapper: Mapper or subclass - optional
 	#        source: name of source file
 	#        hCoffeeOptions  - passed to CoffeeScript.parse()
 	#           default:
 	#              bare: true
 	#              header: false
+	#     If hOptions is a string, it's assumed to be the source
 
 	debug "enter cieloCodeToJS()"
 	debug "cieloCode", cieloCode
 	debug 'hOptions', hOptions
 
-	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indentation"
+	assert (indentLevel(cieloCode)==0), "cieloCodeToJS(): has indent"
 
 	if isString(hOptions)
 		source = hOptions
-		premapper = CieloMapper
+		premapper = TreeWalker
 		postmapper = undef
 	else if isHash(hOptions)
-		premapper = hOptions.premapper || CieloMapper
+		premapper = hOptions.premapper || TreeWalker
 		postmapper = hOptions.postmapper   # may be undef
 		source = hOptions.source
 	else
-		croak "cieloCodeToJS(): Invalid 2nd parm: #{typeof hOptions}"
-	assert source?, "cieloCodeToJS(): Missing source"
+		croak "Invalid 2nd parm: #{OL(hOptions)}"
+	assert source?, "Missing source"
 
-	# --- Even if no premapper is defined, this will handle
-	#     continuation lines, HEREDOCs, etc.
+	# --- Handles extension lines, HEREDOCs, etc.
+	debug "Apply premapper #{className(premapper)}"
 	coffeeCode = doMap(premapper, source, cieloCode)
 	if coffeeCode != cieloCode
 		debug "coffeeCode", coffeeCode
 
 	# --- symbols will always be unique
+	#     We can only get needed symbols from coffee code, not JS code
 	lNeededSymbols = getNeededSymbols(coffeeCode)
-	debug "#{lNeededSymbols.length} needed symbols: #{lNeededSymbols}"
+	debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
 
 	try
 		if convertingCielo

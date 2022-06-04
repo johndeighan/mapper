@@ -1,379 +1,358 @@
 # TreeWalker.coffee
 
 import {
-	assert, undef, pass, croak, isArray, isHash, isArrayOfHashes,
+	assert, undef, croak, defined, OL, rtrim,
+	isString, isNumber, isEmpty, nonEmpty, isArray, isHash,
 	} from '@jdeighan/coffee-utils'
+import {arrayToBlock} from '@jdeighan/coffee-utils/block'
+import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
+import {
+	splitLine, indentLevel, indented, undented,
+	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {indented} from '@jdeighan/coffee-utils/indent'
 
-import {isBuiltin} from '@jdeighan/mapper/builtins'
+import {Mapper} from '@jdeighan/mapper'
+import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
+# ===========================================================================
+#   class TreeWalker
+#      - map() returns {uobj, level, lineNum} or undef
+#   to use, override:
+#      mapStr(str, level) - returns user object, default returns str
+#      handleCmd()
+#      beginWalk() -
+#      visit(uobj, level, lineNum) -
+#      endVisit(uobj, level, lineNum) -
+#      endWalk() -
 
-export class TreeWalker
-
-	constructor: (@tree, hStdKeys={}) ->
-		debug "enter TreeWalker()", hStdKeys
-
-		# --- tree can be a hash or array of hashes
-		if isHash(@tree)
-			debug "tree was hash - constructing list from it"
-			@tree = [@tree]
-		assert isArrayOfHashes(@tree), "new TreeWalker: Bad tree"
-
-		# --- @hStdKeys allows you to provide an alternate name for 'subtree'
-		#     Ditto for 'node', but if the 'node' key exists, but is
-		#        set to undef, the tree is assumed to NOT use user nodes
-		@hStdKeys = {}
-
-		if hStdKeys.subtree?
-			assert hStdKeys.subtree, "empty subtree key"
-			@hStdKeys.subtree = hStdKeys.subtree
-		else
-			@hStdKeys.subtree = 'subtree'
-
-		if hStdKeys.node?            # --- if set to undef, leave it alone
-			@hStdKeys.node = hStdKeys.node
-		else
-			@hStdKeys.node = 'node'
-
-		debug "return from TreeWalker()", @hStdKeys
+export class TreeWalker extends Mapper
 
 	# ..........................................................
-	# --- Called after walk() completes
-	#     Override to have walk() return some result
+	# --- Should always return either:
+	#        undef
+	#        object with {uobj, level, lineNum}
+	# --- Will only receive non-special lines
 
-	getResult: () ->
+	map: (line) ->
+
+		debug "enter TreeWalker.map()", line
+
+		# --- a TreeWalker makes no sense unless items are strings
+		assert isString(line), "non-string: #{OL(line)}"
+
+		lineNum = @lineNum    # so extension lines aren't counted
+		[level, str] = splitLine(line)
+		debug "split: str = #{OL(str)}, level = #{level}"
+		assert nonEmpty(str), "empty string should be special"
+
+		# --- check for extension lines
+		debug "check for extension lines"
+		lExtLines = @fetchLinesAtLevel(level+2)
+		assert isArray(lExtLines), "lExtLines not an array"
+		str = @joinExtensionLines(str, lExtLines)
+
+		debug "call super"
+		str = super(str)      # performs variable replacement
+		debug "from super", str
+
+		# --- handle HEREDOCs
+		debug "check for HEREDOC"
+		if (str.indexOf('<<<') >= 0)
+			hResult = @handleHereDoc(str, level)
+			if (hResult.line != str)
+				str = hResult.line
+				debug "line becomes #{OL(str)}"
+
+
+		# --- NOTE: mapStr() may return undef, meaning to ignore
+		uobj = @mapStr(str, level)
+		if defined(uobj)
+			result = {uobj, level, lineNum}
+			debug "return from TreeWalker.map()", result
+			return result
+		else
+			debug "return undef from TreeWalker.map()"
+			return undef
+
+	# ..........................................................
+
+	joinExtensionLines: (line, lExtLines) ->
+
+		# --- There might be empty lines in lExtLines
+		#     but we'll skip them here
+		for contLine in lExtLines
+			if nonEmpty(contLine)
+				line += ' ' + contLine.trim()
+		return line
+
+	# ..........................................................
+
+	handleHereDoc: (line, level) ->
+		# --- Indentation has been removed from line
+		# --- Find each '<<<' and replace with result of mapHereDoc()
+
+		debug "enter handleHereDoc(level=#{OL(level)})", line
+		assert isString(line), "not a string"
+		lParts = lineToParts(line)
+		debug 'lParts', lParts
+		lObjects = []
+		lNewParts = for part in lParts
+			if part == '<<<'
+				lLines = @getHereDocLines(level+1)
+				debug 'lLines', lLines
+				hResult = mapHereDoc(arrayToBlock(lLines))
+				debug 'hResult', hResult
+				lObjects.push hResult.obj
+				hResult.str
+			else
+				part    # keep as is
+
+		hResult = {
+			line: lNewParts.join('')
+			lParts: lParts
+			lObjects: lObjects
+			}
+
+		debug "return from handleHereDoc", hResult
+		return hResult
+
+	# ..........................................................
+
+	getHereDocLines: (atLevel) ->
+		# --- Get all lines until addHereDocLine() returns undef
+		#     atLevel will be one greater than the indent
+		#        of the line containing <<<
+
+		debug "enter TreeWalker.getHereDocLines()"
+		assert atLevel > 0, "atLevel = #{OL(atLevel)}, should not be 0"
+		lLines = @fetchLinesAtLevel(atLevel, '') # stop on blank line
+		assert isArray(lLines), "lLines not an array"
+		result = undented(lLines, atLevel)
+		debug "return from TreeWalker.getHereDocLines()", result
+		return result
+
+	# ..........................................................
+
+	extSep: (str, nextStr) ->
+
+		return ' '
+
+	# ..........................................................
+
+	isEmptyHereDocLine: (str) ->
+
+		return (str == '.')
+
+	# ..........................................................
+	# --- designed to override
+
+	mapStr: (str, level) ->
+
+		return str
+
+	# ..........................................................
+
+	unmap: (h) ->
+
+		croak "TreeWalker.unmap() called!"
+
+	# ..........................................................
+
+	handleEmptyLine: (line) ->
+
+		return undef    # remove empty lines
+
+	# ..........................................................
+
+	handleComment: (line) ->
+
+		# --- line includes any indentation
+		[level, uobj] = splitLine(line)
+		return {uobj, level, lineNum: @lineNum}
+
+	# ..........................................................
+	# --- We don't define any new commands, but
+	#     we need to determine level from indentation
+
+	handleCmd: (h) ->
+
+		debug "enter TreeWalker.handleCmd()"
+		result = super h
+		if (result == undef)
+			debug "return undef from TreeWalker.handleCmd() - super undef"
+			return undef
+		assert isString(result), "TreeWalker non-string #{OL(result)}"
+
+		[level, uobj] = splitLine(result)
+		result = {uobj, level, lineNum: @lineNum}
+		debug "return from TreeWalker.handleCmd()", result
+		return result
+
+	# ..........................................................
+
+	fetchLinesAtLevel: (atLevel, stopOn=undef) ->
+		# --- Does NOT remove any indentation
+
+		debug "enter TreeWalker.fetchLinesAtLevel(#{OL(atLevel)}, #{OL(stopOn)})"
+		assert (atLevel > 0), "atLevel is 0"
+		lLines = []
+		while defined(item = @fetch()) \
+				&& debug("item = #{OL(item)}") \
+				&& isString(item) \
+				&& ((stopOn == undef) || (item != stopOn)) \
+				&& debug("OK") \
+				&& (isEmpty(item) || (indentLevel(item) >= atLevel))
+
+			debug "push #{OL(item)}"
+			lLines.push item
+
+		# --- Cases:                            unfetch?
+		#        1. item is undef                 NO
+		#        2. item not a string             YES
+		#        3. item == stopOn (& defined)    NO
+		#        4. item nonEmpty and undented    YES
+
+		if ((item == undef) || (item == stopOn))
+			debug "don't unfetch"
+		else
+			debug "do unfetch"
+			@unfetch item
+
+		debug "return from TreeWalker.fetchLinesAtLevel()", lLines
+		return lLines
+
+	# ..........................................................
+
+	fetchBlockAtLevel: (atLevel, stopOn=undef) ->
+
+		debug "enter TreeWalker.fetchBlockAtLevel(#{OL(atLevel)})"
+		lLines = @fetchLinesAtLevel(atLevel, stopOn)
+		debug 'lLines', lLines
+		lLines = undented(lLines, atLevel)
+		debug "undented lLines", lLines
+		result = arrayToBlock(lLines)
+		debug "return from TreeWalker.fetchBlockAtLevel()", result
+		return result
+
+	# ..........................................................
+	# --- override these for tree walking
+
+	beginWalk: () ->
 
 		return undef
+
+	# ..........................................................
+
+	visit: (uobj, level, lineNum) ->
+
+		return indented(uobj, level)
+
+	# ..........................................................
+
+	endVisit:  (uobj, level, lineNum) ->
+
+		return undef
+
+	# ..........................................................
+
+	endWalk: () ->
+
+		return undef
+
+	# ..........................................................
+
+	addLine: (line) ->
+
+		if (line == undef)
+			return
+		if isArray(line)
+			@lLines.push line...
+		else
+			@lLines.push line
+		return
 
 	# ..........................................................
 
 	walk: () ->
 
-		debug "enter TreeWalker.walk()"
-		@walkNodes @tree, 0
-		result = @getResult()
-		debug "return from TreeWalker.walk()", result
-		return result
+		debug "enter walk()"
 
-	# ..........................................................
+		# --- stack of {
+		#        node: {uobj, level, lineNum},
+		#        userhash: {}
+		#        }
+		lStack = []
 
-	walkNodes: (lNodes, level) ->
-
-		debug "enter walkNodes()", lNodes
-		for node in lNodes
-			@walkNode node, level
-		debug "return from walkNodes()"
-		return
-
-	# ..........................................................
-
-	walkSubTrees: (lSubTrees, level) ->
-
-		if !lSubTrees? || (lSubTrees.length==0)
-			return
-		for subtree in lSubTrees
-			if subtree?
-				if isArray(subtree)
-					@walkNodes subtree, level
-				else if isHash(subtree)
-					@walkNode subtree, level
-				else
-					croak "Invalid subtree", 'SUBTREE', subtree
-		return
-
-	# ..........................................................
-
-	walkNode: (superNode, level) ->
-
-		debug "enter walkNode()"
-
-		key = @hStdKeys.node
-		subkey = @hStdKeys.subtree
-		debug "KEYS: '#{key}', '#{subkey}'"
-
-		node = superNode
-		if key && superNode[key]?
-			debug "found node under key '#{key}'"
-			node = superNode[key]
-
-		# --- give visit() method chance to provide list of subtrees
-		lSubTrees = @visit node, superNode, level
-
-		if lSubTrees?
-			debug "visit() returned subtrees", lSubTrees
-			@walkSubTrees lSubTrees, level+1
-		else
-			@walkSubTrees superNode[subkey], level+1
-		@endVisit node, superNode, level
-		debug "return from walkNode()"
-		return
-
-	# ..........................................................
-	# --- return lSubTrees, if any
-
-	visit: (node, hInfo, level) ->
-
-		debug "enter visit() - std"
-		# --- automatically visit subtree if it exists
-		debug "return from visit() - std"
-		return undef
-
-	# ..........................................................
-	# --- called after all subtrees have been visited
-
-	endVisit: (node, hInfo, level) ->
-
-		return
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-export class TreeStringifier extends TreeWalker
-
-	constructor: (tree, hStdKeys={}) ->
-
-		debug "enter TreeStringifier()", tree
-		super(tree, hStdKeys)      # sets @tree
+		# --- resulting lines
 		@lLines = []
-		debug "return from TreeStringifier()"
 
-	# ..........................................................
+		@addLine(@beginWalk())
 
-	visit: (node, hInfo, level) ->
+		for node from @allMapped()
+			while (lStack.length > node.level)
+				hInfo = lStack.pop()
+				{uobj, level, lineNum} = hInfo.node
+				@addLine(@endVisit(uobj, level, lineNum, hInfo.userhash))
 
-		assert node?, "TreeStringifier.visit(): empty node"
-		debug "enter TreeStringifier.visit()"
-		str = indented(@stringify(node), level)
-		debug "stringified: '#{str}'"
-		@lLines.push str
-		debug "return from TreeStringifier.visit()"
-		return undef
+			hInfo = {
+				node
+				userhash: {}
+				}
+			{uobj, level, lineNum} = node
+			@addLine(@visit(uobj, level, lineNum, hInfo.userhash))
+			lStack.push hInfo
+		while (lStack.length > 0)
+			hInfo = lStack.pop()
+			{uobj, level, lineNum} = hInfo.node
+			@addLine(@endVisit(uobj, level, lineNum, hInfo.userhash))
 
-	# ..........................................................
-
-	get: () ->
-
-		debug "enter TreeStringifier.get()"
-		@walk()
-		result = @lLines.join('\n')
-		debug "return from TreeStringifier.get()"
+		@addLine(@endWalk())
+		result = arrayToBlock(@lLines)
+		debug "return from walk()", result
 		return result
 
 	# ..........................................................
 
-	excludeKey: (key) ->
+	getBlock: () ->
 
-		return (key == @hStdKeys.subtree)
-
-	# ..........................................................
-	# --- override this
-
-	stringify: (node) ->
-
-		assert isHash(node),
-				"TreeStringifier.stringify(): node '#{node}' is not a hash"
-		newnode = {}
-		for key,value of node
-			if (! @excludeKey(key))
-				newnode[key] = node[key]
-		return JSON.stringify(newnode)
+		debug "enter getBlock()"
+		result = @walk()
+		debug "return from getBlock()", result
+		return result
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 
-export class ASTWalker extends TreeWalker
-
-	constructor: (ast) ->
-
-		super ast.program, {subtree: 'body', node: undef}
-		@ast = ast.program
-		@lImportedSymbols = []
-		@lUsedSymbols = []
-
-		# --- subarrays start out as list of formal parameters
-		#     to which are added locally assigned variables
-		@lLocalSymbols = [[]]
+export class TraceWalker extends TreeWalker
 
 	# ..........................................................
+	#     builds a trace of the tree
+	#        which is returned by endWalk()
 
-	isLocalSymbol: (name) ->
+	beginWalk: () ->
 
-		for subarray in @lLocalSymbols
-			if subarray.includes(name)
-				return true
-		return false
-
-	# ..........................................................
-
-	addImport: (name, lib) ->
-
-		assert name, "addImport: empty name"
-		if @lImportedSymbols.includes(name)
-			croak "Duplicate import: #{name}"
-		else
-			@lImportedSymbols.push(name)
+		@lTrace = ["begin"]   # an array of strings
 		return
 
 	# ..........................................................
 
-	addUsedSymbol: (name, value={}) ->
+	visit: (uobj, level, lineNum) ->
 
-		assert name, "addUsedSymbol(): empty name"
-		if ! @isLocalSymbol(name) && ! @lUsedSymbols.includes(name)
-			@lUsedSymbols.push(name)
+		@lTrace.push "|.".repeat(level) + "> #{OL(uobj)}"
 		return
 
 	# ..........................................................
 
-	addLocalSymbol: (name) ->
+	endVisit: (uobj, level, lineNum) ->
 
-		assert @lLocalSymbols.length > 0, "no lLocalSymbols"
-		lSymbols = @lLocalSymbols[@lLocalSymbols.length - 1]
-		lSymbols.push name
+		@lTrace.push "|.".repeat(level) + "< #{OL(uobj)}"
 		return
 
 	# ..........................................................
 
-	visit: (node, hInfo, level) ->
+	endWalk: () ->
 
+		@lTrace.push "end"
+		block = arrayToBlock(@lTrace)
+		@lTrace = undef
+		return block
 
-		# --- add to local vars & formal params, where appropriate
-		switch node.type
-
-			when 'Identifier'
-				# --- Identifiers that are not local vars or formal params
-				#     are symbols that should be imported
-
-				name = node.name
-				if ! @isLocalSymbol(name)
-					@addUsedSymbol name
-				return
-
-			when 'ImportDeclaration'
-				{specifiers, source, importKind} = node
-				if (importKind == 'value') && (source.type == 'StringLiteral')
-					lib = source.value     # e.g. '@jdeighan/coffee-utils'
-
-					for hSpec in specifiers
-						{type, imported, local, importKind} = hSpec
-						if (type == 'ImportSpecifier') \
-								&& imported? \
-								&& (imported.type == 'Identifier')
-							@addImport imported.name, lib
-				return
-
-			when 'CatchClause'
-				param = node.param
-				if param? && param.type=='Identifier'
-					@lLocalSymbols.push param.name
-
-			when 'FunctionExpression'
-				lNames = []
-				for parm in node.params
-					if parm.type == 'Identifier'
-						lNames.push parm.name
-				@lLocalSymbols.push lNames
-
-			when 'For'
-				lNames = []
-				if node.name? && (node.name.type=='Identifier')
-					lNames.push node.name.name
-
-				if node.index? && (node.name.type=='Identifier')
-					lNames.push node.index.name
-
-				@lLocalSymbols.push lNames
-
-			when 'AssignmentExpression'
-				if node.left.type == 'Identifier'
-					@addLocalSymbol node.left.name
-
-			when 'AssignmentPattern'
-				if node.left.type == 'Identifier'
-					@addLocalSymbol node.left.name
-
-		# --- Build and return array of subtrees
-
-		lSubTrees = []
-		add = (subtrees...) -> lSubTrees.push subtrees...
-
-		switch node.type
-			when 'AssignmentExpression'
-				add node.left, node.right
-			when 'AssignmentPattern'
-				add node.left, node.right
-			when 'BinaryExpression'
-				add node.left, node.right
-			when 'BlockStatement'
-				add node.body
-			when 'CallExpression'
-				add node.callee, node.arguments
-			when 'CatchClause'
-				add node.body
-			when 'ClassDeclaration'
-				add node.body
-			when 'ClassBody'
-				add node.body
-			when 'ClassMethod'
-				add node.body
-			when 'ExpressionStatement'
-				add node.expression
-			when 'For'
-				add node.body, node.source
-			when 'FunctionExpression'
-				add node.params, node.body
-			when 'IfStatement'
-				add node.test, node.consequent
-			when 'MemberExpression'
-				add node.object
-			when 'Program'
-				add node.body
-			when 'SwitchCase'
-				add node.test, node.consequent
-			when 'SwitchStatement'
-				add node.cases
-			when 'TryStatement'
-				add node.block, node.handler, node.finalizer
-			when 'WhileStatement'
-				add node.test, node.body
-		return lSubTrees
-
-	# ..........................................................
-
-	endVisit: (node, level) ->
-		# --- Called after the node's entire subtree has been walked
-
-		switch node.type
-			when 'FunctionExpression','For', 'CatchClause'
-				@lLocalSymbols.pop()
-
-		return
-
-	# ..........................................................
-
-	getSymbols: () ->
-
-		debug "enter CodeWalker.getSymbols()"
-
-		@lImportedSymbols = []  # filled in during walking
-		@lUsedSymbols = []      # filled in during walking
-
-		debug "walking"
-		@walk()
-		debug "done walking"
-
-		lNeededSymbols = []
-		for name in @lUsedSymbols
-			if ! @lImportedSymbols.includes(name) && ! isBuiltin(name)
-				lNeededSymbols.push(name)
-
-		hResult = {
-			lImported: @lImportedSymbols,
-			lUsed:     @lUsedSymbols,
-			lNeeded:   lNeededSymbols,
-			}
-		debug "return from CodeWalker.getSymbols()", hResult
-		return hResult

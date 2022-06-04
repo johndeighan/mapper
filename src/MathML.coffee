@@ -10,7 +10,7 @@ import {
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {TreeWalker} from '@jdeighan/mapper/walker'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # --- commands, with allowed # of args, allowed # of children
 hCommands = {

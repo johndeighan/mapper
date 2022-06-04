@@ -4,478 +4,441 @@ import assert from 'assert'
 
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {
-	undef, pass, isEmpty, isString,
+	undef, error, warn, rtrim, replaceVars,
 	} from '@jdeighan/coffee-utils'
+import {LOG} from '@jdeighan/coffee-utils/log'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
-	indentLevel, undented, splitLine, indented,
-	} from '@jdeighan/coffee-utils/indent'
-import {
-	debug, setDebugging,
-	} from '@jdeighan/coffee-utils/debug'
-import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+	arrayToBlock, joinBlocks,
+	} from '@jdeighan/coffee-utils/block'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
 
-simple = new UnitTesterNorm()
-
-###
-	class Mapper should handle the following:
-		- #include <file> statements
-		- getPair(), peekPair(), ungetPair(), skipPair()
-		- overriding of mapLine() to return alternate strings or objects
-		- fetch() and fetchBlock() inside mapLine()
-###
+simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
-# --- test getPair(), peekPair(), ungetPair(), skipPair()
 
 (() ->
-	input = new Mapper(import.meta.url, """
+
+	mapper = new Mapper(undef, [1, 2, 3])
+
+	simple.equal 25, mapper.peek(), 1
+	simple.equal 26, mapper.peek(), 1
+	simple.falsy 27, mapper.eof()
+	simple.equal 28, mapper.get(), 1
+	simple.equal 29, mapper.get(), 2
+	simple.equal 30, mapper.lineNum, 2
+
+	simple.falsy 32, mapper.eof()
+	simple.succeeds 33, () -> mapper.unfetch(5)
+	simple.succeeds 34, () -> mapper.unfetch(6)
+	simple.equal 35, mapper.get(), 6
+	simple.equal 36, mapper.get(), 5
+	simple.falsy 37, mapper.eof()
+
+	simple.equal 39, mapper.get(), 3
+	simple.equal 40, mapper.lineNum, 3
+	simple.truthy 41, mapper.eof()
+	simple.succeeds 42, () -> mapper.unfetch(13)
+	simple.falsy 43, mapper.eof()
+	simple.equal 44, mapper.get(), 13
+	simple.truthy 45, mapper.eof()
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Trailing whitespace is stripped from strings
+
+(() ->
+
+	mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t'])
+
+	simple.equal 55, mapper.peek(), 'abc'
+	simple.equal 56, mapper.peek(), 'abc'
+	simple.falsy 57, mapper.eof()
+	simple.equal 58, mapper.get(), 'abc'
+	simple.equal 59, mapper.get(), 'def'
+	simple.equal 60, mapper.get(), 'ghi'
+	simple.equal 61, mapper.lineNum, 3
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test fetch(), fetchUntil()
+
+(() ->
+
+	mapper = new Mapper(undef, """
 			abc
-				def
-					ghi
+			def
+			ghi
+			jkl
+			mno
 			""")
 
-	# --- lPair is [item, level]
+	simple.equal 77, mapper.fetch(), 'abc'
 
-	lPair = input.peekPair()
-	simple.equal 41, lPair, ['abc', 0]
+	# 'jkl' will be discarded
+	simple.equal 80, mapper.fetchUntil('jkl'), ['def','ghi']
 
-	lPair = input.peekPair()
-	simple.equal 44, lPair, ['abc', 0]
-
-	lPair = input.getPair()
-	simple.equal 47, lPair, ['abc', 0]
-
-	lPair = input.getPair()
-	simple.equal 50, lPair, ['def', 1]
-
-	input.ungetPair(lPair)
-	lPair = input.getPair()
-	simple.equal 54, lPair, ['def', 1]
-
-	lPair = input.getPair()
-	simple.equal 57, lPair, ['ghi', 2]
-	input.ungetPair(lPair)
-
-	input.skipPair()
-	pair = input.getPair()
-	simple.equal 62, pair, undef
-
+	simple.equal 82, mapper.fetch(), 'mno'
+	simple.equal 83, mapper.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
-
-class MapperTester extends UnitTester
-
-	transformValue: (input) ->
-		# --- input may be a string or a Mapper or subclass
-
-		if isString(input)
-			oInput = new Mapper(import.meta.url, input)
-		else
-			assert input instanceof Mapper,
-				"input should be a Mapper object"
-			oInput = input
-		return oInput.getBlock()
-
-tester = new MapperTester()
-
-# ---------------------------------------------------------------------------
-# --- Test basic reading till EOF
-
-tester.equal 86, """
-		abc
-		def
-		""", """
-		abc
-		def
-		"""
-
-tester.equal 94, """
-		abc
-
-		def
-		""", """
-		abc
-
-		def
-		"""
 
 (() ->
-	class TestMapper extends Mapper
 
-		# --- This removes blank lines
-		mapLine: (line, level) ->
-			if line == ''
-				return undef
-			else
-				return line
+	# --- A generator is a function that, when you call it,
+	#     it returns an iterator
 
-	str = """
-			abc
+	generator = () ->
+		yield 1
+		yield 2
+		yield 3
+		return
 
-			def
-			"""
+	# --- You can pass any iterator to the Mapper() constructor
+	mapper = new Mapper(undef, generator())
 
-	tester.equal 120, new TestMapper(import.meta.url, str), """
-			abc
-			def
-			"""
+	simple.equal 102, mapper.peek(), 1
+	simple.equal 103, mapper.peek(), 1
+	simple.falsy 104, mapper.eof()
+	simple.equal 105, mapper.get(), 1
+	simple.equal 106, mapper.get(), 2
+	simple.equal 107, mapper.lineNum, 2
 
-	simple.equal 125, doMap(TestMapper, import.meta.url, str), """
-			abc
-			def
-			"""
+	simple.falsy 109, mapper.eof()
+	simple.succeeds 110, () -> mapper.unfetch(5)
+	simple.succeeds 111, () -> mapper.unfetch(6)
+	simple.equal 112, mapper.get(), 6
+	simple.equal 113, mapper.get(), 5
+	simple.falsy 114, mapper.eof()
+
+	simple.equal 116, mapper.get(), 3
+	simple.truthy 117, mapper.eof()
+	simple.succeeds 118, () -> mapper.unfetch(13)
+	simple.falsy 119, mapper.eof()
+	simple.equal 120, mapper.get(), 13
+	simple.truthy 121, mapper.eof()
+	simple.equal 122, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test basic use of mapping function
 
-(()->
-	class TestMapper extends Mapper
+(() ->
+	# --- Mapper should work with any types of objects
 
-		# --- This maps all non-empty lines to the string 'x'
-		mapLine: (line, level) ->
-			if line == ''
-				return undef
-			else
-				return 'x'
+	# --- A generator is a function that, when you call it,
+	#     it returns an iterator
 
-	tester.equal 144, new TestMapper(import.meta.url, """
-			abc
+	lItems = [
+		{a:1, b:2}
+		['a','b']
+		42
+		'xyz'
+		]
 
-			def
-			"""), """
-			x
-			x
-			"""
+	mapper = new Mapper(undef, lItems)
+
+	simple.equal 142, mapper.peek(), {a:1, b:2}
+	simple.equal 143, mapper.peek(), {a:1, b:2}
+	simple.falsy 144, mapper.eof()
+	simple.equal 145, mapper.get(), {a:1, b:2}
+	simple.equal 146, mapper.get(), ['a','b']
+
+	simple.falsy 148, mapper.eof()
+	simple.succeeds 149, () -> mapper.unfetch([])
+	simple.succeeds 150, () -> mapper.unfetch({})
+	simple.equal 151, mapper.get(), {}
+	simple.equal 152, mapper.get(), []
+	simple.falsy 153, mapper.eof()
+
+	simple.equal 155, mapper.get(), 42
+	simple.equal 156, mapper.get(), 'xyz'
+	simple.truthy 157, mapper.eof()
+	simple.succeeds 158, () -> mapper.unfetch(13)
+	simple.falsy 159, mapper.eof()
+	simple.equal 160, mapper.get(), 13
+	simple.truthy 161, mapper.eof()
+	simple.equal 162, mapper.lineNum, 4
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test ability to access 'this' object from a mapper
-#     Goal: remove not only blank lines, but also the line following
-
-(()->
-
-	class TestMapper extends Mapper
-
-		# --- Remove blank lines PLUS the line following a blank line
-		mapLine: (line, level) ->
-			if line == ''
-				follow = @fetch()
-				return undef
-			else
-				return line
-
-	tester.equal 170, new TestMapper(import.meta.url, """
-			abc
-
-			def
-			ghi
-			"""), """
-			abc
-			ghi
-			"""
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test implementing continuation lines
-
-(()->
-
-	class TestMapper extends Mapper
-
-		mapLine: (line, level) ->
-
-			debug "enter mapLine('#{line}', #{level})"
-			if line == '' || line.match(/^\s*\#($|\s)/)
-				debug "return undef from mapLine()"
-				return undef     # skip comments and blank lines
-
-			while (str = @fetch())? && (indentLevel(str) >= level+2)
-				line += ' ' + undented(str)
-			debug "return from mapLine()", line
-			return line
-
-	tester.equal 200, new TestMapper(import.meta.url, """
-			str = compare(
-					"abcde",
-					expected
-					)
-
-			call func
-					with multiple
-					long parameters
-
-			# --- DONE ---
-			"""), """
-			str = compare( "abcde", expected )
-			call func with multiple long parameters
-			"""
-
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test overriding the class
-
-(()->
-
-	class TestMapper extends Mapper
-
-		mapLine: (line, level) ->
-
-			if isEmpty(line)
-				return undef
-			if line == 'abc'
-				return '123'
-			else if line == 'def'
-				return '456'
-			else
-				return line
-
-	tester.equal 236, new TestMapper(import.meta.url, """
-			abc
-
-			def
-			"""), """
-			123
-			456
-			"""
-
-	)()
-
+# File title.md contains:
+# title
+# =====
 # ---------------------------------------------------------------------------
 # --- Test #include
 
-tester.equal 250, """
-		abc
-			#include title.md
-		def
-		""", """
-		abc
-			title
-			=====
-		def
-		"""
-
-# ---------------------------------------------------------------------------
-# --- Test advanced use of mapping function
-#        - skipPair comments and blank lines
-#        - replace reactive statements
-
-(()->
-	class TestMapper extends Mapper
-
-		mapLine: (line, level) ->
-
-			if isEmpty(line) || line.match(/^#\s/)
-				return undef
-			if lMatches = line.match(///^
-					(?:
-						([A-Za-z][A-Za-z0-9_]*)   # variable name
-						\s*
-						)?
-					\<\=\=
-					\s*
-					(.*)
-					$///)
-				[_, varName, expr] = lMatches
-				return "`$:{\n#{varName} = #{expr}\n}`"
-			else
-				return line
-
-	tester.equal 287, new TestMapper(import.meta.url, """
-			abc
-			myvar    <==     2 * 3
-
-			def
-			"""), """
-			abc
-			`$:{
-			myvar = 2 * 3
-			}`
-			def
-			"""
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test #include inside block processed by fetchBlock()
-
 (() ->
-	text = """
-			p a paragraph
-			div:markdown
+
+	numLines = undef
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			mapper = new Mapper(import.meta.url, block)
+			lAll = mapper.getAll()
+			numLines = mapper.lineNum   # set variable numLines
+			return arrayToBlock(lAll)
+
+	# ..........................................................
+
+	tester = new MyTester()
+
+	tester.equal 189, """
+			abc
 				#include title.md
+			def
+			""", """
+			abc
+				title
+				=====
+			def
 			"""
 
-	block = undef
-	class TestParser extends Mapper
-
-		mapLine: (line, level) ->
-			if line == 'div:markdown'
-				block = @fetchBlock(1)
-			return line
-
-	oInput = new TestParser(import.meta.url, text)
-	lPair = oInput.getPair()
-	simple.equal 321, lPair[0], 'p a paragraph'
-	lPair = oInput.getPair()
-	simple.equal 323, lPair[0], 'div:markdown'
-	simple.equal 324, block, '\ttitle\n\t====='
+	simple.equal 200, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test blank lines inside a block
 
 (() ->
-	block = undef
-	class TestParser extends Mapper
+	mapper = new Mapper(import.meta.url, """
+			abc
+			def
+			""", {prefix: '---'})
 
-		mapLine: (line, level) ->
+	simple.equal 211, mapper.getBlock(), """
+			---abc
+			---def
+			"""
+	)()
 
-			if line == 'div:markdown'
-				block = @fetchBlock(1)
-			return line
+# ---------------------------------------------------------------------------
 
-	oInput = new TestParser(import.meta.url, """
-			p a paragraph
-			div:markdown
-				line 1
+(() ->
 
-				line 3
+	mapper = new Mapper(import.meta.url, """
+			abc
+				#include title.md
+			def
 			""")
-	lPair = oInput.getPair()
-	simple.equal 348, lPair[0], 'p a paragraph'
-	lPair = oInput.getPair()
-	simple.equal 350, lPair[0], 'div:markdown'
-	simple.equal 351, block, """
-			line 1
 
-			line 3
-			"""
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-	text = """
-			p a paragraph
-			div:markdown
-				#include title.md
-			"""
-	block = undef
-	class TestParser extends Mapper
-
-		mapLine: (line, level) ->
-
-			if line == 'div:markdown'
-				block = @fetchBlock(1)
-			return line
-
-	oInput = new TestParser(import.meta.url, text)
-	lPair = oInput.getPair()
-	simple.equal 377, lPair[0], 'p a paragraph'
-
-	lPair = oInput.getPair()
-	simple.equal 380, lPair[0], 'div:markdown'
-
-	simple.equal 382, block, '\ttitle\n\t====='
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-	text = """
-			p a paragraph
-			div:markdown
-				#include header.md
-			"""
-
-	### Contents of files used:
-		```header.md
-		header
-		======
-
-			#include para.md
-		```
-
-		```para.md
-		para
-		----
-		```
-	###
-
-	tester.equal 408, text, """
-		p a paragraph
-		div:markdown
-			header
-			======
-
-				para
-				----
-		"""
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test comment
-
-tester.equal 422, """
-		abc
-
-		# --- this is a comment
-
-		def
-		""", """
-		abc
-
-		# --- this is a comment
-
-		def
-		"""
-
-# ---------------------------------------------------------------------------
-# --- Test using getAllPairs(), i.e. retrieving non-text
-
-(()->
-
-	class GatherTester2 extends UnitTesterNorm
-
-		transformValue: (oInput) ->
-
-			assert oInput instanceof Mapper,
-				"oInput should be a Mapper object"
-			return oInput.getAllPairs()
-
-	tester2 = new GatherTester2()
-
-	cmdRE = ///^
-			\s*                # skipPair leading whitespace
-			\# ([a-z][a-z_]*)  # command name
-			\s*                # skipwhitespace following command
-			(.*)               # command arguments
-			$///
-
-	class TestMapper2 extends Mapper
-
-		mapLine: (line, level) ->
-			lMatches = line.match(cmdRE)
-			if lMatches?
-				return { cmd: lMatches[1], argstr: lMatches[2] }
-			else
-				return line
-
-	tester2.equal 467, new TestMapper2(import.meta.url, """
+	simple.equal 227, mapper.getBlock(), """
 			abc
-			#if x==y
-				def
-			#else
+				title
+				=====
+			def
+			"""
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test __END__
+
+(() ->
+
+	numLines = undef
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			mapper = new Mapper(import.meta.url, block)
+			lAll = mapper.getAll()
+			numLines = mapper.lineNum   # set variable numLines
+			return arrayToBlock(lAll)
+
+	# ..........................................................
+
+	tester = new MyTester()
+
+	tester.equal 255, """
+			abc
+			def
+			__END__
+			ghi
+			jkl
+			""", """
+			abc
+			def
+			"""
+
+	simple.equal 266, numLines, 2
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test #include with __END__
+
+(() ->
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			mapper = new Mapper(import.meta.url, block)
+			lAll = mapper.getAll()
+			return arrayToBlock(lAll)
+
+	# ..........................................................
+
+	tester = new MyTester()
+
+	tester.equal 286, """
+			abc
+				#include ended.md
+			def
+			""", """
+			abc
 				ghi
-			"""), [
-			['abc', 0],
-			[{ cmd: 'if', argstr: 'x==y' }, 0],
-			['def', 1],
-			[{ cmd: 'else', argstr: '' }, 0],
-			['ghi', 1],
-			]
+			def
+			"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test #define
+
+(() ->
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			mapper = new Mapper(import.meta.url, block)
+			lAll = mapper.getAll()
+			return arrayToBlock(lAll)
+
+	# ..........................................................
+
+	tester = new MyTester()
+
+	tester.equal 315, """
+			abc
+			#define meaning 42
+			meaning is __meaning__
+			""", """
+			abc
+			meaning is 42
+			"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test doMap()
+
+(() ->
+
+	# --- Usually:
+	#        1. empty lines are retained
+	#        2. '#' style comments are recognized and retained
+	#        3. Only the #define command is interpreted
+
+	result = doMap(Mapper, import.meta.url, """
+			# - test.txt
+
+			abc
+			#define meaning 42
+			The meaning of life is __meaning__
+			""")
+
+	simple.equal 344, result, """
+			# - test.txt
+
+			abc
+			The meaning of life is 42
+			"""
+
+	# --- Now, create a subclass that:
+	#        1. removes empty lines
+	#        2. recognizes '//' style comments and removes them
+	#        3. implements a '#for <args>' cmd that outputs '{#for <args>}'
+
+	class MyMapper extends Mapper
+		handleEmptyLine: () -> return undef
+		isComment: (line) -> return line.match(/\s*\/\//)
+		handleComment: (line) -> return undef
+		handleCmd: ({cmd, argstr, prefix}) ->
+			if (cmd == 'for')
+				return "#{prefix}{#for #{argstr}}"
+			else
+				return super({cmd, argstr, prefix})
+
+	result = doMap(MyMapper, import.meta.url, """
+			// test.txt
+
+			abc
+			#define meaning 42
+			The meaning of life is __meaning__
+			#for x in lItems
+			""")
+
+	simple.equal 344, result, """
+			abc
+			The meaning of life is 42
+			{#for x in lItems}
+			"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test map/unmap
+
+(() ->
+
+	class MyMapper extends Mapper
+		handleEmptyLine: () -> return undef
+		isComment: (line) -> return line.match(/\s*\/\//)
+		handleComment: (line) -> return undef
+		map: (line) ->
+			return {
+				line
+				len: line.length
+				}
+		unmap: (obj) ->
+			return "#{obj.len}"
+
+	result = doMap(MyMapper, import.meta.url, """
+			// test.txt
+
+			abc
+
+			defghi
+			""")
+	simple.equal 407, result, """
+			3
+			6
+			"""
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	mapper = new Mapper(undef, """
+			if (x == 2)
+				doThis
+				doThat
+					then this
+			while (x > 2)
+				--x
+			""")
+
+	simple.equal 226, mapper.peek(), 'if (x == 2)'
+	simple.equal 227, mapper.get(),  'if (x == 2)'
+
+	simple.equal 229, mapper.peek(), '\tdoThis'
+	simple.equal 230, mapper.get(),  '\tdoThis'
+
+	simple.equal 232, mapper.peek(), '\tdoThat'
+	simple.equal 233, mapper.get(),  '\tdoThat'
+
+	simple.equal 235, mapper.peek(), '\t\tthen this'
+	simple.equal 236, mapper.get(),  '\t\tthen this'
+
+	simple.equal 238, mapper.peek(), 'while (x > 2)'
+	simple.equal 239, mapper.get(),  'while (x > 2)'
+
+	simple.equal 241, mapper.peek(), '\t--x'
+	simple.equal 242, mapper.get(),  '\t--x'
+
 	)()

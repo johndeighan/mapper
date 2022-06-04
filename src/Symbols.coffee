@@ -1,18 +1,19 @@
 # Symbols.coffee
 
-import CoffeeScript from 'coffeescript'
-
 import {
-	assert, undef, isString, isArray, croak, uniq, words, escapeStr,
+	assert, undef, defined, isString, isArray, isEmpty, nonEmpty,
+	croak, uniq, words, escapeStr, OL,
 	} from '@jdeighan/coffee-utils'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {
 	barf, slurp, pathTo, mkpath, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {splitLine} from '@jdeighan/coffee-utils/indent'
 
-import {CieloMapper} from '@jdeighan/mapper/cielomapper'
-import {ASTWalker} from '@jdeighan/mapper/walker'
+import {Mapper} from '@jdeighan/mapper'
+import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
+import {ASTWalker} from '@jdeighan/mapper/ast'
 
 # ---------------------------------------------------------------------------
 
@@ -23,12 +24,7 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 
 	debug "enter getNeededSymbols()", coffeeCode
 	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
-	try
-		ast = CoffeeScript.compile coffeeCode, {ast: true}
-		assert ast?, "getNeededSymbols(): ast is empty"
-	catch err
-		LOG 'CODE (in getNeededSymbols)', coffeeCode
-		croak err
+	ast = coffeeCodeToAST(coffeeCode)
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.getSymbols()
@@ -111,15 +107,14 @@ getAvailSymbolsFrom = (filepath) ->
 	contents = slurp(filepath)
 	debug 'Contents of .symbols', contents
 	parser = new SymbolParser(filepath, contents)
-	hSymbols = parser.getSymbols()
-	debug "hSymbols", hSymbols
+	hAvailSymbols = parser.getAvailSymbols()
+	debug "hAvailSymbols", hAvailSymbols
 	debug "return from getAvailSymbolsFrom()"
-
-	return hSymbols
+	return hAvailSymbols
 
 # ---------------------------------------------------------------------------
 
-class SymbolParser extends CieloMapper
+class SymbolParser extends Mapper
 	# --- Parse a .symbols file
 
 	constructor: (content, source) ->
@@ -128,52 +123,54 @@ class SymbolParser extends CieloMapper
 		@curLib = undef
 		@hSymbols = {}
 
-	mapString: (line, level) ->
+	# ..........................................................
+	# ignore empty lines and comments
 
+	handleEmptyLine: (line) -> return undef
+	handleComment:   (line) -> return undef
+
+	# ..........................................................
+
+	map: (full_line) ->
+
+		[level, line] = splitLine(full_line)
 		if level==0
-			@curLib = line
+			@curLib = line.trim()
 		else if level==1
 			assert @curLib?, "mapString(): curLib not defined"
 			lWords = words(line)
 			numWords = lWords.length
 
 			for word,i in lWords
-				symbol = src = undef
-
-				# --- set variables symbol and possibly src
-				if lMatches = word.match(///^
+				lMatches = word.match(///^
 						(\*?)
 						([A-Za-z_][A-Za-z0-9_]*)
+						(?:
+							\/
+							([A-Za-z_][A-Za-z0-9_]*)
+							)?
 						$///)
-					[_, isDefault, symbol] = lMatches
-					# --- word is an identifier (skip words that contain ( or ))
-					if (i+2 < numWords)
-						nextWord = lWords[i+1]
-						if (nextWord == '(as')
-							lMatches = lWords[i+2].match(///^
-									([A-Za-z_][A-Za-z0-9_]*)
-									\)
-									$///)
-							if lMatches
-								src = symbol
-								symbol = lMatches[1]
-
-				if symbol?
-					assert ! @hSymbols[symbol]?,
-						"SymbolParser: duplicate symbol #{symbol}"
-					hDesc = {lib: @curLib}
-					if src?
-						hDesc.src = src
-					if isDefault
-						hDesc.isDefault = true
-					@hSymbols[symbol] = hDesc
+				assert defined(lMatches), "Bad word: #{OL(word)}"
+				[_, isDefault, symbol, alt] = lMatches
+				if nonEmpty(alt)
+					src = symbol
+					symbol = alt
+				assert nonEmpty(symbol), "Bad word: #{OL(word)}"
+				assert ! @hSymbols[symbol]?,
+					"SymbolParser: duplicate symbol #{symbol}"
+				hDesc = {lib: @curLib}
+				if src?
+					hDesc.src = src
+				if isDefault
+					hDesc.isDefault = true
+				@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
 		return undef   # doesn't matter what we return
 
-	getSymbols: () ->
+	getAvailSymbols: () ->
 
-		@getAllPairs()
+		@getBlock()
 		return @hSymbols
 
 # ---------------------------------------------------------------------------

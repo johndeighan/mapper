@@ -69,10 +69,10 @@ export var taml = function(text, hOptions = {}) {
 
 // ---------------------------------------------------------------------------
 //   slurpTAML - read TAML from a file
-export var slurpTAML = function(filepath) {
-  var contents;
-  contents = slurp(filepath);
-  return taml(contents);
+export var slurpTAML = function(filepath, hOptions = undef) {
+  var text;
+  text = slurp(filepath);
+  return taml(text, hOptions);
 };
 
 // ---------------------------------------------------------------------------
@@ -93,30 +93,6 @@ export var TAMLHereDoc = class TAMLHereDoc {
       obj,
       str: JSON.stringify(obj)
     };
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-// A Mapper useful for stories
-export var StoryMapper = class StoryMapper extends Mapper {
-  mapLine(line, level) {
-    var _, ident, lMatches, str;
-    if (lMatches = line.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
-      // colon
-      // optional whitespace
-      // a non-empty string
-      [_, ident, str] = lMatches;
-      if (str.match(/\d+(?:\.\d*)?$/)) {
-        return line;
-      } else {
-        // --- surround with single quotes, double internal single quotes
-        str = "'" + str.replace(/\'/g, "''") + "'";
-        return `${ident}: ${str}`;
-      }
-    } else {
-      return line;
-    }
   }
 
 };

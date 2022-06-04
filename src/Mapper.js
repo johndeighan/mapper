@@ -113,8 +113,8 @@ export var Mapper = class Mapper extends Getter {
     // --- can override
     //     line may contain whitespace
 
-    // --- return undef to remove empty lines
-    return '';
+    // --- return '' to keep empty lines
+    return undef;
   }
 
   // ..........................................................
@@ -132,8 +132,8 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   handleComment(line) {
     debug("in Mapper.handleComment()");
-    // --- return undef to remove empty lines
-    return line;
+    // --- return line to keep comments
+    return undef;
   }
 
   // ..........................................................

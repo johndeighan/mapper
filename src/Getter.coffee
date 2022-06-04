@@ -261,6 +261,9 @@ export class Getter extends Fetcher
 	allMapped: () ->
 
 		debug "enter Getter.allMapped()"
+
+		# --- NOTE: @get will skip items that are mapped to undef
+		#           and only returns undef when the input is exhausted
 		while defined(item = @get())
 			debug "GOT", item
 			yield item

@@ -329,8 +329,8 @@ simple = new UnitTester()
 (() ->
 
 	# --- Usually:
-	#        1. empty lines are retained
-	#        2. '#' style comments are recognized and retained
+	#        1. empty lines are removed
+	#        2. '#' style comments are recognized and removed
 	#        3. Only the #define command is interpreted
 
 	result = doMap(Mapper, import.meta.url, """
@@ -342,8 +342,6 @@ simple = new UnitTester()
 			""")
 
 	simple.equal 344, result, """
-			# - test.txt
-
 			abc
 			The meaning of life is 42
 			"""

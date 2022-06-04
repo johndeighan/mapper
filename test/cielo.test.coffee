@@ -35,13 +35,12 @@ convertCoffee false
 	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
-	# --- test retaining comments
+	# --- test removing comments
 
 	tester.equal 40, """
 			# --- a comment
 			y = x
 			""", """
-			# --- a comment
 			y = x
 			"""
 
@@ -49,11 +48,9 @@ convertCoffee false
 	# --- test removing blank lines
 
 	tester.equal 51, """
-			# --- a comment
 
 			y = x
 			""", """
-			# --- a comment
 			y = x
 			"""
 
@@ -305,7 +302,6 @@ convertCoffee false
 	simple.equal 305, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
-			// --- temp.cielo
 			if (fs.existsSync('file.txt')) {
 				logger("file exists");
 			}

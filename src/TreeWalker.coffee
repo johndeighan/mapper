@@ -75,6 +75,19 @@ export class TreeWalker extends Mapper
 			return undef
 
 	# ..........................................................
+	# --- designed to override
+
+	mapStr: (str, level) ->
+
+		return str
+
+	# ..........................................................
+
+	unmap: (h) ->
+
+		croak "TreeWalker.unmap() called!"
+
+	# ..........................................................
 
 	joinExtensionLines: (line, lExtLines) ->
 
@@ -142,33 +155,6 @@ export class TreeWalker extends Mapper
 	isEmptyHereDocLine: (str) ->
 
 		return (str == '.')
-
-	# ..........................................................
-	# --- designed to override
-
-	mapStr: (str, level) ->
-
-		return str
-
-	# ..........................................................
-
-	unmap: (h) ->
-
-		croak "TreeWalker.unmap() called!"
-
-	# ..........................................................
-
-	handleEmptyLine: (line) ->
-
-		return undef    # remove empty lines
-
-	# ..........................................................
-
-	handleComment: (line) ->
-
-		# --- line includes any indentation
-		[level, uobj] = splitLine(line)
-		return {uobj, level, lineNum: @lineNum}
 
 	# ..........................................................
 	# --- We don't define any new commands, but
@@ -261,18 +247,6 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	addLine: (line) ->
-
-		if (line == undef)
-			return
-		if isArray(line)
-			@lLines.push line...
-		else
-			@lLines.push line
-		return
-
-	# ..........................................................
-
 	walk: () ->
 
 		debug "enter walk()"
@@ -280,6 +254,7 @@ export class TreeWalker extends Mapper
 		# --- stack of {
 		#        node: {uobj, level, lineNum},
 		#        userhash: {}
+		#        parent: <parent stack item>
 		#        }
 		lStack = []
 
@@ -310,6 +285,18 @@ export class TreeWalker extends Mapper
 		result = arrayToBlock(@lLines)
 		debug "return from walk()", result
 		return result
+
+	# ..........................................................
+
+	addLine: (line) ->
+
+		if (line == undef)
+			return
+		if isArray(line)
+			@lLines.push line...
+		else
+			@lLines.push line
+		return
 
 	# ..........................................................
 

@@ -318,17 +318,15 @@ meaning is 42`);
 (function() {
   var MyMapper, result;
   // --- Usually:
-  //        1. empty lines are retained
-  //        2. '#' style comments are recognized and retained
+  //        1. empty lines are removed
+  //        2. '#' style comments are recognized and removed
   //        3. Only the #define command is interpreted
   result = doMap(Mapper, import.meta.url, `# - test.txt
 
 abc
 #define meaning 42
 The meaning of life is __meaning__`);
-  simple.equal(344, result, `# - test.txt
-
-abc
+  simple.equal(344, result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
   //        1. removes empty lines

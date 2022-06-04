@@ -271,6 +271,8 @@ export var Getter = class Getter extends Fetcher {
   * allMapped() {
     var item;
     debug("enter Getter.allMapped()");
+    // --- NOTE: @get will skip items that are mapped to undef
+    //           and only returns undef when the input is exhausted
     while (defined(item = this.get())) {
       debug("GOT", item);
       yield item;

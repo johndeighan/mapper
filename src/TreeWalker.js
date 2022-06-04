@@ -99,6 +99,17 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
+  // --- designed to override
+  mapStr(str, level) {
+    return str;
+  }
+
+  // ..........................................................
+  unmap(h) {
+    return croak("TreeWalker.unmap() called!");
+  }
+
+  // ..........................................................
   joinExtensionLines(line, lExtLines) {
     var contLine, i, len;
 // --- There might be empty lines in lExtLines
@@ -172,35 +183,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   isEmptyHereDocLine(str) {
     return str === '.';
-  }
-
-  // ..........................................................
-  // --- designed to override
-  mapStr(str, level) {
-    return str;
-  }
-
-  // ..........................................................
-  unmap(h) {
-    return croak("TreeWalker.unmap() called!");
-  }
-
-  // ..........................................................
-  handleEmptyLine(line) {
-    return undef; // remove empty lines
-  }
-
-  
-    // ..........................................................
-  handleComment(line) {
-    var level, uobj;
-    // --- line includes any indentation
-    [level, uobj] = splitLine(line);
-    return {
-      uobj,
-      level,
-      lineNum: this.lineNum
-    };
   }
 
   // ..........................................................
@@ -286,24 +268,13 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  addLine(line) {
-    if (line === undef) {
-      return;
-    }
-    if (isArray(line)) {
-      this.lLines.push(...line);
-    } else {
-      this.lLines.push(line);
-    }
-  }
-
-  // ..........................................................
   walk() {
     var hInfo, lStack, level, lineNum, node, ref, result, uobj;
     debug("enter walk()");
     // --- stack of {
     //        node: {uobj, level, lineNum},
     //        userhash: {}
+    //        parent: <parent stack item>
     //        }
     lStack = [];
     // --- resulting lines
@@ -333,6 +304,18 @@ export var TreeWalker = class TreeWalker extends Mapper {
     result = arrayToBlock(this.lLines);
     debug("return from walk()", result);
     return result;
+  }
+
+  // ..........................................................
+  addLine(line) {
+    if (line === undef) {
+      return;
+    }
+    if (isArray(line)) {
+      this.lLines.push(...line);
+    } else {
+      this.lLines.push(line);
+    }
   }
 
   // ..........................................................

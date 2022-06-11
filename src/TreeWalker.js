@@ -32,7 +32,8 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  debug
+  debug,
+  debugDebug
 } from '@jdeighan/coffee-utils/debug';
 
 import {
@@ -111,11 +112,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   joinExtensionLines(line, lExtLines) {
-    var contLine, i, len;
+    var contLine, j, len;
 // --- There might be empty lines in lExtLines
 //     but we'll skip them here
-    for (i = 0, len = lExtLines.length; i < len; i++) {
-      contLine = lExtLines[i];
+    for (j = 0, len = lExtLines.length; j < len; j++) {
+      contLine = lExtLines[j];
       if (nonEmpty(contLine)) {
         line += ' ' + contLine.trim();
       }
@@ -134,10 +135,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
     debug('lParts', lParts);
     lObjects = [];
     lNewParts = (function() {
-      var i, len, results;
+      var j, len, results;
       results = [];
-      for (i = 0, len = lParts.length; i < len; i++) {
-        part = lParts[i];
+      for (j = 0, len = lParts.length; j < len; j++) {
+        part = lParts[j];
         if (part === '<<<') {
           lLines = this.getHereDocLines(level + 1);
           debug('lLines', lLines);
@@ -269,38 +270,67 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   walk() {
-    var hInfo, lStack, level, lineNum, node, ref, result, uobj;
+    var hUser, i, lStack, level, line, lineNum, newNode, node, ref, result, uobj;
     debug("enter walk()");
     // --- stack of {
     //        node: {uobj, level, lineNum},
-    //        userhash: {}
-    //        parent: <parent stack item>
+    //        hUser: {_parent: <parent node>, ...}
     //        }
     lStack = [];
-    // --- resulting lines
-    this.lLines = [];
-    this.addLine(this.beginWalk());
+    this.lLines = []; // --- resulting lines
+    debug("begin walk");
+    line = this.beginWalk();
+    if (defined(line)) {
+      this.addLine(line);
+    }
+    debug("getting nodes");
+    i = 0;
     ref = this.allMapped();
-    for (node of ref) {
-      while (lStack.length > node.level) {
-        hInfo = lStack.pop();
-        ({uobj, level, lineNum} = hInfo.node);
-        this.addLine(this.endVisit(uobj, level, lineNum, hInfo.userhash));
+    for (newNode of ref) {
+      i += 1;
+      debug(`NODE ${i}`, newNode);
+      while (lStack.length > newNode.level) {
+        ({node, hUser} = lStack.pop());
+        ({uobj, level, lineNum} = node);
+        line = this.endVisit(uobj, level, lineNum, hUser);
+        if (defined(line)) {
+          this.addLine(line);
+        }
       }
-      hInfo = {
-        node,
-        userhash: {}
-      };
-      ({uobj, level, lineNum} = node);
-      this.addLine(this.visit(uobj, level, lineNum, hInfo.userhash));
-      lStack.push(hInfo);
+      // --- Create a user hash that the user can add to/modify
+      //     and will see again at endVisit
+      if (lStack.length === 0) {
+        hUser = {
+          _parent: undef
+        };
+      } else {
+        hUser = {
+          _parent: lStack[lStack.length - 1].node
+        };
+      }
+      lStack.push({
+        node: newNode,
+        hUser
+      });
+      ({uobj, level, lineNum} = newNode);
+      line = this.visit(uobj, level, lineNum, hUser);
+      if (defined(line)) {
+        this.addLine(line);
+      }
     }
+    debug(`${i} nodes found`);
     while (lStack.length > 0) {
-      hInfo = lStack.pop();
-      ({uobj, level, lineNum} = hInfo.node);
-      this.addLine(this.endVisit(uobj, level, lineNum, hInfo.userhash));
+      ({node, hUser} = lStack.pop());
+      ({uobj, level, lineNum} = node);
+      line = this.endVisit(uobj, level, lineNum, hUser);
+      if (defined(line)) {
+        this.addLine(line);
+      }
     }
-    this.addLine(this.endWalk());
+    line = this.endWalk();
+    if (defined(line)) {
+      this.addLine(line);
+    }
     result = arrayToBlock(this.lLines);
     debug("return from walk()", result);
     return result;
@@ -308,14 +338,15 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   addLine(line) {
-    if (line === undef) {
-      return;
-    }
+    assert(defined(line), "line is undef");
+    debug(`enter addLine(${OL(line)})`, line);
     if (isArray(line)) {
+      debug("line is an array");
       this.lLines.push(...line);
     } else {
       this.lLines.push(line);
     }
+    debug("return from addLine()");
   }
 
   // ..........................................................

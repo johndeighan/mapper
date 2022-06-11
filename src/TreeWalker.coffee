@@ -9,7 +9,7 @@ import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
 	splitLine, indentLevel, indented, undented,
 	} from '@jdeighan/coffee-utils/indent'
-import {debug} from '@jdeighan/coffee-utils/debug'
+import {debug, debugDebug} from '@jdeighan/coffee-utils/debug'
 
 import {Mapper} from '@jdeighan/mapper'
 import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
@@ -253,35 +253,51 @@ export class TreeWalker extends Mapper
 
 		# --- stack of {
 		#        node: {uobj, level, lineNum},
-		#        userhash: {}
-		#        parent: <parent stack item>
+		#        hUser: {_parent: <parent node>, ...}
 		#        }
 		lStack = []
+		@lLines = []  # --- resulting lines
 
-		# --- resulting lines
-		@lLines = []
+		debug "begin walk"
+		line = @beginWalk()
+		if defined(line)
+			@addLine(line)
 
-		@addLine(@beginWalk())
+		debug "getting nodes"
+		i = 0
+		for newNode from @allMapped()
+			i += 1
+			debug "NODE #{i}", newNode
+			while (lStack.length > newNode.level)
+				{node, hUser} = lStack.pop()
+				{uobj, level, lineNum} = node
+				line = @endVisit(uobj, level, lineNum, hUser)
+				if defined(line)
+					@addLine(line)
 
-		for node from @allMapped()
-			while (lStack.length > node.level)
-				hInfo = lStack.pop()
-				{uobj, level, lineNum} = hInfo.node
-				@addLine(@endVisit(uobj, level, lineNum, hInfo.userhash))
+			# --- Create a user hash that the user can add to/modify
+			#     and will see again at endVisit
+			if (lStack.length == 0)
+				hUser = {_parent: undef}
+			else
+				hUser = {_parent: lStack[lStack.length-1].node}
+			lStack.push {node: newNode, hUser}
 
-			hInfo = {
-				node
-				userhash: {}
-				}
-			{uobj, level, lineNum} = node
-			@addLine(@visit(uobj, level, lineNum, hInfo.userhash))
-			lStack.push hInfo
+			{uobj, level, lineNum} = newNode
+			line = @visit(uobj, level, lineNum, hUser)
+			if defined(line)
+				@addLine(line)
+		debug "#{i} nodes found"
 		while (lStack.length > 0)
-			hInfo = lStack.pop()
-			{uobj, level, lineNum} = hInfo.node
-			@addLine(@endVisit(uobj, level, lineNum, hInfo.userhash))
+			{node, hUser} = lStack.pop()
+			{uobj, level, lineNum} = node
+			line = @endVisit(uobj, level, lineNum, hUser)
+			if defined(line)
+				@addLine(line)
 
-		@addLine(@endWalk())
+		line = @endWalk()
+		if defined(line)
+			@addLine(line)
 		result = arrayToBlock(@lLines)
 		debug "return from walk()", result
 		return result
@@ -290,12 +306,14 @@ export class TreeWalker extends Mapper
 
 	addLine: (line) ->
 
-		if (line == undef)
-			return
+		assert defined(line), "line is undef"
+		debug "enter addLine(#{OL(line)})", line
 		if isArray(line)
+			debug "line is an array"
 			@lLines.push line...
 		else
 			@lLines.push line
+		debug "return from addLine()"
 		return
 
 	# ..........................................................

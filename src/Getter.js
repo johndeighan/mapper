@@ -52,7 +52,7 @@ import {
 export var Getter = class Getter extends Fetcher {
   constructor(source = undef, collection = undef, hOptions = {}) {
     super(source, collection, hOptions);
-    this.hVars = {}; // support variable replacement
+    this.hConsts = {}; // support variable replacement
     
     // --- support peek(), etc.
     //     items are {line, mapped, isMapped}
@@ -61,8 +61,9 @@ export var Getter = class Getter extends Fetcher {
 
   
     // ..........................................................
-  setVar(name, value) {
-    this.hVars[name] = value;
+  setConst(name, value) {
+    assert((name === 'LINE') || (this.hConsts[name] === undef), `cannot set constant ${name} twice`);
+    this.hConsts[name] = value;
   }
 
   // ..........................................................
@@ -217,8 +218,9 @@ export var Getter = class Getter extends Fetcher {
       debug("from handleItemType()", result);
     } else {
       if (isString(item) && (item !== '__END__')) {
-        debug("replace vars");
-        newitem = replaceVars(item, this.hVars);
+        debug("replace consts");
+        // --- Previously, this called replaceVars() from coffee-utils
+        newitem = this.replaceConsts(item, this.hConsts);
         if (newitem !== item) {
           debug(`=> '${newitem}'`);
         }
@@ -230,6 +232,30 @@ export var Getter = class Getter extends Fetcher {
     }
     debug("return from Getter.mapItem()", result);
     return result;
+  }
+
+  // ..........................................................
+  replaceConsts(line, hVars = {}) {
+    var replacerFunc;
+    assert(isHash(hVars), "hVars is not a hash");
+    replacerFunc = (match, prefix, name) => {
+      var value;
+      if (prefix) {
+        return process.env[name];
+      } else {
+        value = hVars[name];
+        if (defined(value)) {
+          if (isString(value)) {
+            return value;
+          } else {
+            return JSON.stringify(value);
+          }
+        } else {
+          return `__${name}__`;
+        }
+      }
+    };
+    return line.replace(/__(env\.)?([A-Za-z_][A-Za-z0-9_]*)__/g, replacerFunc);
   }
 
   // ..........................................................

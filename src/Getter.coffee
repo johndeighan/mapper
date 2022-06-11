@@ -24,7 +24,7 @@ export class Getter extends Fetcher
 
 		super source, collection, hOptions
 
-		@hVars = {}   # support variable replacement
+		@hConsts = {}   # support variable replacement
 
 		# --- support peek(), etc.
 		#     items are {line, mapped, isMapped}
@@ -32,9 +32,11 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	setVar: (name, value) ->
+	setConst: (name, value) ->
 
-		@hVars[name] = value
+		assert (name == 'LINE') || (@hConsts[name] == undef),
+				"cannot set constant #{name} twice"
+		@hConsts[name] = value
 		return
 
 	# ..........................................................
@@ -205,8 +207,11 @@ export class Getter extends Fetcher
 			debug "from handleItemType()", result
 		else
 			if isString(item) && (item != '__END__')
-				debug "replace vars"
-				newitem = replaceVars(item, @hVars)
+				debug "replace consts"
+
+				# --- Previously, this called replaceVars() from coffee-utils
+				newitem = @replaceConsts(item, @hConsts)
+
 				if (newitem != item)
 					debug "=> '#{newitem}'"
 				item = newitem
@@ -217,6 +222,32 @@ export class Getter extends Fetcher
 
 		debug "return from Getter.mapItem()", result
 		return result
+
+	# ..........................................................
+
+	replaceConsts: (line, hVars={}) ->
+
+		assert isHash(hVars), "hVars is not a hash"
+
+		replacerFunc = (match, prefix, name) =>
+			if prefix
+				return process.env[name]
+			else
+				value = hVars[name]
+				if defined(value)
+					if isString(value)
+						return value
+					else
+						return JSON.stringify(value)
+				else
+					return "__#{name}__"
+
+		return line.replace(///
+				__
+				(env\.)?
+				([A-Za-z_][A-Za-z0-9_]*)
+				__
+				///g, replacerFunc)
 
 	# ..........................................................
 

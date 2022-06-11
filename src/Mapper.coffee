@@ -23,9 +23,9 @@ export class Mapper extends Getter
 		debug "enter Mapper()"
 		super source, collection, hOptions
 
-		@setVar 'FILE', @filename
-		@setVar 'DIR', @hSourceInfo.dir
-		@setVar 'LINE', @lineNum
+		@setConst 'FILE', @filename
+		@setConst 'DIR', @hSourceInfo.dir
+		@setConst 'LINE', @lineNum
 		debug "return from Mapper()"
 
 	# ..........................................................
@@ -35,7 +35,7 @@ export class Mapper extends Getter
 
 		debug "enter incLineNum(#{inc})"
 		super inc
-		@setVar 'LINE', @lineNum
+		@setConst 'LINE', @lineNum
 		debug "return from incLineNum()"
 		return
 
@@ -179,7 +179,7 @@ export class Mapper extends Getter
 						process.env[name] = tail
 					else
 						debug "set var #{name} to '#{tail}'"
-						@setVar name, tail
+						@setConst name, tail
 
 				debug "return undef from Mapper.handleCmd()"
 				return undef

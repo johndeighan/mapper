@@ -44,22 +44,22 @@ simple = new UnitTester()
 
 	# --- get() should return {uobj, level}
 
-	simple.equal 45, walker.get(), {
+	simple.equal 47, walker.get(), {
 		level:  0
 		uobj:    'abc'
 		lineNum: 3
 		}
-	simple.equal 50, walker.get(), {
+	simple.equal 52, walker.get(), {
 		level:  1
 		uobj:    'def'
 		lineNum: 4
 		}
-	simple.equal 55, walker.get(), {
+	simple.equal 57, walker.get(), {
 		level:  2
 		uobj:    'ghi'
 		lineNum: 5
 		}
-	simple.equal 60, walker.get(), undef
+	simple.equal 62, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -76,17 +76,17 @@ simple = new UnitTester()
 
 	# --- get() should return {uobj, level}
 
-	simple.equal 77, walker.get(), {
+	simple.equal 79, walker.get(), {
 		level: 0
 		uobj:   'abc def'
 		lineNum: 1
 		}
-	simple.equal 82, walker.get(), {
+	simple.equal 84, walker.get(), {
 		level: 1
 		uobj:   'ghi'
 		lineNum: 3
 		}
-	simple.equal 87, walker.get(), undef
+	simple.equal 89, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -103,27 +103,27 @@ simple = new UnitTester()
 
 	# --- get() should return {uobj, level, lineNum}
 
-	simple.equal 104, walker.get(), {
+	simple.equal 106, walker.get(), {
 		level: 0
 		uobj:   'abc def'
 		lineNum: 1
 		}
-	simple.equal 109, walker.get(), {
+	simple.equal 111, walker.get(), {
 		level: 1
 		uobj:   'ghi'
 		lineNum: 3
 		}
-	simple.equal 114, walker.get(), {
+	simple.equal 116, walker.get(), {
 		level: 1
 		uobj:   '__END__'
 		lineNum: 4
 		}
-	simple.equal 119, walker.get(), {
+	simple.equal 121, walker.get(), {
 		level: 2
 		uobj:   'ghi'
 		lineNum: 5
 		}
-	simple.equal 124, walker.get(), undef
+	simple.equal 126, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -141,7 +141,7 @@ simple = new UnitTester()
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	tester.equal 142, """
+	tester.equal 144, """
 			abc
 			def
 			""", """
@@ -149,7 +149,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	tester.equal 150, """
+	tester.equal 152, """
 			abc
 
 			def
@@ -189,12 +189,12 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 190, doMap(MyMapper, import.meta.url, block), """
+	simple.equal 192, doMap(MyMapper, import.meta.url, block), """
 			abc
 			def
 			"""
 
-	tester.equal 195, block, """
+	tester.equal 197, block, """
 			abc
 			def
 			"""
@@ -237,13 +237,13 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 238, doMap(MyMapper, import.meta.url, block), """
+	simple.equal 240, doMap(MyMapper, import.meta.url, block), """
 			# not a comment
 			abc
 			def
 			"""
 
-	tester.equal 244, block, """
+	tester.equal 246, block, """
 			# not a comment
 			abc
 			def
@@ -274,14 +274,9 @@ simple = new UnitTester()
 
 		# .......................................................
 
-		handleCmd: (h) ->
+		handleCmd: (cmd, argstr, prefix) ->
 
-			{cmd, argstr, prefix} = h
-			return {
-				uobj: "COMMAND: #{cmd}"
-				level: 0
-				lineNum: @lineNum
-				}
+			return "COMMAND: #{cmd}"
 
 	# ..........................................................
 
@@ -302,7 +297,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	tester.equal 302, block, """
+	tester.equal 300, block, """
 			abc
 			COMMAND: command
 			def
@@ -345,7 +340,7 @@ simple = new UnitTester()
 
 	# ..........................................................
 
-	tester.equal 346, """
+	tester.equal 343, """
 			abc
 				def
 
@@ -383,7 +378,7 @@ simple = new UnitTester()
 
 	# ..........................................................
 
-	tester.equal 384, """
+	tester.equal 381, """
 			abc
 
 			def
@@ -410,7 +405,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 411, """
+	tester.equal 408, """
 			abc
 				#include title.md
 			def
@@ -439,7 +434,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 440, """
+	tester.equal 437, """
 			abc
 				def
 					ghi
@@ -479,23 +474,23 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.equal 480, walker.peek(), {level:0, lineNum:1, uobj: 'if (x == 2)'}
-	simple.equal 481, walker.get(),  {level:0, lineNum:1, uobj: 'if (x == 2)'}
+	simple.equal 477, walker.peek(), {level:0, lineNum:1, item: 'if (x == 2)'}
+	simple.equal 478, walker.get(),  {level:0, lineNum:1, item: 'if (x == 2)'}
 
-	simple.equal 483, walker.peek(), {level:1, lineNum:2, uobj: 'doThis'}
-	simple.equal 484, walker.get(),  {level:1, lineNum:2, uobj: 'doThis'}
+	simple.equal 480, walker.peek(), {level:1, lineNum:2, item: 'doThis'}
+	simple.equal 481, walker.get(),  {level:1, lineNum:2, item: 'doThis'}
 
-	simple.equal 486, walker.peek(), {level:1, lineNum:3, uobj: 'doThat'}
-	simple.equal 487, walker.get(),  {level:1, lineNum:3, uobj: 'doThat'}
+	simple.equal 483, walker.peek(), {level:1, lineNum:3, item: 'doThat'}
+	simple.equal 484, walker.get(),  {level:1, lineNum:3, item: 'doThat'}
 
-	simple.equal 489, walker.peek(), {level:2, lineNum:4, uobj: 'then this'}
-	simple.equal 490, walker.get(),  {level:2, lineNum:4, uobj: 'then this'}
+	simple.equal 486, walker.peek(), {level:2, lineNum:4, item: 'then this'}
+	simple.equal 487, walker.get(),  {level:2, lineNum:4, item: 'then this'}
 
-	simple.equal 492, walker.peek(), {level:0, lineNum:5, uobj: 'while (x > 2)'}
-	simple.equal 493, walker.get(),  {level:0, lineNum:5, uobj: 'while (x > 2)'}
+	simple.equal 489, walker.peek(), {level:0, lineNum:5, item: 'while (x > 2)'}
+	simple.equal 490, walker.get(),  {level:0, lineNum:5, item: 'while (x > 2)'}
 
-	simple.equal 495, walker.peek(), {level:1, lineNum:6, uobj: '--x'}
-	simple.equal 496, walker.get(),  {level:1, lineNum:6, uobj: '--x'}
+	simple.equal 492, walker.peek(), {level:1, lineNum:6, item: '--x'}
+	simple.equal 493, walker.get(),  {level:1, lineNum:6, item: '--x'}
 
 	)()
 
@@ -513,25 +508,25 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.equal 514, walker.get(), {
+	simple.equal 511, walker.get(), {
 		level: 0
-		uobj:   'if (x == 2)'
+		item:   'if (x == 2)'
 		lineNum: 1
 		}
 
-	simple.equal 520, walker.fetchBlockAtLevel(1), """
+	simple.equal 517, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
 
-	simple.equal 526, walker.get(), {
+	simple.equal 523, walker.get(), {
 		level: 0
-		uobj:   'while (x > 2)'
+		item:   'while (x > 2)'
 		lineNum: 5
 		}
 
-	simple.equal 532, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 529, walker.fetchBlockAtLevel(1), "--x"
 	)()
 
 # ---------------------------------------------------------------------------
@@ -561,29 +556,29 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.equal 562, walker.get(), {
+	simple.equal 559, walker.get(), {
 			level: 0
-			uobj: {
+			item: {
 				cmd: 'if'
 				cond: '(x == 2)'
 				}
 			lineNum: 1
 			}
-	simple.equal 570, walker.fetchBlockAtLevel(1), """
+	simple.equal 567, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
-	simple.equal 575, walker.get(), {
+	simple.equal 572, walker.get(), {
 			level: 0
-			uobj: {
+			item: {
 				cmd: 'while',
 				cond: '(x > 2)'
 				}
 			lineNum: 5
 			}
-	simple.equal 583, walker.fetchBlockAtLevel(1), "--x"
-	simple.equal 584, walker.get(), undef
+	simple.equal 580, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 581, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -602,7 +597,7 @@ simple = new UnitTester()
 
 	# ..........................................................
 
-	tester.equal 603, """
+	tester.equal 600, """
 			abc
 			def
 			""", """
@@ -614,7 +609,7 @@ simple = new UnitTester()
 			end
 			"""
 
-	tester.equal 615, """
+	tester.equal 612, """
 			abc
 				def
 			""", """
@@ -627,7 +622,7 @@ simple = new UnitTester()
 			"""
 
 	# --- 2 indents is treated as an extension line
-	tester.equal 628, """
+	tester.equal 625, """
 			abc
 					def
 			""", """
@@ -637,7 +632,7 @@ simple = new UnitTester()
 			end
 			"""
 
-	tester.equal 638, """
+	tester.equal 635, """
 			abc
 				def
 			ghi
@@ -668,7 +663,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 669, """
+	tester.equal 666, """
 			abc
 			if x == <<<
 				abc
@@ -681,7 +676,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	tester.equal 682, """
+	tester.equal 679, """
 			abc
 			if x == <<<
 				===
@@ -695,7 +690,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	tester.equal 696, """
+	tester.equal 693, """
 			abc
 			if x == <<<
 				...
@@ -780,7 +775,7 @@ class HtmlMapper extends TreeWalker
 
 	# ----------------------------------------------------------
 
-	tester.equal 781, """
+	tester.equal 778, """
 			body
 				# a comment
 
@@ -809,3 +804,30 @@ class HtmlMapper extends TreeWalker
 	)()
 
 # --- TO DO: Add tests to show that comments/blank lines can be retained
+
+# ---------------------------------------------------------------------------
+# --- test #ifdef and #ifndef
+
+(() ->
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			return doMap(TreeWalker, import.meta.url, block)
+
+	tester = new MyTester()
+
+	tester.equal 821, """
+			abc
+			#ifdef something
+				def
+				ghi
+			#ifndef something
+				xyz
+			""", """
+			abc
+			xyz
+			"""
+
+	)()

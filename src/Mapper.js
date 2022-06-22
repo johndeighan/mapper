@@ -35,8 +35,7 @@ import {
 //   class Mapper
 //       handles:
 //          #define
-//          variable substitution
-//          getLineType(), handleLineType()
+//          const replacement
 export var Mapper = class Mapper extends Getter {
   constructor(source = undef, collection = undef, hOptions = {}) {
     debug("enter Mapper()");
@@ -66,16 +65,17 @@ export var Mapper = class Mapper extends Getter {
       // --- check for empty item
       if (this.isEmptyLine(item)) {
         result = ['empty', undef];
-      }
       // --- check for comment
-      if (this.isComment(item)) {
+      } else if (this.isComment(item)) {
         result = ['comment', undef];
-      }
       // --- check for cmd
-      if (defined(h = this.isCmd(item))) {
+      } else if (defined(h = this.isCmd(item))) {
         assert(isHash(h, ['cmd', 'argstr', 'prefix']), `isCmd() returned non-hash ${OL(h)}`);
         result = ['cmd', h];
       }
+    }
+    if (result === undef) {
+      result = [undef, undef];
     }
     debug("return from Mapper.getItemType()", result);
     return result;
@@ -84,23 +84,28 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override
   handleItemType(type, item, h) {
-    var result;
+    var argstr, cmd, lineNum, prefix, uobj;
     debug(`enter Mapper.handleItemType(${OL(type)})`, item);
+    lineNum = this.lineNum; // save in case functions fetch lines
     switch (type) {
       case 'empty':
-        result = this.handleEmptyLine();
+        uobj = this.handleEmptyLine();
         break;
       case 'comment':
-        result = this.handleComment(item);
+        uobj = this.handleComment(item);
         break;
       case 'cmd':
-        result = this.handleCmd(h);
+        ({cmd, argstr, prefix} = h);
+        assert(isString(cmd), "cmd not a string");
+        assert(isString(argstr), "argstr not a string");
+        assert(isString(prefix), "prefix not a string");
+        uobj = this.handleCmd(cmd, argstr, prefix, h);
         break;
       default:
         croak(`Unknown item type: ${OL(type)}`);
     }
-    debug("return from Mapper.handleItemType()", result);
-    return result;
+    debug("return from Mapper.handleItemType()", uobj);
+    return uobj;
   }
 
   // ..........................................................
@@ -144,10 +149,13 @@ export var Mapper = class Mapper extends Getter {
     if (lMatches = line.match(/^(\s*)\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
       // argstr for command
       [_, prefix, cmd, argstr] = lMatches;
+      if (!prefix) {
+        prefix = '';
+      }
       hResult = {
-        prefix: prefix || '',
         cmd,
-        argstr: argstr ? argstr.trim() : ''
+        argstr: argstr ? argstr.trim() : '',
+        prefix
       };
       debug("return from Mapper.isCmd()", hResult);
       return hResult;
@@ -158,13 +166,16 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  // --- handleCmd must return a pair:
-  //        [handled:boolean, result:any]
-  // Override must 1st handle it's own commands, then call this
-  handleCmd(h) {
-    var _, argstr, cmd, isEnv, lMatches, name, prefix, tail;
-    ({cmd, argstr, prefix} = h);
+  // --- handleCmd returns a mapped object, or
+  //        undef to produce no output
+  // Override must 1st handle its own commands,
+  //    then call the base class handleCmd
+  handleCmd(cmd, argstr, prefix, h) {
+    var _, isEnv, lMatches, name, tail;
+    // --- h has keys 'cmd','argstr' and 'prefix'
+    //     but may contain additional keys
     debug(`enter Mapper.handleCmd #${cmd} '${argstr}'`);
+    assert(isString(prefix), "prefix not a string");
     if (prefix.length > 0) {
       debug(`   prefix = '${escapeStr(prefix)}'`);
     }

@@ -24,7 +24,7 @@ export class FuncHereDoc
 
 	codeToFuncStr: (lParms, strBody) ->
 		coffeeCode = buildCoffeeCode(lParms, strBody)
-		return coffeeCodeToJS(coffeeCode)
+		return coffeeCodeToJS(coffeeCode).replace(/\s+/g, ' ')
 
 	codeToFunc: (lParms, strBody) ->
 		strBody = coffeeCodeToJS(strBody)

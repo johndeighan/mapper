@@ -41,7 +41,7 @@ export var FuncHereDoc = class FuncHereDoc {
   codeToFuncStr(lParms, strBody) {
     var coffeeCode;
     coffeeCode = buildCoffeeCode(lParms, strBody);
-    return coffeeCodeToJS(coffeeCode);
+    return coffeeCodeToJS(coffeeCode).replace(/\s+/g, ' ');
   }
 
   codeToFunc(lParms, strBody) {

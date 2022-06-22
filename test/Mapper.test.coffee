@@ -355,11 +355,11 @@ simple = new UnitTester()
 		handleEmptyLine: () -> return undef
 		isComment: (line) -> return line.match(/\s*\/\//)
 		handleComment: (line) -> return undef
-		handleCmd: ({cmd, argstr, prefix}) ->
+		handleCmd: (cmd, argstr, prefix, h) ->
 			if (cmd == 'for')
 				return "#{prefix}{#for #{argstr}}"
 			else
-				return super({cmd, argstr, prefix})
+				return super(cmd, argstr, prefix, h)
 
 	result = doMap(MyMapper, import.meta.url, """
 			// test.txt

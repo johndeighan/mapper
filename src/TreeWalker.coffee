@@ -1,7 +1,7 @@
 # TreeWalker.coffee
 
 import {
-	assert, undef, croak, defined, OL, rtrim,
+	assert, undef, pass, croak, defined, OL, rtrim,
 	isString, isNumber, isEmpty, nonEmpty, isArray, isHash,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
@@ -9,10 +9,15 @@ import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
 	splitLine, indentLevel, indented, undented,
 	} from '@jdeighan/coffee-utils/indent'
-import {debug, debugDebug} from '@jdeighan/coffee-utils/debug'
+import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {Mapper} from '@jdeighan/mapper'
-import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
+import {
+	lineToParts, mapHereDoc, addHereDocType,
+	} from '@jdeighan/mapper/heredoc'
+import {FuncHereDoc} from '@jdeighan/mapper/func'
+import {TAMLHereDoc} from '@jdeighan/mapper/taml'
+import {RunTimeStack} from '@jdeighan/mapper/stack'
 
 # ===========================================================================
 #   class TreeWalker
@@ -33,45 +38,48 @@ export class TreeWalker extends Mapper
 	#        object with {uobj, level, lineNum}
 	# --- Will only receive non-special lines
 
-	map: (line) ->
+	map: (item) ->
 
-		debug "enter TreeWalker.map()", line
+		debug "enter map()", item
 
 		# --- a TreeWalker makes no sense unless items are strings
-		assert isString(line), "non-string: #{OL(line)}"
+		assert isString(item), "non-string: #{OL(item)}"
+		lineNum = @lineNum   # save in case we fetch more lines
 
-		lineNum = @lineNum    # so extension lines aren't counted
-		[level, str] = splitLine(line)
-		debug "split: str = #{OL(str)}, level = #{level}"
+		[level, str] = splitLine(item)
+
+		debug "split: level = #{OL(level)}, str = #{OL(str)}"
 		assert nonEmpty(str), "empty string should be special"
 
 		# --- check for extension lines
 		debug "check for extension lines"
 		lExtLines = @fetchLinesAtLevel(level+2)
 		assert isArray(lExtLines), "lExtLines not an array"
-		str = @joinExtensionLines(str, lExtLines)
-
-		debug "call super"
-		str = super(str)      # performs variable replacement
-		debug "from super", str
+		if nonEmpty(lExtLines)
+			newstr = @joinExtensionLines(str, lExtLines)
+			if (newstr != str)
+				str = newstr
+				debug "=> #{OL(str)}"
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
 		if (str.indexOf('<<<') >= 0)
 			hResult = @handleHereDoc(str, level)
+			# --- NOTE: hResult.lObjects is not currently used
+			#           but I want to use it in the future to
+			#           prevent having to construct an object from the line
 			if (hResult.line != str)
 				str = hResult.line
-				debug "line becomes #{OL(str)}"
-
+				debug "=> #{OL(str)}"
 
 		# --- NOTE: mapStr() may return undef, meaning to ignore
-		uobj = @mapStr(str, level)
-		if defined(uobj)
-			result = {uobj, level, lineNum}
-			debug "return from TreeWalker.map()", result
-			return result
+		item = @mapStr(str, level)
+		if defined(item)
+			uobj = {level, lineNum, item}
+			debug "return from map()", uobj
+			return uobj
 		else
-			debug "return undef from TreeWalker.map()"
+			debug "return undef from map()"
 			return undef
 
 	# ..........................................................
@@ -80,12 +88,6 @@ export class TreeWalker extends Mapper
 	mapStr: (str, level) ->
 
 		return str
-
-	# ..........................................................
-
-	unmap: (h) ->
-
-		croak "TreeWalker.unmap() called!"
 
 	# ..........................................................
 
@@ -104,45 +106,33 @@ export class TreeWalker extends Mapper
 		# --- Indentation has been removed from line
 		# --- Find each '<<<' and replace with result of mapHereDoc()
 
-		debug "enter handleHereDoc(level=#{OL(level)})", line
+		debug "enter handleHereDoc()", line, level
 		assert isString(line), "not a string"
 		lParts = lineToParts(line)
 		debug 'lParts', lParts
 		lObjects = []
-		lNewParts = for part in lParts
+		lNewParts = []    # to be joined to form new line
+		for part in lParts
 			if part == '<<<'
-				lLines = @getHereDocLines(level+1)
+				debug "get HEREDOC lines at level #{level+1}"
+				lLines = @fetchLinesAtLevel(level+1, '') # stop on blank line
+				lLines = undented(lLines, level+1)
 				debug 'lLines', lLines
+
 				hResult = mapHereDoc(arrayToBlock(lLines))
 				debug 'hResult', hResult
 				lObjects.push hResult.obj
-				hResult.str
+				lNewParts.push hResult.str
 			else
-				part    # keep as is
+				lNewParts.push part    # keep as is
 
 		hResult = {
 			line: lNewParts.join('')
-			lParts: lParts
 			lObjects: lObjects
 			}
 
 		debug "return from handleHereDoc", hResult
 		return hResult
-
-	# ..........................................................
-
-	getHereDocLines: (atLevel) ->
-		# --- Get all lines until addHereDocLine() returns undef
-		#     atLevel will be one greater than the indent
-		#        of the line containing <<<
-
-		debug "enter TreeWalker.getHereDocLines()"
-		assert atLevel > 0, "atLevel = #{OL(atLevel)}, should not be 0"
-		lLines = @fetchLinesAtLevel(atLevel, '') # stop on blank line
-		assert isArray(lLines), "lLines not an array"
-		result = undented(lLines, atLevel)
-		debug "return from TreeWalker.getHereDocLines()", result
-		return result
 
 	# ..........................................................
 
@@ -157,22 +147,62 @@ export class TreeWalker extends Mapper
 		return (str == '.')
 
 	# ..........................................................
-	# --- We don't define any new commands, but
-	#     we need to determine level from indentation
+	# --- We define commands 'ifdef' and 'ifndef'
 
-	handleCmd: (h) ->
+	handleCmd: (cmd, argstr, prefix, h) ->
+		# --- h has keys 'cmd','argstr' and 'prefix'
+		#     but may contain additional keys
 
-		debug "enter TreeWalker.handleCmd()"
-		result = super h
-		if (result == undef)
-			debug "return undef from TreeWalker.handleCmd() - super undef"
+		debug "enter TreeWalker.handleCmd()", h
+
+		# --- Handle our commands, returning if found
+		switch cmd
+			when 'ifdef', 'ifndef'
+				lResult = @splitDef(argstr)
+				assert defined(lResult), "Invalid #{cmd}, argstr=#{OL(argstr)}"
+				[isEnv, name, value] = lResult
+				if isEnv
+					if defined(value)
+						item = {cmd, isEnv, name, value}
+					else
+						item = {cmd, isEnv, name}
+				else
+					if defined(value)
+						item = {cmd, name, value}
+					else
+						item = {cmd, name}
+
+				uobj = {
+					lineNum: @lineNum
+					level: indentLevel(prefix)
+					item
+					}
+				debug "return from TreeWalker.handleCmd()", uobj
+				return uobj
+
+		debug "call super"
+		uobj = super(cmd, argstr, prefix, h)
+		debug "return super from TreeWalker.handleCmd()", uobj
+		return uobj
+
+	# ..........................................................
+
+	splitDef: (argstr) ->
+
+		lMatches = argstr.match(///^
+				(env \.)?
+				([A-Za-z_][A-Za-z0-9_]*)
+				\s*
+				(.*)
+				$///)
+		if lMatches
+			[_, env, name, value] = lMatches
+			isEnv = if nonEmpty(env) then true else false
+			if isEmpty(value)
+				value = undef
+			return [isEnv, name, value]
+		else
 			return undef
-		assert isString(result), "TreeWalker non-string #{OL(result)}"
-
-		[level, uobj] = splitLine(result)
-		result = {uobj, level, lineNum: @lineNum}
-		debug "return from TreeWalker.handleCmd()", result
-		return result
 
 	# ..........................................................
 
@@ -231,7 +261,11 @@ export class TreeWalker extends Mapper
 
 	visit: (uobj, level, lineNum) ->
 
-		return indented(uobj, level)
+		debug "enter visit()", uobj, level, lineNum
+		assert (level >= 0), "level = #{OL(level)}"
+		result = indented(uobj, level)
+		debug "return from visit()", result
+		return result
 
 	# ..........................................................
 
@@ -246,17 +280,93 @@ export class TreeWalker extends Mapper
 		return undef
 
 	# ..........................................................
+	# ..........................................................
+
+	isDefined: (uobj) ->
+
+		{name, value, isEnv} = uobj
+		if isEnv
+			if defined(value)
+				return (process.env[name] == value)
+			else
+				return defined(process.env[name])
+		else
+			if defined(value)
+				return (@getConst(name) == value)
+			else
+				return defined(@getConst(name))
+		return true
+
+	# ..........................................................
+
+	visitNode: (node, hUser) ->
+
+		debug "enter visitNode()", node, hUser
+		{uobj, level, lineNum} = node
+		debug "level = #{OL(level)}"
+		debug "lineNum = #{OL(lineNum)}"
+		cmd = @whichCmd(uobj)
+		debug "cmd = #{OL(cmd)}"
+		switch cmd
+			when 'ifdef'
+				@doVisit = @isDefined(uobj)
+				@minus += 1
+			when 'ifndef'
+				@doVisit = ! @isDefined(uobj)
+				@minus += 1
+			else
+				if @doVisit
+					line = @visit(uobj, level-@minus, lineNum, hUser)
+					if defined(line)
+						@addLine(line)
+		@lStack.push {node, hUser, doVisit: @doVisit}
+		debug "return from visitNode()"
+		return
+
+	# ..........................................................
+
+	endVisitNode: () ->
+
+		debug "enter endVisitNode()"
+		{node, hUser, doVisit} = @lStack.pop()
+		{uobj, level, lineNum} = node
+		switch @whichCmd(uobj)
+			when 'ifdef', 'ifndef'
+				@doVisit = doVisit
+				@minus -= 1
+			else
+				if @doVisit
+					line = @endVisit(uobj, level-@minus, lineNum, hUser)
+					if defined(line)
+						@addLine(line)
+		debug "return from endVisitNode()"
+		return
+
+	# ..........................................................
+
+	whichCmd: (uobj) ->
+
+		if isHash(uobj) && uobj.hasOwnProperty('cmd')
+			return uobj.cmd
+		return undef
+
+	# ..........................................................
 
 	walk: () ->
 
 		debug "enter walk()"
 
-		# --- stack of {
+		# --- @lStack is stack of {
 		#        node: {uobj, level, lineNum},
 		#        hUser: {_parent: <parent node>, ...}
 		#        }
-		lStack = []
 		@lLines = []  # --- resulting lines
+
+		# --- Initialize these here, but they're managed in
+		#     @visitNode() and @endVisitNode()
+		@lStack = []
+		@minus = 0       # --- subtract this from level in visit, endVisit
+		@doVisit = true  # --- if false, skip visiting
 
 		debug "begin walk"
 		line = @beginWalk()
@@ -264,41 +374,31 @@ export class TreeWalker extends Mapper
 			@addLine(line)
 
 		debug "getting nodes"
-		i = 0
-		for newNode from @allMapped()
-			i += 1
-			debug "NODE #{i}", newNode
-			while (lStack.length > newNode.level)
-				{node, hUser} = lStack.pop()
-				{uobj, level, lineNum} = node
-				line = @endVisit(uobj, level, lineNum, hUser)
-				if defined(line)
-					@addLine(line)
+		for node from @allMapped()
+			while (@lStack.length > node.level)
+				@endVisitNode()
 
 			# --- Create a user hash that the user can add to/modify
+			#     and contains a reference to the parent node
 			#     and will see again at endVisit
-			if (lStack.length == 0)
-				hUser = {_parent: undef}
+			if (@lStack.length == 0)
+				hUser = {}
 			else
-				hUser = {_parent: lStack[lStack.length-1].node}
-			lStack.push {node: newNode, hUser}
+				hUser = {_parent: @lStack[@lStack.length-1].node}
+			@visitNode node, hUser
 
-			{uobj, level, lineNum} = newNode
-			line = @visit(uobj, level, lineNum, hUser)
-			if defined(line)
-				@addLine(line)
-		debug "#{i} nodes found"
-		while (lStack.length > 0)
-			{node, hUser} = lStack.pop()
-			{uobj, level, lineNum} = node
-			line = @endVisit(uobj, level, lineNum, hUser)
-			if defined(line)
-				@addLine(line)
+		while (@lStack.length > 0)
+			@endVisitNode()
 
 		line = @endWalk()
 		if defined(line)
 			@addLine(line)
 		result = arrayToBlock(@lLines)
+
+		@lStack = undef
+		@minus = undef
+		@doVisit = undef
+
 		debug "return from walk()", result
 		return result
 
@@ -361,3 +461,7 @@ export class TraceWalker extends TreeWalker
 		@lTrace = undef
 		return block
 
+# ---------------------------------------------------------------------------
+
+addHereDocType new TAMLHereDoc()     #  ---
+addHereDocType new FuncHereDoc()     #  () ->

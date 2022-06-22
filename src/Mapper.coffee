@@ -13,8 +13,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 #   class Mapper
 #       handles:
 #          #define
-#          variable substitution
-#          getLineType(), handleLineType()
+#          const replacement
 
 export class Mapper extends Getter
 
@@ -54,14 +53,17 @@ export class Mapper extends Getter
 				result = ['empty', undef]
 
 			# --- check for comment
-			if @isComment(item)
+			else if @isComment(item)
 				result = ['comment', undef]
 
 			# --- check for cmd
-			if defined(h = @isCmd(item))
+			else if defined(h = @isCmd(item))
 				assert isHash(h, ['cmd','argstr','prefix']),
 						"isCmd() returned non-hash #{OL(h)}"
 				result = ['cmd', h]
+
+		if (result == undef)
+			result = [undef, undef]
 
 		debug "return from Mapper.getItemType()", result
 		return result
@@ -73,18 +75,23 @@ export class Mapper extends Getter
 
 		debug "enter Mapper.handleItemType(#{OL(type)})", item
 
+		lineNum = @lineNum     # save in case functions fetch lines
 		switch type
 			when 'empty'
-				result = @handleEmptyLine()
+				uobj = @handleEmptyLine()
 			when 'comment'
-				result = @handleComment(item)
+				uobj = @handleComment(item)
 			when 'cmd'
-				result = @handleCmd(h)
+				{cmd, argstr, prefix} = h
+				assert isString(cmd), "cmd not a string"
+				assert isString(argstr), "argstr not a string"
+				assert isString(prefix), "prefix not a string"
+				uobj = @handleCmd(cmd, argstr, prefix, h)
 			else
 				croak "Unknown item type: #{OL(type)}"
 
-		debug "return from Mapper.handleItemType()", result
-		return result
+		debug "return from Mapper.handleItemType()", uobj
+		return uobj
 
 	# ..........................................................
 
@@ -138,10 +145,12 @@ export class Mapper extends Getter
 				(.*)             # argstr for command
 				$///)
 			[_, prefix, cmd, argstr] = lMatches
+			if !prefix
+				prefix = ''
 			hResult = {
-				prefix: prefix || ''
 				cmd
 				argstr: if argstr then argstr.trim() else ''
+				prefix
 				}
 			debug "return from Mapper.isCmd()", hResult
 			return hResult
@@ -151,14 +160,17 @@ export class Mapper extends Getter
 		return undef
 
 	# ..........................................................
-	# --- handleCmd must return a pair:
-	#        [handled:boolean, result:any]
-	# Override must 1st handle it's own commands, then call this
+	# --- handleCmd returns a mapped object, or
+	#        undef to produce no output
+	# Override must 1st handle its own commands,
+	#    then call the base class handleCmd
 
-	handleCmd: (h) ->
+	handleCmd: (cmd, argstr, prefix, h) ->
+		# --- h has keys 'cmd','argstr' and 'prefix'
+		#     but may contain additional keys
 
-		{cmd, argstr, prefix} = h
 		debug "enter Mapper.handleCmd ##{cmd} '#{argstr}'"
+		assert isString(prefix), "prefix not a string"
 		if (prefix.length > 0)
 			debug "   prefix = '#{escapeStr(prefix)}'"
 

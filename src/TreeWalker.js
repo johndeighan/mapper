@@ -3,6 +3,7 @@
 import {
   assert,
   undef,
+  pass,
   croak,
   defined,
   OL,
@@ -32,8 +33,7 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  debug,
-  debugDebug
+  debug
 } from '@jdeighan/coffee-utils/debug';
 
 import {
@@ -42,8 +42,21 @@ import {
 
 import {
   lineToParts,
-  mapHereDoc
+  mapHereDoc,
+  addHereDocType
 } from '@jdeighan/mapper/heredoc';
+
+import {
+  FuncHereDoc
+} from '@jdeighan/mapper/func';
+
+import {
+  TAMLHereDoc
+} from '@jdeighan/mapper/taml';
+
+import {
+  RunTimeStack
+} from '@jdeighan/mapper/stack';
 
 // ===========================================================================
 //   class TreeWalker
@@ -61,40 +74,46 @@ export var TreeWalker = class TreeWalker extends Mapper {
   //        undef
   //        object with {uobj, level, lineNum}
   // --- Will only receive non-special lines
-  map(line) {
-    var hResult, lExtLines, level, lineNum, result, str, uobj;
-    debug("enter TreeWalker.map()", line);
+  map(item) {
+    var hResult, lExtLines, level, lineNum, newstr, str, uobj;
+    debug("enter map()", item);
     // --- a TreeWalker makes no sense unless items are strings
-    assert(isString(line), `non-string: ${OL(line)}`);
-    lineNum = this.lineNum; // so extension lines aren't counted
-    [level, str] = splitLine(line);
-    debug(`split: str = ${OL(str)}, level = ${level}`);
+    assert(isString(item), `non-string: ${OL(item)}`);
+    lineNum = this.lineNum; // save in case we fetch more lines
+    [level, str] = splitLine(item);
+    debug(`split: level = ${OL(level)}, str = ${OL(str)}`);
     assert(nonEmpty(str), "empty string should be special");
     // --- check for extension lines
     debug("check for extension lines");
     lExtLines = this.fetchLinesAtLevel(level + 2);
     assert(isArray(lExtLines), "lExtLines not an array");
-    str = this.joinExtensionLines(str, lExtLines);
-    debug("call super");
-    str = super.map(str); // performs variable replacement
-    debug("from super", str);
+    if (nonEmpty(lExtLines)) {
+      newstr = this.joinExtensionLines(str, lExtLines);
+      if (newstr !== str) {
+        str = newstr;
+        debug(`=> ${OL(str)}`);
+      }
+    }
     // --- handle HEREDOCs
     debug("check for HEREDOC");
     if (str.indexOf('<<<') >= 0) {
       hResult = this.handleHereDoc(str, level);
+      // --- NOTE: hResult.lObjects is not currently used
+      //           but I want to use it in the future to
+      //           prevent having to construct an object from the line
       if (hResult.line !== str) {
         str = hResult.line;
-        debug(`line becomes ${OL(str)}`);
+        debug(`=> ${OL(str)}`);
       }
     }
     // --- NOTE: mapStr() may return undef, meaning to ignore
-    uobj = this.mapStr(str, level);
-    if (defined(uobj)) {
-      result = {uobj, level, lineNum};
-      debug("return from TreeWalker.map()", result);
-      return result;
+    item = this.mapStr(str, level);
+    if (defined(item)) {
+      uobj = {level, lineNum, item};
+      debug("return from map()", uobj);
+      return uobj;
     } else {
-      debug("return undef from TreeWalker.map()");
+      debug("return undef from map()");
       return undef;
     }
   }
@@ -106,17 +125,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  unmap(h) {
-    return croak("TreeWalker.unmap() called!");
-  }
-
-  // ..........................................................
   joinExtensionLines(line, lExtLines) {
-    var contLine, j, len;
+    var contLine, i, len;
 // --- There might be empty lines in lExtLines
 //     but we'll skip them here
-    for (j = 0, len = lExtLines.length; j < len; j++) {
-      contLine = lExtLines[j];
+    for (i = 0, len = lExtLines.length; i < len; i++) {
+      contLine = lExtLines[i];
       if (nonEmpty(contLine)) {
         line += ' ' + contLine.trim();
       }
@@ -126,54 +140,36 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   handleHereDoc(line, level) {
-    var hResult, lLines, lNewParts, lObjects, lParts, part;
+    var hResult, i, lLines, lNewParts, lObjects, lParts, len, part;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
-    debug(`enter handleHereDoc(level=${OL(level)})`, line);
+    debug("enter handleHereDoc()", line, level);
     assert(isString(line), "not a string");
     lParts = lineToParts(line);
     debug('lParts', lParts);
     lObjects = [];
-    lNewParts = (function() {
-      var j, len, results;
-      results = [];
-      for (j = 0, len = lParts.length; j < len; j++) {
-        part = lParts[j];
-        if (part === '<<<') {
-          lLines = this.getHereDocLines(level + 1);
-          debug('lLines', lLines);
-          hResult = mapHereDoc(arrayToBlock(lLines));
-          debug('hResult', hResult);
-          lObjects.push(hResult.obj);
-          results.push(hResult.str);
-        } else {
-          results.push(part); // keep as is
-        }
+    lNewParts = []; // to be joined to form new line
+    for (i = 0, len = lParts.length; i < len; i++) {
+      part = lParts[i];
+      if (part === '<<<') {
+        debug(`get HEREDOC lines at level ${level + 1}`);
+        lLines = this.fetchLinesAtLevel(level + 1, ''); // stop on blank line
+        lLines = undented(lLines, level + 1);
+        debug('lLines', lLines);
+        hResult = mapHereDoc(arrayToBlock(lLines));
+        debug('hResult', hResult);
+        lObjects.push(hResult.obj);
+        lNewParts.push(hResult.str);
+      } else {
+        lNewParts.push(part); // keep as is
       }
-      return results;
-    }).call(this);
+    }
     hResult = {
       line: lNewParts.join(''),
-      lParts: lParts,
       lObjects: lObjects
     };
     debug("return from handleHereDoc", hResult);
     return hResult;
-  }
-
-  // ..........................................................
-  getHereDocLines(atLevel) {
-    var lLines, result;
-    // --- Get all lines until addHereDocLine() returns undef
-    //     atLevel will be one greater than the indent
-    //        of the line containing <<<
-    debug("enter TreeWalker.getHereDocLines()");
-    assert(atLevel > 0, `atLevel = ${OL(atLevel)}, should not be 0`);
-    lLines = this.fetchLinesAtLevel(atLevel, ''); // stop on blank line
-    assert(isArray(lLines), "lLines not an array");
-    result = undented(lLines, atLevel);
-    debug("return from TreeWalker.getHereDocLines()", result);
-    return result;
   }
 
   // ..........................................................
@@ -187,25 +183,60 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  // --- We don't define any new commands, but
-  //     we need to determine level from indentation
-  handleCmd(h) {
-    var level, result, uobj;
-    debug("enter TreeWalker.handleCmd()");
-    result = super.handleCmd(h);
-    if (result === undef) {
-      debug("return undef from TreeWalker.handleCmd() - super undef");
+  // --- We define commands 'ifdef' and 'ifndef'
+  handleCmd(cmd, argstr, prefix, h) {
+    var isEnv, item, lResult, name, uobj, value;
+    // --- h has keys 'cmd','argstr' and 'prefix'
+    //     but may contain additional keys
+    debug("enter TreeWalker.handleCmd()", h);
+    // --- Handle our commands, returning if found
+    switch (cmd) {
+      case 'ifdef':
+      case 'ifndef':
+        lResult = this.splitDef(argstr);
+        assert(defined(lResult), `Invalid ${cmd}, argstr=${OL(argstr)}`);
+        [isEnv, name, value] = lResult;
+        if (isEnv) {
+          if (defined(value)) {
+            item = {cmd, isEnv, name, value};
+          } else {
+            item = {cmd, isEnv, name};
+          }
+        } else {
+          if (defined(value)) {
+            item = {cmd, name, value};
+          } else {
+            item = {cmd, name};
+          }
+        }
+        uobj = {
+          lineNum: this.lineNum,
+          level: indentLevel(prefix),
+          item
+        };
+        debug("return from TreeWalker.handleCmd()", uobj);
+        return uobj;
+    }
+    debug("call super");
+    uobj = super.handleCmd(cmd, argstr, prefix, h);
+    debug("return super from TreeWalker.handleCmd()", uobj);
+    return uobj;
+  }
+
+  // ..........................................................
+  splitDef(argstr) {
+    var _, env, isEnv, lMatches, name, value;
+    lMatches = argstr.match(/^(env\.)?([A-Za-z_][A-Za-z0-9_]*)\s*(.*)$/);
+    if (lMatches) {
+      [_, env, name, value] = lMatches;
+      isEnv = nonEmpty(env) ? true : false;
+      if (isEmpty(value)) {
+        value = undef;
+      }
+      return [isEnv, name, value];
+    } else {
       return undef;
     }
-    assert(isString(result), `TreeWalker non-string ${OL(result)}`);
-    [level, uobj] = splitLine(result);
-    result = {
-      uobj,
-      level,
-      lineNum: this.lineNum
-    };
-    debug("return from TreeWalker.handleCmd()", result);
-    return result;
   }
 
   // ..........................................................
@@ -255,7 +286,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visit(uobj, level, lineNum) {
-    return indented(uobj, level);
+    var result;
+    debug("enter visit()", uobj, level, lineNum);
+    assert(level >= 0, `level = ${OL(level)}`);
+    result = indented(uobj, level);
+    debug("return from visit()", result);
+    return result;
   }
 
   // ..........................................................
@@ -269,69 +305,140 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
+  // ..........................................................
+  isDefined(uobj) {
+    var isEnv, name, value;
+    ({name, value, isEnv} = uobj);
+    if (isEnv) {
+      if (defined(value)) {
+        return process.env[name] === value;
+      } else {
+        return defined(process.env[name]);
+      }
+    } else {
+      if (defined(value)) {
+        return this.getConst(name) === value;
+      } else {
+        return defined(this.getConst(name));
+      }
+    }
+    return true;
+  }
+
+  // ..........................................................
+  visitNode(node, hUser) {
+    var cmd, level, line, lineNum, uobj;
+    debug("enter visitNode()", node, hUser);
+    ({uobj, level, lineNum} = node);
+    debug(`level = ${OL(level)}`);
+    debug(`lineNum = ${OL(lineNum)}`);
+    cmd = this.whichCmd(uobj);
+    debug(`cmd = ${OL(cmd)}`);
+    switch (cmd) {
+      case 'ifdef':
+        this.doVisit = this.isDefined(uobj);
+        this.minus += 1;
+        break;
+      case 'ifndef':
+        this.doVisit = !this.isDefined(uobj);
+        this.minus += 1;
+        break;
+      default:
+        if (this.doVisit) {
+          line = this.visit(uobj, level - this.minus, lineNum, hUser);
+          if (defined(line)) {
+            this.addLine(line);
+          }
+        }
+    }
+    this.lStack.push({
+      node,
+      hUser,
+      doVisit: this.doVisit
+    });
+    debug("return from visitNode()");
+  }
+
+  // ..........................................................
+  endVisitNode() {
+    var doVisit, hUser, level, line, lineNum, node, uobj;
+    debug("enter endVisitNode()");
+    ({node, hUser, doVisit} = this.lStack.pop());
+    ({uobj, level, lineNum} = node);
+    switch (this.whichCmd(uobj)) {
+      case 'ifdef':
+      case 'ifndef':
+        this.doVisit = doVisit;
+        this.minus -= 1;
+        break;
+      default:
+        if (this.doVisit) {
+          line = this.endVisit(uobj, level - this.minus, lineNum, hUser);
+          if (defined(line)) {
+            this.addLine(line);
+          }
+        }
+    }
+    debug("return from endVisitNode()");
+  }
+
+  // ..........................................................
+  whichCmd(uobj) {
+    if (isHash(uobj) && uobj.hasOwnProperty('cmd')) {
+      return uobj.cmd;
+    }
+    return undef;
+  }
+
+  // ..........................................................
   walk() {
-    var hUser, i, lStack, level, line, lineNum, newNode, node, ref, result, uobj;
+    var hUser, line, node, ref, result;
     debug("enter walk()");
-    // --- stack of {
+    // --- @lStack is stack of {
     //        node: {uobj, level, lineNum},
     //        hUser: {_parent: <parent node>, ...}
     //        }
-    lStack = [];
     this.lLines = []; // --- resulting lines
+    
+    // --- Initialize these here, but they're managed in
+    //     @visitNode() and @endVisitNode()
+    this.lStack = [];
+    this.minus = 0; // --- subtract this from level in visit, endVisit
+    this.doVisit = true; // --- if false, skip visiting
     debug("begin walk");
     line = this.beginWalk();
     if (defined(line)) {
       this.addLine(line);
     }
     debug("getting nodes");
-    i = 0;
     ref = this.allMapped();
-    for (newNode of ref) {
-      i += 1;
-      debug(`NODE ${i}`, newNode);
-      while (lStack.length > newNode.level) {
-        ({node, hUser} = lStack.pop());
-        ({uobj, level, lineNum} = node);
-        line = this.endVisit(uobj, level, lineNum, hUser);
-        if (defined(line)) {
-          this.addLine(line);
-        }
+    for (node of ref) {
+      while (this.lStack.length > node.level) {
+        this.endVisitNode();
       }
       // --- Create a user hash that the user can add to/modify
+      //     and contains a reference to the parent node
       //     and will see again at endVisit
-      if (lStack.length === 0) {
-        hUser = {
-          _parent: undef
-        };
+      if (this.lStack.length === 0) {
+        hUser = {};
       } else {
         hUser = {
-          _parent: lStack[lStack.length - 1].node
+          _parent: this.lStack[this.lStack.length - 1].node
         };
       }
-      lStack.push({
-        node: newNode,
-        hUser
-      });
-      ({uobj, level, lineNum} = newNode);
-      line = this.visit(uobj, level, lineNum, hUser);
-      if (defined(line)) {
-        this.addLine(line);
-      }
+      this.visitNode(node, hUser);
     }
-    debug(`${i} nodes found`);
-    while (lStack.length > 0) {
-      ({node, hUser} = lStack.pop());
-      ({uobj, level, lineNum} = node);
-      line = this.endVisit(uobj, level, lineNum, hUser);
-      if (defined(line)) {
-        this.addLine(line);
-      }
+    while (this.lStack.length > 0) {
+      this.endVisitNode();
     }
     line = this.endWalk();
     if (defined(line)) {
       this.addLine(line);
     }
     result = arrayToBlock(this.lLines);
+    this.lStack = undef;
+    this.minus = undef;
+    this.doVisit = undef;
     debug("return from walk()", result);
     return result;
   }
@@ -389,3 +496,8 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
   }
 
 };
+
+// ---------------------------------------------------------------------------
+addHereDocType(new TAMLHereDoc()); //  ---
+
+addHereDocType(new FuncHereDoc()); //  () ->

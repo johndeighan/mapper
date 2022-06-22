@@ -2,7 +2,7 @@
 
 import {
 	assert, undef, pass, croak, OL, rtrim, defined, notdefined,
-	escapeStr, isString, isHash, isArray, replaceVars,
+	escapeStr, isString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
@@ -27,8 +27,8 @@ export class Getter extends Fetcher
 		@hConsts = {}   # support variable replacement
 
 		# --- support peek(), etc.
-		#     items are {line, mapped, isMapped}
-		@lCache = []   # --- support peek()
+		#     items are {item, uobj}
+		@lCache = []
 
 	# ..........................................................
 
@@ -40,15 +40,20 @@ export class Getter extends Fetcher
 		return
 
 	# ..........................................................
+
+	getConst: (name) ->
+
+		return @hConsts[name]
+
+	# ..........................................................
 	#    Cache Management
 	# ..........................................................
 
-	addToCache: (line, mapped=undef, isMapped=true) ->
+	addToCache: (item, uobj=undef) ->
 
 		@lCache.unshift {
-			line
-			mapped
-			isMapped
+			item
+			uobj
 			}
 		return
 
@@ -56,12 +61,12 @@ export class Getter extends Fetcher
 
 	getFromCache: () ->
 
-		assert nonEmpty(@lCache), "getFromCache() called on empty cache"
+		assert nonEmpty(@lCache), "empty cache"
 		h = @lCache.shift()
-		if h.isMapped
-			return h.mapped
+		if h.uobj
+			return h.uobj
 		else
-			return @mapItem(h.line)
+			return @mapItem(h.item)
 
 	# ..........................................................
 
@@ -96,30 +101,30 @@ export class Getter extends Fetcher
 
 	get: () ->
 
-		debug "enter Getter.get()"
+		debug "enter get()"
 
 		# --- return anything in @lCache
 		if nonEmpty(@lCache)
-			value = @getFromCache()
-			debug "return from Getter.get() - mapped lookahead", value
-			return value
+			uobj = @getFromCache()
+			debug "return from get() - cached uobj", uobj
+			return uobj
 		debug "no lookahead"
 
 		item = @fetch()
 		debug "fetch() returned", item
 
 		if (item == undef)
-			debug "return undef from Getter.get() - at EOF"
+			debug "return undef from get() - at EOF"
 			return undef
 
-		result = @mapItem(item)
-		debug "mapItem() returned", result
+		uobj = @mapItem(item)
+		debug "mapItem() returned", uobj
 
-		if (result == undef)
-			result = @get()    # recursive call
+		if (uobj == undef)
+			uobj = @get()    # recursive call
 
-		debug "return from Getter.get()", result
-		return result
+		debug "return from get()", uobj
+		return uobj
 
 	# ..........................................................
 
@@ -155,14 +160,22 @@ export class Getter extends Fetcher
 
 		debug 'enter Getter.peek()'
 
-		if nonEmpty(@lCache)
+		# --- Any item in lCache that has uobj == undef has not
+		#     been mapped. lCache may contain such items, but if
+		#     they map to undef, they should be skipped
+		while nonEmpty(@lCache)
 			h = @lCache[0]
-			if ! h.isMapped
-				h.mapped = @mapItem(h.line)
-				h.isMapped = true
+			if defined(h.uobj)
+				debug "return cached item from Getter.peek()", h.uobj
+				return h.uobj
+			else
+				h.uobj = @mapItem(h.item)
+				if defined(h.uobj)
+					debug "return cached item from Getter.peek()", h.uobj
+					return h.uobj
+				else
+					@lCache.shift()   # and continue loop
 
-			debug "return lookahead token from Getter.peek()", h.mapped
-			return h.mapped
 		debug "no lookahead"
 
 		value = @fetch()
@@ -172,56 +185,52 @@ export class Getter extends Fetcher
 		debug "fetch() returned", value
 
 		# --- @lCache is currently empty
-		result = @mapItem(value)
-		debug "from mapItem()", result
+		uobj = @mapItem(value)
+		debug "from mapItem()", uobj
 
 		# --- @lCache might be non-empty now!!!
 
 		# --- if mapItem() returns undef, skip that item
-		if (result == undef)
+		if (uobj == undef)
 			debug "mapItem() returned undef - recursive call"
-			result = @peek()    # recursive call
-			debug "return from Getter.peek()", result
-			return result
+			uobj = @peek()    # recursive call
+			debug "return from Getter.peek()", uobj
+			return uobj
 
-		debug "set lookahead", result
-		@addToCache value, result, true
+		debug "set lookahead", value, uobj
+		@addToCache value, uobj
 
-		debug "return from Getter.peek()", result
-		return result
+		debug "return from Getter.peek()", uobj
+		return uobj
 
 	# ..........................................................
 	# return of undef doesn't mean EOF, it means skip this item
 
 	mapItem: (item) ->
 
-		debug "enter Getter.mapItem()", item
+		debug "enter mapItem()", item
 
-		result = @getItemType(item)
-		if defined(result)
-			[type, hInfo] = result
+		[type, hInfo] = @getItemType(item)
+		if defined(type)
 			debug "item type is #{type}"
 			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
 			debug "call handleItemType()"
-			result = @handleItemType(type, item, hInfo)
-			debug "from handleItemType()", result
+			uobj = @handleItemType(type, item, hInfo)
+			debug "from handleItemType()", uobj
 		else
+			debug "no special type"
 			if isString(item) && (item != '__END__')
-				debug "replace consts"
-
-				# --- Previously, this called replaceVars() from coffee-utils
 				newitem = @replaceConsts(item, @hConsts)
-
 				if (newitem != item)
 					debug "=> '#{newitem}'"
-				item = newitem
+					item = newitem
 
 			debug "call map()"
-			result = @map(item)
-			debug "from map()", result
+			uobj = @map(item)
+			debug "from map()", uobj
 
-		debug "return from Getter.mapItem()", result
-		return result
+		debug "return from mapItem()", uobj
+		return uobj
 
 	# ..........................................................
 
@@ -254,7 +263,7 @@ export class Getter extends Fetcher
 	getItemType: (item) ->
 		# --- return [<name of item type>, <additional info>]
 
-		return undef     # default: not special item types
+		return [undef, undef]   # default: no special item types
 
 	# ..........................................................
 
@@ -269,14 +278,14 @@ export class Getter extends Fetcher
 	#     technically, line does not have to be a string,
 	#        but it usually is
 
-	map: (line) ->
+	map: (item) ->
 
-		debug "enter Getter.map() - identity mapping", line
-		assert defined(line), "line is undef"
+		debug "enter Getter.map() - identity mapping", item
+		assert defined(item), "item is undef"
 
 		# --- by default, identity mapping
-		debug "return from Getter.map()", line
-		return line
+		debug "return from Getter.map()", item
+		return item
 
 	# ..........................................................
 	# --- override to map back to a string, default returns arg

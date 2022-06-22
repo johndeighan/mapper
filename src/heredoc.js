@@ -77,11 +77,11 @@ export var mapHereDoc = function(block) {
     if (result = heredoc.isMyHereDoc(block)) {
       debug(`found ${name} HEREDOC`);
       if (debugHereDoc) {
-        console.log("--------------------------------------");
-        console.log(`HEREDOC type '${name}'`);
-        console.log("--------------------------------------");
-        console.log(block);
-        console.log("--------------------------------------");
+        LOG("--------------------------------------");
+        LOG(`HEREDOC type '${name}'`);
+        LOG("--------------------------------------");
+        LOG(block);
+        LOG("--------------------------------------");
       }
       result = heredoc.map(block, result);
       result.type = typeof result.obj;
@@ -92,6 +92,9 @@ export var mapHereDoc = function(block) {
         LOG(`NOT A ${name} HEREDOC`);
       }
     }
+  }
+  if (debugHereDoc) {
+    LOG("HEREDOC type 'default'");
   }
   result = {
     str: JSON.stringify(block), // can directly replace <<<

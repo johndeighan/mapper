@@ -345,11 +345,11 @@ The meaning of life is 42`);
       return undef;
     }
 
-    handleCmd({cmd, argstr, prefix}) {
+    handleCmd(cmd, argstr, prefix, h) {
       if (cmd === 'for') {
         return `${prefix}{#for ${argstr}}`;
       } else {
-        return super.handleCmd({cmd, argstr, prefix});
+        return super.handleCmd(cmd, argstr, prefix, h);
       }
     }
 

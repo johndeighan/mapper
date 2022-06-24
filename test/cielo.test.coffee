@@ -47,7 +47,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 51, """
+	tester.equal 50, """
 
 			y = x
 			""", """
@@ -60,7 +60,7 @@ convertCoffee false
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 66, """
+	tester.equal 63, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -73,7 +73,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 79, """
+	tester.equal 76, """
 			x = 23
 			y = x
 					+ 5
@@ -83,9 +83,9 @@ convertCoffee false
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- test use of backslash continuation lines
+	# --- can't use backslash continuation lines
 
-	tester.equal 91, """
+	tester.equal 88, """
 			x = 23
 			y = x \
 			+ 5
@@ -98,7 +98,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 104, """
+	tester.equal 101, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -108,7 +108,7 @@ convertCoffee false
 			+ 5
 			"""
 
-	tester.equal 114, """
+	tester.equal 111, """
 			str = <<<
 				abc
 				def
@@ -119,7 +119,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 125, """
+	tester.equal 122, """
 			str = <<<
 				===
 				abc
@@ -131,7 +131,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 137, """
+	tester.equal 134, """
 			str = <<<
 				...this is a
 					long line
@@ -139,7 +139,7 @@ convertCoffee false
 			str = "this is a long line"
 			"""
 
-	tester.equal 145, """
+	tester.equal 142, """
 			lItems = <<<
 				---
 				- a
@@ -148,7 +148,7 @@ convertCoffee false
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 154, """
+	tester.equal 151, """
 			hItems = <<<
 				---
 				a: 13
@@ -157,7 +157,7 @@ convertCoffee false
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 163, """
+	tester.equal 160, """
 			lItems = <<<
 				---
 				-
@@ -170,7 +170,7 @@ convertCoffee false
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 176, """
+	tester.equal 173, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -186,7 +186,7 @@ convertCoffee false
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 192, """
+	tester.equal 189, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -199,7 +199,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 205, """
+	tester.equal 202, """
 			str = \"\"\"
 				this is a
 				long string
@@ -213,7 +213,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 219, '''
+	tester.equal 216, '''
 			str = """
 				this is a
 				long string
@@ -227,7 +227,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 233, """
+	tester.equal 230, """
 			str = '''
 				this is a
 				long string
@@ -257,33 +257,28 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 263, """
+	tester.equal 260, """
 			handler = <<<
 				() ->
 					return 42
 			""", """
-			handler = (function() {
-				return 42;
-				});
+			handler = (function() { return 42; });
 			"""
 
-	tester.equal 273, """
+	tester.equal 268, """
 			handler = <<<
-				() -> return 42
+				() ->
+					return 42
 			""", """
-			handler = (function() {
-				return 42;
-				});
+			handler = (function() { return 42; });
 			"""
 
-	tester.equal 282, """
+	tester.equal 276, """
 			handler = <<<
 				(x, y) ->
 					return 42
 			""", """
-			handler = (function(x, y) {
-				return 42;
-				});
+			handler = (function(x, y) { return 42; });
 			"""
 
 	)()
@@ -299,7 +294,7 @@ convertCoffee false
 
 	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
 
-	simple.equal 305, jsCode, """
+	simple.equal 297, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			if (fs.existsSync('file.txt')) {
@@ -323,7 +318,7 @@ convertCoffee false
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 330, """
+	tester.equal 321, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -335,7 +330,7 @@ convertCoffee false
 
 	# --- But not if we're already importing them
 
-	tester.equal 342, """
+	tester.equal 333, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -349,7 +344,7 @@ convertCoffee false
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	tester.equal 356, """
+	tester.equal 347, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -357,7 +352,7 @@ convertCoffee false
 			x = undef;
 			"""
 
-	tester.equal 364, """
+	tester.equal 355, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -372,7 +367,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 379, """
+	tester.equal 370, """
 			x = 23
 			logger x
 			""", """

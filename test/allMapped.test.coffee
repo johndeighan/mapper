@@ -311,68 +311,233 @@ simple = new UnitTester()
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- test #ifdef with no value
+	# ------------------------------------------------------------------------
+	# --- test #ifdef with no value - value not defined
 
-	tester.equal 316, """
+	tester.equal 317, """
 			#ifdef mobile
 				abc
 			def
 			""", """
-			1 0 {cmd: 'ifdef', name: 'mobile'}
-			2 1 abc
 			3 0 def
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- test #ifdef with a value
+	# --- test #ifdef with no value - value defined
 
-	tester.equal 329, """
+	tester.equal 328, """
+			#define mobile anything
+			#ifdef mobile
+				abc
+			def
+			""", """
+			3 0 abc
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# ------------------------------------------------------------------------
+	# --- test #ifdef with a value - value not defined
+
+	tester.equal 342, """
 			#ifdef mobile samsung
 				abc
 			def
 			""", """
-			1 0 {cmd: 'ifdef', name: 'mobile', value: 'samsung'}
-			2 1 abc
 			3 0 def
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- test #ifndef with no value
+	# --- test #ifdef with a value - value defined, but different
 
-	tester.equal 342, """
+	tester.equal 353, """
+			#define mobile apple
+			#ifdef mobile samsung
+				abc
+			def
+			""", """
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# --- test #ifdef with a value - value defined and same
+
+	tester.equal 365, """
+			#define mobile samsung
+			#ifdef mobile samsung
+				abc
+			def
+			""", """
+			3 0 abc
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# ------------------------------------------------------------------------
+	# --- test #ifndef with no value - not defined
+
+	tester.equal 379, """
 			#ifndef mobile
 				abc
 			def
 			""", """
-			1 0 {cmd: 'ifndef', name: 'mobile'}
-			2 1 abc
+			2 0 abc
 			3 0 def
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- test #ifndef with a value
+	# --- test #ifndef with no value - defined
 
-	tester.equal 355, """
+	tester.equal 391, """
+			#define mobile anything
+			#ifndef mobile
+				abc
+			def
+			""", """
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# ------------------------------------------------------------------------
+	# --- test #ifndef with a value - not defined
+
+	tester.equal 404, """
 			#ifndef mobile samsung
 				abc
 			def
 			""", """
-			1 0 {cmd: 'ifndef', name: 'mobile', value: 'samsung'}
-			2 1 abc
+			2 0 abc
 			3 0 def
 			"""
 
 	# ------------------------------------------------------------------------
+	# --- test #ifndef with a value - defined, but different
+
+	tester.equal 416, """
+			#define mobile apple
+			#ifndef mobile samsung
+				abc
+			def
+			""", """
+			3 0 abc
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# --- test #ifndef with a value - defined and same
+
+	tester.equal 429, """
+			#define mobile samsung
+			#ifndef mobile samsung
+				abc
+			def
+			""", """
+			4 0 def
+			"""
+
+	# ------------------------------------------------------------------------
+	# ------------------------------------------------------------------------
 	# --- nested commands
 
-	tester.equal 368, """
+	tester.equal 442, """
+			#define mobile samsung
+			#define large anything
 			#ifdef mobile samsung
 				#ifdef large
 					abc
+						def
 			""", """
-			1 0 {cmd: 'ifdef', name: 'mobile', value: 'samsung'}
-			2 1 {cmd: 'ifdef', name: 'large'}
-			3 2 abc
+			5 0 abc
+			6 1 def
+			"""
+
+	# --- nested commands
+
+	tester.equal 454, """
+			#define mobile samsung
+			#define large anything
+			#ifndef mobile samsung
+				#ifdef large
+					abc
+			""", """
+			"""
+
+	# --- nested commands
+
+	tester.equal 465, """
+			#define mobile samsung
+			#define large anything
+			#ifdef mobile samsung
+				#ifndef large
+					abc
+			""", """
+			"""
+
+	# --- nested commands
+
+	tester.equal 476, """
+			#define mobile samsung
+			#define large anything
+			#ifndef mobile samsung
+				#ifndef large
+					abc
+			""", """
+			"""
+
+	# ----------------------------------------------------------
+	# --- nested commands - every combination
+
+	tester.equal 476, """
+			#define mobile samsung
+			#define large anything
+			#ifdef mobile samsung
+				abc
+				#ifdef large
+					def
+			ghi
+			""", """
+			4 0 abc
+			6 0 def
+			7 0 ghi
+			"""
+
+	# --- nested commands - every combination
+
+	tester.equal 476, """
+			#define mobile samsung
+			#ifdef mobile samsung
+				abc
+				#ifdef large
+					def
+			ghi
+			""", """
+			3 0 abc
+			6 0 ghi
+			"""
+
+	# --- nested commands - every combination
+
+	tester.equal 476, """
+			#define large anything
+			#ifdef mobile samsung
+				abc
+				#ifdef large
+					def
+			ghi
+			""", """
+			6 0 ghi
+			"""
+
+	# --- nested commands - every combination
+
+	tester.equal 476, """
+			#ifdef mobile samsung
+				abc
+				#ifdef large
+					def
+			ghi
+			""", """
+			5 0 ghi
 			"""
 
 	)()

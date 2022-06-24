@@ -2,7 +2,7 @@
 
 import {
 	assert, undef, pass, croak, defined, OL, rtrim,
-	isString, isNumber, isEmpty, nonEmpty, isArray, isHash,
+	isString, isNumber, isEmpty, nonEmpty, isArray, isHash, isInteger,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
@@ -17,11 +17,10 @@ import {
 	} from '@jdeighan/mapper/heredoc'
 import {FuncHereDoc} from '@jdeighan/mapper/func'
 import {TAMLHereDoc} from '@jdeighan/mapper/taml'
-import {RunTimeStack} from '@jdeighan/mapper/stack'
 
 # ===========================================================================
 #   class TreeWalker
-#      - map() returns {uobj, level, lineNum} or undef
+#      - map() returns {item, level, lineNum} or undef
 #   to use, override:
 #      mapStr(str, level) - returns user object, default returns str
 #      handleCmd()
@@ -31,6 +30,11 @@ import {RunTimeStack} from '@jdeighan/mapper/stack'
 #      endWalk() -
 
 export class TreeWalker extends Mapper
+
+	constructor: (source=undef, collection=undef, hOptions={}) ->
+
+		super source, collection, hOptions
+		@lMinuses = []   # used to adjust level in #ifdef and #ifndef
 
 	# ..........................................................
 	# --- Should always return either:
@@ -73,9 +77,9 @@ export class TreeWalker extends Mapper
 				debug "=> #{OL(str)}"
 
 		# --- NOTE: mapStr() may return undef, meaning to ignore
-		item = @mapStr(str, level)
+		item = @mapStr(str, level, lineNum)
 		if defined(item)
-			uobj = {level, lineNum, item}
+			uobj = {item, level: @realLevel(level), lineNum}
 			debug "return from map()", uobj
 			return uobj
 		else
@@ -85,7 +89,7 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 	# --- designed to override
 
-	mapStr: (str, level) ->
+	mapStr: (str, level, lineNum) ->
 
 		return str
 
@@ -154,36 +158,62 @@ export class TreeWalker extends Mapper
 		#     but may contain additional keys
 
 		debug "enter TreeWalker.handleCmd()", h
+		level = indentLevel(prefix)
+		realLevel = @realLevel(level)
+		lineNum = @lineNum
 
 		# --- Handle our commands, returning if found
 		switch cmd
 			when 'ifdef', 'ifndef'
-				lResult = @splitDef(argstr)
-				assert defined(lResult), "Invalid #{cmd}, argstr=#{OL(argstr)}"
-				[isEnv, name, value] = lResult
-				if isEnv
-					if defined(value)
-						item = {cmd, isEnv, name, value}
-					else
-						item = {cmd, isEnv, name}
+				[name, value, isEnv] = @splitDef(argstr)
+				assert defined(name), "Invalid #{cmd}, argstr=#{OL(argstr)}"
+				ok = @isDefined(name, value, isEnv)
+				keep = if (cmd == 'ifdef') then ok else ! ok
+				if keep
+					@lMinuses.push level
 				else
-					if defined(value)
-						item = {cmd, name, value}
-					else
-						item = {cmd, name}
-
-				uobj = {
-					lineNum: @lineNum
-					level: indentLevel(prefix)
-					item
-					}
-				debug "return from TreeWalker.handleCmd()", uobj
-				return uobj
+					lSkipLines = @fetchLinesAtLevel(level+1)
+					debug "Skip #{lSkipLines.length} lines"
+				debug "return undef from TreeWalker.handleCmd()"
+				return undef
 
 		debug "call super"
-		uobj = super(cmd, argstr, prefix, h)
-		debug "return super from TreeWalker.handleCmd()", uobj
-		return uobj
+		item = super(cmd, argstr, prefix, h)
+
+		if defined(item)
+			uobj = {level: realLevel, lineNum, item}
+			debug "return from TreeWalker.handleCmd()", uobj
+			return uobj
+		else
+			debug "return undef from TreeWalker.handleCmd()"
+			return undef
+
+	# ..........................................................
+
+	getResult: (result, prefix) ->
+
+		if (result == undef)
+			return undef
+		else
+			assert (@lineNum > 0), "lineNum is #{OL(@lineNum)} in getResult()"
+			return {
+				item: result
+				level: @realLevel(indentLevel(prefix))
+				lineNum: @lineNum
+				}
+
+	# ..........................................................
+
+	realLevel: (level) ->
+
+		lNewMinuses = []
+		adjustment = 0
+		for i in @lMinuses
+			if (level > i)
+				adjustment += 1
+				lNewMinuses.push i
+		@lMinuses = lNewMinuses
+		return level - adjustment
 
 	# ..........................................................
 
@@ -200,9 +230,9 @@ export class TreeWalker extends Mapper
 			isEnv = if nonEmpty(env) then true else false
 			if isEmpty(value)
 				value = undef
-			return [isEnv, name, value]
+			return [name, value, isEnv]
 		else
-			return undef
+			return [undef, undef, undef]
 
 	# ..........................................................
 
@@ -259,17 +289,17 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visit: (uobj, level, lineNum) ->
+	visit: (item, level, lineNum, hUser) ->
 
-		debug "enter visit()", uobj, level, lineNum
+		debug "enter visit()", item, level, lineNum, hUser
 		assert (level >= 0), "level = #{OL(level)}"
-		result = indented(uobj, level)
+		result = indented(item, level)
 		debug "return from visit()", result
 		return result
 
 	# ..........................................................
 
-	endVisit:  (uobj, level, lineNum) ->
+	endVisit:  (item, level, lineNum, hUser) ->
 
 		return undef
 
@@ -282,9 +312,8 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 	# ..........................................................
 
-	isDefined: (uobj) ->
+	isDefined: (name, value, isEnv) ->
 
-		{name, value, isEnv} = uobj
 		if isEnv
 			if defined(value)
 				return (process.env[name] == value)
@@ -299,51 +328,6 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visitNode: (node, hUser) ->
-
-		debug "enter visitNode()", node, hUser
-		{uobj, level, lineNum} = node
-		debug "level = #{OL(level)}"
-		debug "lineNum = #{OL(lineNum)}"
-		cmd = @whichCmd(uobj)
-		debug "cmd = #{OL(cmd)}"
-		switch cmd
-			when 'ifdef'
-				@doVisit = @isDefined(uobj)
-				@minus += 1
-			when 'ifndef'
-				@doVisit = ! @isDefined(uobj)
-				@minus += 1
-			else
-				if @doVisit
-					line = @visit(uobj, level-@minus, lineNum, hUser)
-					if defined(line)
-						@addLine(line)
-		@lStack.push {node, hUser, doVisit: @doVisit}
-		debug "return from visitNode()"
-		return
-
-	# ..........................................................
-
-	endVisitNode: () ->
-
-		debug "enter endVisitNode()"
-		{node, hUser, doVisit} = @lStack.pop()
-		{uobj, level, lineNum} = node
-		switch @whichCmd(uobj)
-			when 'ifdef', 'ifndef'
-				@doVisit = doVisit
-				@minus -= 1
-			else
-				if @doVisit
-					line = @endVisit(uobj, level-@minus, lineNum, hUser)
-					if defined(line)
-						@addLine(line)
-		debug "return from endVisitNode()"
-		return
-
-	# ..........................................................
-
 	whichCmd: (uobj) ->
 
 		if isHash(uobj) && uobj.hasOwnProperty('cmd')
@@ -352,52 +336,83 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
+	checkUserObj: (uobj) ->
+
+		assert defined(uobj), "user object is undef"
+		assert isHash(uobj), "user object is #{OL(uobj)}"
+		{item, level, lineNum} = uobj
+		assert defined(item), "item is undef"
+		assert isInteger(level), "level is #{OL(level)}"
+		assert (level >= 0), "level is #{OL(level)}"
+		assert isInteger(lineNum), "lineNum is #{OL(lineNum)}"
+		assert (lineNum >= -1), "lineNum is #{OL(lineNum)}"
+		return
+
+	# ..........................................................
+
+	visitNode: (uobj, hUser, lStack) ->
+
+		@checkUserObj uobj
+		{item, level, lineNum} = uobj
+		line = @visit(item, level, lineNum, hUser, lStack)
+		if defined(line)
+			@addLine(line)
+		return
+
+	# ..........................................................
+
+	endVisitNode: (node, lStack) ->
+
+		assert isHash(node), "node is #{OL(node)}"
+		{uobj, hUser} = node
+		@checkUserObj uobj
+		assert isHash(hUser), "hUser is #{OL(hUser)}"
+		{item, level, lineNum} = uobj
+		line = @endVisit(item, level, lineNum, hUser, lStack)
+		if defined(line)
+			@addLine(line)
+		return
+
+	# ..........................................................
+
 	walk: () ->
 
 		debug "enter walk()"
 
-		# --- @lStack is stack of {
-		#        node: {uobj, level, lineNum},
-		#        hUser: {_parent: <parent node>, ...}
+		# --- lStack is stack of {
+		#        uobj: {item, level, lineNum}
+		#        hUser: {}
 		#        }
 		@lLines = []  # --- resulting lines
-
-		# --- Initialize these here, but they're managed in
-		#     @visitNode() and @endVisitNode()
-		@lStack = []
-		@minus = 0       # --- subtract this from level in visit, endVisit
-		@doVisit = true  # --- if false, skip visiting
+		lStack = []
 
 		debug "begin walk"
 		line = @beginWalk()
 		if defined(line)
 			@addLine(line)
 
-		debug "getting nodes"
-		for node from @allMapped()
-			while (@lStack.length > node.level)
-				@endVisitNode()
+		debug "getting uobj's"
+		for uobj from @allMapped()
+			@checkUserObj uobj
+			{item, level, lineNum} = uobj
+			while (lStack.length > level)
+				node = lStack.pop()
+				@endVisitNode node, lStack
 
 			# --- Create a user hash that the user can add to/modify
-			#     and contains a reference to the parent node
 			#     and will see again at endVisit
-			if (@lStack.length == 0)
-				hUser = {}
-			else
-				hUser = {_parent: @lStack[@lStack.length-1].node}
-			@visitNode node, hUser
+			hUser = {}
+			@visitNode uobj, hUser, lStack
+			lStack.push {uobj, hUser}
 
-		while (@lStack.length > 0)
-			@endVisitNode()
+		while (lStack.length > 0)
+			node = lStack.pop()
+			@endVisitNode node, lStack
 
 		line = @endWalk()
 		if defined(line)
 			@addLine(line)
 		result = arrayToBlock(@lLines)
-
-		@lStack = undef
-		@minus = undef
-		@doVisit = undef
 
 		debug "return from walk()", result
 		return result
@@ -435,28 +450,28 @@ export class TraceWalker extends TreeWalker
 
 	beginWalk: () ->
 
-		@lTrace = ["begin"]   # an array of strings
+		@lTrace = ["BEGIN WALK"]   # an array of strings
 		return
 
 	# ..........................................................
 
-	visit: (uobj, level, lineNum) ->
+	visit: (item, level, lineNum, hUser) ->
 
-		@lTrace.push "|.".repeat(level) + "> #{OL(uobj)}"
+		@lTrace.push "VISIT #{lineNum} #{level} #{OL(item)}"
 		return
 
 	# ..........................................................
 
-	endVisit: (uobj, level, lineNum) ->
+	endVisit: (item, level, lineNum, hUser) ->
 
-		@lTrace.push "|.".repeat(level) + "< #{OL(uobj)}"
+		@lTrace.push "END VISIT #{lineNum} #{level} #{OL(item)}"
 		return
 
 	# ..........................................................
 
 	endWalk: () ->
 
-		@lTrace.push "end"
+		@lTrace.push "END WALK"
 		block = arrayToBlock(@lTrace)
 		@lTrace = undef
 		return block

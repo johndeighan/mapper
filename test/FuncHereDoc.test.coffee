@@ -22,50 +22,41 @@ addHereDocType new FuncHereDoc()    # --- CoffeeScript function
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 28, """
+	tester.equal 25, """
 			(evt) ->
 				log 'click'
 			""",
 			"""
-			(function(evt) {
-				return log('click');
-				});
+			(function(evt) { return log('click'); });
 			"""
 
 	# ------------------------------------------------------------------------
 	# Function block, with no name or parameters
 
-	tester.equal 41, """
+	tester.equal 36, """
 			() ->
 				return true
 			""", """
-			(function() {
-				return true;
-				});
+			(function() { return true; });
 			"""
 
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 53, """
+	tester.equal 46, """
 			(evt) ->
 				console.log 'click'
 			""", """
-			(function(evt) {
-				return console.log('click');
-				});
+			(function(evt) { return console.log('click'); });
 			"""
 
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 65, """
+	tester.equal 56, """
 			(  evt  )     ->
 				log 'click'
 			""", """
-			(function(evt) {
-				return log('click');
-				});
+			(function(evt) { return log('click'); });
 			"""
 	)()
-

@@ -71,7 +71,7 @@ simple = new UnitTester();
 // Test TreeWalker.get()
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `# --- comment, followed by blank line
+  walker = new TreeWalker(undef, `# --- a comment
 
 abc
 	def
@@ -79,17 +79,17 @@ abc
   // --- get() should return {uobj, level}
   simple.equal(47, walker.get(), {
     level: 0,
-    uobj: 'abc',
+    item: 'abc',
     lineNum: 3
   });
   simple.equal(52, walker.get(), {
     level: 1,
-    uobj: 'def',
+    item: 'def',
     lineNum: 4
   });
   simple.equal(57, walker.get(), {
     level: 2,
-    uobj: 'ghi',
+    item: 'ghi',
     lineNum: 5
   });
   return simple.equal(62, walker.get(), undef);
@@ -107,12 +107,12 @@ __END__
   // --- get() should return {uobj, level}
   simple.equal(79, walker.get(), {
     level: 0,
-    uobj: 'abc def',
+    item: 'abc def',
     lineNum: 1
   });
   simple.equal(84, walker.get(), {
     level: 1,
-    uobj: 'ghi',
+    item: 'ghi',
     lineNum: 3
   });
   return simple.equal(89, walker.get(), undef);
@@ -130,22 +130,22 @@ __END__
   // --- get() should return {uobj, level, lineNum}
   simple.equal(106, walker.get(), {
     level: 0,
-    uobj: 'abc def',
+    item: 'abc def',
     lineNum: 1
   });
   simple.equal(111, walker.get(), {
     level: 1,
-    uobj: 'ghi',
+    item: 'ghi',
     lineNum: 3
   });
   simple.equal(116, walker.get(), {
     level: 1,
-    uobj: '__END__',
+    item: '__END__',
     lineNum: 4
   });
   simple.equal(121, walker.get(), {
     level: 2,
-    uobj: 'ghi',
+    item: 'ghi',
     lineNum: 5
   });
   return simple.equal(126, walker.get(), undef);
@@ -175,11 +175,11 @@ def`);
 // ---------------------------------------------------------------------------
 // Test empty line handling
 (function() {
-  var MyMapper, MyTester, block, tester;
-  MyMapper = class MyMapper extends TreeWalker {
+  var MyTester, MyWalker, block, tester;
+  MyWalker = class MyWalker extends TreeWalker {
     // --- This removes blank lines
     handleEmptyLine() {
-      debug("in MyMapper.handleEmptyLine()");
+      debug("in MyWalker.handleEmptyLine()");
       return undef;
     }
 
@@ -187,7 +187,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyMapper, import.meta.url, block);
+      return doMap(MyWalker, import.meta.url, block);
     }
 
   };
@@ -196,7 +196,7 @@ def`);
   block = `abc
 
 def`;
-  simple.equal(192, doMap(MyMapper, import.meta.url, block), `abc
+  simple.equal(192, doMap(MyWalker, import.meta.url, block), `abc
 def`);
   return tester.equal(197, block, `abc
 def`);
@@ -205,8 +205,8 @@ def`);
 // ---------------------------------------------------------------------------
 // Test comment handling
 (function() {
-  var MyMapper, MyTester, block, tester;
-  MyMapper = class MyMapper extends TreeWalker {
+  var MyTester, MyWalker, block, tester;
+  MyWalker = class MyWalker extends TreeWalker {
     isComment(line) {
       // --- comments start with //
       return line.match(/^\s*\/\//);
@@ -221,7 +221,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyMapper, import.meta.url, block);
+      return doMap(MyWalker, import.meta.url, block);
     }
 
   };
@@ -232,7 +232,7 @@ def`);
 # not a comment
 abc
 def`;
-  simple.equal(240, doMap(MyMapper, import.meta.url, block), `# not a comment
+  simple.equal(240, doMap(MyWalker, import.meta.url, block), `# not a comment
 abc
 def`);
   return tester.equal(246, block, `# not a comment
@@ -243,8 +243,8 @@ def`);
 // ---------------------------------------------------------------------------
 // Test command handling
 (function() {
-  var MyMapper, MyTester, block, tester;
-  MyMapper = class MyMapper extends TreeWalker {
+  var MyTester, MyWalker, block, tester;
+  MyWalker = class MyWalker extends TreeWalker {
     isCmd(line) {
       var _, cmd, lMatches;
       // --- line includes any indentation
@@ -265,14 +265,14 @@ def`);
 
     // .......................................................
     handleCmd(cmd, argstr, prefix) {
-      return `COMMAND: ${cmd}`;
+      return this.getResult(`COMMAND: ${cmd}`, prefix);
     }
 
   };
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyMapper, import.meta.url, block);
+      return doMap(MyWalker, import.meta.url, block);
     }
 
   };
@@ -291,11 +291,11 @@ def`);
 // ---------------------------------------------------------------------------
 // try retaining indentation for mapped lines
 (function() {
-  var MyMapper, MyTester, tester;
+  var MyTester, MyWalker, tester;
   // --- NOTE: If you don't override unmapObj(), then
   //           mapStr() must return {str: <string>, level: <level>}
   //           or undef to ignore the line
-  MyMapper = class MyMapper extends TreeWalker {
+  MyWalker = class MyWalker extends TreeWalker {
     // --- This maps all non-empty lines to the string 'x'
     //     and removes all empty lines
     mapStr(str, level) {
@@ -313,7 +313,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyMapper, import.meta.url, block);
+      return doMap(MyWalker, import.meta.url, block);
     }
 
   };
@@ -331,8 +331,8 @@ x`);
 // --- Test ability to access 'this' object from a walker
 //     Goal: remove not only blank lines, but also the line following
 (function() {
-  var MyMapper, MyTester, tester;
-  MyMapper = class MyMapper extends TreeWalker {
+  var MyTester, MyWalker, tester;
+  MyWalker = class MyWalker extends TreeWalker {
     // --- Remove blank lines PLUS the line following a blank line
     handleEmptyLine(line) {
       var follow;
@@ -345,7 +345,7 @@ x`);
     // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyMapper, import.meta.url, block);
+      return doMap(MyWalker, import.meta.url, block);
     }
 
   };
@@ -400,19 +400,19 @@ jkl`, taml(`---
 -
 	level: 0
 	lineNum: 1
-	uobj: 'abc'
+	item: 'abc'
 -
 	level: 1
 	lineNum: 2
-	uobj: 'def'
+	item: 'def'
 -
 	level: 2
 	lineNum: 3
-	uobj: 'ghi'
+	item: 'ghi'
 -
 	level: 0
 	lineNum: 4
-	uobj: 'jkl'`));
+	item: 'jkl'`));
 })();
 
 // ---------------------------------------------------------------------------
@@ -515,8 +515,8 @@ doThat
 // ---------------------------------------------------------------------------
 // --- Test fetchBlockAtLevel() with mapping
 (function() {
-  var MyMapper, walker;
-  MyMapper = class MyMapper extends TreeWalker {
+  var MyWalker, walker;
+  MyWalker = class MyWalker extends TreeWalker {
     mapStr(str, level) {
       var _, cmd, cond, lMatches;
       if ((lMatches = str.match(/^(if|while)\s*(.*)$/))) {
@@ -528,7 +528,7 @@ doThat
     }
 
   };
-  walker = new MyMapper(undef, `if (x == 2)
+  walker = new MyWalker(undef, `if (x == 2)
 	doThis
 	doThat
 		then this
@@ -572,35 +572,35 @@ doThat
   tester = new WalkTester();
   // ..........................................................
   tester.equal(600, `abc
-def`, `begin
-> 'abc'
-< 'abc'
-> 'def'
-< 'def'
-end`);
+def`, `BEGIN WALK
+VISIT 1 0 'abc'
+END VISIT 1 0 'abc'
+VISIT 2 0 'def'
+END VISIT 2 0 'def'
+END WALK`);
   tester.equal(612, `abc
-	def`, `begin
-> 'abc'
-|.> 'def'
-|.< 'def'
-< 'abc'
-end`);
+	def`, `BEGIN WALK
+VISIT 1 0 'abc'
+VISIT 2 1 'def'
+END VISIT 2 1 'def'
+END VISIT 1 0 'abc'
+END WALK`);
   // --- 2 indents is treated as an extension line
   tester.equal(625, `abc
-		def`, `begin
-> 'abc˳def'
-< 'abc˳def'
-end`);
+		def`, `BEGIN WALK
+VISIT 1 0 'abc˳def'
+END VISIT 1 0 'abc˳def'
+END WALK`);
   return tester.equal(635, `abc
 	def
-ghi`, `begin
-> 'abc'
-|.> 'def'
-|.< 'def'
-< 'abc'
-> 'ghi'
-< 'ghi'
-end`);
+ghi`, `BEGIN WALK
+VISIT 1 0 'abc'
+VISIT 2 1 'def'
+END VISIT 2 1 'def'
+END VISIT 1 0 'abc'
+VISIT 3 0 'ghi'
+END VISIT 3 0 'ghi'
+END WALK`);
 })();
 
 // ---------------------------------------------------------------------------
@@ -648,7 +648,7 @@ def`);
 HtmlMapper = class HtmlMapper extends TreeWalker {
   mapStr(str, level) {
     var _, body, hResult, lMatches, md, tag, text;
-    debug(`enter MyMapper.mapStr(${level})`, str);
+    debug(`enter MyWalker.mapStr(${level})`, str);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
     // everything else
@@ -679,7 +679,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
       default:
         croak(`Unknown tag: ${OL(tag)}`);
     }
-    debug("return from MyMapper.mapStr()", hResult);
+    debug("return from MyWalker.mapStr()", hResult);
     return hResult;
   }
 

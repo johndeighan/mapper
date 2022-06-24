@@ -12,7 +12,6 @@
 		"./getter": "./src/Getter.js",
 		".": "./src/Mapper.js",
 		"./tree": "./src/TreeWalker.js",
-		"./stack": "./src/RunTimeStack.js",
 		"./ast": "./src/ASTWalker.js",
 		"./taml": "./src/taml.js",
 		"./markdown": "./src/markdown.js",
@@ -50,13 +49,13 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^2.0.6",
+		"@jdeighan/unit-tester": "^2.0.7",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^7.0.63",
+		"@jdeighan/coffee-utils": "^7.0.64",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.17",
-		"sass": "^1.52.3"
+		"sass": "^1.53.0"
 	}
 }

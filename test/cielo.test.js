@@ -78,61 +78,61 @@ convertCoffee(false);
 y = x`, `y = x`);
   // ------------------------------------------------------------------------
   // --- test removing blank lines
-  tester.equal(51, `
+  tester.equal(50, `
 y = x`, `y = x`);
   // ------------------------------------------------------------------------
   // --- test include files - include.txt is:
   // y = f(2*3)
   // for i in range(5)
   //    y *= i
-  tester.equal(66, `for x in [1,5]
+  tester.equal(63, `for x in [1,5]
 	#include include.txt`, `for x in [1,5]
 	y = f(2*3)
 	for i in range(5)
 		y *= i`);
   // ------------------------------------------------------------------------
   // --- test continuation lines
-  tester.equal(79, `x = 23
+  tester.equal(76, `x = 23
 y = x
 		+ 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
-  // --- test use of backslash continuation lines
-  tester.equal(91, `x = 23
+  // --- can't use backslash continuation lines
+  tester.equal(88, `x = 23
 y = x + 5`, `x = 23
 y = x + 5`);
   // ------------------------------------------------------------------------
   // --- test replacing LINE, FILE, DIR
-  tester.equal(104, `x = 23
+  tester.equal(101, `x = 23
 y = "line __LINE__ in __FILE__"
 + 5`, `x = 23
 y = "line 2 in cielo.test.js"
 + 5`);
-  tester.equal(114, `str = <<<
+  tester.equal(111, `str = <<<
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(125, `str = <<<
+  tester.equal(122, `str = <<<
 	===
 	abc
 	def
 
 x = 42`, `str = "abc\\ndef"
 x = 42`);
-  tester.equal(137, `str = <<<
+  tester.equal(134, `str = <<<
 	...this is a
 		long line`, `str = "this is a long line"`);
-  tester.equal(145, `lItems = <<<
+  tester.equal(142, `lItems = <<<
 	---
 	- a
 	- b`, `lItems = ["a","b"]`);
-  tester.equal(154, `hItems = <<<
+  tester.equal(151, `hItems = <<<
 	---
 	a: 13
 	b: 42`, `hItems = {"a":13,"b":42}`);
-  tester.equal(163, `lItems = <<<
+  tester.equal(160, `lItems = <<<
 	---
 	-
 		a: 13
@@ -140,7 +140,7 @@ x = 42`);
 	-
 		c: 2
 		d: 3`, `lItems = [{"a":13,"b":42},{"c":2,"d":3}]`);
-  tester.equal(176, `func(<<<, <<<, <<<)
+  tester.equal(173, `func(<<<, <<<, <<<)
 	a block
 	of text
 
@@ -151,14 +151,14 @@ x = 42`);
 	---
 	a: 13
 	b: 42`, `func("a block\\nof text", ["a","b"], {"a":13,"b":42})`);
-  tester.equal(192, `x = 42
+  tester.equal(189, `x = 42
 func(x, "abc")
 __END__
 This is extraneous text
 which should be ignored`, `x = 42
 func(x, "abc")`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(205, `str = \"\"\"
+  tester.equal(202, `str = \"\"\"
 	this is a
 	long string
 	\"\"\"`, `str = \"\"\"
@@ -166,7 +166,7 @@ func(x, "abc")`);
 	long string
 	\"\"\"`);
   // --- Make sure triple quoted strings are passed through as is
-  tester.equal(219, `str = """
+  tester.equal(216, `str = """
 	this is a
 	long string
 	"""`, `str = """
@@ -174,7 +174,7 @@ func(x, "abc")`);
 	long string
 	"""`);
   // --- Make sure triple quoted strings are passed through as is
-  return tester.equal(233, `str = '''
+  return tester.equal(230, `str = '''
 	this is a
 	long string
 	'''`, `str = '''
@@ -196,20 +196,15 @@ func(x, "abc")`);
   tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
   // Test function HEREDOC types
-  tester.equal(263, `handler = <<<
+  tester.equal(260, `handler = <<<
 	() ->
-		return 42`, `handler = (function() {
-	return 42;
-	});`);
-  tester.equal(273, `handler = <<<
-	() -> return 42`, `handler = (function() {
-	return 42;
-	});`);
-  return tester.equal(282, `handler = <<<
+		return 42`, `handler = (function() { return 42; });`);
+  tester.equal(268, `handler = <<<
+	() ->
+		return 42`, `handler = (function() { return 42; });`);
+  return tester.equal(276, `handler = <<<
 	(x, y) ->
-		return 42`, `handler = (function(x, y) {
-	return 42;
-	});`);
+		return 42`, `handler = (function(x, y) { return 42; });`);
 })();
 
 // ----------------------------------------------------------------------------
@@ -219,7 +214,7 @@ func(x, "abc")`);
 if fs.existsSync('file.txt')
 	logger "file exists"`;
   jsCode = cieloCodeToJS(cieloCode, import.meta.url);
-  return simple.equal(305, jsCode, `import fs from 'fs';
+  return simple.equal(297, jsCode, `import fs from 'fs';
 import {log as logger} from '@jdeighan/coffee-utils/log';
 if (fs.existsSync('file.txt')) {
 	logger("file exists");
@@ -238,13 +233,13 @@ if (fs.existsSync('file.txt')) {
   };
   tester = new CieloTester('cielo.test');
   // --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
-  tester.equal(330, `dir = mydir(import.meta.url)
+  tester.equal(321, `dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `import {mydir,mkpath} from '@jdeighan/coffee-utils/fs';
 var dir, filepath;
 dir = mydir(import.meta.url);
 filepath = mkpath(dir, 'test.txt');`);
   // --- But not if we're already importing them
-  tester.equal(342, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+  tester.equal(333, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `var dir, filepath;
 import {
@@ -253,10 +248,10 @@ import {
 	} from '@jdeighan/coffee-utils/fs';
 dir = mydir(import.meta.url);
 filepath = mkpath(dir, 'test.txt');`);
-  tester.equal(356, `x = undef`, `import {undef} from '@jdeighan/coffee-utils';
+  tester.equal(347, `x = undef`, `import {undef} from '@jdeighan/coffee-utils';
 var x;
 x = undef;`);
-  tester.equal(364, `x = undef
+  tester.equal(355, `x = undef
 contents = 'this is a file'
 fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})`, `import fs from 'fs';
 import {undef} from '@jdeighan/coffee-utils';
@@ -266,7 +261,7 @@ contents = 'this is a file';
 fs.writeFileSync('temp.txt', contents, {
 	encoding: 'utf8'
 	});`);
-  return tester.equal(379, `x = 23
+  return tester.equal(370, `x = 23
 logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log';
 var x;
 x = 23;

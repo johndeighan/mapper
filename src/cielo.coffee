@@ -22,12 +22,6 @@ import {
 import {TAMLHereDoc} from '@jdeighan/mapper/taml'
 import {doMap, Mapper} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
-import {
-	addHereDocType, lineToParts, mapHereDoc,
-	} from '@jdeighan/mapper/heredoc'
-
-addHereDocType new FuncHereDoc()
-addHereDocType new TAMLHereDoc()
 
 export convertingCielo = true
 
@@ -63,7 +57,12 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 		premapper = TreeWalker
 		postmapper = undef
 	else if isHash(hOptions)
-		premapper = hOptions.premapper || TreeWalker
+		if hOptions.premapper
+			premapper = hOptions.premapper
+			assert premapper instanceof TreeWalker,
+				"premapper must be a TreeWalker"
+		else
+			premapper = TreeWalker
 		postmapper = hOptions.postmapper   # may be undef
 		source = hOptions.source
 	else

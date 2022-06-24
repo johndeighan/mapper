@@ -35,7 +35,7 @@ simple = new UnitTester()
 
 (() ->
 	walker = new TreeWalker(undef, """
-			# --- comment, followed by blank line
+			# --- a comment
 
 			abc
 				def
@@ -46,17 +46,17 @@ simple = new UnitTester()
 
 	simple.equal 47, walker.get(), {
 		level:  0
-		uobj:    'abc'
+		item:    'abc'
 		lineNum: 3
 		}
 	simple.equal 52, walker.get(), {
 		level:  1
-		uobj:    'def'
+		item:    'def'
 		lineNum: 4
 		}
 	simple.equal 57, walker.get(), {
 		level:  2
-		uobj:    'ghi'
+		item:    'ghi'
 		lineNum: 5
 		}
 	simple.equal 62, walker.get(), undef
@@ -78,12 +78,12 @@ simple = new UnitTester()
 
 	simple.equal 79, walker.get(), {
 		level: 0
-		uobj:   'abc def'
+		item:   'abc def'
 		lineNum: 1
 		}
 	simple.equal 84, walker.get(), {
 		level: 1
-		uobj:   'ghi'
+		item:   'ghi'
 		lineNum: 3
 		}
 	simple.equal 89, walker.get(), undef
@@ -105,22 +105,22 @@ simple = new UnitTester()
 
 	simple.equal 106, walker.get(), {
 		level: 0
-		uobj:   'abc def'
+		item:   'abc def'
 		lineNum: 1
 		}
 	simple.equal 111, walker.get(), {
 		level: 1
-		uobj:   'ghi'
+		item:   'ghi'
 		lineNum: 3
 		}
 	simple.equal 116, walker.get(), {
 		level: 1
-		uobj:   '__END__'
+		item:   '__END__'
 		lineNum: 4
 		}
 	simple.equal 121, walker.get(), {
 		level: 2
-		uobj:   'ghi'
+		item:   'ghi'
 		lineNum: 5
 		}
 	simple.equal 126, walker.get(), undef
@@ -163,12 +163,12 @@ simple = new UnitTester()
 # Test empty line handling
 
 (() ->
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		# --- This removes blank lines
 		handleEmptyLine: () ->
 
-			debug "in MyMapper.handleEmptyLine()"
+			debug "in MyWalker.handleEmptyLine()"
 			return undef
 
 	# ..........................................................
@@ -177,7 +177,7 @@ simple = new UnitTester()
 
 		transformValue: (block) ->
 
-			return doMap(MyMapper, import.meta.url, block)
+			return doMap(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -189,7 +189,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 192, doMap(MyMapper, import.meta.url, block), """
+	simple.equal 192, doMap(MyWalker, import.meta.url, block), """
 			abc
 			def
 			"""
@@ -205,7 +205,7 @@ simple = new UnitTester()
 # Test comment handling
 
 (() ->
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		isComment: (line) ->
 
@@ -223,7 +223,7 @@ simple = new UnitTester()
 
 		transformValue: (block) ->
 
-			return doMap(MyMapper, import.meta.url, block)
+			return doMap(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -237,7 +237,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 240, doMap(MyMapper, import.meta.url, block), """
+	simple.equal 240, doMap(MyWalker, import.meta.url, block), """
 			# not a comment
 			abc
 			def
@@ -255,7 +255,7 @@ simple = new UnitTester()
 # Test command handling
 
 (() ->
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		isCmd: (line) ->
 			# --- line includes any indentation
@@ -276,14 +276,14 @@ simple = new UnitTester()
 
 		handleCmd: (cmd, argstr, prefix) ->
 
-			return "COMMAND: #{cmd}"
+			return @getResult("COMMAND: #{cmd}", prefix)
 
 	# ..........................................................
 
 	class MyTester extends UnitTester
 
 		transformValue: (block) ->
-			return doMap(MyMapper, import.meta.url, block)
+			return doMap(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -314,7 +314,7 @@ simple = new UnitTester()
 	#           mapStr() must return {str: <string>, level: <level>}
 	#           or undef to ignore the line
 
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		# --- This maps all non-empty lines to the string 'x'
 		#     and removes all empty lines
@@ -334,7 +334,7 @@ simple = new UnitTester()
 
 		transformValue: (block) ->
 
-			return doMap(MyMapper, import.meta.url, block)
+			return doMap(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -358,7 +358,7 @@ simple = new UnitTester()
 
 (()->
 
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		# --- Remove blank lines PLUS the line following a blank line
 		handleEmptyLine: (line) ->
@@ -372,7 +372,7 @@ simple = new UnitTester()
 
 		transformValue: (block) ->
 
-			return doMap(MyMapper, import.meta.url, block)
+			return doMap(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -444,19 +444,19 @@ simple = new UnitTester()
 			-
 				level: 0
 				lineNum: 1
-				uobj: 'abc'
+				item: 'abc'
 			-
 				level: 1
 				lineNum: 2
-				uobj: 'def'
+				item: 'def'
 			-
 				level: 2
 				lineNum: 3
-				uobj: 'ghi'
+				item: 'ghi'
 			-
 				level: 0
 				lineNum: 4
-				uobj: 'jkl'
+				item: 'jkl'
 			""")
 
 	)()
@@ -534,7 +534,7 @@ simple = new UnitTester()
 
 (() ->
 
-	class MyMapper extends TreeWalker
+	class MyWalker extends TreeWalker
 
 		mapStr: (str, level) ->
 			if (lMatches = str.match(///^
@@ -547,7 +547,7 @@ simple = new UnitTester()
 			else
 				return str
 
-	walker = new MyMapper(undef, """
+	walker = new MyWalker(undef, """
 			if (x == 2)
 				doThis
 				doThat
@@ -601,24 +601,24 @@ simple = new UnitTester()
 			abc
 			def
 			""", """
-			begin
-			> 'abc'
-			< 'abc'
-			> 'def'
-			< 'def'
-			end
+			BEGIN WALK
+			VISIT 1 0 'abc'
+			END VISIT 1 0 'abc'
+			VISIT 2 0 'def'
+			END VISIT 2 0 'def'
+			END WALK
 			"""
 
 	tester.equal 612, """
 			abc
 				def
 			""", """
-			begin
-			> 'abc'
-			|.> 'def'
-			|.< 'def'
-			< 'abc'
-			end
+			BEGIN WALK
+			VISIT 1 0 'abc'
+			VISIT 2 1 'def'
+			END VISIT 2 1 'def'
+			END VISIT 1 0 'abc'
+			END WALK
 			"""
 
 	# --- 2 indents is treated as an extension line
@@ -626,10 +626,10 @@ simple = new UnitTester()
 			abc
 					def
 			""", """
-			begin
-			> 'abc˳def'
-			< 'abc˳def'
-			end
+			BEGIN WALK
+			VISIT 1 0 'abc˳def'
+			END VISIT 1 0 'abc˳def'
+			END WALK
 			"""
 
 	tester.equal 635, """
@@ -637,14 +637,14 @@ simple = new UnitTester()
 				def
 			ghi
 			""", """
-			begin
-			> 'abc'
-			|.> 'def'
-			|.< 'def'
-			< 'abc'
-			> 'ghi'
-			< 'ghi'
-			end
+			BEGIN WALK
+			VISIT 1 0 'abc'
+			VISIT 2 1 'def'
+			END VISIT 2 1 'def'
+			END VISIT 1 0 'abc'
+			VISIT 3 0 'ghi'
+			END VISIT 3 0 'ghi'
+			END WALK
 			"""
 	)()
 
@@ -713,7 +713,7 @@ class HtmlMapper extends TreeWalker
 
 	mapStr: (str, level) ->
 
-		debug "enter MyMapper.mapStr(#{level})", str
+		debug "enter MyWalker.mapStr(#{level})", str
 		lMatches = str.match(///^
 				(\S+)     # the tag
 				(?:
@@ -741,7 +741,7 @@ class HtmlMapper extends TreeWalker
 			else
 				croak "Unknown tag: #{OL(tag)}"
 
-		debug "return from MyMapper.mapStr()", hResult
+		debug "return from MyWalker.mapStr()", hResult
 		return hResult
 
 	# .......................................................

@@ -31,26 +31,18 @@ addHereDocType(new FuncHereDoc()); // --- CoffeeScript function
   };
   tester = new HereDocMapper();
   // ------------------------------------------------------------------------
-  tester.equal(28, `(evt) ->
-	log 'click'`, `(function(evt) {
-	return log('click');
-	});`);
+  tester.equal(25, `(evt) ->
+	log 'click'`, `(function(evt) { return log('click'); });`);
   // ------------------------------------------------------------------------
   // Function block, with no name or parameters
-  tester.equal(41, `() ->
-	return true`, `(function() {
-	return true;
-	});`);
+  tester.equal(36, `() ->
+	return true`, `(function() { return true; });`);
   // ------------------------------------------------------------------------
   // Function block, with no name but one parameter
-  tester.equal(53, `(evt) ->
-	console.log 'click'`, `(function(evt) {
-	return console.log('click');
-	});`);
+  tester.equal(46, `(evt) ->
+	console.log 'click'`, `(function(evt) { return console.log('click'); });`);
   // ------------------------------------------------------------------------
   // Function block, with no name but one parameter
-  return tester.equal(65, `(  evt  )     ->
-	log 'click'`, `(function(evt) {
-	return log('click');
-	});`);
+  return tester.equal(56, `(  evt  )     ->
+	log 'click'`, `(function(evt) { return log('click'); });`);
 })();

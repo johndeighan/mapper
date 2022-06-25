@@ -75,7 +75,6 @@ export class Mapper extends Getter
 
 		debug "enter Mapper.handleItemType(#{OL(type)})", item
 
-		lineNum = @lineNum     # save in case functions fetch lines
 		switch type
 			when 'empty'
 				uobj = @handleEmptyLine()

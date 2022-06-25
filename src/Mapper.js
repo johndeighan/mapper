@@ -84,9 +84,8 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override
   handleItemType(type, item, h) {
-    var argstr, cmd, lineNum, prefix, uobj;
+    var argstr, cmd, prefix, uobj;
     debug(`enter Mapper.handleItemType(${OL(type)})`, item);
-    lineNum = this.lineNum; // save in case functions fetch lines
     switch (type) {
       case 'empty':
         uobj = this.handleEmptyLine();

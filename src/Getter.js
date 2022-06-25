@@ -72,28 +72,30 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   //    Cache Management
   // ..........................................................
-  addToCache(item, uobj = undef) {
+  addToCache(item, uobj) {
+    // --- uobj is mapped version of item
+    //     uobj may be undef
     this.lCache.unshift({item, uobj});
   }
 
   // ..........................................................
   getFromCache() {
-    var h;
+    var item, uobj;
     assert(nonEmpty(this.lCache), "empty cache");
-    h = this.lCache.shift();
-    if (h.uobj) {
-      return h.uobj;
+    ({item, uobj} = this.lCache.shift());
+    if (uobj) {
+      return uobj;
     } else {
-      return this.mapItem(h.item);
+      return this.mapItem(item);
     }
   }
 
   // ..........................................................
   fetchFromCache() {
-    var h;
-    assert(nonEmpty(this.lCache), "fetchFromCache() called on empty cache");
-    h = this.lCache.shift();
-    return h.unmapped;
+    var item, uobj;
+    assert(nonEmpty(this.lCache), "empty cache");
+    ({item, uobj} = this.lCache.shift());
+    return h.item;
   }
 
   // ..........................................................
@@ -111,7 +113,7 @@ export var Getter = class Getter extends Fetcher {
     if (isEmpty(this.lCache)) {
       return super.unfetch(line);
     }
-    this.addToCache(line, undef, false);
+    this.addToCache(line, undef);
   }
 
   // ..........................................................
@@ -127,8 +129,10 @@ export var Getter = class Getter extends Fetcher {
       return uobj;
     }
     debug("no lookahead");
+    debug(`lineNum = ${this.lineNum}`);
     item = this.fetch();
     debug("fetch() returned", item);
+    debug(`lineNum = ${this.lineNum}`);
     if (item === undef) {
       debug("return undef from get() - at EOF");
       return undef;
@@ -218,8 +222,9 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   // return of undef doesn't mean EOF, it means skip this item
   mapItem(item) {
-    var hInfo, newitem, type, uobj;
+    var hInfo, newitem, result, type, uobj;
     debug("enter mapItem()", item);
+    debug(`lineNum = ${this.lineNum}`);
     [type, hInfo] = this.getItemType(item);
     if (defined(type)) {
       debug(`item type is ${type}`);
@@ -240,8 +245,21 @@ export var Getter = class Getter extends Fetcher {
       uobj = this.map(item);
       debug("from map()", uobj);
     }
-    debug("return from mapItem()", uobj);
-    return uobj;
+    if (uobj === undef) {
+      debug("return undef from mapItem()");
+      return undef;
+    } else {
+      result = this.bundle(uobj);
+      assert(defined(result), "result is undef");
+      debug("return from mapItem()", result);
+      return result;
+    }
+  }
+
+  // ..........................................................
+  bundle(result) {
+    // --- designed to override - NEVER return undef
+    return result;
   }
 
   // ..........................................................

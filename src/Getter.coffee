@@ -49,12 +49,11 @@ export class Getter extends Fetcher
 	#    Cache Management
 	# ..........................................................
 
-	addToCache: (item, uobj=undef) ->
+	addToCache: (item, uobj) ->
+		# --- uobj is mapped version of item
+		#     uobj may be undef
 
-		@lCache.unshift {
-			item
-			uobj
-			}
+		@lCache.unshift {item, uobj}
 		return
 
 	# ..........................................................
@@ -62,19 +61,19 @@ export class Getter extends Fetcher
 	getFromCache: () ->
 
 		assert nonEmpty(@lCache), "empty cache"
-		h = @lCache.shift()
-		if h.uobj
-			return h.uobj
+		{item, uobj} = @lCache.shift()
+		if uobj
+			return uobj
 		else
-			return @mapItem(h.item)
+			return @mapItem(item)
 
 	# ..........................................................
 
 	fetchFromCache: () ->
 
-		assert nonEmpty(@lCache), "fetchFromCache() called on empty cache"
-		h = @lCache.shift()
-		return h.unmapped
+		assert nonEmpty(@lCache), "empty cache"
+		{item, uobj} = @lCache.shift()
+		return h.item
 
 	# ..........................................................
 	#        We override fetch(), unfetch()
@@ -92,7 +91,7 @@ export class Getter extends Fetcher
 
 		if isEmpty(@lCache)
 			return super(line)
-		@addToCache line, undef, false
+		@addToCache line, undef
 		return
 
 	# ..........................................................
@@ -110,8 +109,10 @@ export class Getter extends Fetcher
 			return uobj
 		debug "no lookahead"
 
+		debug "lineNum = #{@lineNum}"
 		item = @fetch()
 		debug "fetch() returned", item
+		debug "lineNum = #{@lineNum}"
 
 		if (item == undef)
 			debug "return undef from get() - at EOF"
@@ -209,6 +210,7 @@ export class Getter extends Fetcher
 	mapItem: (item) ->
 
 		debug "enter mapItem()", item
+		debug "lineNum = #{@lineNum}"
 
 		[type, hInfo] = @getItemType(item)
 		if defined(type)
@@ -229,8 +231,21 @@ export class Getter extends Fetcher
 			uobj = @map(item)
 			debug "from map()", uobj
 
-		debug "return from mapItem()", uobj
-		return uobj
+		if (uobj == undef)
+			debug "return undef from mapItem()"
+			return undef
+		else
+			result = @bundle(uobj)
+			assert defined(result), "result is undef"
+			debug "return from mapItem()", result
+			return result
+
+	# ..........................................................
+
+	bundle: (result) ->
+		# --- designed to override - NEVER return undef
+
+		return result
 
 	# ..........................................................
 

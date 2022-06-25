@@ -57,17 +57,19 @@ import {
 
 // ===========================================================================
 //   class TreeWalker
-//      - map() returns {item, level, lineNum} or undef
+//      - map() returns mapped item or undef
+//      - bundle() returns {item, level, lineNum}
 //   to use, override:
 //      mapStr(str, level) - returns user object, default returns str
 //      handleCmd()
 //      beginWalk() -
-//      visit(uobj, level, lineNum) -
-//      endVisit(uobj, level, lineNum) -
+//      visit(uobj, hUser, lStack) -
+//      endVisit(uobj, hUser, lStack) -
 //      endWalk() -
 export var TreeWalker = class TreeWalker extends Mapper {
   constructor(source = undef, collection = undef, hOptions = {}) {
     super(source, collection, hOptions);
+    this.level = 0;
     this.lMinuses = []; // used to adjust level in #ifdef and #ifndef
   }
 
@@ -75,22 +77,29 @@ export var TreeWalker = class TreeWalker extends Mapper {
     // ..........................................................
   // --- Should always return either:
   //        undef
-  //        object with {uobj, level, lineNum}
+  //        uobj - mapped object
   // --- Will only receive non-special lines
   map(item) {
-    var hResult, lExtLines, level, lineNum, newstr, str, uobj;
+    var hResult, lExtLines, newstr, str;
     debug("enter map()", item);
     // --- a TreeWalker makes no sense unless items are strings
     assert(isString(item), `non-string: ${OL(item)}`);
-    lineNum = this.lineNum; // save in case we fetch more lines
-    [level, str] = splitLine(item);
-    debug(`split: level = ${OL(level)}, str = ${OL(str)}`);
+    this.orgLineNum = this.lineNum; // save in case we fetch more lines
+    debug(`orgLineNum = ${this.orgLineNum}`);
+    [this.level, str] = splitLine(item);
+    debug(`split: level = ${OL(this.level)}, str = ${OL(str)}`);
     assert(nonEmpty(str), "empty string should be special");
-    // --- check for extension lines
+    // --- check for extension lines, stop on blank line
     debug("check for extension lines");
-    lExtLines = this.fetchLinesAtLevel(level + 2);
+    lExtLines = this.fetchLinesAtLevel(this.level + 2, {
+      stopOn: ''
+    });
     assert(isArray(lExtLines), "lExtLines not an array");
-    if (nonEmpty(lExtLines)) {
+    debug(`${lExtLines.length} extension lines`);
+    if (isEmpty(lExtLines)) {
+      debug("no extension lines");
+      debug(`lineNum = ${this.lineNum}`);
+    } else {
       newstr = this.joinExtensionLines(str, lExtLines);
       if (newstr !== str) {
         str = newstr;
@@ -100,7 +109,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     // --- handle HEREDOCs
     debug("check for HEREDOC");
     if (str.indexOf('<<<') >= 0) {
-      hResult = this.handleHereDoc(str, level);
+      hResult = this.handleHereDoc(str);
       // --- NOTE: hResult.lObjects is not currently used
       //           but I want to use it in the future to
       //           prevent having to construct an object from the line
@@ -108,27 +117,29 @@ export var TreeWalker = class TreeWalker extends Mapper {
         str = hResult.line;
         debug(`=> ${OL(str)}`);
       }
+    } else {
+      debug("no HEREDOCs");
+      debug(`lineNum = ${this.lineNum}`);
     }
     // --- NOTE: mapStr() may return undef, meaning to ignore
-    item = this.mapStr(str, level, lineNum);
-    if (defined(item)) {
-      uobj = {
-        item,
-        level: this.realLevel(level),
-        lineNum
-      };
-      debug("return from map()", uobj);
-      return uobj;
-    } else {
-      debug("return undef from map()");
-      return undef;
-    }
+    item = this.mapStr(str);
+    debug("return from map()", item);
+    return item;
   }
 
   // ..........................................................
   // --- designed to override
-  mapStr(str, level, lineNum) {
+  mapStr(str) {
     return str;
+  }
+
+  // ..........................................................
+  bundle(item) {
+    return {
+      item,
+      level: this.realLevel(),
+      lineNum: this.orgLineNum
+    };
   }
 
   // ..........................................................
@@ -146,11 +157,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  handleHereDoc(line, level) {
+  handleHereDoc(line) {
     var hResult, j, lLines, lNewParts, lObjects, lParts, len, part;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
-    debug("enter handleHereDoc()", line, level);
+    debug("enter handleHereDoc()", line);
     assert(isString(line), "not a string");
     lParts = lineToParts(line);
     debug('lParts', lParts);
@@ -159,9 +170,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
     for (j = 0, len = lParts.length; j < len; j++) {
       part = lParts[j];
       if (part === '<<<') {
-        debug(`get HEREDOC lines at level ${level + 1}`);
-        lLines = this.fetchLinesAtLevel(level + 1, ''); // stop on blank line
-        lLines = undented(lLines, level + 1);
+        debug(`get HEREDOC lines at level ${this.level + 1}`);
+        lLines = this.fetchLinesAtLevel(this.level + 1, {
+          stopOn: '',
+          discard: true
+        });
+        lLines = undented(lLines, this.level + 1);
         debug('lLines', lLines);
         hResult = mapHereDoc(arrayToBlock(lLines));
         debug('hResult', hResult);
@@ -192,13 +206,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   // --- We define commands 'ifdef' and 'ifndef'
   handleCmd(cmd, argstr, prefix, h) {
-    var isEnv, item, keep, lSkipLines, level, lineNum, name, ok, realLevel, uobj, value;
+    var isEnv, item, keep, lSkipLines, name, ok, realLevel, value;
     // --- h has keys 'cmd','argstr' and 'prefix'
     //     but may contain additional keys
     debug("enter TreeWalker.handleCmd()", h);
-    level = indentLevel(prefix);
-    realLevel = this.realLevel(level);
-    lineNum = this.lineNum;
+    this.level = indentLevel(prefix);
+    realLevel = this.realLevel();
     // --- Handle our commands, returning if found
     switch (cmd) {
       case 'ifdef':
@@ -208,9 +221,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
         ok = this.isDefined(name, value, isEnv);
         keep = cmd === 'ifdef' ? ok : !ok;
         if (keep) {
-          this.lMinuses.push(level);
+          this.lMinuses.push(this.level);
         } else {
-          lSkipLines = this.fetchLinesAtLevel(level + 1);
+          lSkipLines = this.fetchLinesAtLevel(this.level + 1);
           debug(`Skip ${lSkipLines.length} lines`);
         }
         debug("return undef from TreeWalker.handleCmd()");
@@ -218,49 +231,25 @@ export var TreeWalker = class TreeWalker extends Mapper {
     }
     debug("call super");
     item = super.handleCmd(cmd, argstr, prefix, h);
-    if (defined(item)) {
-      uobj = {
-        level: realLevel,
-        lineNum,
-        item
-      };
-      debug("return from TreeWalker.handleCmd()", uobj);
-      return uobj;
-    } else {
-      debug("return undef from TreeWalker.handleCmd()");
-      return undef;
-    }
+    debug("return from TreeWalker.handleCmd()", item);
+    return item;
   }
 
   // ..........................................................
-  getResult(result, prefix) {
-    if (result === undef) {
-      return undef;
-    } else {
-      assert(this.lineNum > 0, `lineNum is ${OL(this.lineNum)} in getResult()`);
-      return {
-        item: result,
-        level: this.realLevel(indentLevel(prefix)),
-        lineNum: this.lineNum
-      };
-    }
-  }
-
-  // ..........................................................
-  realLevel(level) {
+  realLevel() {
     var adjustment, i, j, lNewMinuses, len, ref;
     lNewMinuses = [];
     adjustment = 0;
     ref = this.lMinuses;
     for (j = 0, len = ref.length; j < len; j++) {
       i = ref[j];
-      if (level > i) {
+      if (this.level > i) {
         adjustment += 1;
         lNewMinuses.push(i);
       }
     }
     this.lMinuses = lNewMinuses;
-    return level - adjustment;
+    return this.level - adjustment;
   }
 
   // ..........................................................
@@ -280,13 +269,18 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  fetchLinesAtLevel(atLevel, stopOn = undef) {
-    var item, lLines;
+  fetchLinesAtLevel(atLevel, hOptions = {}) {
+    var discard, item, lLines, stopOn;
     // --- Does NOT remove any indentation
+    stopOn = hOptions.stopOn;
+    if (defined(stopOn)) {
+      assert(isString(stopOn), `stopOn is ${OL(stopOn)}`);
+      discard = hOptions.discard || false;
+    }
     debug(`enter TreeWalker.fetchLinesAtLevel(${OL(atLevel)}, ${OL(stopOn)})`);
-    assert(atLevel > 0, "atLevel is 0");
+    assert(atLevel > 0, `atLevel is ${atLevel}`);
     lLines = [];
-    while (defined(item = this.fetch()) && debug(`item = ${OL(item)}`) && isString(item) && ((stopOn === undef) || (item !== stopOn)) && debug("OK") && (isEmpty(item) || (indentLevel(item) >= atLevel))) {
+    while (defined(item = this.fetch()) && debug(`item = ${OL(item)}`) && isString(item) && ((stopOn === undef) || (item !== stopOn)) && (isEmpty(item) || (indentLevel(item) >= atLevel))) {
       debug(`push ${OL(item)}`);
       lLines.push(item);
     }
@@ -295,9 +289,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     //        2. item not a string             YES
     //        3. item == stopOn (& defined)    NO
     //        4. item nonEmpty and undented    YES
-    if ((item === undef) || (item === stopOn)) {
-      debug("don't unfetch");
-    } else {
+    if (isString(item) && !discard) {
       debug("do unfetch");
       this.unfetch(item);
     }
@@ -306,10 +298,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  fetchBlockAtLevel(atLevel, stopOn = undef) {
+  fetchBlockAtLevel(atLevel, hOptions = {}) {
     var lLines, result;
-    debug(`enter TreeWalker.fetchBlockAtLevel(${OL(atLevel)})`);
-    lLines = this.fetchLinesAtLevel(atLevel, stopOn);
+    debug(`enter TreeWalker.fetchBlockAtLevel(${OL(atLevel)})`, hOptions);
+    lLines = this.fetchLinesAtLevel(atLevel, hOptions);
     debug('lLines', lLines);
     lLines = undented(lLines, atLevel);
     debug("undented lLines", lLines);
@@ -325,17 +317,17 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visit(item, level, lineNum, hUser) {
+  visit(item, hUser, lStack) {
     var result;
-    debug("enter visit()", item, level, lineNum, hUser);
-    assert(level >= 0, `level = ${OL(level)}`);
-    result = indented(item, level);
+    debug("enter visit()", item, hUser);
+    assert(this.level >= 0, `level = ${OL(this.level)}`);
+    result = indented(item, this.level);
     debug("return from visit()", result);
     return result;
   }
 
   // ..........................................................
-  endVisit(item, level, lineNum, hUser) {
+  endVisit(item, hUser, lStack) {
     return undef;
   }
 
@@ -385,35 +377,23 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visitNode(uobj, hUser, lStack) {
-    var item, level, line, lineNum;
-    this.checkUserObj(uobj);
-    ({item, level, lineNum} = uobj);
-    line = this.visit(item, level, lineNum, hUser, lStack);
-    if (defined(line)) {
-      this.addLine(line);
+  addLine(line) {
+    assert(defined(line), "line is undef");
+    debug(`enter addLine(${OL(line)})`, line);
+    if (isArray(line)) {
+      debug("line is an array");
+      this.lLines.push(...line);
+    } else {
+      this.lLines.push(line);
     }
-  }
-
-  // ..........................................................
-  endVisitNode(node, lStack) {
-    var hUser, item, level, line, lineNum, uobj;
-    assert(isHash(node), `node is ${OL(node)}`);
-    ({uobj, hUser} = node);
-    this.checkUserObj(uobj);
-    assert(isHash(hUser), `hUser is ${OL(hUser)}`);
-    ({item, level, lineNum} = uobj);
-    line = this.endVisit(item, level, lineNum, hUser, lStack);
-    if (defined(line)) {
-      this.addLine(line);
-    }
+    debug("return from addLine()");
   }
 
   // ..........................................................
   walk() {
     var hUser, item, lStack, level, line, lineNum, node, ref, result, uobj;
     debug("enter walk()");
-    // --- lStack is stack of {
+    // --- lStack is stack of node = {
     //        uobj: {item, level, lineNum}
     //        hUser: {}
     //        }
@@ -430,18 +410,21 @@ export var TreeWalker = class TreeWalker extends Mapper {
       this.checkUserObj(uobj);
       ({item, level, lineNum} = uobj);
       while (lStack.length > level) {
-        node = lStack.pop();
+        node = lStack[lStack.length - 1];
         this.endVisitNode(node, lStack);
+        lStack.pop();
       }
       // --- Create a user hash that the user can add to/modify
       //     and will see again at endVisit
       hUser = {};
-      this.visitNode(uobj, hUser, lStack);
-      lStack.push({uobj, hUser});
+      node = {uobj, hUser};
+      lStack.push(node);
+      this.visitNode(node, lStack);
     }
     while (lStack.length > 0) {
-      node = lStack.pop();
+      node = lStack[lStack.length - 1];
       this.endVisitNode(node, lStack);
+      lStack.pop();
     }
     line = this.endWalk();
     if (defined(line)) {
@@ -453,16 +436,30 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  addLine(line) {
-    assert(defined(line), "line is undef");
-    debug(`enter addLine(${OL(line)})`, line);
-    if (isArray(line)) {
-      debug("line is an array");
-      this.lLines.push(...line);
-    } else {
-      this.lLines.push(line);
+  visitNode(node, lStack) {
+    var hUser, item, level, line, lineNum, uobj;
+    assert(isHash(node), `node is ${OL(node)}`);
+    ({uobj, hUser} = node);
+    this.checkUserObj(uobj);
+    ({item, level, lineNum} = uobj);
+    line = this.visit(item, hUser, lStack);
+    if (defined(line)) {
+      this.addLine(line);
     }
-    debug("return from addLine()");
+  }
+
+  // ..........................................................
+  endVisitNode(node, lStack) {
+    var hUser, item, line, lineNum, uobj;
+    assert(isHash(node), `node is ${OL(node)}`);
+    ({uobj, hUser} = node);
+    this.checkUserObj(uobj);
+    assert(isHash(hUser), `hUser is ${OL(hUser)}`);
+    ({item, level: this.level, lineNum} = uobj);
+    line = this.endVisit(item, hUser, lStack);
+    if (defined(line)) {
+      this.addLine(line);
+    }
   }
 
   // ..........................................................
@@ -486,12 +483,18 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
   }
 
   // ..........................................................
-  visit(item, level, lineNum, hUser) {
+  visit(item, hUser, lStack) {
+    var hTOS, level, lineNum;
+    hTOS = lStack[lStack.length - 1];
+    ({item, level, lineNum} = hTOS.uobj);
     this.lTrace.push(`VISIT ${lineNum} ${level} ${OL(item)}`);
   }
 
   // ..........................................................
-  endVisit(item, level, lineNum, hUser) {
+  endVisit(item, hUser, lStack) {
+    var hTOS, level, lineNum;
+    hTOS = lStack[lStack.length - 1];
+    ({item, level, lineNum} = hTOS.uobj);
     this.lTrace.push(`END VISIT ${lineNum} ${level} ${OL(item)}`);
   }
 

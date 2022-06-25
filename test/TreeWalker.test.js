@@ -265,7 +265,7 @@ def`);
 
     // .......................................................
     handleCmd(cmd, argstr, prefix) {
-      return this.getResult(`COMMAND: ${cmd}`, prefix);
+      return `COMMAND: ${cmd}`;
     }
 
   };
@@ -355,7 +355,6 @@ x`);
 
 def
 ghi`, `abc
-def
 ghi`);
 })();
 
@@ -371,7 +370,7 @@ ghi`);
   };
   // ..........................................................
   tester = new MyTester();
-  return tester.equal(408, `abc
+  return tester.equal(407, `abc
 	#include title.md
 def`, `abc
 	title
@@ -393,7 +392,7 @@ def`);
 
   };
   tester = new MyTester();
-  return tester.equal(437, `abc
+  return tester.equal(436, `abc
 	def
 		ghi
 jkl`, taml(`---
@@ -424,62 +423,62 @@ jkl`, taml(`---
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(477, walker.peek(), {
+  simple.equal(476, walker.peek(), {
     level: 0,
     lineNum: 1,
     item: 'if (x == 2)'
   });
-  simple.equal(478, walker.get(), {
+  simple.equal(477, walker.get(), {
     level: 0,
     lineNum: 1,
     item: 'if (x == 2)'
   });
-  simple.equal(480, walker.peek(), {
+  simple.equal(479, walker.peek(), {
     level: 1,
     lineNum: 2,
     item: 'doThis'
   });
-  simple.equal(481, walker.get(), {
+  simple.equal(480, walker.get(), {
     level: 1,
     lineNum: 2,
     item: 'doThis'
   });
-  simple.equal(483, walker.peek(), {
+  simple.equal(482, walker.peek(), {
     level: 1,
     lineNum: 3,
     item: 'doThat'
   });
-  simple.equal(484, walker.get(), {
+  simple.equal(483, walker.get(), {
     level: 1,
     lineNum: 3,
     item: 'doThat'
   });
-  simple.equal(486, walker.peek(), {
+  simple.equal(485, walker.peek(), {
     level: 2,
     lineNum: 4,
     item: 'then this'
   });
-  simple.equal(487, walker.get(), {
+  simple.equal(486, walker.get(), {
     level: 2,
     lineNum: 4,
     item: 'then this'
   });
-  simple.equal(489, walker.peek(), {
+  simple.equal(488, walker.peek(), {
     level: 0,
     lineNum: 5,
     item: 'while (x > 2)'
   });
-  simple.equal(490, walker.get(), {
+  simple.equal(489, walker.get(), {
     level: 0,
     lineNum: 5,
     item: 'while (x > 2)'
   });
-  simple.equal(492, walker.peek(), {
+  simple.equal(491, walker.peek(), {
     level: 1,
     lineNum: 6,
     item: '--x'
   });
-  return simple.equal(493, walker.get(), {
+  return simple.equal(492, walker.get(), {
     level: 1,
     lineNum: 6,
     item: '--x'
@@ -496,20 +495,20 @@ while (x > 2)
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(511, walker.get(), {
+  simple.equal(510, walker.get(), {
     level: 0,
     item: 'if (x == 2)',
     lineNum: 1
   });
-  simple.equal(517, walker.fetchBlockAtLevel(1), `doThis
+  simple.equal(516, walker.fetchBlockAtLevel(1), `doThis
 doThat
 	then this`);
-  simple.equal(523, walker.get(), {
+  simple.equal(522, walker.get(), {
     level: 0,
     item: 'while (x > 2)',
     lineNum: 5
   });
-  return simple.equal(529, walker.fetchBlockAtLevel(1), "--x");
+  return simple.equal(528, walker.fetchBlockAtLevel(1), "--x");
 })();
 
 // ---------------------------------------------------------------------------
@@ -534,7 +533,7 @@ doThat
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(559, walker.get(), {
+  simple.equal(558, walker.get(), {
     level: 0,
     item: {
       cmd: 'if',
@@ -542,10 +541,10 @@ while (x > 2)
     },
     lineNum: 1
   });
-  simple.equal(567, walker.fetchBlockAtLevel(1), `doThis
+  simple.equal(566, walker.fetchBlockAtLevel(1), `doThis
 doThat
 	then this`);
-  simple.equal(572, walker.get(), {
+  simple.equal(571, walker.get(), {
     level: 0,
     item: {
       cmd: 'while',
@@ -553,8 +552,8 @@ doThat
     },
     lineNum: 5
   });
-  simple.equal(580, walker.fetchBlockAtLevel(1), "--x");
-  return simple.equal(581, walker.get(), undef);
+  simple.equal(579, walker.fetchBlockAtLevel(1), "--x");
+  return simple.equal(580, walker.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -571,14 +570,14 @@ doThat
   };
   tester = new WalkTester();
   // ..........................................................
-  tester.equal(600, `abc
+  tester.equal(599, `abc
 def`, `BEGIN WALK
 VISIT 1 0 'abc'
 END VISIT 1 0 'abc'
 VISIT 2 0 'def'
 END VISIT 2 0 'def'
 END WALK`);
-  tester.equal(612, `abc
+  tester.equal(611, `abc
 	def`, `BEGIN WALK
 VISIT 1 0 'abc'
 VISIT 2 1 'def'
@@ -586,12 +585,12 @@ END VISIT 2 1 'def'
 END VISIT 1 0 'abc'
 END WALK`);
   // --- 2 indents is treated as an extension line
-  tester.equal(625, `abc
+  tester.equal(624, `abc
 		def`, `BEGIN WALK
 VISIT 1 0 'abc˳def'
 END VISIT 1 0 'abc˳def'
 END WALK`);
-  return tester.equal(635, `abc
+  return tester.equal(634, `abc
 	def
 ghi`, `BEGIN WALK
 VISIT 1 0 'abc'
@@ -615,7 +614,7 @@ END WALK`);
   };
   // ..........................................................
   tester = new MyTester();
-  tester.equal(666, `abc
+  tester.equal(665, `abc
 if x == <<<
 	abc
 	def
@@ -623,7 +622,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  tester.equal(679, `abc
+  tester.equal(678, `abc
 if x == <<<
 	===
 	abc
@@ -632,7 +631,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  return tester.equal(693, `abc
+  return tester.equal(692, `abc
 if x == <<<
 	...
 	abc
@@ -646,16 +645,16 @@ def`);
 // ---------------------------------------------------------------------------
 // --- A more complex example
 HtmlMapper = class HtmlMapper extends TreeWalker {
-  mapStr(str, level) {
+  mapStr(str) {
     var _, body, hResult, lMatches, md, tag, text;
-    debug(`enter MyWalker.mapStr(${level})`, str);
+    debug(`enter MyWalker.mapStr(${this.level})`, str);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
     // everything else
     // optional
     assert(defined(lMatches), "missing HTML tag");
     [_, tag, text] = lMatches;
-    hResult = {tag, level};
+    hResult = {tag, level: this.level};
     switch (tag) {
       case 'body':
         assert(isEmpty(text), "body tag doesn't allow content");
@@ -668,7 +667,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
         break;
       case 'div:markdown':
         hResult.tag = 'div';
-        body = this.fetchBlockAtLevel(level + 1);
+        body = this.fetchBlockAtLevel(this.level + 1);
         debug("body", body);
         if (nonEmpty(body)) {
           md = doMap(SimpleMarkDownMapper, import.meta.url, body);
@@ -684,11 +683,11 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   }
 
   // .......................................................
-  visit(uobj, level) {
+  visit(uobj, hUser) {
     var lParts, result;
-    lParts = [indented(`<${uobj.tag}>`, level)];
+    lParts = [indented(`<${uobj.tag}>`, this.level)];
     if (nonEmpty(uobj.body)) {
-      lParts.push(indented(uobj.body, level + 1));
+      lParts.push(indented(uobj.body, this.level + 1));
     }
     result = arrayToBlock(lParts);
     debug('result', result);
@@ -696,8 +695,8 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   }
 
   // .......................................................
-  endVisit(uobj, level) {
-    return indented(`</${uobj.tag}>`, level);
+  endVisit(uobj, hUser) {
+    return indented(`</${uobj.tag}>`, this.level);
   }
 
 };
@@ -713,7 +712,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(778, `body
+  return tester.equal(777, `body
 	# a comment
 
 	div:markdown
@@ -749,7 +748,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
 
   };
   tester = new MyTester();
-  return tester.equal(821, `abc
+  return tester.equal(820, `abc
 #ifdef something
 	def
 	ghi

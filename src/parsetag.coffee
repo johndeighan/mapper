@@ -198,6 +198,6 @@ export tag2str = (hToken, type='begin') ->
 		if hNoEnd[hToken.tag]
 			return ""
 		else
-			return "<#{hToken.tag}>"
+			return "</#{hToken.tag}>"
 	else
 		croak "type must be 'begin' or 'end'"

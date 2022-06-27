@@ -200,7 +200,7 @@ export var tag2str = function(hToken, type = 'begin') {
     if (hNoEnd[hToken.tag]) {
       return "";
     } else {
-      return `<${hToken.tag}>`;
+      return `</${hToken.tag}>`;
     }
   } else {
     return croak("type must be 'begin' or 'end'");

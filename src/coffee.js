@@ -96,6 +96,36 @@ export var coffeeCodeToJS = function(coffeeCode, hOptions = {}) {
 };
 
 // ---------------------------------------------------------------------------
+export var coffeeFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
+  var coffeeCode, dumpfile, i, jsCode, lNeeded, len, n, sym, word;
+  if (destPath == null) {
+    destPath = withExt(srcPath, '.js', {
+      removeLeadingUnderScore: true
+    });
+  }
+  if (hOptions.force || !newerDestFileExists(srcPath, destPath)) {
+    coffeeCode = slurp(srcPath);
+    if (hOptions.saveAST) {
+      dumpfile = withExt(srcPath, '.ast');
+      lNeeded = getNeededSymbols(coffeeCode, {dumpfile});
+      if ((lNeeded === undef) || (lNeeded.length === 0)) {
+        debug(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
+      } else {
+        n = lNeeded.length;
+        word = n === 1 ? 'SYMBOL' : 'SYMBOLS';
+        debug(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
+        for (i = 0, len = lNeeded.length; i < len; i++) {
+          sym = lNeeded[i];
+          debug(`   - ${sym}`);
+        }
+      }
+    }
+    jsCode = coffeeCodeToJS(coffeeCode, hOptions);
+    barf(destPath, jsCode);
+  }
+};
+
+// ---------------------------------------------------------------------------
 export var coffeeCodeToAST = function(coffeeCode) {
   var ast, err;
   assert(isUndented(coffeeCode), "has indentation");

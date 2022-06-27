@@ -112,7 +112,7 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 # ---------------------------------------------------------------------------
 
 export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
-	# --- coffee => js
+	# --- cielo => js
 	#     Valid Options:
 	#        saveAST
 	#        force

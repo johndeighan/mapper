@@ -81,6 +81,35 @@ export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 
 # ---------------------------------------------------------------------------
 
+export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
+	# --- coffee => js
+	#     Valid Options:
+	#        saveAST
+	#        force
+	#        premapper
+	#        postmapper
+
+	if ! destPath?
+		destPath = withExt(srcPath, '.js', {removeLeadingUnderScore:true})
+	if hOptions.force || ! newerDestFileExists(srcPath, destPath)
+		coffeeCode = slurp(srcPath)
+		if hOptions.saveAST
+			dumpfile = withExt(srcPath, '.ast')
+			lNeeded = getNeededSymbols(coffeeCode, {dumpfile})
+			if (lNeeded == undef) || (lNeeded.length == 0)
+				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
+			else
+				n = lNeeded.length
+				word = if (n==1) then'SYMBOL' else 'SYMBOLS'
+				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
+				for sym in lNeeded
+					debug "   - #{sym}"
+		jsCode = coffeeCodeToJS(coffeeCode, hOptions)
+		barf destPath, jsCode
+	return
+
+# ---------------------------------------------------------------------------
+
 export coffeeCodeToAST = (coffeeCode) ->
 
 	assert isUndented(coffeeCode), "has indentation"

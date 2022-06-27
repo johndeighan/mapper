@@ -206,10 +206,11 @@ export doMap = (inputClass, source, content=undef) ->
 
 	assert inputClass?, "Missing input class"
 	name = className(inputClass)
-	debug "enter doMap(#{name}) source='#{source}'", content
+	debug "enter doMap()", name, source, content
 	oInput = new inputClass(source, content)
 	assert oInput instanceof Mapper,
 		"doMap() requires a Mapper or subclass"
+	debug "got oInput object"
 	result = oInput.getBlock()
 	debug "return from doMap()", result
 	return result

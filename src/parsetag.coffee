@@ -1,6 +1,13 @@
 # parsetag.coffee
 
-import {assert, undef, pass, error, nonEmpty} from '@jdeighan/coffee-utils'
+import {
+	assert, undef, pass, error, croak, words, nonEmpty,
+	} from '@jdeighan/coffee-utils'
+
+hNoEnd = {}
+for tag in words('area base br col command embed hr img input' \
+		+ ' keygen link meta param source track wbr')
+	hNoEnd[tag] = true
 
 # ---------------------------------------------------------------------------
 
@@ -179,10 +186,18 @@ export attrStr = (hAttr) ->
 
 # ---------------------------------------------------------------------------
 
-export tag2str = (hToken) ->
+export tag2str = (hToken, type='begin') ->
 
-	str = "<#{hToken.tag}"    # build the string bit by bit
-	if nonEmpty(hToken.hAttr)
-		str += attrStr(hToken.hAttr)
-	str += '>'
-	return str
+	if (type == 'begin')
+		str = "<#{hToken.tag}"    # build the string bit by bit
+		if nonEmpty(hToken.hAttr)
+			str += attrStr(hToken.hAttr)
+		str += '>'
+		return str
+	else if (type == 'end')
+		if hNoEnd[hToken.tag]
+			return ""
+		else
+			return "<#{hToken.tag}>"
+	else
+		croak "type must be 'begin' or 'end'"

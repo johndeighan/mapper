@@ -30,8 +30,8 @@ simple = new UnitTester()
 			abc
 			""", """
 			BEGIN WALK
-			VISIT 1 0 'abc'
-			END VISIT 1 0 'abc'
+			VISIT 0 'abc'
+			END VISIT 0 'abc'
 			END WALK
 			"""
 
@@ -40,10 +40,10 @@ simple = new UnitTester()
 			def
 			""", """
 			BEGIN WALK
-			VISIT 1 0 'abc'
-			END VISIT 1 0 'abc'
-			VISIT 2 0 'def'
-			END VISIT 2 0 'def'
+			VISIT 0 'abc'
+			END VISIT 0 'abc'
+			VISIT 0 'def'
+			END VISIT 0 'def'
 			END WALK
 			"""
 
@@ -52,10 +52,10 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
-			VISIT 1 0 'abc'
-			VISIT 2 1 'def'
-			END VISIT 2 1 'def'
-			END VISIT 1 0 'abc'
+			VISIT 0 'abc'
+			VISIT 1 'def'
+			END VISIT 1 'def'
+			END VISIT 0 'abc'
 			END WALK
 			"""
 
@@ -66,10 +66,10 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
-			VISIT 2 0 'abc'
-			VISIT 4 1 'def'
-			END VISIT 4 1 'def'
-			END VISIT 2 0 'abc'
+			VISIT 0 'abc'
+			VISIT 1 'def'
+			END VISIT 1 'def'
+			END VISIT 0 'abc'
 			END WALK
 			"""
 
@@ -80,8 +80,8 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
-			VISIT 2 0 'abc'
-			END VISIT 2 0 'abc'
+			VISIT 0 'abc'
+			END VISIT 0 'abc'
 			END WALK
 			"""
 
@@ -91,8 +91,8 @@ simple = new UnitTester()
 					def
 			""", """
 			BEGIN WALK
-			VISIT 2 0 'abc˳def'
-			END VISIT 2 0 'abc˳def'
+			VISIT 0 'abc˳def'
+			END VISIT 0 'abc˳def'
 			END WALK
 			"""
 
@@ -118,8 +118,8 @@ simple = new UnitTester()
 			abc
 			""", """
 			BEGIN WALK
-			VISIT 1 0 {"text":"abc"}
-			END VISIT 1 0 {"text":"abc"}
+			VISIT 0 {"text":"abc"}
+			END VISIT 0 {"text":"abc"}
 			END WALK
 			"""
 

@@ -40,9 +40,9 @@ export var Mapper = class Mapper extends Getter {
   constructor(source = undef, collection = undef, hOptions = {}) {
     debug("enter Mapper()");
     super(source, collection, hOptions);
-    this.setConst('FILE', this.filename);
+    this.setConst('FILE', this.hSourceInfo.filename);
     this.setConst('DIR', this.hSourceInfo.dir);
-    this.setConst('LINE', this.lineNum);
+    this.setConst('LINE', this.hSourceInfo.lineNum);
     debug("return from Mapper()");
   }
 
@@ -51,7 +51,7 @@ export var Mapper = class Mapper extends Getter {
   incLineNum(inc = 1) {
     debug(`enter incLineNum(${inc})`);
     super.incLineNum(inc);
-    this.setConst('LINE', this.lineNum);
+    this.setConst('LINE', this.hSourceInfo.lineNum);
     debug("return from incLineNum()");
   }
 

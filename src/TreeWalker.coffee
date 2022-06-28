@@ -1,7 +1,7 @@
 # TreeWalker.coffee
 
 import {
-	assert, undef, pass, croak, defined, OL, rtrim,
+	assert, undef, pass, croak, defined, OL, rtrim, words,
 	isString, isNumber, isEmpty, nonEmpty, isArray, isHash, isInteger,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
@@ -21,13 +21,13 @@ import {TAMLHereDoc} from '@jdeighan/mapper/taml'
 # ===========================================================================
 #   class TreeWalker
 #      - map() returns mapped item or undef
-#      - bundle() returns {item, level, lineNum}
+#      - bundle() returns {item, level}
 #   to use, override:
-#      mapStr(str, level) - returns user object, default returns str
+#      mapStr(str) - returns user object, default returns str
 #      handleCmd()
 #      beginWalk() -
-#      visit(uobj, hUser, lStack) -
-#      endVisit(uobj, hUser, lStack) -
+#      visit(uobj, hUser, level, lStack) -
+#      endVisit(uobj, hUser, level, lStack) -
 #      endWalk() -
 
 export class TreeWalker extends Mapper
@@ -35,7 +35,8 @@ export class TreeWalker extends Mapper
 	constructor: (source=undef, collection=undef, hOptions={}) ->
 
 		super source, collection, hOptions
-		@level = 0
+
+		@srcLevel = 0
 		@lMinuses = []   # used to adjust level in #ifdef and #ifndef
 
 	# ..........................................................
@@ -50,22 +51,18 @@ export class TreeWalker extends Mapper
 
 		# --- a TreeWalker makes no sense unless items are strings
 		assert isString(item), "non-string: #{OL(item)}"
-		@orgLineNum = @lineNum   # save in case we fetch more lines
-		debug "orgLineNum = #{@orgLineNum}"
 
-		[@level, str] = splitLine(item)
-
-		debug "split: level = #{OL(@level)}, str = #{OL(str)}"
+		[@srcLevel, str] = splitLine(item)
+		debug "split: level = #{OL(@srcLevel)}, str = #{OL(str)}"
 		assert nonEmpty(str), "empty string should be special"
 
 		# --- check for extension lines, stop on blank line
 		debug "check for extension lines"
-		lExtLines = @fetchLinesAtLevel(@level+2, {stopOn: ''})
+		lExtLines = @fetchLinesAtLevel(@srcLevel+2, {stopOn: ''})
 		assert isArray(lExtLines), "lExtLines not an array"
 		debug "#{lExtLines.length} extension lines"
 		if isEmpty(lExtLines)
 			debug "no extension lines"
-			debug "lineNum = #{@lineNum}"
 		else
 			newstr = @joinExtensionLines(str, lExtLines)
 			if (newstr != str)
@@ -84,17 +81,16 @@ export class TreeWalker extends Mapper
 				debug "=> #{OL(str)}"
 		else
 			debug "no HEREDOCs"
-			debug "lineNum = #{@lineNum}"
 
 		# --- NOTE: mapStr() may return undef, meaning to ignore
-		item = @mapStr(str)
+		item = @mapStr(str, @srcLevel)
 		debug "return from map()", item
 		return item
 
 	# ..........................................................
 	# --- designed to override
 
-	mapStr: (str) ->
+	mapStr: (str, srcLevel) ->
 
 		return str
 
@@ -105,7 +101,6 @@ export class TreeWalker extends Mapper
 		return {
 			item
 			level: @realLevel()
-			lineNum: @orgLineNum
 			}
 
 	# ..........................................................
@@ -133,9 +128,9 @@ export class TreeWalker extends Mapper
 		lNewParts = []    # to be joined to form new line
 		for part in lParts
 			if part == '<<<'
-				debug "get HEREDOC lines at level #{@level+1}"
-				lLines = @fetchLinesAtLevel(@level+1, {stopOn: '', discard: true})
-				lLines = undented(lLines, @level+1)
+				debug "get HEREDOC lines at level #{@srcLevel+1}"
+				lLines = @fetchLinesAtLevel(@srcLevel+1, {stopOn: '', discard: true})
+				lLines = undented(lLines, @srcLevel+1)
 				debug 'lLines', lLines
 
 				hResult = mapHereDoc(arrayToBlock(lLines))
@@ -173,8 +168,8 @@ export class TreeWalker extends Mapper
 		#     but may contain additional keys
 
 		debug "enter TreeWalker.handleCmd()", h
-		@level = indentLevel(prefix)
-		realLevel = @realLevel()
+		@srcLevel = indentLevel(prefix)
+		debug "srcLevel = #{@srcLevel}"
 
 		# --- Handle our commands, returning if found
 		switch cmd
@@ -182,11 +177,13 @@ export class TreeWalker extends Mapper
 				[name, value, isEnv] = @splitDef(argstr)
 				assert defined(name), "Invalid #{cmd}, argstr=#{OL(argstr)}"
 				ok = @isDefined(name, value, isEnv)
+				debug "ok = #{OL(ok)}"
 				keep = if (cmd == 'ifdef') then ok else ! ok
+				debug "keep = #{OL(keep)}"
 				if keep
-					@lMinuses.push @level
+					@lMinuses.push @srcLevel
 				else
-					lSkipLines = @fetchLinesAtLevel(@level+1)
+					lSkipLines = @fetchLinesAtLevel(@srcLevel+1)
 					debug "Skip #{lSkipLines.length} lines"
 				debug "return undef from TreeWalker.handleCmd()"
 				return undef
@@ -204,11 +201,11 @@ export class TreeWalker extends Mapper
 		lNewMinuses = []
 		adjustment = 0
 		for i in @lMinuses
-			if (@level > i)
+			if (@srcLevel > i)
 				adjustment += 1
 				lNewMinuses.push i
 		@lMinuses = lNewMinuses
-		return @level - adjustment
+		return @srcLevel - adjustment
 
 	# ..........................................................
 
@@ -285,17 +282,16 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visit: (item, hUser, lStack) ->
+	visit: (item, hUser, level, lStack) ->
 
-		debug "enter visit()", item, hUser
-		assert (@level >= 0), "level = #{OL(@level)}"
-		result = indented(item, @level)
+		debug "enter visit()", item, hUser, level
+		result = indented(item, level)
 		debug "return from visit()", result
 		return result
 
 	# ..........................................................
 
-	endVisit:  (item, hUser, lStack) ->
+	endVisit:  (item, hUser, level, lStack) ->
 
 		return undef
 
@@ -335,14 +331,13 @@ export class TreeWalker extends Mapper
 	checkUserObj: (uobj) ->
 
 		assert defined(uobj), "user object is undef"
-		assert isHash(uobj), "user object is #{OL(uobj)}"
-		{item, level, lineNum} = uobj
+		assert isHash(uobj, words('item level')),
+				"user object is #{OL(uobj)}"
+		{item, level} = uobj
 		assert defined(item), "item is undef"
 		assert isInteger(level), "level is #{OL(level)}"
 		assert (level >= 0), "level is #{OL(level)}"
-		assert isInteger(lineNum), "lineNum is #{OL(lineNum)}"
-		assert (lineNum >= -1), "lineNum is #{OL(lineNum)}"
-		return
+		return uobj
 
 	# ..........................................................
 
@@ -365,7 +360,7 @@ export class TreeWalker extends Mapper
 		debug "enter walk()"
 
 		# --- lStack is stack of node = {
-		#        uobj: {item, level, lineNum}
+		#        uobj: {item, level}
 		#        hUser: {}
 		#        }
 		@lLines = []  # --- resulting lines
@@ -378,24 +373,21 @@ export class TreeWalker extends Mapper
 
 		debug "getting uobj's"
 		for uobj from @allMapped()
-			@checkUserObj uobj
-			{item, level, lineNum} = uobj
+			{_, level} = @checkUserObj uobj
 			while (lStack.length > level)
-				node = lStack[lStack.length - 1]
+				node = lStack.pop()
 				@endVisitNode node, lStack
-				lStack.pop()
 
 			# --- Create a user hash that the user can add to/modify
 			#     and will see again at endVisit
 			hUser = {}
 			node = {uobj, hUser}
-			lStack.push node
 			@visitNode node, lStack
+			lStack.push node
 
 		while (lStack.length > 0)
-			node = lStack[lStack.length - 1]
+			node = lStack.pop()
 			@endVisitNode node, lStack
-			lStack.pop()
 
 		line = @endWalk()
 		if defined(line)
@@ -411,9 +403,8 @@ export class TreeWalker extends Mapper
 
 		assert isHash(node), "node is #{OL(node)}"
 		{uobj, hUser} = node
-		@checkUserObj uobj
-		{item, level, lineNum} = uobj
-		line = @visit(item, hUser, lStack)
+		{item, level} = @checkUserObj uobj
+		line = @visit(item, hUser, level, lStack)
 		if defined(line)
 			@addLine(line)
 		return
@@ -424,10 +415,9 @@ export class TreeWalker extends Mapper
 
 		assert isHash(node), "node is #{OL(node)}"
 		{uobj, hUser} = node
-		@checkUserObj uobj
 		assert isHash(hUser), "hUser is #{OL(hUser)}"
-		{item, @level, lineNum} = uobj
-		line = @endVisit(item, hUser, lStack)
+		{item, level} = @checkUserObj uobj
+		line = @endVisit(item, hUser, level, lStack)
 		if defined(line)
 			@addLine(line)
 		return
@@ -456,20 +446,16 @@ export class TraceWalker extends TreeWalker
 
 	# ..........................................................
 
-	visit: (item, hUser, lStack) ->
+	visit: (item, hUser, level, lStack) ->
 
-		hTOS = lStack[lStack.length - 1]
-		{item, level, lineNum} = hTOS.uobj
-		@lTrace.push "VISIT #{lineNum} #{level} #{OL(item)}"
+		@lTrace.push "VISIT #{level} #{OL(item)}"
 		return
 
 	# ..........................................................
 
-	endVisit: (item, hUser, lStack) ->
+	endVisit: (item, hUser, level, lStack) ->
 
-		hTOS = lStack[lStack.length - 1]
-		{item, level, lineNum} = hTOS.uobj
-		@lTrace.push "END VISIT #{lineNum} #{level} #{OL(item)}"
+		@lTrace.push "END VISIT #{level} #{OL(item)}"
 		return
 
 	# ..........................................................

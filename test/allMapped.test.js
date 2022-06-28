@@ -68,7 +68,6 @@ simple = new UnitTester();
 
 abc`, [
     {
-      lineNum: 3,
       level: 0,
       item: 'abc'
     }
@@ -76,7 +75,7 @@ abc`, [
   // ------------------------------------------------------------------------
   // --- remove comments and blank lines
   //     create user object from simple line
-  tester.equal(53, `# --- comment, followed by blank line
+  tester.equal(52, `# --- comment, followed by blank line
 
 abc
 
@@ -84,45 +83,38 @@ abc
 
 def`, [
     {
-      lineNum: 3,
       level: 0,
       item: 'abc'
     },
     {
-      lineNum: 7,
       level: 0,
       item: 'def'
     }
   ]);
   // ------------------------------------------------------------------------
   // --- level
-  return tester.equal(77, `abc
+  return tester.equal(74, `abc
 	def
 		ghi
 	uvw
 xyz`, [
     {
-      lineNum: 1,
       level: 0,
       item: 'abc'
     },
     {
-      lineNum: 2,
       level: 1,
       item: 'def'
     },
     {
-      lineNum: 3,
       level: 2,
       item: 'ghi'
     },
     {
-      lineNum: 4,
       level: 1,
       item: 'uvw'
     },
     {
-      lineNum: 5,
       level: 0,
       item: 'xyz'
     }
@@ -154,18 +146,15 @@ xyz`, [
     }
 
     getUserObj(line) {
-      var item, level, lineNum, pos0, pos1;
-      pos0 = line.indexOf(' ');
-      assert(pos0 > 0, "Missing 1st space char");
-      pos1 = line.indexOf(' ', pos0 + 1);
-      assert(pos1 > 0, "Missing 2nd space char");
-      lineNum = parseInt(line.substring(0, pos0));
-      level = parseInt(line.substring(pos0 + 1, pos1));
-      item = line.substring(pos1 + 1);
+      var item, level, pos;
+      pos = line.indexOf(' ');
+      assert(pos > 0, "Missing 1st space char");
+      level = parseInt(line.substring(0, pos));
+      item = line.substring(pos + 1);
       if (item[0] === '{') {
         item = eval_expr(item);
       }
-      return {lineNum, level, item};
+      return {level, item};
     }
 
     transformExpected(block) {
@@ -192,210 +181,210 @@ xyz`, [
   };
   tester = new Tester();
   // ------------------------------------------------------------------------
-  tester.equal(173, `# --- comment, followed by blank line
+  tester.equal(158, `# --- comment, followed by blank line
 
 abc
 	def
-		ghi`, `3 0 abc
-4 1 def
-5 2 ghi`);
+		ghi`, `0 abc
+1 def
+2 ghi`);
   // ------------------------------------------------------------------------
   // --- const replacement
-  tester.equal(188, `#define name John Deighan
+  tester.equal(173, `#define name John Deighan
 abc
-__name__`, `2 0 abc
-3 0 John Deighan`);
+__name__`, `0 abc
+0 John Deighan`);
   // ------------------------------------------------------------------------
   // --- extension lines
-  tester.equal(200, `abc
+  tester.equal(185, `abc
 		&& def
 		&& ghi
-xyz`, `1 0 abc && def && ghi
-4 0 xyz`);
+xyz`, `0 abc && def && ghi
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (default)
-  tester.equal(213, `func(<<<)
+  tester.equal(198, `func(<<<)
 	abc
 	def
 
-xyz`, `1 0 func("abc\\ndef")
-5 0 xyz`);
+xyz`, `0 func("abc\\ndef")
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (explicit)
-  tester.equal(227, `func(<<<)
+  tester.equal(212, `func(<<<)
 	===
 	abc
 	def
 
-xyz`, `1 0 func("abc\\ndef")
-6 0 xyz`);
+xyz`, `0 func("abc\\ndef")
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  tester.equal(242, `func(<<<)
+  tester.equal(227, `func(<<<)
 	...
 	abc
 	def
 
-xyz`, `1 0 func("abc def")
-6 0 xyz`);
+xyz`, `0 func("abc def")
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  tester.equal(257, `func(<<<)
+  tester.equal(242, `func(<<<)
 	...abc
 	   def
 
-xyz`, `1 0 func("abc def")
-5 0 xyz`);
+xyz`, `0 func("abc def")
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - TAML
-  tester.equal(271, `func(<<<)
+  tester.equal(256, `func(<<<)
 	---
 	- abc
 	- def
 
-xyz`, `1 0 func(["abc","def"])
-6 0 xyz`);
+xyz`, `0 func(["abc","def"])
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - function
-  tester.equal(286, `handleClick(<<<)
+  tester.equal(271, `handleClick(<<<)
 	(event) ->
 		event.preventDefault()
 		alert('clicked')
 		return
 
-xyz`, `1 0 handleClick((function(event) { event.preventDefault(); alert('clicked'); });)
-7 0 xyz`);
+xyz`, `0 handleClick((function(event) { event.preventDefault(); alert('clicked'); });)
+0 xyz`);
   // ------------------------------------------------------------------------
   // --- using __END__
-  tester.equal(302, `abc
+  tester.equal(287, `abc
 def
 __END__
 ghi
-jkl`, `1 0 abc
-2 0 def`);
+jkl`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value not defined
-  tester.equal(317, `#ifdef mobile
+  tester.equal(302, `#ifdef mobile
 	abc
-def`, `3 0 def`);
+def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value defined
-  tester.equal(328, `#define mobile anything
+  tester.equal(313, `#define mobile anything
 #ifdef mobile
 	abc
-def`, `3 0 abc
-4 0 def`);
+def`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value not defined
-  tester.equal(342, `#ifdef mobile samsung
+  tester.equal(327, `#ifdef mobile samsung
 	abc
-def`, `3 0 def`);
+def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined, but different
-  tester.equal(353, `#define mobile apple
+  tester.equal(338, `#define mobile apple
 #ifdef mobile samsung
 	abc
-def`, `4 0 def`);
+def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined and same
-  tester.equal(365, `#define mobile samsung
+  tester.equal(350, `#define mobile samsung
 #ifdef mobile samsung
 	abc
-def`, `3 0 abc
-4 0 def`);
+def`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - not defined
-  tester.equal(379, `#ifndef mobile
+  tester.equal(364, `#ifndef mobile
 	abc
-def`, `2 0 abc
-3 0 def`);
+def`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - defined
-  tester.equal(391, `#define mobile anything
+  tester.equal(376, `#define mobile anything
 #ifndef mobile
 	abc
-def`, `4 0 def`);
+def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - not defined
-  tester.equal(404, `#ifndef mobile samsung
+  tester.equal(389, `#ifndef mobile samsung
 	abc
-def`, `2 0 abc
-3 0 def`);
+def`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined, but different
-  tester.equal(416, `#define mobile apple
+  tester.equal(401, `#define mobile apple
 #ifndef mobile samsung
 	abc
-def`, `3 0 abc
-4 0 def`);
+def`, `0 abc
+0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined and same
-  tester.equal(429, `#define mobile samsung
+  tester.equal(414, `#define mobile samsung
 #ifndef mobile samsung
 	abc
-def`, `4 0 def`);
+def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- nested commands
-  tester.equal(442, `#define mobile samsung
+  tester.equal(427, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	#ifdef large
 		abc
-			def`, `5 0 abc
-6 1 def`);
+			def`, `0 abc
+1 def`);
   // --- nested commands
-  tester.equal(454, `#define mobile samsung
+  tester.equal(441, `#define mobile samsung
 #define large anything
 #ifndef mobile samsung
 	#ifdef large
 		abc`, `			`);
   // --- nested commands
-  tester.equal(465, `#define mobile samsung
+  tester.equal(452, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	#ifndef large
 		abc`, `			`);
   // --- nested commands
-  tester.equal(476, `#define mobile samsung
+  tester.equal(463, `#define mobile samsung
 #define large anything
 #ifndef mobile samsung
 	#ifndef large
 		abc`, `			`);
   // ----------------------------------------------------------
   // --- nested commands - every combination
-  tester.equal(476, `#define mobile samsung
+  tester.equal(475, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	abc
 	#ifdef large
 		def
-ghi`, `4 0 abc
-6 0 def
-7 0 ghi`);
+ghi`, `0 abc
+0 def
+0 ghi`);
   // --- nested commands - every combination
-  tester.equal(476, `#define mobile samsung
+  tester.equal(491, `#define mobile samsung
 #ifdef mobile samsung
 	abc
 	#ifdef large
 		def
-ghi`, `3 0 abc
-6 0 ghi`);
+ghi`, `0 abc
+0 ghi`);
   // --- nested commands - every combination
-  tester.equal(476, `#define large anything
+  tester.equal(505, `#define large anything
 #ifdef mobile samsung
 	abc
 	#ifdef large
 		def
-ghi`, `6 0 ghi`);
+ghi`, `0 ghi`);
   // --- nested commands - every combination
-  return tester.equal(476, `#ifdef mobile samsung
+  return tester.equal(518, `#ifdef mobile samsung
 	abc
 	#ifdef large
 		def
-ghi`, `5 0 ghi`);
+ghi`, `0 ghi`);
 })();

@@ -46,7 +46,7 @@ simple = new UnitTester();
   simple.falsy(27, mapper.eof());
   simple.equal(28, mapper.get(), 1);
   simple.equal(29, mapper.get(), 2);
-  simple.equal(30, mapper.lineNum, 2);
+  simple.equal(30, mapper.hSourceInfo.lineNum, 2);
   simple.falsy(32, mapper.eof());
   simple.succeeds(33, function() {
     return mapper.unfetch(5);
@@ -58,7 +58,7 @@ simple = new UnitTester();
   simple.equal(36, mapper.get(), 5);
   simple.falsy(37, mapper.eof());
   simple.equal(39, mapper.get(), 3);
-  simple.equal(40, mapper.lineNum, 3);
+  simple.equal(40, mapper.hSourceInfo.lineNum, 3);
   simple.truthy(41, mapper.eof());
   simple.succeeds(42, function() {
     return mapper.unfetch(13);
@@ -79,7 +79,7 @@ simple = new UnitTester();
   simple.equal(58, mapper.get(), 'abc');
   simple.equal(59, mapper.get(), 'def');
   simple.equal(60, mapper.get(), 'ghi');
-  return simple.equal(61, mapper.lineNum, 3);
+  return simple.equal(61, mapper.hSourceInfo.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ mno`);
   // 'jkl' will be discarded
   simple.equal(80, mapper.fetchUntil('jkl'), ['def', 'ghi']);
   simple.equal(82, mapper.fetch(), 'mno');
-  return simple.equal(83, mapper.lineNum, 5);
+  return simple.equal(83, mapper.hSourceInfo.lineNum, 5);
 })();
 
 // ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ mno`);
   simple.falsy(104, mapper.eof());
   simple.equal(105, mapper.get(), 1);
   simple.equal(106, mapper.get(), 2);
-  simple.equal(107, mapper.lineNum, 2);
+  simple.equal(107, mapper.hSourceInfo.lineNum, 2);
   simple.falsy(109, mapper.eof());
   simple.succeeds(110, function() {
     return mapper.unfetch(5);
@@ -134,7 +134,7 @@ mno`);
   simple.falsy(119, mapper.eof());
   simple.equal(120, mapper.get(), 13);
   simple.truthy(121, mapper.eof());
-  return simple.equal(122, mapper.lineNum, 3);
+  return simple.equal(122, mapper.hSourceInfo.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ mno`);
   simple.falsy(159, mapper.eof());
   simple.equal(160, mapper.get(), 13);
   simple.truthy(161, mapper.eof());
-  return simple.equal(162, mapper.lineNum, 4);
+  return simple.equal(162, mapper.hSourceInfo.lineNum, 4);
 })();
 
 // ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ mno`);
       var lAll, mapper;
       mapper = new Mapper(import.meta.url, block);
       lAll = mapper.getAll();
-      numLines = mapper.lineNum; // set variable numLines
+      numLines = mapper.hSourceInfo.lineNum; // set variable numLines
       return arrayToBlock(lAll);
     }
 
@@ -254,7 +254,7 @@ def`);
       var lAll, mapper;
       mapper = new Mapper(import.meta.url, block);
       lAll = mapper.getAll();
-      numLines = mapper.lineNum; // set variable numLines
+      numLines = mapper.hSourceInfo.lineNum; // set variable numLines
       return arrayToBlock(lAll);
     }
 

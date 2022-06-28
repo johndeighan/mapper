@@ -129,10 +129,10 @@ export var Getter = class Getter extends Fetcher {
       return uobj;
     }
     debug("no lookahead");
-    debug(`lineNum = ${this.lineNum}`);
+    debug(`source = ${this.sourceInfoStr()}`);
     item = this.fetch();
     debug("fetch() returned", item);
-    debug(`lineNum = ${this.lineNum}`);
+    debug(`source = ${this.sourceInfoStr()}`);
     if (item === undef) {
       debug("return undef from get() - at EOF");
       return undef;
@@ -224,7 +224,7 @@ export var Getter = class Getter extends Fetcher {
   mapItem(item) {
     var hInfo, newitem, result, type, uobj;
     debug("enter mapItem()", item);
-    debug(`lineNum = ${this.lineNum}`);
+    debug(`source = ${this.sourceInfoStr()}`);
     [type, hInfo] = this.getItemType(item);
     if (defined(type)) {
       debug(`item type is ${type}`);

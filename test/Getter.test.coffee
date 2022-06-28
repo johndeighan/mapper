@@ -27,7 +27,7 @@ simple = new UnitTester()
 	simple.falsy 27, getter.eof()
 	simple.equal 28, getter.get(), 1
 	simple.equal 29, getter.get(), 2
-	simple.equal 30, getter.lineNum, 2
+	simple.equal 30, getter.hSourceInfo.lineNum, 2
 
 	simple.falsy 32, getter.eof()
 	simple.succeeds 33, () -> getter.unfetch(5)
@@ -37,7 +37,7 @@ simple = new UnitTester()
 	simple.falsy 37, getter.eof()
 
 	simple.equal 39, getter.get(), 3
-	simple.equal 40, getter.lineNum, 3
+	simple.equal 40, getter.hSourceInfo.lineNum, 3
 	simple.truthy 41, getter.eof()
 	simple.succeeds 42, () -> getter.unfetch(13)
 	simple.falsy 43, getter.eof()
@@ -58,7 +58,7 @@ simple = new UnitTester()
 	simple.equal 58, getter.get(), 'abc'
 	simple.equal 59, getter.get(), 'def'
 	simple.equal 60, getter.get(), 'ghi'
-	simple.equal 61, getter.lineNum, 3
+	simple.equal 61, getter.hSourceInfo.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ simple = new UnitTester()
 	simple.equal 80, getter.fetchUntil('jkl'), ['def','ghi']
 
 	simple.equal 82, getter.fetch(), 'mno'
-	simple.equal 83, getter.lineNum, 5
+	simple.equal 83, getter.hSourceInfo.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ simple = new UnitTester()
 	simple.falsy 104, getter.eof()
 	simple.equal 105, getter.get(), 1
 	simple.equal 106, getter.get(), 2
-	simple.equal 107, getter.lineNum, 2
+	simple.equal 107, getter.hSourceInfo.lineNum, 2
 
 	simple.falsy 109, getter.eof()
 	simple.succeeds 110, () -> getter.unfetch(5)
@@ -119,7 +119,7 @@ simple = new UnitTester()
 	simple.falsy 119, getter.eof()
 	simple.equal 120, getter.get(), 13
 	simple.truthy 121, getter.eof()
-	simple.equal 122, getter.lineNum, 3
+	simple.equal 122, getter.hSourceInfo.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -159,7 +159,7 @@ simple = new UnitTester()
 	simple.falsy 159, getter.eof()
 	simple.equal 160, getter.get(), 13
 	simple.truthy 161, getter.eof()
-	simple.equal 162, getter.lineNum, 4
+	simple.equal 162, getter.hSourceInfo.lineNum, 4
 	)()
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ simple = new UnitTester()
 
 			getter = new Getter(import.meta.url, block)
 			lAll = getter.getAll()
-			numLines = getter.lineNum   # set variable numLines
+			numLines = getter.hSourceInfo.lineNum   # set variable numLines
 			return arrayToBlock(lAll)
 
 	# ..........................................................

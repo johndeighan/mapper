@@ -22,9 +22,9 @@ export class Mapper extends Getter
 		debug "enter Mapper()"
 		super source, collection, hOptions
 
-		@setConst 'FILE', @filename
+		@setConst 'FILE', @hSourceInfo.filename
 		@setConst 'DIR', @hSourceInfo.dir
-		@setConst 'LINE', @lineNum
+		@setConst 'LINE', @hSourceInfo.lineNum
 		debug "return from Mapper()"
 
 	# ..........................................................
@@ -34,7 +34,7 @@ export class Mapper extends Getter
 
 		debug "enter incLineNum(#{inc})"
 		super inc
-		@setConst 'LINE', @lineNum
+		@setConst 'LINE', @hSourceInfo.lineNum
 		debug "return from incLineNum()"
 		return
 

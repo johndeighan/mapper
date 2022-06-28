@@ -109,10 +109,10 @@ export class Getter extends Fetcher
 			return uobj
 		debug "no lookahead"
 
-		debug "lineNum = #{@lineNum}"
+		debug "source = #{@sourceInfoStr()}"
 		item = @fetch()
 		debug "fetch() returned", item
-		debug "lineNum = #{@lineNum}"
+		debug "source = #{@sourceInfoStr()}"
 
 		if (item == undef)
 			debug "return undef from get() - at EOF"
@@ -210,7 +210,7 @@ export class Getter extends Fetcher
 	mapItem: (item) ->
 
 		debug "enter mapItem()", item
-		debug "lineNum = #{@lineNum}"
+		debug "source = #{@sourceInfoStr()}"
 
 		[type, hInfo] = @getItemType(item)
 		if defined(type)

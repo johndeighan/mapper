@@ -16,7 +16,7 @@ import {
 
 # ---------------------------------------------------------------------------
 #   class Fetcher
-#      - sets @hSourceInfo, @filename, @lineNum
+#      - sets @hSourceInfo
 #      - fetch(), unfetch()
 #      - removes trailing WS from strings
 #      - stops at __END__
@@ -40,6 +40,10 @@ export class Fetcher
 			@hSourceInfo = {
 				filename: '<unknown>'
 				}
+
+		# --- Add current line number to hSourceInfo
+		@hSourceInfo.lineNum = 0
+
 		if hOptions.prefix?
 			@hSourceInfo.prefix = hOptions.prefix
 
@@ -59,8 +63,6 @@ export class Fetcher
 		@iterator = collection[Symbol.iterator]()
 		@lLookAhead = []   # --- support unfetch()
 		@forcedEOF = false
-		@altInput = undef    # handle #include
-		@lineNum = 0
 
 		if defined(hOptions.prefix)
 			@prefix = hOptions.prefix
@@ -68,7 +70,6 @@ export class Fetcher
 			@prefix = ''
 		debug 'prefix', @prefix
 
-		@filename = @hSourceInfo.filename
 		@init()
 		debug "return from Fetcher()"
 
@@ -80,23 +81,32 @@ export class Fetcher
 
 	# ..........................................................
 
-	getSourceInfo: () ->
+	sourceInfoStr: () ->
 
-		if defined(@altInput)
-			return @altInput.getSourceInfo()
-		else
-			@hSourceInfo.lineNum = @lineNum
-			return @hSourceInfo
+		lParts = []
+		h = @hSourceInfo
+		lParts.push @sourceStr(h)
+		while defined(h.altInput)
+			h = h.altInput.hSourceInfo
+			lParts.push @sourceStr(h)
+		return lParts.join(' ')
+
+	# ..........................................................
+
+	sourceStr: (h) ->
+
+		assert isHash(h, ['filename','lineNum']), "h is #{OL(h)}"
+		return "#{h.filename}/#{h.lineNum}"
 
 	# ..........................................................
 
 	fetch: () ->
 
-		debug "enter Fetcher.fetch() from #{@filename}"
+		debug "enter Fetcher.fetch() from #{@hSourceInfo.filename}"
 
-		if defined(@altInput)
+		if defined(@hSourceInfo.altInput)
 			debug "has altInput"
-			value = @altInput.fetch()
+			value = @hSourceInfo.altInput.fetch()
 
 			# --- NOTE: value will never be #include
 			#           because altInput's fetch would handle it
@@ -107,7 +117,7 @@ export class Fetcher
 				return value
 
 			# --- alternate input is exhausted
-			@altInput = undef
+			@hSourceInfo.altInput = undef
 			debug "alt EOF"
 		else
 			debug "there is no altInput"
@@ -198,7 +208,9 @@ export class Fetcher
 		if (fullpath == undef)
 			croak "Can't find include file #{fname} in dir #{dir}"
 		assert fs.existsSync(fullpath), "#{fullpath} does not exist"
-		@altInput = new Fetcher(fullpath, undef, {prefix})
+
+		@hSourceInfo.altInput = new Fetcher(fullpath, undef, {prefix})
+
 		debug "return from createAltInput()"
 		return
 
@@ -215,9 +227,9 @@ export class Fetcher
 					///)
 			assert isEmpty(lMatches), "unfetch() of a #include"
 
-		if defined(@altInput)
+		if defined(@hSourceInfo.altInput)
 			debug "has alt input"
-			@altInput.unfetch value
+			@hSourceInfo.altInput.unfetch value
 			@incLineNum -1
 			debug "return from Fetcher.unfetch() - alt"
 			return
@@ -232,7 +244,7 @@ export class Fetcher
 
 	incLineNum: (inc=1) ->
 
-		@lineNum += inc
+		@hSourceInfo.lineNum += inc
 		return
 
 	# ..........................................................

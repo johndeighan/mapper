@@ -44,7 +44,7 @@ import {
 
 // ---------------------------------------------------------------------------
 //   class Fetcher
-//      - sets @hSourceInfo, @filename, @lineNum
+//      - sets @hSourceInfo
 //      - fetch(), unfetch()
 //      - removes trailing WS from strings
 //      - stops at __END__
@@ -65,6 +65,8 @@ export var Fetcher = class Fetcher {
         filename: '<unknown>'
       };
     }
+    // --- Add current line number to hSourceInfo
+    this.hSourceInfo.lineNum = 0;
     if (hOptions.prefix != null) {
       this.hSourceInfo.prefix = hOptions.prefix;
     }
@@ -85,15 +87,12 @@ export var Fetcher = class Fetcher {
     this.iterator = collection[Symbol.iterator]();
     this.lLookAhead = []; // --- support unfetch()
     this.forcedEOF = false;
-    this.altInput = undef; // handle #include
-    this.lineNum = 0;
     if (defined(hOptions.prefix)) {
       this.prefix = hOptions.prefix;
     } else {
       this.prefix = '';
     }
     debug('prefix', this.prefix);
-    this.filename = this.hSourceInfo.filename;
     this.init();
     debug("return from Fetcher()");
   }
@@ -102,22 +101,31 @@ export var Fetcher = class Fetcher {
   init() {}
 
   // ..........................................................
-  getSourceInfo() {
-    if (defined(this.altInput)) {
-      return this.altInput.getSourceInfo();
-    } else {
-      this.hSourceInfo.lineNum = this.lineNum;
-      return this.hSourceInfo;
+  sourceInfoStr() {
+    var h, lParts;
+    lParts = [];
+    h = this.hSourceInfo;
+    lParts.push(this.sourceStr(h));
+    while (defined(h.altInput)) {
+      h = h.altInput.hSourceInfo;
+      lParts.push(this.sourceStr(h));
     }
+    return lParts.join(' ');
+  }
+
+  // ..........................................................
+  sourceStr(h) {
+    assert(isHash(h, ['filename', 'lineNum']), `h is ${OL(h)}`);
+    return `${h.filename}/${h.lineNum}`;
   }
 
   // ..........................................................
   fetch() {
     var _, done, fname, lMatches, prefix, value;
-    debug(`enter Fetcher.fetch() from ${this.filename}`);
-    if (defined(this.altInput)) {
+    debug(`enter Fetcher.fetch() from ${this.hSourceInfo.filename}`);
+    if (defined(this.hSourceInfo.altInput)) {
       debug("has altInput");
-      value = this.altInput.fetch();
+      value = this.hSourceInfo.altInput.fetch();
       // --- NOTE: value will never be #include
       //           because altInput's fetch would handle it
       if (defined(value)) {
@@ -126,7 +134,7 @@ export var Fetcher = class Fetcher {
         return value;
       }
       // --- alternate input is exhausted
-      this.altInput = undef;
+      this.hSourceInfo.altInput = undef;
       debug("alt EOF");
     } else {
       debug("there is no altInput");
@@ -204,7 +212,7 @@ export var Fetcher = class Fetcher {
       croak(`Can't find include file ${fname} in dir ${dir}`);
     }
     assert(fs.existsSync(fullpath), `${fullpath} does not exist`);
-    this.altInput = new Fetcher(fullpath, undef, {prefix});
+    this.hSourceInfo.altInput = new Fetcher(fullpath, undef, {prefix});
     debug("return from createAltInput()");
   }
 
@@ -217,9 +225,9 @@ export var Fetcher = class Fetcher {
       lMatches = value.match(/^\s*\#include/);
       assert(isEmpty(lMatches), "unfetch() of a #include");
     }
-    if (defined(this.altInput)) {
+    if (defined(this.hSourceInfo.altInput)) {
       debug("has alt input");
-      this.altInput.unfetch(value);
+      this.hSourceInfo.altInput.unfetch(value);
       this.incLineNum(-1);
       debug("return from Fetcher.unfetch() - alt");
       return;
@@ -232,7 +240,7 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
-    this.lineNum += inc;
+    this.hSourceInfo.lineNum += inc;
   }
 
   // ..........................................................

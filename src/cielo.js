@@ -75,8 +75,8 @@ export var convertCielo = function(flag) {
 };
 
 // ---------------------------------------------------------------------------
-export var cieloCodeToJS = function(cieloCode, hOptions) {
-  var coffeeCode, err, jsCode, jsPreCode, lImports, lNeededSymbols, postmapper, premapper, source, stmt;
+export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
+  var coffeeCode, err, hCoffeeOptions, jsCode, jsPreCode, lImports, lNeededSymbols, postmapper, premapper, stmt;
   // --- cielo => js
   //     Valid Options:
   //        premapper:  Mapper or subclass
@@ -87,27 +87,17 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
   //              bare: true
   //              header: false
   //     If hOptions is a string, it's assumed to be the source
-  debug("enter cieloCodeToJS()");
-  debug("cieloCode", cieloCode);
-  debug('hOptions', hOptions);
+  debug("enter cieloCodeToJS()", cieloCode, source, hOptions);
   assert(isUndented(cieloCode), "cieloCodeToJS(): has indent");
-  if (isString(hOptions)) {
-    source = hOptions;
-    premapper = TreeWalker;
-    postmapper = undef;
-  } else if (isHash(hOptions)) {
-    if (hOptions.premapper) {
-      premapper = hOptions.premapper;
-      assert(premapper instanceof TreeWalker, "premapper must be a TreeWalker");
-    } else {
-      premapper = TreeWalker;
-    }
-    postmapper = hOptions.postmapper; // may be undef
-    source = hOptions.source;
+  assert(isHash(hOptions), "hOptions not a hash");
+  if (hOptions.premapper) {
+    premapper = hOptions.premapper;
+    assert(premapper instanceof TreeWalker, "premapper must be a TreeWalker");
   } else {
-    croak(`Invalid 2nd parm: ${OL(hOptions)}`);
+    premapper = TreeWalker;
   }
-  assert(source != null, "Missing source");
+  postmapper = hOptions.postmapper; // may be undef
+  
   // --- Handles extension lines, HEREDOCs, etc.
   debug(`Apply premapper ${className(premapper)}`);
   coffeeCode = doMap(premapper, source, cieloCode);
@@ -120,7 +110,8 @@ export var cieloCodeToJS = function(cieloCode, hOptions) {
   debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
   try {
     if (convertingCielo) {
-      jsPreCode = coffeeCodeToJS(coffeeCode, hOptions.hCoffeeOptions);
+      hCoffeeOptions = hOptions.hCoffeeOptions;
+      jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions);
       debug("jsPreCode", jsPreCode);
     } else {
       jsPreCode = cieloCode;
@@ -184,7 +175,7 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
         }
       }
     }
-    jsCode = cieloCodeToJS(cieloCode, hOptions);
+    jsCode = cieloCodeToJS(cieloCode, srcPath, hOptions);
     barf(destPath, jsCode);
   }
 };

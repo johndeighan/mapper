@@ -34,7 +34,7 @@ export convertCielo = (flag) ->
 
 # ---------------------------------------------------------------------------
 
-export cieloCodeToJS = (cieloCode, hOptions) ->
+export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	# --- cielo => js
 	#     Valid Options:
 	#        premapper:  Mapper or subclass
@@ -46,28 +46,18 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 	#              header: false
 	#     If hOptions is a string, it's assumed to be the source
 
-	debug "enter cieloCodeToJS()"
-	debug "cieloCode", cieloCode
-	debug 'hOptions', hOptions
+	debug "enter cieloCodeToJS()", cieloCode, source, hOptions
 
 	assert isUndented(cieloCode), "cieloCodeToJS(): has indent"
+	assert isHash(hOptions), "hOptions not a hash"
 
-	if isString(hOptions)
-		source = hOptions
-		premapper = TreeWalker
-		postmapper = undef
-	else if isHash(hOptions)
-		if hOptions.premapper
-			premapper = hOptions.premapper
-			assert premapper instanceof TreeWalker,
-				"premapper must be a TreeWalker"
-		else
-			premapper = TreeWalker
-		postmapper = hOptions.postmapper   # may be undef
-		source = hOptions.source
+	if hOptions.premapper
+		premapper = hOptions.premapper
+		assert premapper instanceof TreeWalker,
+			"premapper must be a TreeWalker"
 	else
-		croak "Invalid 2nd parm: #{OL(hOptions)}"
-	assert source?, "Missing source"
+		premapper = TreeWalker
+	postmapper = hOptions.postmapper   # may be undef
 
 	# --- Handles extension lines, HEREDOCs, etc.
 	debug "Apply premapper #{className(premapper)}"
@@ -82,7 +72,8 @@ export cieloCodeToJS = (cieloCode, hOptions) ->
 
 	try
 		if convertingCielo
-			jsPreCode = coffeeCodeToJS(coffeeCode, hOptions.hCoffeeOptions)
+			hCoffeeOptions = hOptions.hCoffeeOptions
+			jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions)
 			debug "jsPreCode", jsPreCode
 		else
 			jsPreCode = cieloCode
@@ -134,6 +125,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		jsCode = cieloCodeToJS(cieloCode, hOptions)
+		jsCode = cieloCodeToJS(cieloCode, srcPath, hOptions)
 		barf destPath, jsCode
 	return

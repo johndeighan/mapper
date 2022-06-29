@@ -3,11 +3,13 @@
 import CoffeeScript from 'coffeescript'
 
 import {
-	assert, croak, CWS, undef,
+	assert, croak, CWS, undef, defined, OL,
 	} from '@jdeighan/coffee-utils'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indentLevel, isUndented} from '@jdeighan/coffee-utils/indent'
+
+import {Mapper, doMap} from '@jdeighan/mapper'
 
 export convertingCoffee = true
 
@@ -20,6 +22,34 @@ export convertCoffee = (flag) ->
 
 # ---------------------------------------------------------------------------
 
+export brew = (code, source='internal') ->
+
+	assert convertingCoffee, "not converting coffee code"
+	hCoffeeOptions = {
+		bare: true
+		header: false
+		}
+	mapped = doMap(CoffeePreProcessor, source, code)
+	result = CoffeeScript.compile(mapped, hCoffeeOptions)
+
+	# --- Result is JS code
+	return result.trim()
+
+# ---------------------------------------------------------------------------
+
+export getAST = (code, source='internal') ->
+
+	hCoffeeOptions = {
+		ast: true
+		}
+	mapped = doMap(CoffeePreProcessor, source, code)
+	result = CoffeeScript.compile(mapped, hCoffeeOptions)
+
+	# --- Result is an AST
+	return result
+
+# ---------------------------------------------------------------------------
+
 export coffeeExprToJS = (coffeeExpr) ->
 
 	assert isUndented(coffeeExpr), "has indentation"
@@ -29,7 +59,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 		debug "return from coffeeExprToJS() not converting", coffeeExpr
 		return coffeeExpr
 	try
-		jsExpr = CoffeeScript.compile(coffeeExpr, {bare: true}).trim()
+		jsExpr = brew(coffeeExpr)
 
 		# --- Remove any trailing semicolon
 		pos = jsExpr.length - 1
@@ -53,7 +83,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 #        inlineMap - generate source map inside the JS file
 # ---------------------------------------------------------------------------
 
-export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
+export coffeeCodeToJS = (coffeeCode, source=undef, hOptions={}) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToJS()", coffeeCode
@@ -62,17 +92,13 @@ export coffeeCodeToJS = (coffeeCode, hOptions={}) ->
 		debug "return from coffeeCodeToJS() not converting", coffeeCode
 		return coffeeCode
 
-	hCoffeeOptions = hOptions.hCoffeeOptions
-	if ! hCoffeeOptions
-		hCoffeeOptions = {
-			bare: true
-			header: false
-			}
 	try
+		jsCode = brew(coffeeCode, source)
+
 		# --- cleanJS() does:
 		#        1. remove blank lines
 		#        2. remove trailing newline
-		jsCode = cleanJS(CoffeeScript.compile(coffeeCode, hCoffeeOptions))
+		jsCode = cleanJS(jsCode)
 	catch err
 		croak err, "Original Code", coffeeCode
 
@@ -104,19 +130,19 @@ export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		jsCode = coffeeCodeToJS(coffeeCode, hOptions)
+		jsCode = coffeeCodeToJS(coffeeCode, srcPath, hOptions)
 		barf destPath, jsCode
 	return
 
 # ---------------------------------------------------------------------------
 
-export coffeeCodeToAST = (coffeeCode) ->
+export coffeeCodeToAST = (coffeeCode, source=undef) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToAST()", coffeeCode
 
 	try
-		ast = CoffeeScript.compile coffeeCode, {ast: true}
+		ast = getAST(coffeeCode, source)
 		assert ast?, "ast is empty"
 	catch err
 		croak err, "in coffeeCodeToAST", coffeeCode
@@ -139,3 +165,40 @@ export minifyJS = (jsCode, lParms) ->
 	jsCode = CWS(jsCode)
 	jsCode = jsCode.replace(/,\s+/, ',')
 	return jsCode
+
+# ---------------------------------------------------------------------------
+
+expand = (qstr) ->
+
+	lMatches = qstr.match(/^\"(.*)\"$/)
+	assert defined(lMatches), "Bad arg: #{OL(qstr)}"
+	assert (lMatches[1].indexOf('"') == -1), "Bad arg: #{OL(qstr)}"
+	result = qstr.replace(///
+			\$
+			([A-Za-z_][A-Za-z0-9_]*)
+			///g,
+		(_, ident) -> "\#{OL(#{ident})}"
+		)
+
+# ---------------------------------------------------------------------------
+
+export class CoffeePreProcessor extends Mapper
+
+	handleComment: (line) ->
+		# --- Retain comments
+
+		return line
+
+	# ..........................................................
+
+	map: (item) ->
+
+		result = item.replace(///
+				\"
+				[^"]*     # sequence of non-quote characters
+				\"
+				///g,
+			(qstr) -> expand(qstr)
+			)
+		return result
+

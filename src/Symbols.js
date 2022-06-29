@@ -35,7 +35,8 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  splitLine
+  splitLine,
+  isUndented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -58,6 +59,7 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   //     NOTE: items in array returned will always be unique
   debug("enter getNeededSymbols()", coffeeCode);
   assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
+  assert(isUndented(coffeeCode), "coffeeCode has indent");
   ast = coffeeCodeToAST(coffeeCode);
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.getSymbols();

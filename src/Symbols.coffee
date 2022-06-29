@@ -9,7 +9,7 @@ import {
 	barf, slurp, pathTo, mkpath, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {splitLine} from '@jdeighan/coffee-utils/indent'
+import {splitLine, isUndented} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
@@ -24,6 +24,7 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 
 	debug "enter getNeededSymbols()", coffeeCode
 	assert isString(coffeeCode), "getNeededSymbols(): code not a string"
+	assert isUndented(coffeeCode), "coffeeCode has indent"
 	ast = coffeeCodeToAST(coffeeCode)
 
 	walker = new ASTWalker(ast)

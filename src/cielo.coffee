@@ -48,7 +48,7 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 
 	debug "enter cieloCodeToJS()", cieloCode, source, hOptions
 
-	assert isUndented(cieloCode), "cieloCodeToJS(): has indent"
+	assert isUndented(cieloCode), "cieloCode has indent"
 	assert isHash(hOptions), "hOptions not a hash"
 
 	if hOptions.premapper
@@ -63,6 +63,7 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	debug "Apply premapper #{className(premapper)}"
 	coffeeCode = doMap(premapper, source, cieloCode)
 	if coffeeCode != cieloCode
+		assert isUndented(coffeeCode), "coffeeCode has indent"
 		debug "coffeeCode", coffeeCode
 
 	# --- symbols will always be unique

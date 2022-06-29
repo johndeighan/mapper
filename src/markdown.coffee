@@ -37,7 +37,7 @@ stripComments = (block) ->
 export markdownify = (block) ->
 
 	debug "enter markdownify()", block
-	assert block?, "markdownify(): block is undef"
+	assert isString(block), "block is not a string"
 	if ! convert
 		debug "return original text from markdownify() - not converting"
 		return block

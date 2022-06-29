@@ -65,7 +65,7 @@ stripComments = function(block) {
 export var markdownify = function(block) {
   var html, result;
   debug("enter markdownify()", block);
-  assert(block != null, "markdownify(): block is undef");
+  assert(isString(block), "block is not a string");
   if (!convert) {
     debug("return original text from markdownify() - not converting");
     return block;

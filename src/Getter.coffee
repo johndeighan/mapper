@@ -359,7 +359,7 @@ export class Getter extends Fetcher
 		if defined(endStr)
 			debug 'endStr', endStr
 			lStrings.push endStr
-		block = arrayToBlock(lStrings)
+		block = @finalizeBlock(arrayToBlock(lStrings))
 		debug "return from Getter.getBlock()", block
 		return block
 
@@ -368,3 +368,9 @@ export class Getter extends Fetcher
 	endBlock: () ->
 
 		return undef
+
+	# ..........................................................
+
+	finalizeBlock: (block) ->
+
+		return block

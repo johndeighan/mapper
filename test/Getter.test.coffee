@@ -11,6 +11,7 @@ import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
 	arrayToBlock, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
+import {phStr, phReplace} from '@jdeighan/coffee-utils/placeholders'
 
 import {Getter} from '@jdeighan/mapper/getter'
 
@@ -240,5 +241,55 @@ simple = new UnitTester()
 
 	simple.equal 241, getter.peek(), '\t--x'
 	simple.equal 242, getter.get(),  '\t--x'
+
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	# --- Pre-declare all variables that are assigned to
+
+	class VarGetter extends Getter
+
+		init: () ->
+
+			@lVars = []
+			return
+
+		# .......................................................
+
+		map: (item) ->
+
+			if lMatches = item.match(///^
+					([A-Za-z_][A-Za-z0-9_]*)    # an identifier
+					\s*
+					=
+					///)
+				[_, varName] = lMatches
+				@lVars.push varName
+
+			return item
+
+		# .......................................................
+
+		finalizeBlock: (block) ->
+
+			strVars = @lVars.join(',')
+			return phReplace(block, {'vars': strVars})
+
+		# .......................................................
+
+	getter = new VarGetter(undef, """
+			var #{phStr('vars')}
+			x = 2
+			y = 3
+			""")
+	result = getter.getBlock()
+	simple.equal 263, result, """
+			var x,y
+			x = 2
+			y = 3
+			"""
 
 	)()

@@ -377,7 +377,7 @@ export var Getter = class Getter extends Fetcher {
       debug('endStr', endStr);
       lStrings.push(endStr);
     }
-    block = arrayToBlock(lStrings);
+    block = this.finalizeBlock(arrayToBlock(lStrings));
     debug("return from Getter.getBlock()", block);
     return block;
   }
@@ -385,6 +385,11 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   endBlock() {
     return undef;
+  }
+
+  // ..........................................................
+  finalizeBlock(block) {
+    return block;
   }
 
 };

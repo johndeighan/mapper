@@ -31,6 +31,11 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
+  phStr,
+  phReplace
+} from '@jdeighan/coffee-utils/placeholders';
+
+import {
   Getter
 } from '@jdeighan/mapper/getter';
 
@@ -248,4 +253,43 @@ while (x > 2)
   simple.equal(239, getter.get(), 'while (x > 2)');
   simple.equal(241, getter.peek(), '\t--x');
   return simple.equal(242, getter.get(), '\t--x');
+})();
+
+// ---------------------------------------------------------------------------
+(function() {
+  var VarGetter, getter, result;
+  // --- Pre-declare all variables that are assigned to
+  VarGetter = class VarGetter extends Getter {
+    init() {
+      this.lVars = [];
+    }
+
+    // .......................................................
+    map(item) {
+      var _, lMatches, varName;
+      if (lMatches = item.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/)) { // an identifier
+        [_, varName] = lMatches;
+        this.lVars.push(varName);
+      }
+      return item;
+    }
+
+    // .......................................................
+    finalizeBlock(block) {
+      var strVars;
+      strVars = this.lVars.join(',');
+      return phReplace(block, {
+        'vars': strVars
+      });
+    }
+
+  };
+  // .......................................................
+  getter = new VarGetter(undef, `var ${phStr('vars')}
+x = 2
+y = 3`);
+  result = getter.getBlock();
+  return simple.equal(263, result, `var x,y
+x = 2
+y = 3`);
 })();

@@ -28,7 +28,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 # @jdeighan/coffee-utils/log
 #    log/logger
 
-simple.equal 28, getAvailSymbols(import.meta.url), {
+simple.equal 31, getAvailSymbols(import.meta.url), {
 	barf: {
 		lib: '@jdeighan/coffee-utils/fs',
 		},
@@ -74,33 +74,37 @@ tester = new SymbolsTester()
 
 # ---------------------------------------------------------------------------
 
-simple.equal 74, getNeededSymbols("""
+simple.equal 77, getNeededSymbols("""
+	name = 'John'
+	"""), []
+
+simple.equal 81, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-simple.equal 79, getNeededSymbols("""
+simple.equal 86, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-simple.equal 84, getNeededSymbols("""
+simple.equal 91, getNeededSymbols("""
 	x = z
 	y = x + 5
 	"""), ['z']
 
-simple.equal 89, getNeededSymbols("""
+simple.equal 96, getNeededSymbols("""
 	x = myfunc(4)
 	y = x + 5
 	"""), ['myfunc']
 
-simple.equal 94, getNeededSymbols("""
+simple.equal 101, getNeededSymbols("""
 	import {z} from 'somewhere'
 	x = z
 	y = x + 5
 	"""), []
 
-simple.equal 100, getNeededSymbols("""
+simple.equal 107, getNeededSymbols("""
 	import {myfunc} from 'somewhere'
 	x = myfunc(4)
 	y = x + 5
@@ -114,7 +118,7 @@ simple.equal 100, getNeededSymbols("""
 # --- make sure it's using the testing .symbols file
 
 hSymbols = getAvailSymbols(import.meta.url)
-simple.equal 114, hSymbols, {
+simple.equal 121, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
 		readFile:{lib: 'fs'}
@@ -140,7 +144,7 @@ simple.equal 114, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	simple.equal 140, joinBlocks(lImports..., text), """
+	simple.equal 147, joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42
@@ -151,11 +155,14 @@ simple.equal 114, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
+	simple.equal 159, buildImportList([]), []
+
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 152, buildImportList(lNeeded, import.meta.url), [
+	simple.equal 159, buildImportList(lNeeded, import.meta.url), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"
 		"import {log as logger} from '@jdeighan/coffee-utils/log'"
 		]
+
 	)()

@@ -53,12 +53,12 @@ import {
 
 // ---------------------------------------------------------------------------
 export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
-  var ast, hSymbolInfo, walker;
+  var ast, hSymbolInfo, result, walker;
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //     NOTE: items in array returned will always be unique
-  debug("enter getNeededSymbols()", coffeeCode);
-  assert(isString(coffeeCode), "getNeededSymbols(): code not a string");
+  debug("enter getNeededSymbols()", coffeeCode, hOptions);
+  assert(isString(coffeeCode), "code not a string");
   assert(isUndented(coffeeCode), "coffeeCode has indent");
   ast = coffeeCodeToAST(coffeeCode);
   walker = new ASTWalker(ast);
@@ -66,15 +66,16 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   if (hOptions.dumpfile) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(ast));
   }
-  debug("return from getNeededSymbols()");
-  return uniq(hSymbolInfo.lNeeded);
+  result = uniq(hSymbolInfo.lNeeded);
+  debug("return from getNeededSymbols()", result);
+  return result;
 };
 
 // ---------------------------------------------------------------------------
 export var buildImportList = function(lNeededSymbols, source) {
   var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
-  debug(`enter buildImportList('${escapeStr(source)}')`, lNeededSymbols);
-  if (!lNeededSymbols || (lNeededSymbols.length === 0)) {
+  debug("enter buildImportList()", lNeededSymbols, source);
+  if (isEmpty(lNeededSymbols)) {
     debug("return from buildImportList() - no needed symbols");
     return [];
   }
@@ -119,12 +120,17 @@ export var buildImportList = function(lNeededSymbols, source) {
 
 // ---------------------------------------------------------------------------
 // export only to allow unit testing
-export var getAvailSymbols = function(source) {
+export var getAvailSymbols = function(source = undef) {
   var filepath, hSourceInfo, hSymbols, searchDir;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
-  debug(`enter getAvailSymbols('${escapeStr(source)}')`);
-  hSourceInfo = parseSource(source);
-  searchDir = hSourceInfo.dir;
+  debug("enter getAvailSymbols()", source);
+  if (source === undef) {
+    searchDir = process.cwd();
+  } else {
+    hSourceInfo = parseSource(source);
+    searchDir = hSourceInfo.dir;
+    assert(defined(searchDir), `No directory info for ${OL(source)}`);
+  }
   debug(`search for .symbols from '${searchDir}'`);
   filepath = pathTo('.symbols', searchDir, 'up');
   if (filepath == null) {
@@ -132,7 +138,6 @@ export var getAvailSymbols = function(source) {
     return {};
   }
   hSymbols = getAvailSymbolsFrom(filepath);
-  debug("hSymbols", hSymbols);
   debug("return from getAvailSymbols()", hSymbols);
   return hSymbols;
 };
@@ -141,13 +146,12 @@ export var getAvailSymbols = function(source) {
 getAvailSymbolsFrom = function(filepath) {
   var contents, hAvailSymbols, parser;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
-  debug(`enter getAvailSymbolsFrom('${filepath}')`);
+  debug("enter getAvailSymbolsFrom()", filepath);
   contents = slurp(filepath);
   debug('Contents of .symbols', contents);
   parser = new SymbolParser(filepath, contents);
   hAvailSymbols = parser.getAvailSymbols();
-  debug("hAvailSymbols", hAvailSymbols);
-  debug("return from getAvailSymbolsFrom()");
+  debug("return from getAvailSymbolsFrom()", hAvailSymbols);
   return hAvailSymbols;
 };
 

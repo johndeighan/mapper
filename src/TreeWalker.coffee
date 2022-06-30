@@ -341,16 +341,16 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	addLine: (line) ->
+	addText: (text) ->
 
-		assert defined(line), "line is undef"
-		debug "enter addLine(#{OL(line)})", line
-		if isArray(line)
-			debug "line is an array"
-			@lLines.push line...
-		else
-			@lLines.push line
-		debug "return from addLine()"
+		debug "enter addText()", text
+		if defined(text)
+			if isArray(text)
+				debug "text is an array"
+				@lLines.push text...
+			else
+				@lLines.push text
+		debug "return from addText()"
 		return
 
 	# ..........................................................
@@ -367,9 +367,8 @@ export class TreeWalker extends Mapper
 		lStack = []
 
 		debug "begin walk"
-		line = @beginWalk()
-		if defined(line)
-			@addLine(line)
+		text = @beginWalk()
+		@addText(text)
 
 		debug "getting uobj's"
 		for uobj from @allMapped()
@@ -389,9 +388,8 @@ export class TreeWalker extends Mapper
 			node = lStack.pop()
 			@endVisitNode node, lStack
 
-		line = @endWalk()
-		if defined(line)
-			@addLine(line)
+		text = @endWalk()
+		@addText(text)
 		result = arrayToBlock(@lLines)
 
 		debug "return from walk()", result
@@ -404,9 +402,8 @@ export class TreeWalker extends Mapper
 		assert isHash(node), "node is #{OL(node)}"
 		{uobj, hUser} = node
 		{item, level} = @checkUserObj uobj
-		line = @visit(item, hUser, level, lStack)
-		if defined(line)
-			@addLine(line)
+		text = @visit(item, hUser, level, lStack)
+		@addText(text)
 		return
 
 	# ..........................................................
@@ -417,9 +414,8 @@ export class TreeWalker extends Mapper
 		{uobj, hUser} = node
 		assert isHash(hUser), "hUser is #{OL(hUser)}"
 		{item, level} = @checkUserObj uobj
-		line = @endVisit(item, hUser, level, lStack)
-		if defined(line)
-			@addLine(line)
+		text = @endVisit(item, hUser, level, lStack)
+		@addText(text)
 		return
 
 	# ..........................................................

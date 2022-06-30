@@ -373,21 +373,22 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  addLine(line) {
-    assert(defined(line), "line is undef");
-    debug(`enter addLine(${OL(line)})`, line);
-    if (isArray(line)) {
-      debug("line is an array");
-      this.lLines.push(...line);
-    } else {
-      this.lLines.push(line);
+  addText(text) {
+    debug("enter addText()", text);
+    if (defined(text)) {
+      if (isArray(text)) {
+        debug("text is an array");
+        this.lLines.push(...text);
+      } else {
+        this.lLines.push(text);
+      }
     }
-    debug("return from addLine()");
+    debug("return from addText()");
   }
 
   // ..........................................................
   walk() {
-    var _, hUser, lStack, level, line, node, ref, result, uobj;
+    var _, hUser, lStack, level, node, ref, result, text, uobj;
     debug("enter walk()");
     // --- lStack is stack of node = {
     //        uobj: {item, level}
@@ -396,10 +397,8 @@ export var TreeWalker = class TreeWalker extends Mapper {
     this.lLines = []; // --- resulting lines
     lStack = [];
     debug("begin walk");
-    line = this.beginWalk();
-    if (defined(line)) {
-      this.addLine(line);
-    }
+    text = this.beginWalk();
+    this.addText(text);
     debug("getting uobj's");
     ref = this.allMapped();
     for (uobj of ref) {
@@ -419,10 +418,8 @@ export var TreeWalker = class TreeWalker extends Mapper {
       node = lStack.pop();
       this.endVisitNode(node, lStack);
     }
-    line = this.endWalk();
-    if (defined(line)) {
-      this.addLine(line);
-    }
+    text = this.endWalk();
+    this.addText(text);
     result = arrayToBlock(this.lLines);
     debug("return from walk()", result);
     return result;
@@ -430,27 +427,23 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visitNode(node, lStack) {
-    var hUser, item, level, line, uobj;
+    var hUser, item, level, text, uobj;
     assert(isHash(node), `node is ${OL(node)}`);
     ({uobj, hUser} = node);
     ({item, level} = this.checkUserObj(uobj));
-    line = this.visit(item, hUser, level, lStack);
-    if (defined(line)) {
-      this.addLine(line);
-    }
+    text = this.visit(item, hUser, level, lStack);
+    this.addText(text);
   }
 
   // ..........................................................
   endVisitNode(node, lStack) {
-    var hUser, item, level, line, uobj;
+    var hUser, item, level, text, uobj;
     assert(isHash(node), `node is ${OL(node)}`);
     ({uobj, hUser} = node);
     assert(isHash(hUser), `hUser is ${OL(hUser)}`);
     ({item, level} = this.checkUserObj(uobj));
-    line = this.endVisit(item, hUser, level, lStack);
-    if (defined(line)) {
-      this.addLine(line);
-    }
+    text = this.endVisit(item, hUser, level, lStack);
+    this.addText(text);
   }
 
   // ..........................................................

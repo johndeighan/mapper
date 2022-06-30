@@ -115,7 +115,7 @@ export class Getter extends Fetcher
 		debug "source = #{@sourceInfoStr()}"
 
 		if (item == undef)
-			debug "return undef from get() - at EOF"
+			debug "return from get() - at EOF", undef
 			return undef
 
 		uobj = @mapItem(item)
@@ -143,16 +143,16 @@ export class Getter extends Fetcher
 		debug "enter Getter.eof()"
 
 		if nonEmpty(@lCache)
-			debug "return false from Getter.eof() - cache not empty"
+			debug "return from Getter.eof() - cache not empty", false
 			return false
 
 		value = @fetch()
 		if (value == undef)
-			debug "return true from Getter.eof()"
+			debug "return from Getter.eof()", true
 			return true
 		else
 			@unfetch value
-			debug "return false from Getter.eof()"
+			debug "return from Getter.eof()", false
 			return false
 
 	# ..........................................................

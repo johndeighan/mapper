@@ -275,7 +275,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
       assert(isString(stopOn), `stopOn is ${OL(stopOn)}`);
       discard = hOptions.discard || false;
     }
-    debug(`enter TreeWalker.fetchLinesAtLevel(${OL(atLevel)}, ${OL(stopOn)})`);
+    debug("enter TreeWalker.fetchLinesAtLevel()", atLevel, stopOn);
     assert(atLevel > 0, `atLevel is ${atLevel}`);
     lLines = [];
     while (defined(item = this.fetch()) && debug(`item = ${OL(item)}`) && isString(item) && ((stopOn === undef) || (item !== stopOn)) && (isEmpty(item) || (indentLevel(item) >= atLevel))) {
@@ -298,7 +298,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   fetchBlockAtLevel(atLevel, hOptions = {}) {
     var lLines, result;
-    debug(`enter TreeWalker.fetchBlockAtLevel(${OL(atLevel)})`, hOptions);
+    debug("enter TreeWalker.fetchBlockAtLevel()", atLevel, hOptions);
     lLines = this.fetchLinesAtLevel(atLevel, hOptions);
     debug('lLines', lLines);
     lLines = undented(lLines, atLevel);

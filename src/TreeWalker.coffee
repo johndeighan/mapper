@@ -235,7 +235,7 @@ export class TreeWalker extends Mapper
 		if defined(stopOn)
 			assert isString(stopOn), "stopOn is #{OL(stopOn)}"
 			discard = hOptions.discard || false
-		debug "enter TreeWalker.fetchLinesAtLevel(#{OL(atLevel)}, #{OL(stopOn)})"
+		debug "enter TreeWalker.fetchLinesAtLevel()", atLevel, stopOn
 		assert (atLevel > 0), "atLevel is #{atLevel}"
 		lLines = []
 		while defined(item = @fetch()) \
@@ -264,7 +264,7 @@ export class TreeWalker extends Mapper
 
 	fetchBlockAtLevel: (atLevel, hOptions={}) ->
 
-		debug "enter TreeWalker.fetchBlockAtLevel(#{OL(atLevel)})", hOptions
+		debug "enter TreeWalker.fetchBlockAtLevel()", atLevel, hOptions
 		lLines = @fetchLinesAtLevel(atLevel, hOptions)
 		debug 'lLines', lLines
 		lLines = undented(lLines, atLevel)

@@ -198,7 +198,7 @@ export var tag2str = function(hToken, type = 'begin') {
     return str;
   } else if (type === 'end') {
     if (hNoEnd[hToken.tag]) {
-      return "";
+      return undef;
     } else {
       return `</${hToken.tag}>`;
     }

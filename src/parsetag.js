@@ -22,7 +22,7 @@ for (i = 0, len = ref.length; i < len; i++) {
 
 // ---------------------------------------------------------------------------
 export var parsetag = function(line) {
-  var _, all, attrName, br_val, className, dq_val, hAttr, hToken, j, lClasses, lMatches, len1, modifiers, prefix, quote, ref1, rest, sq_val, subtype, tagName, uq_val, value, varName;
+  var _, all, attrName, br_val, className, dq_val, hAttr, hToken, ident, j, lClasses, lMatches, len1, modifiers, prefix, quote, ref1, rest, sq_val, subtype, tagName, uq_val, value, varName;
   if (lMatches = line.match(/^(?:([A-Za-z][A-Za-z0-9_]*)\s*=\s*)?([A-Za-z][A-Za-z0-9_]*)(?:\:([a-z]+))?(\S*)\s*(.*)$/)) { // variable name
     // variable is optional
     // tag name
@@ -36,6 +36,7 @@ export var parsetag = function(line) {
   } else {
     error(`parsetag(): Invalid HTML: '${line}'`);
   }
+  lClasses = [];
   switch (subtype) {
     case undef:
     case '':
@@ -53,12 +54,9 @@ export var parsetag = function(line) {
       if (tagName !== 'div') {
         error("parsetag(): subtype 'markdown' only allowed with div");
       }
+      lClasses.push(subtype);
   }
   // --- Handle classes added via .<class>
-  lClasses = [];
-  if (subtype === 'markdown') {
-    lClasses.push('markdown');
-  }
   if (modifiers) {
     // --- currently, these are only class names
     while (lMatches = modifiers.match(/^\.([A-Za-z][A-Za-z0-9_]*)/)) {
@@ -79,40 +77,47 @@ export var parsetag = function(line) {
     };
   }
   if (rest) {
-    while (lMatches = rest.match(/^(?:(?:(bind|on):)?([A-Za-z][A-Za-z0-9_]*))=(?:\{([^}]*)\}|"([^"]*)"|'([^']*)'|([^"'\s]+))\s*/)) { // prefix
+    while (lMatches = rest.match(/^(?:(?:(?:(bind|on):)?([A-Za-z][A-Za-z0-9_]*))=(?:\{([^}]*)\}|"([^"]*)"|'([^']*)'|([^"'\s]+))|\{([A-Za-z][A-Za-z0-9_]*)\})\s*/)) { // prefix
       // attribute name
       // attribute value
-      [all, prefix, attrName, br_val, dq_val, sq_val, uq_val] = lMatches;
-      if (br_val) {
-        value = br_val;
-        quote = '{';
+      [all, prefix, attrName, br_val, dq_val, sq_val, uq_val, ident] = lMatches;
+      if (ident) {
+        hAttr[ident] = {
+          value: ident,
+          shorthand: true
+        };
       } else {
-        assert(prefix == null, "prefix requires use of {...}");
-        if (dq_val) {
-          value = dq_val;
-          quote = '"';
-        } else if (sq_val) {
-          value = sq_val;
-          quote = "'";
+        if (br_val) {
+          value = br_val;
+          quote = '{';
         } else {
-          value = uq_val;
-          quote = '';
+          assert(prefix == null, "prefix requires use of {...}");
+          if (dq_val) {
+            value = dq_val;
+            quote = '"';
+          } else if (sq_val) {
+            value = sq_val;
+            quote = "'";
+          } else {
+            value = uq_val;
+            quote = '';
+          }
         }
-      }
-      if (prefix) {
-        attrName = `${prefix}:${attrName}`;
-      }
-      if (attrName === 'class') {
-        ref1 = value.split(/\s+/);
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          className = ref1[j];
-          lClasses.push(className);
+        if (prefix) {
+          attrName = `${prefix}:${attrName}`;
         }
-      } else {
-        if (hAttr.attrName != null) {
-          error(`parsetag(): Multiple attributes named '${attrName}'`);
+        if (attrName === 'class') {
+          ref1 = value.split(/\s+/);
+          for (j = 0, len1 = ref1.length; j < len1; j++) {
+            className = ref1[j];
+            lClasses.push(className);
+          }
+        } else {
+          if (hAttr.attrName != null) {
+            error(`parsetag(): Multiple attributes named '${attrName}'`);
+          }
+          hAttr[attrName] = {value, quote};
         }
-        hAttr[attrName] = {value, quote};
       }
       rest = rest.substring(all.length);
     }
@@ -166,7 +171,7 @@ export var isBlockTag = function(hTag) {
 // ---------------------------------------------------------------------------
 // --- export only for unit testing
 export var attrStr = function(hAttr) {
-  var attrName, bquote, equote, j, len1, quote, ref1, str, value;
+  var attrName, bquote, equote, j, len1, quote, ref1, shorthand, str, value;
   if (!hAttr) {
     return '';
   }
@@ -174,14 +179,18 @@ export var attrStr = function(hAttr) {
   ref1 = Object.getOwnPropertyNames(hAttr);
   for (j = 0, len1 = ref1.length; j < len1; j++) {
     attrName = ref1[j];
-    ({value, quote} = hAttr[attrName]);
-    if (quote === '{') {
-      bquote = '{';
-      equote = '}';
+    ({value, quote, shorthand} = hAttr[attrName]);
+    if (shorthand) {
+      str += ` {${value}}`;
     } else {
-      bquote = equote = quote;
+      if (quote === '{') {
+        bquote = '{';
+        equote = '}';
+      } else {
+        bquote = equote = quote;
+      }
+      str += ` ${attrName}=${bquote}${value}${equote}`;
     }
-    str += ` ${attrName}=${bquote}${value}${equote}`;
   }
   return str;
 };

@@ -202,9 +202,23 @@ import {
     },
     containedText: '# Title'
   });
-  return tester.equal(155, 'svelte:head', {
+  tester.equal(155, 'svelte:head', {
     type: 'tag',
     tag: 'svelte:head'
+  });
+  return tester.equal(160, 'img {src} alt="dance"', {
+    type: 'tag',
+    tag: 'img',
+    hAttr: {
+      src: {
+        shorthand: true,
+        value: 'src'
+      },
+      alt: {
+        value: 'dance',
+        quote: '"'
+      }
+    }
   });
 })();
 
@@ -218,11 +232,11 @@ import {
 
   };
   tester = new TagTester();
-  tester.equal(173, {
+  tester.equal(182, {
     type: 'tag',
     tag: 'p'
   }, "<p>");
-  tester.equal(178, {
+  tester.equal(187, {
     type: 'tag',
     tag: 'p',
     hAttr: {
@@ -232,7 +246,7 @@ import {
       }
     }
   }, '<p class="error">');
-  tester.equal(186, {
+  tester.equal(195, {
     type: 'tag',
     tag: 'p',
     hAttr: {
@@ -242,10 +256,24 @@ import {
       }
     }
   }, '<p class={myclass}>');
-  return tester.equal(194, {
+  tester.equal(203, {
     type: 'tag',
     tag: 'svelte:head'
   }, '<svelte:head>');
+  return tester.equal(208, {
+    type: 'tag',
+    tag: 'img',
+    hAttr: {
+      src: {
+        shorthand: true,
+        value: 'src'
+      },
+      alt: {
+        value: 'dance',
+        quote: '"'
+      }
+    }
+  }, '<img {src} alt="dance">');
 })();
 
 // ---------------------------------------------------------------------------
@@ -259,11 +287,11 @@ import {
 
   };
   tester = new TagTester();
-  tester.equal(213, {
+  tester.equal(231, {
     type: 'tag',
     tag: 'p'
   }, "</p>");
-  tester.equal(218, {
+  tester.equal(236, {
     type: 'tag',
     tag: 'p',
     hAttr: {
@@ -273,7 +301,7 @@ import {
       }
     }
   }, '</p>');
-  tester.equal(226, {
+  tester.equal(244, {
     type: 'tag',
     tag: 'p',
     hAttr: {
@@ -283,7 +311,7 @@ import {
       }
     }
   }, '</p>');
-  return tester.equal(234, {
+  return tester.equal(252, {
     type: 'tag',
     tag: 'svelte:head'
   }, '</svelte:head>');

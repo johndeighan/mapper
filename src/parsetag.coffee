@@ -36,6 +36,7 @@ export parsetag = (line) ->
 	else
 		error "parsetag(): Invalid HTML: '#{line}'"
 
+	lClasses = []
 	switch subtype
 		when undef, ''
 			pass
@@ -45,12 +46,9 @@ export parsetag = (line) ->
 		when 'markdown', 'sourcecode'
 			if (tagName != 'div')
 				error "parsetag(): subtype 'markdown' only allowed with div"
+			lClasses.push subtype
 
 	# --- Handle classes added via .<class>
-	lClasses = []
-	if (subtype == 'markdown')
-		lClasses.push 'markdown'
-
 	if modifiers
 		# --- currently, these are only class names
 		while lMatches = modifiers.match(///^
@@ -72,46 +70,54 @@ export parsetag = (line) ->
 		while lMatches = rest.match(///^
 				(?:
 					(?:
-						( bind | on )          # prefix
-						:
-						)?
-					([A-Za-z][A-Za-z0-9_]*)   # attribute name
-					)
-				=
-				(?:
-					  \{ ([^}]*) \}           # attribute value
-					| " ([^"]*) "
-					| ' ([^']*) '
-					|   ([^"'\s]+)
-					)
-				\s*
+						(?:
+							( bind | on )          # prefix
+							:
+							)?
+						([A-Za-z][A-Za-z0-9_]*)   # attribute name
+						)
+					=
+					(?:
+						  \{ ([^}]*) \}           # attribute value
+						| " ([^"]*) "
+						| ' ([^']*) '
+						|   ([^"'\s]+)
+						)
+					|
+					\{
+					([A-Za-z][A-Za-z0-9_]*)
+					\}
+					) \s*
 				///)
-			[all, prefix, attrName, br_val, dq_val, sq_val, uq_val] = lMatches
-			if br_val
-				value = br_val
-				quote = '{'
+			[all, prefix, attrName, br_val, dq_val, sq_val, uq_val, ident] = lMatches
+			if ident
+				hAttr[ident] = { value: ident, shorthand: true }
 			else
-				assert ! prefix?, "prefix requires use of {...}"
-				if dq_val
-					value = dq_val
-					quote = '"'
-				else if sq_val
-					value = sq_val
-					quote = "'"
+				if br_val
+					value = br_val
+					quote = '{'
 				else
-					value = uq_val
-					quote = ''
+					assert ! prefix?, "prefix requires use of {...}"
+					if dq_val
+						value = dq_val
+						quote = '"'
+					else if sq_val
+						value = sq_val
+						quote = "'"
+					else
+						value = uq_val
+						quote = ''
 
-			if prefix
-				attrName = "#{prefix}:#{attrName}"
+				if prefix
+					attrName = "#{prefix}:#{attrName}"
 
-			if attrName == 'class'
-				for className in value.split(/\s+/)
-					lClasses.push className
-			else
-				if hAttr.attrName?
-					error "parsetag(): Multiple attributes named '#{attrName}'"
-				hAttr[attrName] = { value, quote }
+				if attrName == 'class'
+					for className in value.split(/\s+/)
+						lClasses.push className
+				else
+					if hAttr.attrName?
+						error "parsetag(): Multiple attributes named '#{attrName}'"
+					hAttr[attrName] = { value, quote }
 
 			rest = rest.substring(all.length)
 
@@ -175,13 +181,16 @@ export attrStr = (hAttr) ->
 		return ''
 	str = ''
 	for attrName in Object.getOwnPropertyNames(hAttr)
-		{value, quote} = hAttr[attrName]
-		if quote == '{'
-			bquote = '{'
-			equote = '}'
+		{value, quote, shorthand} = hAttr[attrName]
+		if shorthand
+			str += " {#{value}}"
 		else
-			bquote = equote = quote
-		str += " #{attrName}=#{bquote}#{value}#{equote}"
+			if quote == '{'
+				bquote = '{'
+				equote = '}'
+			else
+				bquote = equote = quote
+			str += " #{attrName}=#{bquote}#{value}#{equote}"
 	return str
 
 # ---------------------------------------------------------------------------

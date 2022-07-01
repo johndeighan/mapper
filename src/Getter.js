@@ -34,14 +34,6 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  parseSource,
-  slurp,
-  isSimpleFileName,
-  isDir,
-  pathTo
-} from '@jdeighan/coffee-utils/fs';
-
-import {
   Fetcher
 } from '@jdeighan/mapper/fetcher';
 

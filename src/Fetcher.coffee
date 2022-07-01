@@ -75,6 +75,17 @@ export class Fetcher
 
 	# ..........................................................
 
+	pathTo: (fname) ->
+		# --- fname must be a simple file name
+		# --- returns a relative path
+		#     searches from @hSourceInfo.dir || process.cwd()
+		#     searches downward
+
+		assert isSimpleFileName(fname), "fname must not be a path"
+		return pathTo(fname, @hSourceInfo.dir, {relative: true})
+
+	# ..........................................................
+
 	init: () ->
 
 		return

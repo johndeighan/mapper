@@ -132,7 +132,9 @@ export var getAvailSymbols = function(source = undef) {
     assert(defined(searchDir), `No directory info for ${OL(source)}`);
   }
   debug(`search for .symbols from '${searchDir}'`);
-  filepath = pathTo('.symbols', searchDir, 'up');
+  filepath = pathTo('.symbols', searchDir, {
+    direction: 'up'
+  });
   if (filepath == null) {
     debug("return from getAvailSymbols() - no .symbols file found");
     return {};

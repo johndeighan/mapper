@@ -448,9 +448,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   getBlock() {
-    var result;
+    var block, result;
     debug("enter getBlock()");
-    result = this.walk();
+    block = this.walk();
+    debug('block', block);
+    result = this.finalizeBlock(block);
     debug("return from getBlock()", result);
     return result;
   }

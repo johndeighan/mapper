@@ -423,7 +423,9 @@ export class TreeWalker extends Mapper
 	getBlock: () ->
 
 		debug "enter getBlock()"
-		result = @walk()
+		block = @walk()
+		debug 'block', block
+		result = @finalizeBlock(block)
 		debug "return from getBlock()", result
 		return result
 

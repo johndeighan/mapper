@@ -70,7 +70,7 @@ export var Section = class Section {
   // ..........................................................
   prepend(data) {
     if (isArray(data)) {
-      this.lLines = [...lLines, ...this.lLines];
+      this.lLines = [...data, ...this.lLines];
     } else {
       this.lLines = [data, ...this.lLines];
     }

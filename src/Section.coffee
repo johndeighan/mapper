@@ -57,7 +57,7 @@ export class Section
 	prepend: (data) ->
 
 		if isArray(data)
-			@lLines = [lLines..., @lLines...]
+			@lLines = [data..., @lLines...]
 		else
 			@lLines = [data, @lLines...]
 		return

@@ -5,7 +5,9 @@ import yaml from 'js-yaml';
 import {
   assert,
   undef,
-  oneline,
+  defined,
+  notdefined,
+  OL,
   isString
 } from '@jdeighan/coffee-utils';
 
@@ -16,6 +18,7 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
+  LOG,
   log,
   tamlStringify
 } from '@jdeighan/coffee-utils/log';
@@ -48,23 +51,29 @@ export var isTAML = function(text) {
 // ---------------------------------------------------------------------------
 //   taml - convert valid TAML string to a JavaScript value
 export var taml = function(text, hOptions = {}) {
+  var premapper, result;
   // --- Valid options:
   //        premapper - a subclass of Mapper
-  debug(`enter taml(${oneline(text)})`);
+  debug(`enter taml(${OL(text)})`);
   if (text == null) {
     debug("return undef from taml() - text is not defined");
     return undef;
   }
   // --- If a premapper is provided, use it to map the text
-  if (hOptions.premapper) {
+  if (defined(hOptions.premapper)) {
+    premapper = hOptions.premapper;
+    // --- THIS FAILS and I don't know why???
+    //		assert (premapper instanceof Mapper),
+    //				"not a Mapper subclass: #{OL(premapper)}"
     assert(hOptions.source, "taml(): premapper without source");
-    text = doMap(hOptions.premapper, hOptions.source, text);
+    text = doMap(premapper, hOptions.source, text);
   }
-  assert(isTAML(text), `taml(): string ${oneline(text)} isn't TAML`);
-  debug("return from taml()");
-  return yaml.load(untabify(text), {
+  assert(isTAML(text), `taml(): string ${OL(text)} isn't TAML`);
+  result = yaml.load(untabify(text), {
     skipInvalid: true
   });
+  debug("return from taml()", result);
+  return result;
 };
 
 // ---------------------------------------------------------------------------
@@ -73,26 +82,4 @@ export var slurpTAML = function(filepath, hOptions = undef) {
   var text;
   text = slurp(filepath);
   return taml(text, hOptions);
-};
-
-// ---------------------------------------------------------------------------
-// --- Plugin for a TAML HEREDOC type
-export var TAMLHereDoc = class TAMLHereDoc {
-  myName() {
-    return 'taml';
-  }
-
-  isMyHereDoc(block) {
-    return isTAML(block);
-  }
-
-  map(block) {
-    var obj;
-    obj = taml(block);
-    return {
-      obj,
-      str: JSON.stringify(obj)
-    };
-  }
-
 };

@@ -7,10 +7,13 @@ import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
+import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
 import {doMap} from '@jdeighan/mapper'
 import {convertCoffee} from '@jdeighan/mapper/coffee'
 import {cieloCodeToJS, convertCielo} from '@jdeighan/mapper/cielo'
 import {TreeWalker} from '@jdeighan/mapper/tree'
+
+addStdHereDocTypes()
 
 simple = new UnitTesterNorm(import.meta.url)
 convertCoffee false
@@ -37,7 +40,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing comments
 
-	tester.equal 40, """
+	tester.equal 43, """
 			# --- a comment
 			y = x
 			""", """
@@ -47,7 +50,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 50, """
+	tester.equal 53, """
 
 			y = x
 			""", """
@@ -60,7 +63,7 @@ convertCoffee false
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 63, """
+	tester.equal 66, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -73,7 +76,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 76, """
+	tester.equal 79, """
 			x = 23
 			y = x
 					+ 5
@@ -85,7 +88,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	tester.equal 88, """
+	tester.equal 91, """
 			x = 23
 			y = x \
 			+ 5
@@ -98,7 +101,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 101, """
+	tester.equal 104, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -108,7 +111,7 @@ convertCoffee false
 			+ 5
 			"""
 
-	tester.equal 111, """
+	tester.equal 114, """
 			str = <<<
 				abc
 				def
@@ -119,7 +122,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 122, """
+	tester.equal 125, """
 			str = <<<
 				===
 				abc
@@ -131,7 +134,7 @@ convertCoffee false
 			x = 42
 			"""
 
-	tester.equal 134, """
+	tester.equal 137, """
 			str = <<<
 				...this is a
 					long line
@@ -139,7 +142,7 @@ convertCoffee false
 			str = "this is a long line"
 			"""
 
-	tester.equal 142, """
+	tester.equal 145, """
 			lItems = <<<
 				---
 				- a
@@ -148,7 +151,7 @@ convertCoffee false
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 151, """
+	tester.equal 154, """
 			hItems = <<<
 				---
 				a: 13
@@ -157,7 +160,7 @@ convertCoffee false
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 160, """
+	tester.equal 163, """
 			lItems = <<<
 				---
 				-
@@ -170,7 +173,7 @@ convertCoffee false
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 173, """
+	tester.equal 176, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -186,7 +189,7 @@ convertCoffee false
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 189, """
+	tester.equal 192, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -199,7 +202,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 202, """
+	tester.equal 205, """
 			str = \"\"\"
 				this is a
 				long string
@@ -213,7 +216,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 216, '''
+	tester.equal 219, '''
 			str = """
 				this is a
 				long string
@@ -227,7 +230,7 @@ convertCoffee false
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 230, """
+	tester.equal 233, """
 			str = '''
 				this is a
 				long string
@@ -257,28 +260,22 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 260, """
+	tester.equal 263, """
 			handler = <<<
 				() ->
 					return 42
 			""", """
-			handler = (function() { return 42; });
+			handler = () ->
+				return 42
 			"""
 
-	tester.equal 268, """
-			handler = <<<
-				() ->
-					return 42
-			""", """
-			handler = (function() { return 42; });
-			"""
-
-	tester.equal 276, """
+	tester.equal 272, """
 			handler = <<<
 				(x, y) ->
 					return 42
 			""", """
-			handler = (function(x, y) { return 42; });
+			handler = (x, y) ->
+				return 42
 			"""
 
 	)()
@@ -294,7 +291,7 @@ convertCoffee false
 
 	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
 
-	simple.equal 297, jsCode, """
+	simple.equal 294, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			if (fs.existsSync('file.txt')) {
@@ -318,7 +315,7 @@ convertCoffee false
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 321, """
+	tester.equal 318, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -330,7 +327,7 @@ convertCoffee false
 
 	# --- But not if we're already importing them
 
-	tester.equal 333, """
+	tester.equal 330, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -344,7 +341,7 @@ convertCoffee false
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	tester.equal 347, """
+	tester.equal 344, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -352,7 +349,7 @@ convertCoffee false
 			x = undef;
 			"""
 
-	tester.equal 355, """
+	tester.equal 352, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -367,7 +364,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 370, """
+	tester.equal 367, """
 			x = 23
 			logger x
 			""", """

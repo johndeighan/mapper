@@ -1,8 +1,9 @@
 # heredoc.coffee
 
 import {
-	assert, isString, isHash, isEmpty, nonEmpty,
-	undef, pass, croak, escapeStr, CWS,
+	assert, undef, defined, notdefined, pass, croak,
+	isString, isHash, isEmpty, nonEmpty,
+	escapeStr, CWS, OL, className,
 	} from '@jdeighan/coffee-utils'
 import {
 	firstLine, remainingLines, joinBlocks,
@@ -11,16 +12,10 @@ import {indented} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {LOG} from '@jdeighan/coffee-utils/log'
 
-lAllHereDocs = []
-lAllHereDocNames = []
-export debugHereDoc = false
+import {isTAML, taml} from '@jdeighan/mapper/taml'
 
-# ---------------------------------------------------------------------------
-
-export doDebugHereDoc = (flag=true) ->
-
-	debugHereDoc = flag
-	return
+lHereDocs = []   # checked in this order - list of type names
+hHereDocs = {}   # {type: obj}
 
 # ---------------------------------------------------------------------------
 
@@ -38,105 +33,148 @@ export lineToParts = (line) ->
 	return lParts
 
 # ---------------------------------------------------------------------------
-# Returns a hash with keys:
-#    str - replacement string
-#    obj - any kind of object, number, string, etc.
-#    type - typeof obj
+# ---------------------------------------------------------------------------
+# --- To extend,
+#        define doMap(block) that:
+#           returns undef if it's not your HEREDOC type
+#           else returns a CieloScript expression
+
+export class BaseHereDoc
+
+	doMap: (block) ->
+
+		return undef
+
+# ---------------------------------------------------------------------------
+# Returns a CieloScript expression or undef
 
 export mapHereDoc = (block) ->
 
-	debug "enter mapHereDoc()"
-	assert isString(block), "mapHereDoc(): not a string"
-	for heredoc,i in lAllHereDocs
-		name = heredoc.myName()
-		debug "TRY #{name} HEREDOC"
-		if result = heredoc.isMyHereDoc(block)
-			debug "found #{name} HEREDOC"
-			if debugHereDoc
-				LOG "--------------------------------------"
-				LOG "HEREDOC type '#{name}'"
-				LOG "--------------------------------------"
-				LOG block
-				LOG "--------------------------------------"
-			result = heredoc.map(block, result)
-			result.type = typeof result.obj
-			debug "return from mapHereDoc()", result
-			return result
+	debug "enter mapHereDoc()", block
+	assert isString(block), "not a string"
+	for type in lHereDocs
+		debug "CHECK FOR #{type} HEREDOC"
+		heredoc = hHereDocs[type]
+		if defined(str = heredoc.doMap(block))
+			debug "   - FOUND #{type} HEREDOC"
+			debug "return from mapHereDoc()", str
+			return str
 		else
-			if debugHereDoc
-				LOG "NOT A #{name} HEREDOC"
+			debug "   - NOT A #{type} HEREDOC"
 
-	if debugHereDoc
-		LOG "HEREDOC type 'default'"
-	result = {
-		str: JSON.stringify(block) # can directly replace <<<
-		obj: block
-		type: typeof block
-		}
-	debug "return from mapHereDoc()"
+	debug "HEREDOC type 'default'"
+	result = JSON.stringify(block)    # can directly replace <<<
+	debug "return from mapHereDoc()", result
 	return result
 
 # ---------------------------------------------------------------------------
 
-export addHereDocType = (obj) ->
+export isHereDocType = (type) ->
 
-	name = obj.myName()
-	assert name not in lAllHereDocNames, "'#{name}' is already a HEREDOC type"
-	lAllHereDocNames.unshift name
-	lAllHereDocs.unshift obj
+	return defined(hHereDocs[type])
+
+# ---------------------------------------------------------------------------
+
+export addHereDocType = (type, inputClass) ->
+
+	assert inputClass?, "Missing input class"
+	name = className(inputClass)
+	debug "enter addHereDocType()", type, name
+	if defined(hHereDocs[type])
+		# --- Already installed, but OK if it's the same class
+		installed = className(hHereDocs[type])
+		if (installed != name)
+			croak "type #{OL(type)}: add #{name}, installed is #{installed}"
+		debug "return from addHereDocType() - already installed"
+		return
+
+	oHereDoc = new inputClass()
+	assert oHereDoc instanceof BaseHereDoc,
+		"addHereDocType() requires a BaseHereDoc subclass"
+
+	lHereDocs.push type
+	hHereDocs[type]  = oHereDoc
+	debug "return from addHereDocType()"
 	return
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 
-export class BlockHereDoc
+export addStdHereDocTypes = () ->
 
-	myName: () ->
-		return 'explicit block'
-
-	isMyHereDoc: (block) ->
-		return firstLine(block) == '==='
-
-	map: (block) ->
-		block = remainingLines(block)
-		return {
-			str: JSON.stringify(block) # can directly replace <<<
-			obj: block
-			}
+	addHereDocType 'one line', OneLineHereDoc
+	addHereDocType 'block', ExplicitBlockHereDoc
+	addHereDocType 'taml', TAMLHereDoc
+	addHereDocType 'func', FuncHereDoc
+	return
 
 # ---------------------------------------------------------------------------
 
-export class OneLineHereDoc
+export class ExplicitBlockHereDoc extends BaseHereDoc
 
-	myName: () ->
-		return 'one line'
+	doMap: (block) ->
 
-	isMyHereDoc: (block) ->
-		return block.indexOf('...') == 0
-
-	map: (block) ->
-		# --- replace all runs of whitespace with single space char
-		block = block.substring(3).trim().replace(/\s+/gs, ' ')
-		return {
-			str: JSON.stringify(block) # can directly replace <<<
-			obj: block
-			}
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-qesc = (block) ->
-
-	hEsc = {
-		"\n": "\\n"
-		"\r": ""
-		"\t": "\\t"
-		"\"": "\\\""
-		}
-	return escapeStr(block, hEsc)
+		if firstLine(block) != '==='
+			return undef
+		return JSON.stringify(remainingLines(block))
 
 # ---------------------------------------------------------------------------
 
-# --- last one is checked first
-addHereDocType new OneLineHereDoc()   #  ...
-addHereDocType new BlockHereDoc()     #  ===
+export class OneLineHereDoc extends BaseHereDoc
+
+	doMap: (block) ->
+
+		if (block.indexOf('...') != 0)
+			return undef
+		return JSON.stringify(block.substring(3).trim().replace(/\s+/gs, ' '))
+
+# ---------------------------------------------------------------------------
+
+export class TAMLHereDoc extends BaseHereDoc
+
+	doMap: (block) ->
+		if ! isTAML(block)
+			return undef
+		return JSON.stringify(taml(block))
+
+# ---------------------------------------------------------------------------
+
+export class FuncHereDoc extends BaseHereDoc
+
+	doMap: (block) ->
+		if ! @isFunctionDef(block)
+			return undef
+		return block
+
+	# ........................................................................
+
+	isFunctionDef: (block) ->
+
+		debug "enter isFunctionDef()", block
+		lMatches = block.match(///^
+				\(
+				\s*
+				(                            # optional parameters
+					[A-Za-z_][A-Za-z0-9_]*
+					(?:
+						,
+						\s*
+						[A-Za-z_][A-Za-z0-9_]*
+						)*
+					)?
+				\s*
+				\)
+				\s*
+				->
+				[\ \t]*
+				\n?
+				(.*)
+				$///s)
+		if lMatches
+			# --- HERE, we should check if it compiles
+			[_, strParms, strBody] = lMatches
+
+			debug "return from isFunctionDef - OK"
+			return true
+		else
+			debug "return from isFunctionDef - no match"
+			return false

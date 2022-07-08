@@ -42,12 +42,12 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  coffeeCodeToJS
-} from '@jdeighan/mapper/coffee';
+  TreeWalker
+} from '@jdeighan/mapper/tree';
 
 import {
-  FuncHereDoc
-} from '@jdeighan/mapper/func';
+  coffeeCodeToJS
+} from '@jdeighan/mapper/coffee';
 
 import {
   getNeededSymbols,
@@ -55,17 +55,9 @@ import {
 } from '@jdeighan/mapper/symbols';
 
 import {
-  TAMLHereDoc
-} from '@jdeighan/mapper/taml';
-
-import {
   doMap,
   Mapper
 } from '@jdeighan/mapper';
-
-import {
-  TreeWalker
-} from '@jdeighan/mapper/tree';
 
 export var convertingCielo = true;
 

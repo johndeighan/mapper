@@ -12,11 +12,7 @@ import {
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {Mapper} from '@jdeighan/mapper'
-import {
-	lineToParts, mapHereDoc, addHereDocType,
-	} from '@jdeighan/mapper/heredoc'
-import {FuncHereDoc} from '@jdeighan/mapper/func'
-import {TAMLHereDoc} from '@jdeighan/mapper/taml'
+import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ===========================================================================
 #   class TreeWalker
@@ -56,9 +52,12 @@ export class TreeWalker extends Mapper
 		debug "split: level = #{OL(@srcLevel)}, str = #{OL(str)}"
 		assert nonEmpty(str), "empty string should be special"
 
-		# --- check for extension lines, stop on blank line
+		# --- check for extension lines, stop on blank line if found
 		debug "check for extension lines"
-		lExtLines = @fetchLinesAtLevel(@srcLevel+2, {stopOn: ''})
+		hOptions = {
+			stopOn: ''
+			}
+		lExtLines = @fetchLinesAtLevel(@srcLevel+2, hOptions)
 		assert isArray(lExtLines), "lExtLines not an array"
 		debug "#{lExtLines.length} extension lines"
 		if isEmpty(lExtLines)
@@ -72,12 +71,9 @@ export class TreeWalker extends Mapper
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
 		if (str.indexOf('<<<') >= 0)
-			hResult = @handleHereDoc(str)
-			# --- NOTE: hResult.lObjects is not currently used
-			#           but I want to use it in the future to
-			#           prevent having to construct an object from the line
-			if (hResult.line != str)
-				str = hResult.line
+			newStr = @handleHereDocsInLine(str)
+			if (newStr != str)
+				str = newStr
 				debug "=> #{OL(str)}"
 		else
 			debug "no HEREDOCs"
@@ -116,37 +112,46 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	handleHereDoc: (line) ->
+	handleHereDocsInLine: (line) ->
 		# --- Indentation has been removed from line
 		# --- Find each '<<<' and replace with result of mapHereDoc()
 
-		debug "enter handleHereDoc()", line
+		debug "enter handleHereDocsInLine()", line
 		assert isString(line), "not a string"
 		lParts = lineToParts(line)
 		debug 'lParts', lParts
-		lObjects = []
 		lNewParts = []    # to be joined to form new line
 		for part in lParts
 			if part == '<<<'
 				debug "get HEREDOC lines at level #{@srcLevel+1}"
-				lLines = @fetchLinesAtLevel(@srcLevel+1, {stopOn: '', discard: true})
-				lLines = undented(lLines, @srcLevel+1)
-				debug 'lLines', lLines
+				hOptions = {
+					stopOn: ''
+					discard: true    # discard the terminating empty line
+					}
 
-				hResult = mapHereDoc(arrayToBlock(lLines))
-				debug 'hResult', hResult
-				lObjects.push hResult.obj
-				lNewParts.push hResult.str
+				# --- block will be undented
+				block = @fetchBlockAtLevel(@srcLevel+1, hOptions)
+				debug 'block', block
+
+				cieloExpr = mapHereDoc(block)
+				assert defined(cieloExpr), "mapHereDoc returned undef"
+				debug 'cieloExpr', cieloExpr
+
+				str = @handleHereDoc(cieloExpr, block)
+				assert defined(str), "handleHereDoc returned undef"
+				lNewParts.push str
 			else
 				lNewParts.push part    # keep as is
 
-		hResult = {
-			line: lNewParts.join('')
-			lObjects: lObjects
-			}
+		result = lNewParts.join('')
+		debug "return from handleHereDocsInLine", result
+		return result
 
-		debug "return from handleHereDoc", hResult
-		return hResult
+	# ..........................................................
+
+	handleHereDoc: (cieloExpr, block) ->
+
+		return cieloExpr
 
 	# ..........................................................
 
@@ -466,6 +471,3 @@ export class TraceWalker extends TreeWalker
 		return block
 
 # ---------------------------------------------------------------------------
-
-addHereDocType new TAMLHereDoc()     #  ---
-addHereDocType new FuncHereDoc()     #  () ->

@@ -1,6 +1,6 @@
 # allMapped.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {
 	assert, croak, undef, pass, OL, defined,
 	isEmpty, nonEmpty, isString, eval_expr,
@@ -9,10 +9,10 @@ import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 
-import {doDebugHereDoc} from '@jdeighan/mapper/heredoc'
+import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
 import {TreeWalker, TraceWalker} from '@jdeighan/mapper/tree'
 
-simple = new UnitTester()
+addStdHereDocTypes()
 
 # ---------------------------------------------------------------------------
 # Test TreeWalker.allMapped()
@@ -34,7 +34,7 @@ simple = new UnitTester()
 	# --- remove comments and blank lines
 	#     create user object from simple line
 
-	tester.equal 37, """
+	tester.equal 46, """
 			# --- comment, followed by blank line
 
 			abc
@@ -49,7 +49,7 @@ simple = new UnitTester()
 	# --- remove comments and blank lines
 	#     create user object from simple line
 
-	tester.equal 52, """
+	tester.equal 61, """
 			# --- comment, followed by blank line
 
 			abc
@@ -71,7 +71,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- level
 
-	tester.equal 74, """
+	tester.equal 83, """
 			abc
 				def
 					ghi
@@ -125,9 +125,9 @@ simple = new UnitTester()
 		getUserObj: (line) ->
 
 			pos = line.indexOf(' ')
-			assert (pos > 0), "Missing 1st space char"
+			assert (pos > 0), "Missing 1st space char in #{OL(line)}"
 			level = parseInt(line.substring(0, pos))
-			item = line.substring(pos+1)
+			item = line.substring(pos+1).replace(/\\N/g, '\n').replace(/\\T/g, '\t')
 
 			if (item[0] == '{')
 				item = eval_expr(item)
@@ -155,7 +155,7 @@ simple = new UnitTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 158, """
+	tester.equal 167, """
 			# --- comment, followed by blank line
 
 			abc
@@ -170,7 +170,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- const replacement
 
-	tester.equal 173, """
+	tester.equal 182, """
 			#define name John Deighan
 			abc
 			__name__
@@ -182,7 +182,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- extension lines
 
-	tester.equal 185, """
+	tester.equal 194, """
 			abc
 					&& def
 					&& ghi
@@ -195,7 +195,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (default)
 
-	tester.equal 198, """
+	tester.equal 207, """
 			func(<<<)
 				abc
 				def
@@ -209,7 +209,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (explicit)
 
-	tester.equal 212, """
+	tester.equal 221, """
 			func(<<<)
 				===
 				abc
@@ -224,7 +224,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	tester.equal 227, """
+	tester.equal 236, """
 			func(<<<)
 				...
 				abc
@@ -239,7 +239,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	tester.equal 242, """
+	tester.equal 251, """
 			func(<<<)
 				...abc
 				   def
@@ -253,7 +253,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - TAML
 
-	tester.equal 256, """
+	tester.equal 265, """
 			func(<<<)
 				---
 				- abc
@@ -268,23 +268,23 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - function
 
-	tester.equal 271, """
+	tester.equal 280, """
 			handleClick(<<<)
 				(event) ->
 					event.preventDefault()
-					alert('clicked')
+					alert 'clicked'
 					return
 
 			xyz
 			""", """
-			0 handleClick((function(event) { event.preventDefault(); alert('clicked'); });)
+			0 handleClick((event) ->\\N\\Tevent.preventDefault()\\N\\Talert 'clicked'\\N\\Treturn)
 			0 xyz
 			"""
 
 	# ------------------------------------------------------------------------
 	# --- using __END__
 
-	tester.equal 287, """
+	tester.equal 296, """
 			abc
 			def
 			__END__
@@ -299,7 +299,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value not defined
 
-	tester.equal 302, """
+	tester.equal 311, """
 			#ifdef mobile
 				abc
 			def
@@ -310,7 +310,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value defined
 
-	tester.equal 313, """
+	tester.equal 322, """
 			#define mobile anything
 			#ifdef mobile
 				abc
@@ -324,7 +324,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value not defined
 
-	tester.equal 327, """
+	tester.equal 336, """
 			#ifdef mobile samsung
 				abc
 			def
@@ -335,7 +335,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined, but different
 
-	tester.equal 338, """
+	tester.equal 347, """
 			#define mobile apple
 			#ifdef mobile samsung
 				abc
@@ -347,7 +347,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined and same
 
-	tester.equal 350, """
+	tester.equal 359, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -361,7 +361,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - not defined
 
-	tester.equal 364, """
+	tester.equal 373, """
 			#ifndef mobile
 				abc
 			def
@@ -373,7 +373,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - defined
 
-	tester.equal 376, """
+	tester.equal 385, """
 			#define mobile anything
 			#ifndef mobile
 				abc
@@ -386,7 +386,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - not defined
 
-	tester.equal 389, """
+	tester.equal 398, """
 			#ifndef mobile samsung
 				abc
 			def
@@ -398,7 +398,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined, but different
 
-	tester.equal 401, """
+	tester.equal 410, """
 			#define mobile apple
 			#ifndef mobile samsung
 				abc
@@ -411,7 +411,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined and same
 
-	tester.equal 414, """
+	tester.equal 423, """
 			#define mobile samsung
 			#ifndef mobile samsung
 				abc
@@ -424,7 +424,7 @@ simple = new UnitTester()
 	# ------------------------------------------------------------------------
 	# --- nested commands
 
-	tester.equal 427, """
+	tester.equal 436, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -438,7 +438,7 @@ simple = new UnitTester()
 
 	# --- nested commands
 
-	tester.equal 441, """
+	tester.equal 450, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
@@ -449,7 +449,7 @@ simple = new UnitTester()
 
 	# --- nested commands
 
-	tester.equal 452, """
+	tester.equal 461, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -460,7 +460,7 @@ simple = new UnitTester()
 
 	# --- nested commands
 
-	tester.equal 463, """
+	tester.equal 472, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
@@ -472,7 +472,7 @@ simple = new UnitTester()
 	# ----------------------------------------------------------
 	# --- nested commands - every combination
 
-	tester.equal 475, """
+	tester.equal 484, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -488,7 +488,7 @@ simple = new UnitTester()
 
 	# --- nested commands - every combination
 
-	tester.equal 491, """
+	tester.equal 500, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -502,7 +502,7 @@ simple = new UnitTester()
 
 	# --- nested commands - every combination
 
-	tester.equal 505, """
+	tester.equal 514, """
 			#define large anything
 			#ifdef mobile samsung
 				abc
@@ -515,7 +515,7 @@ simple = new UnitTester()
 
 	# --- nested commands - every combination
 
-	tester.equal 518, """
+	tester.equal 527, """
 			#ifdef mobile samsung
 				abc
 				#ifdef large

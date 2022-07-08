@@ -11,16 +11,16 @@ import {isBuiltin} from '@jdeighan/mapper/builtins'
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-class TreeWalker
+class ASTBase
 
 	constructor: (@tree, hStdKeys={}) ->
-		debug "enter TreeWalker()", hStdKeys
+		debug "enter ASTBase()", hStdKeys
 
 		# --- tree can be a hash or array of hashes
 		if isHash(@tree)
 			debug "tree was hash - constructing list from it"
 			@tree = [@tree]
-		assert isArrayOfHashes(@tree), "new TreeWalker: Bad tree"
+		assert isArrayOfHashes(@tree), "new ASTBase: Bad tree"
 
 		# --- @hStdKeys allows you to provide an alternate name for 'subtree'
 		#     Ditto for 'node', but if the 'node' key exists, but is
@@ -38,7 +38,7 @@ class TreeWalker
 		else
 			@hStdKeys.node = 'node'
 
-		debug "return from TreeWalker()", @hStdKeys
+		debug "return from ASTBase()", @hStdKeys
 
 	# ..........................................................
 	# --- Called after walk() completes
@@ -52,10 +52,10 @@ class TreeWalker
 
 	walk: () ->
 
-		debug "enter TreeWalker.walk()"
+		debug "enter ASTBase.walk()"
 		@walkNodes @tree, 0
 		result = @getResult()
-		debug "return from TreeWalker.walk()", result
+		debug "return from ASTBase.walk()", result
 		return result
 
 	# ..........................................................
@@ -131,7 +131,7 @@ class TreeWalker
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-export class ASTWalker extends TreeWalker
+export class ASTWalker extends ASTBase
 
 	constructor: (ast) ->
 
@@ -328,7 +328,7 @@ export class ASTWalker extends TreeWalker
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-export class TreeStringifier extends TreeWalker
+export class TreeStringifier extends ASTBase
 
 	constructor: (tree, hStdKeys={}) ->
 

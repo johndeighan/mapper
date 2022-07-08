@@ -44,17 +44,8 @@ import {
 
 import {
   lineToParts,
-  mapHereDoc,
-  addHereDocType
+  mapHereDoc
 } from '@jdeighan/mapper/heredoc';
-
-import {
-  FuncHereDoc
-} from '@jdeighan/mapper/func';
-
-import {
-  TAMLHereDoc
-} from '@jdeighan/mapper/taml';
 
 // ===========================================================================
 //   class TreeWalker
@@ -81,18 +72,19 @@ export var TreeWalker = class TreeWalker extends Mapper {
   //        uobj - mapped object
   // --- Will only receive non-special lines
   map(item) {
-    var hResult, lExtLines, newstr, str;
+    var hOptions, lExtLines, newStr, newstr, str;
     debug("enter map()", item);
     // --- a TreeWalker makes no sense unless items are strings
     assert(isString(item), `non-string: ${OL(item)}`);
     [this.srcLevel, str] = splitLine(item);
     debug(`split: level = ${OL(this.srcLevel)}, str = ${OL(str)}`);
     assert(nonEmpty(str), "empty string should be special");
-    // --- check for extension lines, stop on blank line
+    // --- check for extension lines, stop on blank line if found
     debug("check for extension lines");
-    lExtLines = this.fetchLinesAtLevel(this.srcLevel + 2, {
+    hOptions = {
       stopOn: ''
-    });
+    };
+    lExtLines = this.fetchLinesAtLevel(this.srcLevel + 2, hOptions);
     assert(isArray(lExtLines), "lExtLines not an array");
     debug(`${lExtLines.length} extension lines`);
     if (isEmpty(lExtLines)) {
@@ -107,12 +99,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
     // --- handle HEREDOCs
     debug("check for HEREDOC");
     if (str.indexOf('<<<') >= 0) {
-      hResult = this.handleHereDoc(str);
-      // --- NOTE: hResult.lObjects is not currently used
-      //           but I want to use it in the future to
-      //           prevent having to construct an object from the line
-      if (hResult.line !== str) {
-        str = hResult.line;
+      newStr = this.handleHereDocsInLine(str);
+      if (newStr !== str) {
+        str = newStr;
         debug(`=> ${OL(str)}`);
       }
     } else {
@@ -153,40 +142,44 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  handleHereDoc(line) {
-    var hResult, j, lLines, lNewParts, lObjects, lParts, len, part;
+  handleHereDocsInLine(line) {
+    var block, cieloExpr, hOptions, j, lNewParts, lParts, len, part, result, str;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
-    debug("enter handleHereDoc()", line);
+    debug("enter handleHereDocsInLine()", line);
     assert(isString(line), "not a string");
     lParts = lineToParts(line);
     debug('lParts', lParts);
-    lObjects = [];
     lNewParts = []; // to be joined to form new line
     for (j = 0, len = lParts.length; j < len; j++) {
       part = lParts[j];
       if (part === '<<<') {
         debug(`get HEREDOC lines at level ${this.srcLevel + 1}`);
-        lLines = this.fetchLinesAtLevel(this.srcLevel + 1, {
+        hOptions = {
           stopOn: '',
-          discard: true
-        });
-        lLines = undented(lLines, this.srcLevel + 1);
-        debug('lLines', lLines);
-        hResult = mapHereDoc(arrayToBlock(lLines));
-        debug('hResult', hResult);
-        lObjects.push(hResult.obj);
-        lNewParts.push(hResult.str);
+          discard: true // discard the terminating empty line
+        };
+        // --- block will be undented
+        block = this.fetchBlockAtLevel(this.srcLevel + 1, hOptions);
+        debug('block', block);
+        cieloExpr = mapHereDoc(block);
+        assert(defined(cieloExpr), "mapHereDoc returned undef");
+        debug('cieloExpr', cieloExpr);
+        str = this.handleHereDoc(cieloExpr, block);
+        assert(defined(str), "handleHereDoc returned undef");
+        lNewParts.push(str);
       } else {
         lNewParts.push(part); // keep as is
       }
     }
-    hResult = {
-      line: lNewParts.join(''),
-      lObjects: lObjects
-    };
-    debug("return from handleHereDoc", hResult);
-    return hResult;
+    result = lNewParts.join('');
+    debug("return from handleHereDocsInLine", result);
+    return result;
+  }
+
+  // ..........................................................
+  handleHereDoc(cieloExpr, block) {
+    return cieloExpr;
   }
 
   // ..........................................................
@@ -490,6 +483,3 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
 };
 
 // ---------------------------------------------------------------------------
-addHereDocType(new TAMLHereDoc()); //  ---
-
-addHereDocType(new FuncHereDoc()); //  () ->

@@ -58,6 +58,12 @@ import {
   SimpleMarkDownMapper
 } from '@jdeighan/mapper/markdown';
 
+import {
+  addStdHereDocTypes
+} from '@jdeighan/mapper/heredoc';
+
+addStdHereDocTypes();
+
 /*
 	class TreeWalker should handle the following:
 		- remove empty lines, retain comments

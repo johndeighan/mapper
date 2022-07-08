@@ -1,27 +1,36 @@
 # heredoc.test.coffee
 
-import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {
 	assert, undef, isString, extractMatches, CWS, OL,
+	defined, notdefined,
 	} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
+import {setDebugging, debug} from '@jdeighan/coffee-utils/debug'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
 import {
-	lineToParts, mapHereDoc, addHereDocType,
+	lineToParts, mapHereDoc, addHereDocType, isHereDocType,
+	BaseHereDoc, addStdHereDocTypes,
 	} from '@jdeighan/mapper/heredoc'
 
-simple = new UnitTesterNorm()
+addStdHereDocTypes()
 
 # ---------------------------------------------------------------------------
 
-simple.equal 20, lineToParts('this is not a heredoc'), [
+simple.truthy 23, isHereDocType('one line')
+simple.truthy 24, isHereDocType('taml')
+simple.falsy 25, isHereDocType('two line')
+
+# ---------------------------------------------------------------------------
+
+simple.equal 29, lineToParts('this is not a heredoc'), [
 	'this is not a heredoc'
 	]
 
-simple.equal 24, lineToParts('this <<< is <<< heredoc'), [
+simple.equal 33, lineToParts('this <<< is <<< heredoc'), [
 	'this '
 	'<<<'
 	' is '
@@ -29,7 +38,7 @@ simple.equal 24, lineToParts('this <<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-simple.equal 32, lineToParts('<<< is <<< heredoc'), [
+simple.equal 41, lineToParts('<<< is <<< heredoc'), [
 	''
 	'<<<'
 	' is '
@@ -37,7 +46,7 @@ simple.equal 32, lineToParts('<<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-simple.equal 40, lineToParts('this <<< is <<<'), [
+simple.equal 49, lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
@@ -45,7 +54,7 @@ simple.equal 40, lineToParts('this <<< is <<<'), [
 	''
 	]
 
-simple.equal 48, lineToParts('<<< is <<<'), [
+simple.equal 57, lineToParts('<<< is <<<'), [
 	''
 	'<<<'
 	' is '
@@ -53,13 +62,13 @@ simple.equal 48, lineToParts('<<< is <<<'), [
 	''
 	]
 
-simple.equal 56, lineToParts('<<<'), [
+simple.equal 65, lineToParts('<<<'), [
 	''
 	'<<<'
 	''
 	]
 
-simple.equal 62, lineToParts('<<<<<<'), [
+simple.equal 71, lineToParts('<<<<<<'), [
 	''
 	'<<<'
 	''
@@ -69,52 +78,41 @@ simple.equal 62, lineToParts('<<<<<<'), [
 
 # ---------------------------------------------------------------------------
 
-simple.equal 72, mapHereDoc("""
+simple.equal 81, mapHereDoc("""
 		abc
 		def
-		"""), {
-			str: '"abc\\ndef"'
-			obj: "abc\ndef"
-			type: 'string'
-			}
+		"""), '"abc\\ndef"'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 83, mapHereDoc("""
+simple.equal 88, mapHereDoc("""
 		===
 		abc
 		def
-		"""), {
-			str: '"abc\\ndef"'
-			obj: "abc\ndef"
-			type: 'string'
-			}
+		"""), '"abc\\ndef"'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 95, mapHereDoc("""
+simple.equal 96, mapHereDoc("""
 		...
 		abc
 		def
-		"""), {
-			str: '"abc def"'
-			obj: "abc def"
-			type: 'string'
-			}
+		"""), '"abc def"'
 
 # ---------------------------------------------------------------------------
 
 class HereDocTester extends UnitTester
 
 	transformValue: (block) ->
-		return mapHereDoc(block).str
+
+		return mapHereDoc(block)
 
 tester = new HereDocTester()
 
 # ------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal 117, """
+tester.equal 115, """
 		this is a
 		block of text
 		""",
@@ -123,7 +121,7 @@ tester.equal 117, """
 # ------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal 126, """
+tester.equal 124, """
 		===
 		this is a
 		block of text
@@ -133,7 +131,7 @@ tester.equal 126, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 136, """
+tester.equal 134, """
 		...this is a
 		line of text
 		""",
@@ -142,7 +140,7 @@ tester.equal 136, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 145, """
+tester.equal 143, """
 		...
 		this is a
 		line of text
@@ -152,27 +150,24 @@ tester.equal 145, """
 # ---------------------------------------------------------------------------
 # Test creating new heredoc types
 
-class MatrixHereDoc
+class MatrixHereDoc extends BaseHereDoc
 
-	myName: () ->
-		return 'matrix'
-
-	isMyHereDoc: (block) ->
+	doMap: (block) ->
 		# --- if block starts with a digit
-		return block.match(/^\s*\d/)
-
-	map: (block) ->
+		debug "enter MatrixHereDoc.doMap()", block
+		if notdefined(block.match(/^\s*\d/s))
+			debug "return undef from MatrixHereDoc.doMap()"
+			return undef
 		lArray = []
 		for line in blockToArray(block)
 			lArray.push extractMatches(line, /\d+/g, parseInt)
-		return {
-			obj: lArray
-			str: JSON.stringify(lArray)
-			}
+		result = JSON.stringify(lArray)
+		debug "return from MatrixHereDoc.doMap()", result
+		return result
 
-addHereDocType new MatrixHereDoc()
+addHereDocType 'matrix', MatrixHereDoc
 
-tester.equal 175, """
+tester.equal 170, """
 		1 2 3
 		2 4 6
 		""",
@@ -181,24 +176,24 @@ tester.equal 175, """
 # ------------------------------------------------------------------------
 # Test creating a new heredoc type by overriding mapToString
 
-class UCHereDoc
+class UCHereDoc extends BaseHereDoc
 
-	myName: () ->
-		return 'upper case'
+	doMap: (block) ->
 
-	isMyHereDoc: (block) ->
-		return block.indexOf('^^^') == 0
+		debug "enter UCHereDoc.doMap()", block
+		if (block.indexOf('^^^') != 0)
+			debug "return undef from UCHereDoc.doMap()"
+			return undef
 
-	map: (block) ->
 		block = block.substring(4).toUpperCase()
-		return {
-			obj: block
-			str: JSON.stringify(block)
-			}
+		debug 'block', block
+		result = JSON.stringify(block)
+		debug "return from UCHereDoc.doMap()", result
+		return result
 
-addHereDocType new UCHereDoc()
+addHereDocType 'upper case', UCHereDoc
 
-tester.equal 201, """
+tester.equal 196, """
 		^^^
 		This is a
 		block of text
@@ -211,30 +206,174 @@ tester.equal 201, """
 #     e.g. with header line ***,
 #     we'll create an upper-cased single line string
 
-class UCHereDoc2
+class UCHereDoc2 extends BaseHereDoc
 
-	myName: () ->
-		return 'upper case 2'
+	doMap: (block) ->
 
-	isMyHereDoc: (block) ->
-		return (firstLine(block) == '***')
+		debug "enter UCHereDoc2.doMap()", block
+		if (firstLine(block) != '***')
+			debug "return undef from UCHereDoc.doMap()"
+			return undef
 
-	map: (block) ->
-		block = remainingLines(block).toUpperCase()
-		str = CWS(block)
-		return {
-			str: JSON.stringify(str)
-			obj: str
-			type: 'string'
-			}
+		block = CWS(remainingLines(block).toUpperCase())
+		debug 'block', block
+		result = JSON.stringify(block)
+		debug "return from UCHereDoc2.doMap()", result
+		return result
 
-addHereDocType new UCHereDoc2()
+addHereDocType 'upper case 2', UCHereDoc2
 
 # ---------------------------------------------------------------------------
 
-tester.equal 235, """
+tester.equal 228, """
 		***
 		select ID,Name
 		from Users
 		""",
 		'"SELECT ID,NAME FROM USERS"'
+
+# ===========================================================================
+
+class HereDocTester extends UnitTester
+
+	transformValue: (block) ->
+		return mapHereDoc(block)
+
+tester = new HereDocTester()
+
+# ---------------------------------------------------------------------------
+# TAML block
+
+tester.equal 247, """
+		---
+		- abc
+		- def
+		""",
+		'["abc","def"]'
+
+# ---------------------------------------------------------------------------
+# TAML-like block, but actually a block
+
+tester.equal 257, """
+		===
+		---
+		- abc
+		- def
+		""",
+		'"---\\n- abc\\n- def"'
+
+# ---------------------------------------------------------------------------
+# TAML block 2
+
+tester.equal 268, """
+		---
+		-
+			label: Help
+			url: /help
+		-
+			label: Books
+			url: /books
+		""",
+		'[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]'
+
+# ---------------------------------------------------------------------------
+
+class HereDocReplacer extends UnitTester
+
+	transformValue: (block) ->
+		lNewParts = for part in lineToParts(firstLine(block))
+			if part == '<<<'
+				mapHereDoc(undented(remainingLines(block)))
+			else
+				part    # keep as is
+
+		result = lNewParts.join('')
+		return result
+
+replacer = new HereDocReplacer()
+
+# ---------------------------------------------------------------------------
+
+replacer.equal 297, """
+		TopMenu lItems={<<<}
+			---
+			-
+				label: Help
+				url: /help
+			-
+				label: Books
+				url: /books
+		""", """
+		TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}
+		"""
+
+# ---------------------------------------------------------------------------
+
+replacer.equal 312, """
+		<TopMenu lItems={<<<}>
+			---
+			-
+				label: Help
+				url: /help
+			-
+				label: Books
+				url: /books
+		""", """
+		<TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}>
+		"""
+
+# ---------------------------------------------------------------------------
+
+(() ->
+
+	class HereDocMapper extends UnitTester
+
+		transformValue: (block) ->
+			return mapHereDoc(block)
+
+	tester = new HereDocMapper()
+
+	# ------------------------------------------------------------------------
+
+	tester.equal 338, """
+			(evt) ->
+				log 'click'
+			""",
+			"""
+			(evt) ->
+				log 'click'
+			"""
+
+	# ------------------------------------------------------------------------
+	# Function block, with no name or parameters
+
+	tester.equal 350, """
+			() ->
+				return true
+			""", """
+			() ->
+				return true
+			"""
+
+	# ------------------------------------------------------------------------
+	# Function block, with no name but one parameter
+
+	tester.equal 361, """
+			(evt) ->
+				console.log 'click'
+			""", """
+			(evt) ->
+				console.log 'click'
+			"""
+
+	# ------------------------------------------------------------------------
+	# Function block, with no name but one parameter
+
+	tester.equal 372, """
+			(  evt  )     ->
+				log 'click'
+			""", """
+			(  evt  )     ->
+				log 'click'
+			"""
+	)()

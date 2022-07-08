@@ -18,6 +18,9 @@ import {taml} from '@jdeighan/coffee-utils/taml'
 import {doMap} from '@jdeighan/mapper'
 import {TreeWalker, TraceWalker} from '@jdeighan/mapper/tree'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
+import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
+
+addStdHereDocTypes()
 
 ###
 	class TreeWalker should handle the following:

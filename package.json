@@ -10,8 +10,6 @@
 	"exports": {
 		"./fetcher": "./src/Fetcher.js",
 		"./getter": "./src/Getter.js",
-		"./section": "./src/Section.js",
-		"./sectionmap": "./src/SectionMap.js",
 		".": "./src/Mapper.js",
 		"./tree": "./src/TreeWalker.js",
 		"./ast": "./src/ASTWalker.js",
@@ -55,7 +53,7 @@
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^8.0.3",
+		"@jdeighan/coffee-utils": "^8.0.4",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.17",
 		"sass": "^1.53.0"

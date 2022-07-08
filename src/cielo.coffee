@@ -14,14 +14,12 @@ import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
+import {TreeWalker} from '@jdeighan/mapper/tree'
 import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
-import {FuncHereDoc} from '@jdeighan/mapper/func'
 import {
 	getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
-import {TAMLHereDoc} from '@jdeighan/mapper/taml'
 import {doMap, Mapper} from '@jdeighan/mapper'
-import {TreeWalker} from '@jdeighan/mapper/tree'
 
 export convertingCielo = true
 

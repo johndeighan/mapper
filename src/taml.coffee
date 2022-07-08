@@ -3,12 +3,12 @@
 import yaml from 'js-yaml'
 
 import {
-	assert, undef, oneline, isString,
+	assert, undef, defined, notdefined, OL, isString,
 	} from '@jdeighan/coffee-utils'
 import {
 	untabify, tabify, splitLine,
 	} from '@jdeighan/coffee-utils/indent'
-import {log, tamlStringify} from '@jdeighan/coffee-utils/log'
+import {LOG, log, tamlStringify} from '@jdeighan/coffee-utils/log'
 import {slurp, forEachLineInFile} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {firstLine, blockToArray} from '@jdeighan/coffee-utils/block'
@@ -29,19 +29,26 @@ export taml = (text, hOptions={}) ->
 	# --- Valid options:
 	#        premapper - a subclass of Mapper
 
-	debug "enter taml(#{oneline(text)})"
+	debug "enter taml(#{OL(text)})"
 	if ! text?
 		debug "return undef from taml() - text is not defined"
 		return undef
 
 	# --- If a premapper is provided, use it to map the text
-	if hOptions.premapper
-		assert hOptions.source, "taml(): premapper without source"
-		text = doMap(hOptions.premapper, hOptions.source, text)
+	if defined(hOptions.premapper)
+		premapper = hOptions.premapper
 
-	assert isTAML(text), "taml(): string #{oneline(text)} isn't TAML"
-	debug "return from taml()"
-	return yaml.load(untabify(text), {skipInvalid: true})
+		# --- THIS FAILS and I don't know why???
+#		assert (premapper instanceof Mapper),
+#				"not a Mapper subclass: #{OL(premapper)}"
+
+		assert hOptions.source, "taml(): premapper without source"
+		text = doMap(premapper, hOptions.source, text)
+
+	assert isTAML(text), "taml(): string #{OL(text)} isn't TAML"
+	result = yaml.load(untabify(text), {skipInvalid: true})
+	debug "return from taml()", result
+	return result
 
 # ---------------------------------------------------------------------------
 #   slurpTAML - read TAML from a file
@@ -51,20 +58,3 @@ export slurpTAML = (filepath, hOptions=undef) ->
 	text = slurp(filepath)
 	return taml(text, hOptions)
 
-# ---------------------------------------------------------------------------
-# --- Plugin for a TAML HEREDOC type
-
-export class TAMLHereDoc
-
-	myName: () ->
-		return 'taml'
-
-	isMyHereDoc: (block) ->
-		return isTAML(block)
-
-	map: (block) ->
-		obj = taml(block)
-		return {
-			obj
-			str: JSON.stringify(obj)
-			}

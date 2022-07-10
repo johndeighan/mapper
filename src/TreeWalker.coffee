@@ -133,11 +133,11 @@ export class TreeWalker extends Mapper
 				block = @fetchBlockAtLevel(@srcLevel+1, hOptions)
 				debug 'block', block
 
-				cieloExpr = mapHereDoc(block)
-				assert defined(cieloExpr), "mapHereDoc returned undef"
-				debug 'cieloExpr', cieloExpr
+				expr = mapHereDoc(block)
+				assert defined(expr), "mapHereDoc returned undef"
+				debug 'mapped block', expr
 
-				str = @handleHereDoc(cieloExpr, block)
+				str = @handleHereDoc(expr, block)
 				assert defined(str), "handleHereDoc returned undef"
 				lNewParts.push str
 			else

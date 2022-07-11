@@ -16,7 +16,6 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  convertMarkdown,
   markdownify,
   SimpleMarkDownMapper
 } from '@jdeighan/mapper/markdown';
@@ -48,7 +47,7 @@ text`, `<p>text</p>`);
   tester.equal(53, `# title
 text`, `<p>text</p>`);
   tester.equal(60, `this is **bold** text`, `<p>this is <strong>bold</strong> text</p>`);
-  tester.equal(66, `\`\`\`javascript
+  return tester.equal(66, `\`\`\`javascript
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
@@ -60,12 +59,6 @@ assets: &#39;build&#39;,
 fallback: null,
 &rbrace;)
 </code></pre>`);
-  convertMarkdown(false);
-  return tester.equal(85, `title
-=====
-text`, `title
-=====
-text`);
 })();
 
 // ---------------------------------------------------------------------------

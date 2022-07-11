@@ -20,13 +20,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  sassify,
-  convertSASS
+  sassify
 } from '@jdeighan/mapper/sass';
 
 simple = new UnitTesterNorm();
-
-convertSASS(false);
 
 // ---------------------------------------------------------------------------
 SassTester = class SassTester extends UnitTesterNorm {
@@ -39,21 +36,6 @@ SassTester = class SassTester extends UnitTesterNorm {
 tester = new SassTester();
 
 // ---------------------------------------------------------------------------
-(function() {
-  return tester.equal(28, `# --- This is a red paragraph (this should be removed)
-p
-	margin: 0
-	span
-		# --- this is also a comment
-		color: red`, `p
-	margin: 0
-	span
-		color: red`);
-})();
-
-// ---------------------------------------------------------------------------
-convertSASS(true);
-
 (function() {
   return tester.equal(50, `# --- here, we should use the real sass processor
 p

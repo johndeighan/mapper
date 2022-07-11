@@ -21,15 +21,6 @@ import {
 	} from '@jdeighan/mapper/symbols'
 import {doMap, Mapper} from '@jdeighan/mapper'
 
-export convertingCielo = true
-
-# ---------------------------------------------------------------------------
-
-export convertCielo = (flag) ->
-
-	convertingCielo = flag
-	return
-
 # ---------------------------------------------------------------------------
 
 export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
@@ -69,12 +60,9 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
 
 	try
-		if convertingCielo
-			hCoffeeOptions = hOptions.hCoffeeOptions
-			jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions)
-			debug "jsPreCode", jsPreCode
-		else
-			jsPreCode = cieloCode
+		hCoffeeOptions = hOptions.hCoffeeOptions
+		jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions)
+		debug "jsPreCode", jsPreCode
 		if postmapper
 			jsCode = doMap(postmapper, source, jsPreCode)
 			if jsCode != jsPreCode
@@ -88,10 +76,10 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	lImports = buildImportList(lNeededSymbols, source)
 	debug "lImports", lImports
 	assert isArray(lImports), "cieloCodeToJS(): lImports is not an array"
-	if convertingCielo
-		# --- append ';' to import statements
-		lImports = for stmt in lImports
-			stmt + ';'
+
+	# --- append ';' to import statements
+	lImports = for stmt in lImports
+		stmt + ';'
 
 	# --- joinBlocks() flattens all its arguments to array of strings
 	jsCode = joinBlocks(lImports, jsCode)

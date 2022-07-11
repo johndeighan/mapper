@@ -13,15 +13,6 @@ import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 import {isHashComment} from '@jdeighan/mapper/utils'
 import {Mapper} from '@jdeighan/mapper'
 
-convert = true
-
-# ---------------------------------------------------------------------------
-
-export convertMarkdown = (flag) ->
-
-	convert = flag
-	return
-
 # ---------------------------------------------------------------------------
 
 stripComments = (block) ->
@@ -38,9 +29,6 @@ export markdownify = (block) ->
 
 	debug "enter markdownify()", block
 	assert isString(block), "block is not a string"
-	if ! convert
-		debug "return original text from markdownify() - not converting"
-		return block
 	html = marked.parse(undented(stripComments(block)), {
 		grm: true,
 		headerIds: false,

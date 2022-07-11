@@ -10,7 +10,7 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
 import {doMap} from '@jdeighan/mapper'
 import {
-	cieloCodeToJS, cieloCodeToCoffee, convertCielo,
+	cieloCodeToJS, cieloCodeToCoffee,
 	} from '@jdeighan/mapper/cielo'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 

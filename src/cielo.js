@@ -59,13 +59,6 @@ import {
   Mapper
 } from '@jdeighan/mapper';
 
-export var convertingCielo = true;
-
-// ---------------------------------------------------------------------------
-export var convertCielo = function(flag) {
-  convertingCielo = flag;
-};
-
 // ---------------------------------------------------------------------------
 export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   var coffeeCode, err, hCoffeeOptions, jsCode, jsPreCode, lImports, lNeededSymbols, postmapper, premapper, stmt;
@@ -101,13 +94,9 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   lNeededSymbols = getNeededSymbols(coffeeCode);
   debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
   try {
-    if (convertingCielo) {
-      hCoffeeOptions = hOptions.hCoffeeOptions;
-      jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions);
-      debug("jsPreCode", jsPreCode);
-    } else {
-      jsPreCode = cieloCode;
-    }
+    hCoffeeOptions = hOptions.hCoffeeOptions;
+    jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions);
+    debug("jsPreCode", jsPreCode);
     if (postmapper) {
       jsCode = doMap(postmapper, source, jsPreCode);
       if (jsCode !== jsPreCode) {
@@ -124,18 +113,16 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   lImports = buildImportList(lNeededSymbols, source);
   debug("lImports", lImports);
   assert(isArray(lImports), "cieloCodeToJS(): lImports is not an array");
-  if (convertingCielo) {
-    // --- append ';' to import statements
-    lImports = (function() {
-      var i, len, results;
-      results = [];
-      for (i = 0, len = lImports.length; i < len; i++) {
-        stmt = lImports[i];
-        results.push(stmt + ';');
-      }
-      return results;
-    })();
-  }
+  // --- append ';' to import statements
+  lImports = (function() {
+    var i, len, results;
+    results = [];
+    for (i = 0, len = lImports.length; i < len; i++) {
+      stmt = lImports[i];
+      results.push(stmt + ';');
+    }
+    return results;
+  })();
   // --- joinBlocks() flattens all its arguments to array of strings
   jsCode = joinBlocks(lImports, jsCode);
   debug("return from cieloCodeToJS()", jsCode);

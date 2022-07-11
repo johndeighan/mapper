@@ -42,8 +42,7 @@ import {
 
 import {
   cieloCodeToJS,
-  cieloCodeToCoffee,
-  convertCielo
+  cieloCodeToCoffee
 } from '@jdeighan/mapper/cielo';
 
 import {

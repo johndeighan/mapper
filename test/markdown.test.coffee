@@ -4,7 +4,7 @@ import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {
-	convertMarkdown, markdownify, SimpleMarkDownMapper,
+	markdownify, SimpleMarkDownMapper,
 	} from '@jdeighan/mapper/markdown'
 
 simple = new UnitTesterNorm()
@@ -80,17 +80,6 @@ simple = new UnitTesterNorm()
 		</code></pre>
 		"""
 
-	convertMarkdown false
-
-	tester.equal 85, """
-			title
-			=====
-			text
-			""", """
-			title
-			=====
-			text
-			"""
 	)()
 
 # ---------------------------------------------------------------------------

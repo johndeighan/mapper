@@ -41,11 +41,8 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  convertCoffee
-} from '@jdeighan/mapper/coffee';
-
-import {
   cieloCodeToJS,
+  cieloCodeToCoffee,
   convertCielo
 } from '@jdeighan/mapper/cielo';
 
@@ -56,8 +53,6 @@ import {
 addStdHereDocTypes();
 
 simple = new UnitTesterNorm(import.meta.url);
-
-convertCoffee(false);
 
 // ---------------------------------------------------------------------------
 // --- Features:
@@ -73,7 +68,7 @@ convertCoffee(false);
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(code) {
-      return cieloCodeToJS(code, import.meta.url);
+      return cieloCodeToCoffee(code, import.meta.url);
     }
 
   };
@@ -192,7 +187,6 @@ func(x, "abc")`);
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  convertCoffee(true);
   CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(text) {
       return doMap(TreeWalker, import.meta.url, text);
@@ -202,11 +196,11 @@ func(x, "abc")`);
   tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
   // Test function HEREDOC types
-  tester.equal(263, `handler = <<<
+  tester.equal(261, `handler = <<<
 	() ->
 		return 42`, `handler = () ->
 	return 42`);
-  return tester.equal(272, `handler = <<<
+  return tester.equal(270, `handler = <<<
 	(x, y) ->
 		return 42`, `handler = (x, y) ->
 	return 42`);
@@ -219,7 +213,7 @@ func(x, "abc")`);
 if fs.existsSync('file.txt')
 	logger "file exists"`;
   jsCode = cieloCodeToJS(cieloCode, import.meta.url);
-  return simple.equal(294, jsCode, `import fs from 'fs';
+  return simple.equal(292, jsCode, `import fs from 'fs';
 import {log as logger} from '@jdeighan/coffee-utils/log';
 if (fs.existsSync('file.txt')) {
 	logger("file exists");
@@ -229,7 +223,6 @@ if (fs.existsSync('file.txt')) {
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  convertCoffee(true);
   CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(text) {
       return cieloCodeToJS(text, import.meta.url);
@@ -238,13 +231,13 @@ if (fs.existsSync('file.txt')) {
   };
   tester = new CieloTester('cielo.test');
   // --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
-  tester.equal(318, `dir = mydir(import.meta.url)
+  tester.equal(314, `dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `import {mydir,mkpath} from '@jdeighan/coffee-utils/fs';
 var dir, filepath;
 dir = mydir(import.meta.url);
 filepath = mkpath(dir, 'test.txt');`);
   // --- But not if we're already importing them
-  tester.equal(330, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
+  tester.equal(326, `import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 dir = mydir(import.meta.url)
 filepath = mkpath(dir, 'test.txt')`, `var dir, filepath;
 import {
@@ -253,10 +246,10 @@ import {
 	} from '@jdeighan/coffee-utils/fs';
 dir = mydir(import.meta.url);
 filepath = mkpath(dir, 'test.txt');`);
-  tester.equal(344, `x = undef`, `import {undef} from '@jdeighan/coffee-utils';
+  tester.equal(340, `x = undef`, `import {undef} from '@jdeighan/coffee-utils';
 var x;
 x = undef;`);
-  tester.equal(352, `x = undef
+  tester.equal(348, `x = undef
 contents = 'this is a file'
 fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})`, `import fs from 'fs';
 import {undef} from '@jdeighan/coffee-utils';
@@ -266,7 +259,7 @@ contents = 'this is a file';
 fs.writeFileSync('temp.txt', contents, {
 	encoding: 'utf8'
 	});`);
-  return tester.equal(367, `x = 23
+  return tester.equal(363, `x = 23
 logger x`, `import {log as logger} from '@jdeighan/coffee-utils/log';
 var x;
 x = 23;

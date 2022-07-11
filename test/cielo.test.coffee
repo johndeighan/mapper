@@ -9,14 +9,14 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
 import {doMap} from '@jdeighan/mapper'
-import {convertCoffee} from '@jdeighan/mapper/coffee'
-import {cieloCodeToJS, convertCielo} from '@jdeighan/mapper/cielo'
+import {
+	cieloCodeToJS, cieloCodeToCoffee, convertCielo,
+	} from '@jdeighan/mapper/cielo'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 
 addStdHereDocTypes()
 
 simple = new UnitTesterNorm(import.meta.url)
-convertCoffee false
 
 # ---------------------------------------------------------------------------
 # --- Features:
@@ -33,7 +33,7 @@ convertCoffee false
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (code) ->
-			return cieloCodeToJS(code, import.meta.url)
+			return cieloCodeToCoffee(code, import.meta.url)
 
 	tester = new CieloTester(import.meta.url)
 
@@ -248,8 +248,6 @@ convertCoffee false
 
 (() ->
 
-	convertCoffee true
-
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
@@ -260,7 +258,7 @@ convertCoffee false
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 263, """
+	tester.equal 261, """
 			handler = <<<
 				() ->
 					return 42
@@ -269,7 +267,7 @@ convertCoffee false
 				return 42
 			"""
 
-	tester.equal 272, """
+	tester.equal 270, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -291,7 +289,7 @@ convertCoffee false
 
 	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
 
-	simple.equal 294, jsCode, """
+	simple.equal 292, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			if (fs.existsSync('file.txt')) {
@@ -304,8 +302,6 @@ convertCoffee false
 
 (() ->
 
-	convertCoffee true
-
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
@@ -315,7 +311,7 @@ convertCoffee false
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 318, """
+	tester.equal 314, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -327,7 +323,7 @@ convertCoffee false
 
 	# --- But not if we're already importing them
 
-	tester.equal 330, """
+	tester.equal 326, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -341,7 +337,7 @@ convertCoffee false
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	tester.equal 344, """
+	tester.equal 340, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -349,7 +345,7 @@ convertCoffee false
 			x = undef;
 			"""
 
-	tester.equal 352, """
+	tester.equal 348, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -364,7 +360,7 @@ convertCoffee false
 				});
 			"""
 
-	tester.equal 367, """
+	tester.equal 363, """
 			x = 23
 			logger x
 			""", """

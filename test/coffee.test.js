@@ -35,7 +35,6 @@ import {
 import {
   coffeeExprToJS,
   coffeeCodeToJS,
-  convertCoffee,
   cleanJS,
   minifyJS
 } from '@jdeighan/mapper/coffee';

@@ -11,20 +11,10 @@ import {indentLevel, isUndented} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
 
-export convertingCoffee = true
-
-# ---------------------------------------------------------------------------
-
-export convertCoffee = (flag) ->
-
-	convertingCoffee = flag
-	return
-
 # ---------------------------------------------------------------------------
 
 export brew = (code, source='internal') ->
 
-	assert convertingCoffee, "not converting coffee code"
 	hCoffeeOptions = {
 		bare: true
 		header: false
@@ -55,9 +45,6 @@ export coffeeExprToJS = (coffeeExpr) ->
 	assert isUndented(coffeeExpr), "has indentation"
 	debug "enter coffeeExprToJS()"
 
-	if ! convertingCoffee
-		debug "return from coffeeExprToJS() not converting", coffeeExpr
-		return coffeeExpr
 	try
 		jsExpr = brew(coffeeExpr)
 
@@ -87,10 +74,6 @@ export coffeeCodeToJS = (coffeeCode, source=undef, hOptions={}) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToJS()", coffeeCode
-
-	if ! convertingCoffee
-		debug "return from coffeeCodeToJS() not converting", coffeeCode
-		return coffeeCode
 
 	try
 		jsCode = brew(coffeeCode, source)

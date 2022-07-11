@@ -37,7 +37,6 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	#     Valid Options:
 	#        premapper:  Mapper or subclass
 	#        postmapper: Mapper or subclass - optional
-	#        source: name of source file
 	#        hCoffeeOptions  - passed to CoffeeScript.parse()
 	#           default:
 	#              bare: true
@@ -98,6 +97,60 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 	jsCode = joinBlocks(lImports, jsCode)
 	debug "return from cieloCodeToJS()", jsCode
 	return jsCode
+
+# ---------------------------------------------------------------------------
+
+export cieloCodeToCoffee = (cieloCode, source=undef, hOptions={}) ->
+	# --- cielo => coffee
+	#     Valid Options:
+	#        premapper:  Mapper or subclass
+	#        postmapper: Mapper or subclass - optional
+	#        hCoffeeOptions  - passed to CoffeeScript.parse()
+	#           default:
+	#              bare: true
+	#              header: false
+	#     If hOptions is a string, it's assumed to be the source
+
+	debug "enter cieloCodeToCoffee()", cieloCode, source, hOptions
+
+	assert isUndented(cieloCode), "cieloCode has indent"
+	assert isHash(hOptions), "hOptions not a hash"
+
+	if hOptions.premapper
+		premapper = hOptions.premapper
+		assert premapper instanceof TreeWalker,
+			"premapper must be a TreeWalker"
+	else
+		premapper = TreeWalker
+	postmapper = hOptions.postmapper   # may be undef
+
+	# --- Handles extension lines, HEREDOCs, etc.
+	debug "Apply premapper #{className(premapper)}"
+	coffeeCode = doMap(premapper, source, cieloCode)
+	if coffeeCode != cieloCode
+		assert isUndented(coffeeCode), "coffeeCode has indent"
+		debug "coffeeCode", coffeeCode
+
+	# --- symbols will always be unique
+	#     We can only get needed symbols from coffee code, not JS code
+	lNeededSymbols = getNeededSymbols(coffeeCode)
+	debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
+
+	if postmapper
+		newCoffeeCode = doMap(postmapper, source, coffeeCode)
+		if (newCoffeeCode != coffeeCode)
+			coffeeCode = newCoffeeCode
+			debug "post mapped", coffeeCode
+
+	# --- Prepend needed imports
+	lImports = buildImportList(lNeededSymbols, source)
+	debug "lImports", lImports
+	assert isArray(lImports), "cieloCodeToCoffee(): lImports is not an array"
+
+	# --- joinBlocks() flattens all its arguments to array of strings
+	coffeeCode = joinBlocks(lImports, coffeeCode)
+	debug "return from cieloCodeToCoffee()", coffeeCode
+	return coffeeCode
 
 # ---------------------------------------------------------------------------
 

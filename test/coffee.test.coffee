@@ -8,7 +8,7 @@ import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {doMap} from '@jdeighan/mapper'
 import {
-	coffeeExprToJS, coffeeCodeToJS, convertCoffee, cleanJS, minifyJS,
+	coffeeExprToJS, coffeeCodeToJS, cleanJS, minifyJS,
 	} from '@jdeighan/mapper/coffee'
 
 simple = new UnitTesterNorm()

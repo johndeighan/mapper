@@ -33,17 +33,9 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
-export var convertingCoffee = true;
-
-// ---------------------------------------------------------------------------
-export var convertCoffee = function(flag) {
-  convertingCoffee = flag;
-};
-
 // ---------------------------------------------------------------------------
 export var brew = function(code, source = 'internal') {
   var hCoffeeOptions, mapped, result;
-  assert(convertingCoffee, "not converting coffee code");
   hCoffeeOptions = {
     bare: true,
     header: false
@@ -71,10 +63,6 @@ export var coffeeExprToJS = function(coffeeExpr) {
   var err, jsExpr, pos;
   assert(isUndented(coffeeExpr), "has indentation");
   debug("enter coffeeExprToJS()");
-  if (!convertingCoffee) {
-    debug("return from coffeeExprToJS() not converting", coffeeExpr);
-    return coffeeExpr;
-  }
   try {
     jsExpr = brew(coffeeExpr);
     // --- Remove any trailing semicolon
@@ -104,10 +92,6 @@ export var coffeeCodeToJS = function(coffeeCode, source = undef, hOptions = {}) 
   var err, jsCode;
   assert(isUndented(coffeeCode), "has indentation");
   debug("enter coffeeCodeToJS()", coffeeCode);
-  if (!convertingCoffee) {
-    debug("return from coffeeCodeToJS() not converting", coffeeCode);
-    return coffeeCode;
-  }
   try {
     jsCode = brew(coffeeCode, source);
     // --- cleanJS() does:

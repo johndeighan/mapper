@@ -23,10 +23,8 @@
 		"./symbols": "./src/Symbols.js",
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
-		"./parsetag": "./src/parsetag.js",
 		"./math": "./src/MathML.js",
 		"./utils": "./src/utils.js",
-		"./debar": "./src/debar.js",
 		"./package.json": "./package.json"
 	},
 	"scripts": {

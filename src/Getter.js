@@ -241,7 +241,7 @@ export var Getter = class Getter extends Fetcher {
       debug("return undef from mapItem()");
       return undef;
     } else {
-      result = this.bundle(uobj);
+      result = this.bundle(uobj, type);
       assert(defined(result), "result is undef");
       debug("return from mapItem()", result);
       return result;

@@ -232,7 +232,7 @@ export class Getter extends Fetcher
 			debug "return undef from mapItem()"
 			return undef
 		else
-			result = @bundle(uobj)
+			result = @bundle(uobj, type)
 			assert defined(result), "result is undef"
 			debug "return from mapItem()", result
 			return result

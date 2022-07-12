@@ -17,7 +17,7 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 # ===========================================================================
 #   class TreeWalker
 #      - map() returns mapped item or undef
-#      - bundle() returns {item, level}
+#      - bundle() returns {item, type, level}
 #   to use, override:
 #      mapStr(str) - returns user object, default returns str
 #      handleCmd()
@@ -92,14 +92,15 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	bundle: (item) ->
+	bundle: (item, type) ->
 
-		return {
-			item
-			level: @realLevel()
-			}
+		if defined(type)
+			return {item, type, level: @realLevel() }
+		else
+			return {item, level: @realLevel() }
 
 	# ..........................................................
+	# --- can override to change how lines are joined
 
 	joinExtensionLines: (line, lExtLines) ->
 
@@ -290,6 +291,7 @@ export class TreeWalker extends Mapper
 	visit: (item, hUser, level, lStack) ->
 
 		debug "enter visit()", item, hUser, level
+		assert isString(item), "item is #{OL(item)}"
 		result = indented(item, level)
 		debug "return from visit()", result
 		return result
@@ -297,6 +299,22 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	endVisit:  (item, hUser, level, lStack) ->
+
+		return undef
+
+	# ..........................................................
+
+	visitSpecial: (type, item, hUser, level, lStack) ->
+
+		debug "enter visitSpecial()", type, item, hUser, level
+		assert isString(item), "item is #{OL(item)}"
+		result = indented(item, level)
+		debug "return from visitSpecial()", result
+		return result
+
+	# ..........................................................
+
+	endVisitSpecial:  (type, item, hUser, level, lStack) ->
 
 		return undef
 
@@ -335,10 +353,9 @@ export class TreeWalker extends Mapper
 
 	checkUserObj: (uobj) ->
 
-		assert defined(uobj), "user object is undef"
-		assert isHash(uobj, words('item level')),
-				"user object is #{OL(uobj)}"
-		{item, level} = uobj
+		assert defined(uobj), "uobj is undef"
+		assert isHash(uobj, words('item level')), "uobj is #{OL(uobj)}"
+		{item, type, level} = uobj
 		assert defined(item), "item is undef"
 		assert isInteger(level), "level is #{OL(level)}"
 		assert (level >= 0), "level is #{OL(level)}"
@@ -365,7 +382,7 @@ export class TreeWalker extends Mapper
 		debug "enter walk()"
 
 		# --- lStack is stack of node = {
-		#        uobj: {item, level}
+		#        uobj: {item, type, level}
 		#        hUser: {}
 		#        }
 		@lLines = []  # --- resulting lines
@@ -377,7 +394,7 @@ export class TreeWalker extends Mapper
 
 		debug "getting uobj's"
 		for uobj from @allMapped()
-			{_, level} = @checkUserObj uobj
+			{level} = @checkUserObj uobj
 			while (lStack.length > level)
 				node = lStack.pop()
 				@endVisitNode node, lStack
@@ -406,8 +423,11 @@ export class TreeWalker extends Mapper
 
 		assert isHash(node), "node is #{OL(node)}"
 		{uobj, hUser} = node
-		{item, level} = @checkUserObj uobj
-		text = @visit(item, hUser, level, lStack)
+		{item, type, level} = @checkUserObj uobj
+		if defined(type)
+			text = @visitSpecial(type, item, hUser, level, lStack)
+		else
+			text = @visit(item, hUser, level, lStack)
 		@addText(text)
 		return
 
@@ -418,8 +438,11 @@ export class TreeWalker extends Mapper
 		assert isHash(node), "node is #{OL(node)}"
 		{uobj, hUser} = node
 		assert isHash(hUser), "hUser is #{OL(hUser)}"
-		{item, level} = @checkUserObj uobj
-		text = @endVisit(item, hUser, level, lStack)
+		{item, type, level} = @checkUserObj uobj
+		if defined(type)
+			text = @endVisitSpecial(type, item, hUser, level, lStack)
+		else
+			text = @endVisit(item, hUser, level, lStack)
 		@addText(text)
 		return
 

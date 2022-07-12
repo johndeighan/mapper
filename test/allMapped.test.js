@@ -67,8 +67,8 @@ addStdHereDocTypes();
 
 abc`, [
     {
-      level: 0,
-      item: 'abc'
+      item: 'abc',
+      level: 0
     }
   ]);
   // ------------------------------------------------------------------------
@@ -82,12 +82,12 @@ abc
 
 def`, [
     {
-      level: 0,
-      item: 'abc'
+      item: 'abc',
+      level: 0
     },
     {
-      level: 0,
-      item: 'def'
+      item: 'def',
+      level: 0
     }
   ]);
   // ------------------------------------------------------------------------
@@ -98,24 +98,24 @@ def`, [
 	uvw
 xyz`, [
     {
-      level: 0,
-      item: 'abc'
+      item: 'abc',
+      level: 0
     },
     {
-      level: 1,
-      item: 'def'
+      item: 'def',
+      level: 1
     },
     {
-      level: 2,
-      item: 'ghi'
+      item: 'ghi',
+      level: 2
     },
     {
-      level: 1,
-      item: 'uvw'
+      item: 'uvw',
+      level: 1
     },
     {
-      level: 0,
-      item: 'xyz'
+      item: 'xyz',
+      level: 0
     }
   ]);
 })();

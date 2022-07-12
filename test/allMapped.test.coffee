@@ -40,8 +40,8 @@ addStdHereDocTypes()
 			abc
 			""", [
 			{
-				level:   0
-				item:    'abc'
+				item:  'abc'
+				level: 0
 				},
 			]
 
@@ -59,12 +59,12 @@ addStdHereDocTypes()
 			def
 			""", [
 			{
-				level:   0
-				item:    'abc'
+				item:  'abc'
+				level: 0
 				},
 			{
-				level:   0
-				item:    'def'
+				item:  'def'
+				level: 0
 				},
 			]
 
@@ -79,24 +79,24 @@ addStdHereDocTypes()
 			xyz
 			""", [
 			{
-				level:   0
 				item:    'abc'
-				},
-			{
-				level:   1
-				item:    'def'
-				},
-			{
-				level:   2
-				item:    'ghi'
-				},
-			{
-				level:   1
-				item:    'uvw'
-				},
-			{
 				level:   0
+				},
+			{
+				item:    'def'
+				level:   1
+				},
+			{
+				item:    'ghi'
+				level:   2
+				},
+			{
+				item:    'uvw'
+				level:   1
+				},
+			{
 				item:    'xyz'
+				level:   0
 				},
 			]
 	)()

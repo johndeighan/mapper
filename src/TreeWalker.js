@@ -50,7 +50,7 @@ import {
 // ===========================================================================
 //   class TreeWalker
 //      - map() returns mapped item or undef
-//      - bundle() returns {item, level}
+//      - bundle() returns {item, type, level}
 //   to use, override:
 //      mapStr(str) - returns user object, default returns str
 //      handleCmd()
@@ -120,14 +120,23 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  bundle(item) {
-    return {
-      item,
-      level: this.realLevel()
-    };
+  bundle(item, type) {
+    if (defined(type)) {
+      return {
+        item,
+        type,
+        level: this.realLevel()
+      };
+    } else {
+      return {
+        item,
+        level: this.realLevel()
+      };
+    }
   }
 
   // ..........................................................
+  // --- can override to change how lines are joined
   joinExtensionLines(line, lExtLines) {
     var contLine, j, len;
 // --- There might be empty lines in lExtLines
@@ -311,6 +320,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   visit(item, hUser, level, lStack) {
     var result;
     debug("enter visit()", item, hUser, level);
+    assert(isString(item), `item is ${OL(item)}`);
     result = indented(item, level);
     debug("return from visit()", result);
     return result;
@@ -318,6 +328,21 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   endVisit(item, hUser, level, lStack) {
+    return undef;
+  }
+
+  // ..........................................................
+  visitSpecial(type, item, hUser, level, lStack) {
+    var result;
+    debug("enter visitSpecial()", type, item, hUser, level);
+    assert(isString(item), `item is ${OL(item)}`);
+    result = indented(item, level);
+    debug("return from visitSpecial()", result);
+    return result;
+  }
+
+  // ..........................................................
+  endVisitSpecial(type, item, hUser, level, lStack) {
     return undef;
   }
 
@@ -355,10 +380,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   checkUserObj(uobj) {
-    var item, level;
-    assert(defined(uobj), "user object is undef");
-    assert(isHash(uobj, words('item level')), `user object is ${OL(uobj)}`);
-    ({item, level} = uobj);
+    var item, level, type;
+    assert(defined(uobj), "uobj is undef");
+    assert(isHash(uobj, words('item level')), `uobj is ${OL(uobj)}`);
+    ({item, type, level} = uobj);
     assert(defined(item), "item is undef");
     assert(isInteger(level), `level is ${OL(level)}`);
     assert(level >= 0, `level is ${OL(level)}`);
@@ -381,10 +406,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   walk() {
-    var _, hUser, lStack, level, node, ref, result, text, uobj;
+    var hUser, lStack, level, node, ref, result, text, uobj;
     debug("enter walk()");
     // --- lStack is stack of node = {
-    //        uobj: {item, level}
+    //        uobj: {item, type, level}
     //        hUser: {}
     //        }
     this.lLines = []; // --- resulting lines
@@ -395,7 +420,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     debug("getting uobj's");
     ref = this.allMapped();
     for (uobj of ref) {
-      ({_, level} = this.checkUserObj(uobj));
+      ({level} = this.checkUserObj(uobj));
       while (lStack.length > level) {
         node = lStack.pop();
         this.endVisitNode(node, lStack);
@@ -420,22 +445,30 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visitNode(node, lStack) {
-    var hUser, item, level, text, uobj;
+    var hUser, item, level, text, type, uobj;
     assert(isHash(node), `node is ${OL(node)}`);
     ({uobj, hUser} = node);
-    ({item, level} = this.checkUserObj(uobj));
-    text = this.visit(item, hUser, level, lStack);
+    ({item, type, level} = this.checkUserObj(uobj));
+    if (defined(type)) {
+      text = this.visitSpecial(type, item, hUser, level, lStack);
+    } else {
+      text = this.visit(item, hUser, level, lStack);
+    }
     this.addText(text);
   }
 
   // ..........................................................
   endVisitNode(node, lStack) {
-    var hUser, item, level, text, uobj;
+    var hUser, item, level, text, type, uobj;
     assert(isHash(node), `node is ${OL(node)}`);
     ({uobj, hUser} = node);
     assert(isHash(hUser), `hUser is ${OL(hUser)}`);
-    ({item, level} = this.checkUserObj(uobj));
-    text = this.endVisit(item, hUser, level, lStack);
+    ({item, type, level} = this.checkUserObj(uobj));
+    if (defined(type)) {
+      text = this.endVisitSpecial(type, item, hUser, level, lStack);
+    } else {
+      text = this.endVisit(item, hUser, level, lStack);
+    }
     this.addText(text);
   }
 

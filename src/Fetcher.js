@@ -55,9 +55,10 @@ import {
 export var Fetcher = class Fetcher {
   constructor(source = undef, collection = undef, hOptions = {}) {
     var content;
-    debug(`enter Fetcher(${OL(source)})`, collection);
-    if (source) {
-      this.hSourceInfo = parseSource(source);
+    this.source = source;
+    debug(`enter Fetcher(${OL(this.source)})`, collection);
+    if (this.source) {
+      this.hSourceInfo = parseSource(this.source);
       debug('hSourceInfo', this.hSourceInfo);
       assert(this.hSourceInfo.filename, "parseSource returned no filename");
     } else {

@@ -27,12 +27,12 @@ import {
 
 export class Fetcher
 
-	constructor: (source=undef, collection=undef, hOptions={}) ->
+	constructor: (@source=undef, collection=undef, hOptions={}) ->
 
-		debug "enter Fetcher(#{OL(source)})", collection
+		debug "enter Fetcher(#{OL(@source)})", collection
 
-		if source
-			@hSourceInfo = parseSource(source)
+		if @source
+			@hSourceInfo = parseSource(@source)
 			debug 'hSourceInfo', @hSourceInfo
 			assert @hSourceInfo.filename,
 					"parseSource returned no filename"

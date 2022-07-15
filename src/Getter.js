@@ -376,6 +376,7 @@ export var Getter = class Getter extends Fetcher {
 
   // ..........................................................
   endBlock() {
+    // --- currently, only used in markdown processing
     return undef;
   }
 

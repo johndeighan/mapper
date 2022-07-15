@@ -385,6 +385,7 @@ simple = new UnitTester()
 (() ->
 
 	class MyMapper extends Mapper
+
 		handleEmptyLine: () -> return undef
 		isComment: (line) -> return line.match(/\s*\/\//)
 		handleComment: (line) -> return undef

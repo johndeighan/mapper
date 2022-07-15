@@ -38,12 +38,13 @@ simple = new UnitTesterNorm(import.meta.url)
 	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
-	# --- test removing comments
+	# --- test retaining comments
 
 	tester.equal 43, """
 			# --- a comment
 			y = x
 			""", """
+			# --- a comment
 			y = x
 			"""
 
@@ -292,6 +293,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	simple.equal 292, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
+			// --- temp.cielo
 			if (fs.existsSync('file.txt')) {
 				logger("file exists");
 			}

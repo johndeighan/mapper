@@ -8,6 +8,7 @@ import {
 import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
+import {LOG} from '@jdeighan/coffee-utils/log'
 import {
 	debug, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
@@ -45,17 +46,22 @@ addStdHereDocTypes()
 
 	# --- get() should return {uobj, level}
 
+	simple.equal 48, walker.get(), {
+		level: 0
+		item:  '# --- a comment'
+		type:  'comment'
+		}
 	simple.equal 47, walker.get(), {
-		level:  0
-		item:    'abc'
+		level: 0
+		item:  'abc'
 		}
 	simple.equal 52, walker.get(), {
-		level:  1
-		item:    'def'
+		level: 1
+		item:  'def'
 		}
 	simple.equal 57, walker.get(), {
-		level:  2
-		item:    'ghi'
+		level: 2
+		item:  'ghi'
 		}
 	simple.equal 62, walker.get(), undef
 	)()
@@ -282,7 +288,7 @@ addStdHereDocTypes()
 	# ..........................................................
 
 	block = """
-			# remove this
+			# don't remove this
 
 			abc
 			- command
@@ -290,6 +296,7 @@ addStdHereDocTypes()
 			"""
 
 	tester.equal 300, block, """
+			# don't remove this
 			abc
 			COMMAND: command
 			def
@@ -744,6 +751,20 @@ class HtmlMapper extends TreeWalker
 
 		return indented("</#{uobj.tag}>", level)
 
+	# ..........................................................
+
+	visitSpecial: (type, item, hUser, level, lStack) ->
+
+		if (type == 'comment')
+			if lMatches = item.match(///^
+					\s*
+					\#
+					(.*)
+					$///)
+				[_, str] = lMatches
+				return indented("<!-- #{str.trim()} -->", level)
+		return undef
+
 # ---------------------------------------------------------------------------
 
 (() ->
@@ -772,6 +793,7 @@ class HtmlMapper extends TreeWalker
 					p more text
 			""", """
 			<body>
+				<!-- a comment -->
 				<div>
 					<h1>A title</h1>
 					<p>some text</p>
@@ -785,8 +807,6 @@ class HtmlMapper extends TreeWalker
 			"""
 
 	)()
-
-# --- TO DO: Add tests to show that comments/blank lines can be retained
 
 # ---------------------------------------------------------------------------
 # --- test #ifdef and #ifndef

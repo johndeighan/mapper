@@ -28,6 +28,10 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
+  LOG
+} from '@jdeighan/coffee-utils/log';
+
+import {
   debug,
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
@@ -82,6 +86,11 @@ abc
 	def
 		ghi`);
   // --- get() should return {uobj, level}
+  simple.equal(48, walker.get(), {
+    level: 0,
+    item: '# --- a comment',
+    type: 'comment'
+  });
   simple.equal(47, walker.get(), {
     level: 0,
     item: 'abc'
@@ -274,12 +283,13 @@ def`);
   };
   tester = new MyTester();
   // ..........................................................
-  block = `# remove this
+  block = `# don't remove this
 
 abc
 - command
 def`;
-  return tester.equal(300, block, `abc
+  return tester.equal(300, block, `# don't remove this
+abc
 COMMAND: command
 def`);
 })();
@@ -675,6 +685,18 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
     return indented(`</${uobj.tag}>`, level);
   }
 
+  // ..........................................................
+  visitSpecial(type, item, hUser, level, lStack) {
+    var _, lMatches, str;
+    if (type === 'comment') {
+      if (lMatches = item.match(/^\s*\#(.*)$/)) {
+        [_, str] = lMatches;
+        return indented(`<!-- ${str.trim()} -->`, level);
+      }
+    }
+    return undef;
+  }
+
 };
 
 // ---------------------------------------------------------------------------
@@ -699,6 +721,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
 
 	div
 		p more text`, `<body>
+	<!-- a comment -->
 	<div>
 		<h1>A title</h1>
 		<p>some text</p>
@@ -711,9 +734,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
 </body>`);
 })();
 
-// --- TO DO: Add tests to show that comments/blank lines can be retained
-
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // --- test #ifdef and #ifndef
 (function() {
   var MyTester, tester;

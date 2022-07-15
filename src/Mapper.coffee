@@ -4,6 +4,7 @@ import {
 	assert, undef, pass, croak, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
+import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
@@ -59,7 +60,7 @@ export class Mapper extends Getter
 			# --- check for cmd
 			else if defined(h = @isCmd(item))
 				assert isHash(h, ['cmd','argstr','prefix']),
-						"isCmd() returned non-hash #{OL(h)}"
+						"isCmd() returned bad hash #{OL(h)}"
 				result = ['cmd', h]
 
 		if (result == undef)
@@ -73,18 +74,17 @@ export class Mapper extends Getter
 
 	handleItemType: (type, item, h) ->
 
-		debug "enter Mapper.handleItemType(#{OL(type)})", item
-
+		debug "enter Mapper.handleItemType()", type, item
+		[prefix, str] = splitPrefix(item)
 		switch type
 			when 'empty'
 				uobj = @handleEmptyLine()
 			when 'comment'
-				uobj = @handleComment(item)
+				uobj = @handleComment(item, prefix)
 			when 'cmd'
-				{cmd, argstr, prefix} = h
+				{cmd, argstr} = h
 				assert isString(cmd), "cmd not a string"
 				assert isString(argstr), "argstr not a string"
-				assert isString(prefix), "prefix not a string"
 				uobj = @handleCmd(cmd, argstr, prefix, h)
 			else
 				croak "Unknown item type: #{OL(type)}"
@@ -123,12 +123,12 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	handleComment: (line) ->
+	handleComment: (line, prefix) ->
 
 		debug "in Mapper.handleComment()"
 
-		# --- return line to keep comments
-		return undef
+		# --- return undef to remove comments
+		return line
 
 	# ..........................................................
 

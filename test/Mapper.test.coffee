@@ -342,6 +342,7 @@ simple = new UnitTester()
 			""")
 
 	simple.equal 344, result, """
+			# - test.txt
 			abc
 			The meaning of life is 42
 			"""

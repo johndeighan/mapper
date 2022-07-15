@@ -113,11 +113,11 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   get() {
     var item, uobj;
-    debug("enter get()");
+    debug("enter Getter.get()");
     // --- return anything in @lCache
     if (nonEmpty(this.lCache)) {
       uobj = this.getFromCache();
-      debug("return from get() - cached uobj", uobj);
+      debug("return from Getter.get() - cached uobj", uobj);
       return uobj;
     }
     debug("no lookahead");
@@ -126,7 +126,7 @@ export var Getter = class Getter extends Fetcher {
     debug("fetch() returned", item);
     debug(`source = ${this.sourceInfoStr()}`);
     if (item === undef) {
-      debug("return from get() - at EOF", undef);
+      debug("return from Getter.get() - at EOF", undef);
       return undef;
     }
     uobj = this.mapItem(item);
@@ -134,7 +134,7 @@ export var Getter = class Getter extends Fetcher {
     if (uobj === undef) {
       uobj = this.get(); // recursive call
     }
-    debug("return from get()", uobj);
+    debug("return from Getter.get()", uobj);
     return uobj;
   }
 

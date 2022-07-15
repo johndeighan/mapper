@@ -20,6 +20,11 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  splitPrefix,
+  splitLine
+} from '@jdeighan/coffee-utils/indent';
+
+import {
   LOG
 } from '@jdeighan/coffee-utils/log';
 
@@ -70,7 +75,7 @@ export var Mapper = class Mapper extends Getter {
         result = ['comment', undef];
       // --- check for cmd
       } else if (defined(h = this.isCmd(item))) {
-        assert(isHash(h, ['cmd', 'argstr', 'prefix']), `isCmd() returned non-hash ${OL(h)}`);
+        assert(isHash(h, ['cmd', 'argstr', 'prefix']), `isCmd() returned bad hash ${OL(h)}`);
         result = ['cmd', h];
       }
     }
@@ -84,20 +89,20 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override
   handleItemType(type, item, h) {
-    var argstr, cmd, prefix, uobj;
-    debug(`enter Mapper.handleItemType(${OL(type)})`, item);
+    var argstr, cmd, prefix, str, uobj;
+    debug("enter Mapper.handleItemType()", type, item);
+    [prefix, str] = splitPrefix(item);
     switch (type) {
       case 'empty':
         uobj = this.handleEmptyLine();
         break;
       case 'comment':
-        uobj = this.handleComment(item);
+        uobj = this.handleComment(item, prefix);
         break;
       case 'cmd':
-        ({cmd, argstr, prefix} = h);
+        ({cmd, argstr} = h);
         assert(isString(cmd), "cmd not a string");
         assert(isString(argstr), "argstr not a string");
-        assert(isString(prefix), "prefix not a string");
         uobj = this.handleCmd(cmd, argstr, prefix, h);
         break;
       default:
@@ -134,10 +139,10 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  handleComment(line) {
+  handleComment(line, prefix) {
     debug("in Mapper.handleComment()");
-    // --- return line to keep comments
-    return undef;
+    // --- return undef to remove comments
+    return line;
   }
 
   // ..........................................................

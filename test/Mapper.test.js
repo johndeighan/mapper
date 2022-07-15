@@ -326,7 +326,8 @@ meaning is 42`);
 abc
 #define meaning 42
 The meaning of life is __meaning__`);
-  simple.equal(344, result, `abc
+  simple.equal(344, result, `# - test.txt
+abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
   //        1. removes empty lines

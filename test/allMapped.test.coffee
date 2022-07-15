@@ -40,6 +40,11 @@ addStdHereDocTypes()
 			abc
 			""", [
 			{
+				item:  '# --- comment, followed by blank line'
+				level: 0
+				type: 'comment'
+				},
+			{
 				item:  'abc'
 				level: 0
 				},
@@ -54,13 +59,23 @@ addStdHereDocTypes()
 
 			abc
 
-			# -- this should be removed
+			# --- this should not be removed
 
 			def
 			""", [
 			{
+				item:  '# --- comment, followed by blank line'
+				level: 0
+				type: 'comment'
+				},
+			{
 				item:  'abc'
 				level: 0
+				},
+			{
+				item:  '# --- this should not be removed'
+				level: 0
+				type: 'comment'
 				},
 			{
 				item:  'def'
@@ -156,8 +171,6 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 
 	tester.equal 167, """
-			# --- comment, followed by blank line
-
 			abc
 				def
 					ghi

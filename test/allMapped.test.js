@@ -67,6 +67,11 @@ addStdHereDocTypes();
 
 abc`, [
     {
+      item: '# --- comment, followed by blank line',
+      level: 0,
+      type: 'comment'
+    },
+    {
       item: 'abc',
       level: 0
     }
@@ -78,12 +83,22 @@ abc`, [
 
 abc
 
-# -- this should be removed
+# --- this should not be removed
 
 def`, [
     {
+      item: '# --- comment, followed by blank line',
+      level: 0,
+      type: 'comment'
+    },
+    {
       item: 'abc',
       level: 0
+    },
+    {
+      item: '# --- this should not be removed',
+      level: 0,
+      type: 'comment'
     },
     {
       item: 'def',
@@ -180,9 +195,7 @@ xyz`, [
   };
   tester = new Tester();
   // ------------------------------------------------------------------------
-  tester.equal(167, `# --- comment, followed by blank line
-
-abc
+  tester.equal(167, `abc
 	def
 		ghi`, `0 abc
 1 def

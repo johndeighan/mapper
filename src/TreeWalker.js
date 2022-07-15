@@ -121,18 +121,17 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   bundle(item, type) {
+    var result;
+    debug("enter bundle()", item, type);
+    result = {
+      item,
+      level: this.realLevel()
+    };
     if (defined(type)) {
-      return {
-        item,
-        type,
-        level: this.realLevel()
-      };
-    } else {
-      return {
-        item,
-        level: this.realLevel()
-      };
+      result.type = type;
     }
+    debug("return from bundle()", result);
+    return result;
   }
 
   // ..........................................................
@@ -199,6 +198,15 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   isEmptyHereDocLine(str) {
     return str === '.';
+  }
+
+  // ..........................................................
+  handleComment(line, prefix) {
+    debug("enter TreeWalker.handleComment()", line, prefix);
+    this.srcLevel = indentLevel(prefix);
+    debug(`srcLevel = ${this.srcLevel}`);
+    debug("return from TreeWalker.handleComment()", line);
+    return line;
   }
 
   // ..........................................................
@@ -393,13 +401,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   addText(text) {
     debug("enter addText()", text);
-    if (defined(text)) {
-      if (isArray(text)) {
-        debug("text is an array");
-        this.lLines.push(...text);
-      } else {
-        this.lLines.push(text);
-      }
+    assert(defined(text), "text is undef");
+    if (isArray(text)) {
+      debug("text is an array");
+      this.lLines.push(...text);
+    } else {
+      this.lLines.push(text);
     }
     debug("return from addText()");
   }
@@ -416,10 +423,13 @@ export var TreeWalker = class TreeWalker extends Mapper {
     lStack = [];
     debug("begin walk");
     text = this.beginWalk();
-    this.addText(text);
+    if (defined(text)) {
+      this.addText(text);
+    }
     debug("getting uobj's");
     ref = this.allMapped();
     for (uobj of ref) {
+      debug("got", uobj);
       ({level} = this.checkUserObj(uobj));
       while (lStack.length > level) {
         node = lStack.pop();
@@ -437,7 +447,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
       this.endVisitNode(node, lStack);
     }
     text = this.endWalk();
-    this.addText(text);
+    if (defined(text)) {
+      this.addText(text);
+    }
     result = arrayToBlock(this.lLines);
     debug("return from walk()", result);
     return result;
@@ -454,7 +466,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
     } else {
       text = this.visit(item, hUser, level, lStack);
     }
-    this.addText(text);
+    if (defined(text)) {
+      this.addText(text);
+    }
   }
 
   // ..........................................................
@@ -469,7 +483,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
     } else {
       text = this.endVisit(item, hUser, level, lStack);
     }
-    this.addText(text);
+    if (defined(text)) {
+      this.addText(text);
+    }
   }
 
   // ..........................................................
@@ -502,6 +518,16 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
   // ..........................................................
   endVisit(item, hUser, level, lStack) {
     this.lTrace.push(`END VISIT ${level} ${OL(item)}`);
+  }
+
+  // ..........................................................
+  visitSpecial(type, item, hUser, level, lStack) {
+    this.lTrace.push(`VISIT SPECIAL ${level} ${type} ${OL(item)}`);
+  }
+
+  // ..........................................................
+  endVisitSpecial(type, item, hUser, level, lStack) {
+    this.lTrace.push(`END VISIT SPECIAL ${level} ${type} ${OL(item)}`);
   }
 
   // ..........................................................

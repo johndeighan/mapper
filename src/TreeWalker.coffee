@@ -94,10 +94,15 @@ export class TreeWalker extends Mapper
 
 	bundle: (item, type) ->
 
+		debug "enter bundle()", item, type
+		result = {
+			item
+			level: @realLevel()
+			}
 		if defined(type)
-			return {item, type, level: @realLevel() }
-		else
-			return {item, level: @realLevel() }
+			result.type = type
+		debug "return from bundle()", result
+		return result
 
 	# ..........................................................
 	# --- can override to change how lines are joined
@@ -165,6 +170,17 @@ export class TreeWalker extends Mapper
 	isEmptyHereDocLine: (str) ->
 
 		return (str == '.')
+
+	# ..........................................................
+
+	handleComment: (line, prefix) ->
+
+		debug "enter TreeWalker.handleComment()", line, prefix
+		@srcLevel = indentLevel(prefix)
+		debug "srcLevel = #{@srcLevel}"
+
+		debug "return from TreeWalker.handleComment()", line
+		return line
 
 	# ..........................................................
 	# --- We define commands 'ifdef' and 'ifndef'
@@ -366,12 +382,12 @@ export class TreeWalker extends Mapper
 	addText: (text) ->
 
 		debug "enter addText()", text
-		if defined(text)
-			if isArray(text)
-				debug "text is an array"
-				@lLines.push text...
-			else
-				@lLines.push text
+		assert defined(text), "text is undef"
+		if isArray(text)
+			debug "text is an array"
+			@lLines.push text...
+		else
+			@lLines.push text
 		debug "return from addText()"
 		return
 
@@ -390,10 +406,12 @@ export class TreeWalker extends Mapper
 
 		debug "begin walk"
 		text = @beginWalk()
-		@addText(text)
+		if defined(text)
+			@addText(text)
 
 		debug "getting uobj's"
 		for uobj from @allMapped()
+			debug "got", uobj
 			{level} = @checkUserObj uobj
 			while (lStack.length > level)
 				node = lStack.pop()
@@ -411,7 +429,8 @@ export class TreeWalker extends Mapper
 			@endVisitNode node, lStack
 
 		text = @endWalk()
-		@addText(text)
+		if defined(text)
+			@addText(text)
 		result = arrayToBlock(@lLines)
 
 		debug "return from walk()", result
@@ -428,7 +447,8 @@ export class TreeWalker extends Mapper
 			text = @visitSpecial(type, item, hUser, level, lStack)
 		else
 			text = @visit(item, hUser, level, lStack)
-		@addText(text)
+		if defined(text)
+			@addText(text)
 		return
 
 	# ..........................................................
@@ -443,7 +463,8 @@ export class TreeWalker extends Mapper
 			text = @endVisitSpecial(type, item, hUser, level, lStack)
 		else
 			text = @endVisit(item, hUser, level, lStack)
-		@addText(text)
+		if defined(text)
+			@addText(text)
 		return
 
 	# ..........................................................
@@ -482,6 +503,20 @@ export class TraceWalker extends TreeWalker
 	endVisit: (item, hUser, level, lStack) ->
 
 		@lTrace.push "END VISIT #{level} #{OL(item)}"
+		return
+
+	# ..........................................................
+
+	visitSpecial: (type, item, hUser, level, lStack) ->
+
+		@lTrace.push "VISIT SPECIAL #{level} #{type} #{OL(item)}"
+		return
+
+	# ..........................................................
+
+	endVisitSpecial:  (type, item, hUser, level, lStack) ->
+
+		@lTrace.push "END VISIT SPECIAL #{level} #{type} #{OL(item)}"
 		return
 
 	# ..........................................................

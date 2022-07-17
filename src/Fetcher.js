@@ -67,7 +67,7 @@ export var Fetcher = class Fetcher {
       };
     }
     // --- Add current line number to hSourceInfo
-    this.hSourceInfo.lineNum = 0;
+    this.lineNum = 0;
     if (hOptions.prefix != null) {
       this.hSourceInfo.prefix = hOptions.prefix;
     }
@@ -115,21 +115,18 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   sourceInfoStr() {
-    var h, lParts;
+    var lParts;
     lParts = [];
-    h = this.hSourceInfo;
-    lParts.push(this.sourceStr(h));
-    while (defined(h.altInput)) {
-      h = h.altInput.hSourceInfo;
-      lParts.push(this.sourceStr(h));
+    lParts.push(this.sourceStr());
+    if (defined(this.hSourceInfo.altInput)) {
+      lParts.push(this.hSourceInfo.altInput.sourceStr());
     }
     return lParts.join(' ');
   }
 
   // ..........................................................
-  sourceStr(h) {
-    assert(isHash(h, ['filename', 'lineNum']), `h is ${OL(h)}`);
-    return `${h.filename}/${h.lineNum}`;
+  sourceStr() {
+    return `${this.hSourceInfo.filename}/${this.lineNum}`;
   }
 
   // ..........................................................
@@ -205,7 +202,7 @@ export var Fetcher = class Fetcher {
     }
     hItem = {
       item: value,
-      lineNum: this.hSourceInfo.lineNum,
+      lineNum: this.lineNum,
       source: this.sourceInfoStr()
     };
     debug("return from Fetcher.fetch()", hItem);
@@ -261,7 +258,7 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
-    this.hSourceInfo.lineNum += inc;
+    this.lineNum += inc;
   }
 
   // ..........................................................

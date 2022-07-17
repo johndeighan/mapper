@@ -51,14 +51,14 @@ import {
     item: 1,
     lineNum: 1
   });
-  simple.equal(34, fetcher.hSourceInfo.lineNum, 1);
+  simple.equal(34, fetcher.lineNum, 1);
   simple.succeeds(35, function() {
     return fetcher.unfetch({
       item: 1,
       lineNum: 1
     });
   });
-  simple.equal(36, fetcher.hSourceInfo.lineNum, 0);
+  simple.equal(36, fetcher.lineNum, 0);
   simple.hashhas(37, fetcher.fetch(), {
     item: 1,
     lineNum: 1
@@ -67,16 +67,16 @@ import {
     item: 2,
     lineNum: 2
   });
-  simple.equal(39, fetcher.hSourceInfo.lineNum, 2);
+  simple.equal(39, fetcher.lineNum, 2);
   simple.hashhas(40, fetcher.fetch(), {
     item: 3,
     lineNum: 3
   });
-  simple.equal(41, fetcher.hSourceInfo.lineNum, 3);
+  simple.equal(41, fetcher.lineNum, 3);
   simple.equal(42, fetcher.fetch(), undef);
-  simple.equal(43, fetcher.hSourceInfo.lineNum, 3);
+  simple.equal(43, fetcher.lineNum, 3);
   simple.equal(44, fetcher.fetch(), undef);
-  return simple.equal(45, fetcher.hSourceInfo.lineNum, 3);
+  return simple.equal(45, fetcher.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ import {
     lineNum: 2
   });
   simple.equal(65, fetcher.fetch(), undef);
-  return simple.equal(66, fetcher.hSourceInfo.lineNum, 2);
+  return simple.equal(66, fetcher.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------
@@ -270,7 +270,7 @@ ghi`);
       var fetcher;
       fetcher = new Fetcher(import.meta.url, block);
       block = fetcher.fetchBlock();
-      numLines = fetcher.hSourceInfo.lineNum; // set variable numLines
+      numLines = fetcher.lineNum; // set variable numLines
       return block;
     }
 
@@ -325,13 +325,13 @@ def`);
   });
   h = fetcher.hSourceInfo;
   simple.equal(263, h.altInput.hSourceInfo.filename, 'title.md');
-  return simple.equal(264, h.lineNum, 2);
+  return simple.equal(264, h.altInput.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------
 // --- test @hSourceInfo with indentation
 (function() {
-  var fetcher, h, hItem;
+  var altInput, fetcher, hItem;
   fetcher = new Fetcher(import.meta.url, `abc
 	#include title.md
 def`);
@@ -339,9 +339,9 @@ def`);
     pass;
   }
   simple.equal(282, hItem.item, '\t=====');
-  h = fetcher.hSourceInfo;
-  simple.equal(284, h.altInput.hSourceInfo.filename, 'title.md');
-  return simple.equal(285, h.lineNum, 2);
+  altInput = fetcher.hSourceInfo.altInput;
+  simple.equal(284, altInput.hSourceInfo.filename, 'title.md');
+  return simple.equal(285, altInput.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------

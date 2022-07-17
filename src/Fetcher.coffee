@@ -42,7 +42,7 @@ export class Fetcher
 				}
 
 		# --- Add current line number to hSourceInfo
-		@hSourceInfo.lineNum = 0
+		@lineNum = 0
 
 		if hOptions.prefix?
 			@hSourceInfo.prefix = hOptions.prefix
@@ -95,19 +95,16 @@ export class Fetcher
 	sourceInfoStr: () ->
 
 		lParts = []
-		h = @hSourceInfo
-		lParts.push @sourceStr(h)
-		while defined(h.altInput)
-			h = h.altInput.hSourceInfo
-			lParts.push @sourceStr(h)
+		lParts.push @sourceStr()
+		if defined(@hSourceInfo.altInput)
+			lParts.push @hSourceInfo.altInput.sourceStr()
 		return lParts.join(' ')
 
 	# ..........................................................
 
-	sourceStr: (h) ->
+	sourceStr: () ->
 
-		assert isHash(h, ['filename','lineNum']), "h is #{OL(h)}"
-		return "#{h.filename}/#{h.lineNum}"
+		return "#{@hSourceInfo.filename}/#{@lineNum}"
 
 	# ..........................................................
 	# --- returns a hash with keys:
@@ -197,7 +194,7 @@ export class Fetcher
 
 		hItem = {
 			item: value
-			lineNum: @hSourceInfo.lineNum
+			lineNum: @lineNum
 			source: @sourceInfoStr()
 			}
 		debug "return from Fetcher.fetch()", hItem
@@ -264,7 +261,7 @@ export class Fetcher
 
 	incLineNum: (inc=1) ->
 
-		@hSourceInfo.lineNum += inc
+		@lineNum += inc
 		return
 
 	# ..........................................................

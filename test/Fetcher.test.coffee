@@ -31,18 +31,18 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	fetcher = new Fetcher(undef, [1, 2, 3])
 
 	simple.hashhas 33, fetcher.fetch(), {item: 1, lineNum: 1}
-	simple.equal 34, fetcher.hSourceInfo.lineNum, 1
+	simple.equal 34, fetcher.lineNum, 1
 	simple.succeeds 35, () -> fetcher.unfetch({item: 1, lineNum: 1})
-	simple.equal 36, fetcher.hSourceInfo.lineNum, 0
+	simple.equal 36, fetcher.lineNum, 0
 	simple.hashhas 37, fetcher.fetch(), {item: 1, lineNum: 1}
 	simple.hashhas 38, fetcher.fetch(), {item: 2, lineNum: 2}
-	simple.equal 39, fetcher.hSourceInfo.lineNum, 2
+	simple.equal 39, fetcher.lineNum, 2
 	simple.hashhas 40, fetcher.fetch(), {item: 3, lineNum: 3}
-	simple.equal 41, fetcher.hSourceInfo.lineNum, 3
+	simple.equal 41, fetcher.lineNum, 3
 	simple.equal 42, fetcher.fetch(), undef
-	simple.equal 43, fetcher.hSourceInfo.lineNum, 3
+	simple.equal 43, fetcher.lineNum, 3
 	simple.equal 44, fetcher.fetch(), undef
-	simple.equal 45, fetcher.hSourceInfo.lineNum, 3
+	simple.equal 45, fetcher.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	simple.hashhas 63, fetcher.fetch(), {item: 'abc', lineNum: 1}
 	simple.hashhas 64, fetcher.fetch(), {item: 'def', lineNum: 2}
 	simple.equal 65, fetcher.fetch(), undef
-	simple.equal 66, fetcher.hSourceInfo.lineNum, 2
+	simple.equal 66, fetcher.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 			fetcher = new Fetcher(import.meta.url, block)
 			block = fetcher.fetchBlock()
-			numLines = fetcher.hSourceInfo.lineNum   # set variable numLines
+			numLines = fetcher.lineNum   # set variable numLines
 			return block
 
 	# ..........................................................
@@ -261,7 +261,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	simple.hashhas 261, hItem, {item: '=====', lineNum: 2}
 	h = fetcher.hSourceInfo
 	simple.equal 263, h.altInput.hSourceInfo.filename, 'title.md'
-	simple.equal 264, h.lineNum, 2
+	simple.equal 264, h.altInput.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -280,9 +280,9 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		pass
 
 	simple.equal 282, hItem.item, '\t====='
-	h = fetcher.hSourceInfo
-	simple.equal 284, h.altInput.hSourceInfo.filename, 'title.md'
-	simple.equal 285, h.lineNum, 2
+	altInput = fetcher.hSourceInfo.altInput
+	simple.equal 284, altInput.hSourceInfo.filename, 'title.md'
+	simple.equal 285, altInput.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------

@@ -110,6 +110,8 @@ export class Fetcher
 		return "#{h.filename}/#{h.lineNum}"
 
 	# ..........................................................
+	# --- returns a hash with keys:
+	#        line
 
 	fetch: () ->
 
@@ -189,12 +191,17 @@ export class Fetcher
 				debug "return from Fetcher.fetch()", value
 				return value
 
-		if @prefix
+		if (@prefix.length > 0)
 			assert isString(value), "prefix with non-string value"
 			value = @prefix + value
 
-		debug "return from Fetcher.fetch()", value
-		return value
+		hItem = {
+			item: value
+			lineNum: @hSourceInfo.lineNum
+			source: @sourceInfoStr()
+			}
+		debug "return from Fetcher.fetch()", hItem
+		return hItem
 
 	# ..........................................................
 
@@ -231,10 +238,12 @@ export class Fetcher
 
 		debug "enter Fetcher.unfetch()", value
 		assert defined(value), "value must be defined"
-		if isString(value)
-			lMatches = value.match(///^
+		{item} = value
+		if isString(item)
+			lMatches = item.match(///^
 					\s*
 					\#include
+					\b
 					///)
 			assert isEmpty(lMatches), "unfetch() of a #include"
 
@@ -297,8 +306,8 @@ export class Fetcher
 
 		debug "enter Fetcher.fetchUntil()"
 		lItems = []
-		while defined(item = @fetch()) && (item != end)
-			lItems.push item
+		while defined(h = @fetch()) && (h.item != end)
+			lItems.push h
 		debug "return from Fetcher.fetchUntil()", lItems
 		return lItems
 
@@ -308,7 +317,8 @@ export class Fetcher
 
 		debug "enter Fetcher.fetchBlock()"
 		lStrings = []
-		for str from @all()
+		for h from @all()
+			str = h.item
 			assert isString(str), "fetchBlock(): non-string #{OL(str)}"
 			lStrings.push(str)
 		debug 'lStrings', lStrings

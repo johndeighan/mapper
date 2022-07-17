@@ -2,7 +2,7 @@
 
 import assert from 'assert'
 
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {
 	undef, pass, defined, error, warn, rtrim, replaceVars,
 	} from '@jdeighan/coffee-utils'
@@ -14,16 +14,14 @@ import {
 
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
-simple = new UnitTester()
-
 # ---------------------------------------------------------------------------
 
 (() ->
 
 	fetcher = new Fetcher("c:/Users/johnd/mapper/package.json")
-	simple.equal 24, fetcher.hSourceInfo.filename, 'package.json'
-	simple.equal 25, fetcher.hSourceInfo.dir, 'c:/Users/johnd/mapper'
-	simple.equal 26, fetcher.hSourceInfo.ext, '.json'
+	simple.equal 22, fetcher.hSourceInfo.filename, 'package.json'
+	simple.equal 23, fetcher.hSourceInfo.dir, 'c:/Users/johnd/mapper'
+	simple.equal 24, fetcher.hSourceInfo.ext, '.json'
 	)()
 
 # ---------------------------------------------------------------------------
@@ -32,19 +30,19 @@ simple = new UnitTester()
 
 	fetcher = new Fetcher(undef, [1, 2, 3])
 
-	simple.equal 35, fetcher.fetch(), 1
-	simple.equal 36, fetcher.hSourceInfo.lineNum, 1
-	simple.succeeds 37, () -> fetcher.unfetch(1)
-	simple.equal 38, fetcher.hSourceInfo.lineNum, 0
-	simple.equal 39, fetcher.fetch(), 1
-	simple.equal 40, fetcher.fetch(), 2
-	simple.equal 41, fetcher.hSourceInfo.lineNum, 2
-	simple.equal 42, fetcher.fetch(), 3
+	simple.hashhas 33, fetcher.fetch(), {item: 1, lineNum: 1}
+	simple.equal 34, fetcher.hSourceInfo.lineNum, 1
+	simple.succeeds 35, () -> fetcher.unfetch({item: 1, lineNum: 1})
+	simple.equal 36, fetcher.hSourceInfo.lineNum, 0
+	simple.hashhas 37, fetcher.fetch(), {item: 1, lineNum: 1}
+	simple.hashhas 38, fetcher.fetch(), {item: 2, lineNum: 2}
+	simple.equal 39, fetcher.hSourceInfo.lineNum, 2
+	simple.hashhas 40, fetcher.fetch(), {item: 3, lineNum: 3}
+	simple.equal 41, fetcher.hSourceInfo.lineNum, 3
+	simple.equal 42, fetcher.fetch(), undef
 	simple.equal 43, fetcher.hSourceInfo.lineNum, 3
 	simple.equal 44, fetcher.fetch(), undef
 	simple.equal 45, fetcher.hSourceInfo.lineNum, 3
-	simple.equal 46, fetcher.fetch(), undef
-	simple.equal 47, fetcher.hSourceInfo.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -52,8 +50,8 @@ simple = new UnitTester()
 
 (() ->
 	fetcher = new Fetcher(undef, ['abc','def','ghi'], {prefix: '>'})
-	simple.equal 55, fetcher.fetch(), '>abc'
-	simple.equal 56, fetcher.fetch(), '>def'
+	simple.hashhas 53, fetcher.fetch(), {item: '>abc', lineNum: 1}
+	simple.hashhas 54, fetcher.fetch(), {item: '>def', lineNum: 2}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -62,10 +60,10 @@ simple = new UnitTester()
 (() ->
 
 	fetcher = new Fetcher(undef, ['abc','def','__END__','ghi'])
-	simple.equal 65, fetcher.fetch(), 'abc'
-	simple.equal 66, fetcher.fetch(), 'def'
-	simple.equal 67, fetcher.fetch(), undef
-	simple.equal 68, fetcher.hSourceInfo.lineNum, 2
+	simple.hashhas 63, fetcher.fetch(), {item: 'abc', lineNum: 1}
+	simple.hashhas 64, fetcher.fetch(), {item: 'def', lineNum: 2}
+	simple.equal 65, fetcher.fetch(), undef
+	simple.equal 66, fetcher.hSourceInfo.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -74,8 +72,8 @@ simple = new UnitTester()
 (() ->
 
 	fetcher = new Fetcher(undef, ['abc  ','def  '], {prefix: '>'})
-	simple.equal 77, fetcher.fetch(), '>abc'
-	simple.equal 78, fetcher.fetch(), '>def'
+	simple.hashhas 75, fetcher.fetch(), {item: '>abc', lineNum: 1}
+	simple.hashhas 76, fetcher.fetch(), {item: '>def', lineNum: 2}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -85,7 +83,10 @@ simple = new UnitTester()
 	fetcher = new Fetcher(undef, ['abc  ','def  '], {prefix: '>'})
 	lItems = for item from fetcher.all()
 		item
-	simple.equal 88, lItems, ['>abc','>def']
+	simple.hashhas 86, lItems, [
+		{item: '>abc', lineNum: 1}
+		{item: '>def', lineNum: 2}
+		]
 	)()
 
 # ---------------------------------------------------------------------------
@@ -93,7 +94,11 @@ simple = new UnitTester()
 
 (() ->
 	fetcher = new Fetcher(undef, ['abc  ','def  ','ghi'])
-	simple.equal 96, fetcher.fetchAll(), ['abc','def','ghi']
+	simple.hashhas 97, fetcher.fetchAll(), [
+		{item: 'abc', lineNum: 1}
+		{item: 'def', lineNum: 2}
+		{item: 'ghi', lineNum: 3}
+		]
 	)()
 
 # ---------------------------------------------------------------------------
@@ -101,7 +106,9 @@ simple = new UnitTester()
 
 (() ->
 	fetcher = new Fetcher(undef, ['abc  ','def  ','ghi'])
-	simple.equal 104, fetcher.fetchUntil('def'), ['abc']
+	simple.hashhas 109, fetcher.fetchUntil('def'), [
+		{item: 'abc', lineNum: 1}
+		]
 	)()
 
 # ---------------------------------------------------------------------------
@@ -109,7 +116,7 @@ simple = new UnitTester()
 
 (() ->
 	fetcher = new Fetcher(undef, ['abc  ','def  ','ghi'])
-	simple.equal 112, fetcher.fetchBlock(), """
+	simple.equal 119, fetcher.fetchBlock(), """
 		abc
 		def
 		ghi
@@ -127,7 +134,11 @@ simple = new UnitTester()
 			def
 			ghi
 			""")
-	simple.equal 130, fetcher.fetchAll(), ['abc','def','ghi']
+	simple.hashhas 137, fetcher.fetchAll(), [
+		{item: 'abc', lineNum: 1}
+		{item: 'def', lineNum: 2}
+		{item: 'ghi', lineNum: 3}
+		]
 	)()
 
 # ---------------------------------------------------------------------------
@@ -139,7 +150,9 @@ simple = new UnitTester()
 			def
 			ghi
 			""")
-	simple.equal 142, fetcher.fetchUntil('def'), ['abc']
+	simple.hashhas 153, fetcher.fetchUntil('def'), [
+		{item: 'abc', lineNum: 1}
+		]
 	)()
 
 # ---------------------------------------------------------------------------
@@ -151,7 +164,7 @@ simple = new UnitTester()
 			def
 			ghi
 			""")
-	simple.equal 154, fetcher.fetchBlock(), """
+	simple.equal 167, fetcher.fetchBlock(), """
 		abc
 		def
 		ghi
@@ -176,15 +189,15 @@ simple = new UnitTester()
 		transformValue: (block) ->
 
 			fetcher = new Fetcher(import.meta.url, block)
-			lAll = fetcher.fetchAll()
+			block = fetcher.fetchBlock()
 			numLines = fetcher.hSourceInfo.lineNum   # set variable numLines
-			return arrayToBlock(lAll)
+			return block
 
 	# ..........................................................
 
 	tester = new MyTester()
 
-	tester.equal 187, """
+	tester.equal 200, """
 			abc
 				#include title.md
 			def
@@ -195,7 +208,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 198, numLines, 3
+	simple.equal 211, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -206,7 +219,7 @@ simple = new UnitTester()
 			def
 			""", {prefix: '---'})
 
-	simple.equal 209, fetcher.fetchBlock(), """
+	simple.equal 222, fetcher.fetchBlock(), """
 			---abc
 			---def
 			"""
@@ -222,7 +235,7 @@ simple = new UnitTester()
 			def
 			""")
 
-	simple.equal 225, fetcher.fetchBlock(), """
+	simple.equal 238, fetcher.fetchBlock(), """
 			abc
 				title
 				=====
@@ -241,14 +254,14 @@ simple = new UnitTester()
 			def
 			""")
 
-	while defined(line = fetcher.fetch()) \
-			&& (line != '=====')
+	while defined(hItem = fetcher.fetch()) \
+			&& (hItem.item != '=====')
 		pass
 
-	simple.equal 248, line, '====='
+	simple.hashhas 261, hItem, {item: '=====', lineNum: 2}
 	h = fetcher.hSourceInfo
-	simple.equal 250, h.altInput.hSourceInfo.filename, 'title.md'
-	simple.equal 251, h.lineNum, 2
+	simple.equal 263, h.altInput.hSourceInfo.filename, 'title.md'
+	simple.equal 264, h.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -262,14 +275,14 @@ simple = new UnitTester()
 			def
 			""")
 
-	while defined(line = fetcher.fetch()) \
-			&& (line != '\t=====')
+	while defined(hItem = fetcher.fetch()) \
+			&& (hItem.item != '\t=====')
 		pass
 
-	simple.equal 269, line, '\t====='
+	simple.equal 282, hItem.item, '\t====='
 	h = fetcher.hSourceInfo
-	simple.equal 271, h.altInput.hSourceInfo.filename, 'title.md'
-	simple.equal 272, h.lineNum, 2
+	simple.equal 284, h.altInput.hSourceInfo.filename, 'title.md'
+	simple.equal 285, h.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -282,21 +295,21 @@ simple = new UnitTester()
 			#include title.md
 			def
 			""")
-	simple.equal 285, fetcher.sourceInfoStr(), "test.txt/0"
+	simple.equal 298, fetcher.sourceInfoStr(), "test.txt/0"
 
-	line = fetcher.fetch()
-	simple.equal 288, line, 'abc'
-	simple.equal 289, fetcher.sourceInfoStr(), "test.txt/1"
+	hItem = fetcher.fetch()
+	simple.equal 301, hItem.item, 'abc'
+	simple.equal 302, fetcher.sourceInfoStr(), "test.txt/1"
 
-	line = fetcher.fetch()
-	simple.equal 292, line, 'title'
-	simple.equal 293, fetcher.sourceInfoStr(), "test.txt/2 title.md/1"
+	hItem = fetcher.fetch()
+	simple.equal 305, hItem.item, 'title'
+	simple.equal 306, fetcher.sourceInfoStr(), "test.txt/2 title.md/1"
 
-	line = fetcher.fetch()
-	simple.equal 296, line, '====='
-	simple.equal 297, fetcher.sourceInfoStr(), "test.txt/2 title.md/2"
+	hItem = fetcher.fetch()
+	simple.equal 309, hItem.item, '====='
+	simple.equal 310, fetcher.sourceInfoStr(), "test.txt/2 title.md/2"
 
-	line = fetcher.fetch()
-	simple.equal 300, line, 'def'
-	simple.equal 301, fetcher.sourceInfoStr(), "test.txt/3"
+	hItem = fetcher.fetch()
+	simple.equal 313, hItem.item, 'def'
+	simple.equal 314, fetcher.sourceInfoStr(), "test.txt/3"
 	)()

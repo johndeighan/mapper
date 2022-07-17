@@ -46,31 +46,26 @@ export class Getter extends Fetcher
 	#    Cache Management
 	# ..........................................................
 
-	addToCache: (item, uobj) ->
-		# --- uobj is mapped version of item
-		#     uobj may be undef
+	fetchFromCache: () ->
 
-		@lCache.unshift {item, uobj}
-		return
+		assert nonEmpty(@lCache), "empty cache"
+		hItem = @lCache.shift()
+		return hItem
 
 	# ..........................................................
 
 	getFromCache: () ->
 
-		assert nonEmpty(@lCache), "empty cache"
-		{item, uobj} = @lCache.shift()
-		if uobj
-			return uobj
-		else
-			return @mapItem(item)
+		while nonEmpty(@lCache)
+			hItem = @fetchFromCache()
+			if defined(hItem.uobj)
+				return hItem
+			else
+				uobj = @mapItem(hItem)
+				if defined(uobj)
+					return hItem
 
-	# ..........................................................
-
-	fetchFromCache: () ->
-
-		assert nonEmpty(@lCache), "empty cache"
-		{item, uobj} = @lCache.shift()
-		return h.item
+		return undef
 
 	# ..........................................................
 	#        We override fetch(), unfetch()
@@ -84,11 +79,11 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	unfetch: (line) ->
+	unfetch: (hItem) ->
 
 		if isEmpty(@lCache)
-			return super(line)
-		@addToCache line, undef
+			return super(hItem)
+		@lCache.unshift hItem
 		return
 
 	# ..........................................................
@@ -100,29 +95,33 @@ export class Getter extends Fetcher
 		debug "enter Getter.get()"
 
 		# --- return anything in @lCache
-		if nonEmpty(@lCache)
-			uobj = @getFromCache()
-			debug "return from Getter.get() - cached uobj", uobj
-			return uobj
+		#     NOTE: getFromCache() may return undef if all items
+		#           in cache have not been mapped, and all of them
+		#           map to undef
+		hItem = @getFromCache()
+		if defined(hItem)
+			debug "return from Getter.get() - cached hItem", hItem
+			return hItem
+
 		debug "no lookahead"
 
 		debug "source = #{@sourceInfoStr()}"
-		item = @fetch()
-		debug "fetch() returned", item
+		hItem = @fetch()
+		debug "fetch() returned", hItem
 		debug "source = #{@sourceInfoStr()}"
 
-		if (item == undef)
+		if (hItem == undef)
 			debug "return from Getter.get() - at EOF", undef
 			return undef
 
-		uobj = @mapItem(item)
+		uobj = @mapItem(hItem)
 		debug "mapItem() returned", uobj
 
 		if (uobj == undef)
-			uobj = @get()    # recursive call
+			hItem = @get()    # recursive call
 
-		debug "return from Getter.get()", uobj
-		return uobj
+		debug "return from Getter.get()", hItem
+		return hItem
 
 	# ..........................................................
 
@@ -143,12 +142,12 @@ export class Getter extends Fetcher
 			debug "return from Getter.eof() - cache not empty", false
 			return false
 
-		value = @fetch()
-		if (value == undef)
+		hItem = @fetch()
+		if (hItem == undef)
 			debug "return from Getter.eof()", true
 			return true
 		else
-			@unfetch value
+			@unfetch hItem
 			debug "return from Getter.eof()", false
 			return false
 
@@ -162,28 +161,28 @@ export class Getter extends Fetcher
 		#     been mapped. lCache may contain such items, but if
 		#     they map to undef, they should be skipped
 		while nonEmpty(@lCache)
-			h = @lCache[0]
-			if defined(h.uobj)
-				debug "return cached item from Getter.peek()", h.uobj
-				return h.uobj
+			hItem = @lCache[0]
+			if defined(hItem.uobj)
+				debug "return cached item from Getter.peek()", hItem
+				return hItem
 			else
-				h.uobj = @mapItem(h.item)
-				if defined(h.uobj)
-					debug "return cached item from Getter.peek()", h.uobj
-					return h.uobj
+				uobj = @mapItem(hItem)
+				if defined(uobj)
+					debug "return cached item from Getter.peek()", hItem
+					return hItem
 				else
 					@lCache.shift()   # and continue loop
 
 		debug "no lookahead"
 
-		value = @fetch()
-		if (value == undef)
+		hItem = @fetch()
+		if (hItem == undef)
 			debug "return undef from Getter.peek() - at EOF"
 			return undef
-		debug "fetch() returned", value
+		debug "fetch() returned", hItem
 
 		# --- @lCache is currently empty
-		uobj = @mapItem(value)
+		uobj = @mapItem(hItem)
 		debug "from mapItem()", uobj
 
 		# --- @lCache might be non-empty now!!!
@@ -191,28 +190,30 @@ export class Getter extends Fetcher
 		# --- if mapItem() returns undef, skip that item
 		if (uobj == undef)
 			debug "mapItem() returned undef - recursive call"
-			uobj = @peek()    # recursive call
-			debug "return from Getter.peek()", uobj
-			return uobj
+			hItem = @peek()    # recursive call
+			debug "return from Getter.peek()", hItem
+			return hItem
 
-		debug "set lookahead", value, uobj
-		@addToCache value, uobj
+		debug "set lookahead", hItem
+		@lCache.unshift hItem
 
-		debug "return from Getter.peek()", uobj
-		return uobj
+		debug "return from Getter.peek()", hItem
+		return hItem
 
 	# ..........................................................
-	# return of undef doesn't mean EOF, it means skip this item
+	# --- return of undef doesn't mean EOF, it means skip this item
+	#     MUST set key 'uobj' to a defined value if not returning undef
 
-	mapItem: (item) ->
+	mapItem: (hItem) ->
 
-		debug "enter mapItem()", item
+		debug "enter mapItem()", hItem
 		debug "source = #{@sourceInfoStr()}"
 
-		[type, hInfo] = @getItemType(item)
+		[type, hInfo] = @getItemType(hItem)
 		if defined(type)
 			debug "item type is #{type}"
 			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
+			hInfo.type = type
 			debug "call handleItemType()"
 			uobj = @handleItemType(type, item, hInfo)
 			debug "from handleItemType()", uobj

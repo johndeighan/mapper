@@ -133,8 +133,10 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
+  // --- returns a hash with keys:
+  //        line
   fetch() {
-    var _, done, fname, lMatches, prefix, value;
+    var _, done, fname, hItem, lMatches, prefix, value;
     debug(`enter Fetcher.fetch() from ${this.hSourceInfo.filename}`);
     if (defined(this.hSourceInfo.altInput)) {
       debug("has altInput");
@@ -197,12 +199,17 @@ export var Fetcher = class Fetcher {
         return value;
       }
     }
-    if (this.prefix) {
+    if (this.prefix.length > 0) {
       assert(isString(value), "prefix with non-string value");
       value = this.prefix + value;
     }
-    debug("return from Fetcher.fetch()", value);
-    return value;
+    hItem = {
+      item: value,
+      lineNum: this.hSourceInfo.lineNum,
+      source: this.sourceInfoStr()
+    };
+    debug("return from Fetcher.fetch()", hItem);
+    return hItem;
   }
 
   // ..........................................................
@@ -231,11 +238,12 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   unfetch(value) {
-    var lMatches;
+    var item, lMatches;
     debug("enter Fetcher.unfetch()", value);
     assert(defined(value), "value must be defined");
-    if (isString(value)) {
-      lMatches = value.match(/^\s*\#include/);
+    ({item} = value);
+    if (isString(item)) {
+      lMatches = item.match(/^\s*\#include\b/);
       assert(isEmpty(lMatches), "unfetch() of a #include");
     }
     if (defined(this.hSourceInfo.altInput)) {
@@ -291,11 +299,11 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   fetchUntil(end) {
-    var item, lItems;
+    var h, lItems;
     debug("enter Fetcher.fetchUntil()");
     lItems = [];
-    while (defined(item = this.fetch()) && (item !== end)) {
-      lItems.push(item);
+    while (defined(h = this.fetch()) && (h.item !== end)) {
+      lItems.push(h);
     }
     debug("return from Fetcher.fetchUntil()", lItems);
     return lItems;
@@ -303,11 +311,12 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   fetchBlock() {
-    var block, lStrings, ref, str;
+    var block, h, lStrings, ref, str;
     debug("enter Fetcher.fetchBlock()");
     lStrings = [];
     ref = this.all();
-    for (str of ref) {
+    for (h of ref) {
+      str = h.item;
       assert(isString(str), `fetchBlock(): non-string ${OL(str)}`);
       lStrings.push(str);
     }

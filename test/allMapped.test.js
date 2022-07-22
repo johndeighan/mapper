@@ -36,9 +36,12 @@ import {
 } from '@jdeighan/mapper/heredoc';
 
 import {
-  TreeWalker,
-  TraceWalker
+  TreeWalker
 } from '@jdeighan/mapper/tree';
+
+import {
+  TraceWalker
+} from '@jdeighan/mapper/trace';
 
 addStdHereDocTypes();
 
@@ -63,7 +66,7 @@ addStdHereDocTypes();
   // ------------------------------------------------------------------------
   // --- remove comments and blank lines
   //     create user object from simple line
-  tester.equal(46, `# --- comment, followed by blank line
+  tester.like(46, `# --- comment, followed by blank line
 
 abc`, [
     {
@@ -79,7 +82,7 @@ abc`, [
   // ------------------------------------------------------------------------
   // --- remove comments and blank lines
   //     create user object from simple line
-  tester.equal(61, `# --- comment, followed by blank line
+  tester.like(61, `# --- comment, followed by blank line
 
 abc
 
@@ -107,7 +110,7 @@ def`, [
   ]);
   // ------------------------------------------------------------------------
   // --- level
-  return tester.equal(83, `abc
+  return tester.like(83, `abc
 	def
 		ghi
 	uvw
@@ -195,27 +198,27 @@ xyz`, [
   };
   tester = new Tester();
   // ------------------------------------------------------------------------
-  tester.equal(167, `abc
+  tester.like(167, `abc
 	def
 		ghi`, `0 abc
 1 def
 2 ghi`);
   // ------------------------------------------------------------------------
   // --- const replacement
-  tester.equal(182, `#define name John Deighan
+  tester.like(182, `#define name John Deighan
 abc
 __name__`, `0 abc
 0 John Deighan`);
   // ------------------------------------------------------------------------
   // --- extension lines
-  tester.equal(194, `abc
+  tester.like(194, `abc
 		&& def
 		&& ghi
 xyz`, `0 abc && def && ghi
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (default)
-  tester.equal(207, `func(<<<)
+  tester.like(207, `func(<<<)
 	abc
 	def
 
@@ -223,7 +226,7 @@ xyz`, `0 func("abc\\ndef")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (explicit)
-  tester.equal(221, `func(<<<)
+  tester.like(221, `func(<<<)
 	===
 	abc
 	def
@@ -232,7 +235,7 @@ xyz`, `0 func("abc\\ndef")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  tester.equal(236, `func(<<<)
+  tester.like(236, `func(<<<)
 	...
 	abc
 	def
@@ -241,15 +244,15 @@ xyz`, `0 func("abc def")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  tester.equal(251, `func(<<<)
+  tester.like(251, `func(<<<)
 	...abc
-	   def
+		def
 
 xyz`, `0 func("abc def")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - TAML
-  tester.equal(265, `func(<<<)
+  tester.like(265, `func(<<<)
 	---
 	- abc
 	- def
@@ -258,7 +261,7 @@ xyz`, `0 func(["abc","def"])
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - function
-  tester.equal(280, `handleClick(<<<)
+  tester.like(280, `handleClick(<<<)
 	(event) ->
 		event.preventDefault()
 		alert 'clicked'
@@ -268,7 +271,7 @@ xyz`, `0 handleClick((event) ->\\N\\Tevent.preventDefault()\\N\\Talert 'clicked'
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- using __END__
-  tester.equal(296, `abc
+  tester.like(296, `abc
 def
 __END__
 ghi
@@ -277,12 +280,12 @@ jkl`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value not defined
-  tester.equal(311, `#ifdef mobile
+  tester.like(311, `#ifdef mobile
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value defined
-  tester.equal(322, `#define mobile anything
+  tester.like(322, `#define mobile anything
 #ifdef mobile
 	abc
 def`, `0 abc
@@ -290,18 +293,18 @@ def`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value not defined
-  tester.equal(336, `#ifdef mobile samsung
+  tester.like(336, `#ifdef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined, but different
-  tester.equal(347, `#define mobile apple
+  tester.like(347, `#define mobile apple
 #ifdef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined and same
-  tester.equal(359, `#define mobile samsung
+  tester.like(359, `#define mobile samsung
 #ifdef mobile samsung
 	abc
 def`, `0 abc
@@ -309,40 +312,40 @@ def`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - not defined
-  tester.equal(373, `#ifndef mobile
+  tester.like(373, `#ifndef mobile
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - defined
-  tester.equal(385, `#define mobile anything
+  tester.like(385, `#define mobile anything
 #ifndef mobile
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - not defined
-  tester.equal(398, `#ifndef mobile samsung
+  tester.like(398, `#ifndef mobile samsung
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined, but different
-  tester.equal(410, `#define mobile apple
+  tester.like(410, `#define mobile apple
 #ifndef mobile samsung
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined and same
-  tester.equal(423, `#define mobile samsung
+  tester.like(423, `#define mobile samsung
 #ifndef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- nested commands
-  tester.equal(436, `#define mobile samsung
+  tester.like(436, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	#ifdef large
@@ -350,26 +353,26 @@ def`, `0 def`);
 			def`, `0 abc
 1 def`);
   // --- nested commands
-  tester.equal(450, `#define mobile samsung
+  tester.like(450, `#define mobile samsung
 #define large anything
 #ifndef mobile samsung
 	#ifdef large
 		abc`, `			`);
   // --- nested commands
-  tester.equal(461, `#define mobile samsung
+  tester.like(461, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	#ifndef large
 		abc`, `			`);
   // --- nested commands
-  tester.equal(472, `#define mobile samsung
+  tester.like(472, `#define mobile samsung
 #define large anything
 #ifndef mobile samsung
 	#ifndef large
 		abc`, `			`);
   // ----------------------------------------------------------
   // --- nested commands - every combination
-  tester.equal(484, `#define mobile samsung
+  tester.like(484, `#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	abc
@@ -379,7 +382,7 @@ ghi`, `0 abc
 0 def
 0 ghi`);
   // --- nested commands - every combination
-  tester.equal(500, `#define mobile samsung
+  tester.like(500, `#define mobile samsung
 #ifdef mobile samsung
 	abc
 	#ifdef large
@@ -387,14 +390,14 @@ ghi`, `0 abc
 ghi`, `0 abc
 0 ghi`);
   // --- nested commands - every combination
-  tester.equal(514, `#define large anything
+  tester.like(514, `#define large anything
 #ifdef mobile samsung
 	abc
 	#ifdef large
 		def
 ghi`, `0 ghi`);
   // --- nested commands - every combination
-  return tester.equal(527, `#ifdef mobile samsung
+  return tester.like(527, `#ifdef mobile samsung
 	abc
 	#ifdef large
 		def

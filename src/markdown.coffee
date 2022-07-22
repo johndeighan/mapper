@@ -47,31 +47,45 @@ export class SimpleMarkDownMapper extends Mapper
 		@prevLine = undef
 		return
 
-	mapItem: (item) ->
+	# ..........................................................
 
-		debug "enter mapItem(#{OL(item)})"
-		assert defined(item), "item is undef"
-		assert isString(item), "item not a string"
-		if isEmpty(item) || isHashComment(item)
-			debug "return undef from mapItem()"
-			return undef   # ignore empty lines and comments
-		else if item.match(/^={3,}$/) && defined(@prevLine)
+	handleEmptyLine: (hLine) ->
+
+		return undef
+
+	# ..........................................................
+
+	handleComment: (hLine) ->
+
+		return undef
+
+	# ..........................................................
+
+	map: (hLine) ->
+
+		debug "enter SimpleMarkDownMapper.mapItem()", hLine
+		assert defined(hLine), "hLine is undef"
+		{line} = hLine
+		assert isString(line), "line not a string"
+		if line.match(/^={3,}$/) && defined(@prevLine)
 			result = "<h1>#{@prevLine}</h1>"
 			debug "set prevLine to undef"
 			@prevLine = undef
-			debug "return from mapItem()", result
+			debug "return from SimpleMarkDownMapper.mapItem()", result
 			return result
 		else
 			result = @prevLine
-			debug "set prevLine to #{OL(item)}"
-			@prevLine = item
+			debug "set prevLine to #{OL(line)}"
+			@prevLine = line
 			if defined(result)
 				result = "<p>#{result}</p>"
-				debug "return from mapItem()", result
+				debug "return from SimpleMarkDownMapper.mapItem()", result
 				return result
 			else
-				debug "return undef from mapItem()"
+				debug "return undef from SimpleMarkDownMapper.mapItem()"
 				return undef
+
+	# ..........................................................
 
 	endBlock: () ->
 

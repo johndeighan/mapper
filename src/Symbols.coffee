@@ -130,13 +130,14 @@ class SymbolParser extends Mapper
 	# ..........................................................
 	# ignore empty lines and comments
 
-	handleEmptyLine: (line) -> return undef
-	handleComment:   (line) -> return undef
+	handleEmptyLine: (hLine) -> return undef
+	handleComment:   (hLine) -> return undef
 
 	# ..........................................................
 
-	map: (full_line) ->
+	map: (hLine) ->
 
+		full_line = hLine.line
 		[level, line] = splitLine(full_line)
 		if level==0
 			@curLib = line.trim()
@@ -171,6 +172,8 @@ class SymbolParser extends Mapper
 		else
 			croak "Bad .symbols file - level = #{level}"
 		return undef   # doesn't matter what we return
+
+	# ..........................................................
 
 	getAvailSymbols: () ->
 

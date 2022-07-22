@@ -46,7 +46,6 @@ export var Getter = class Getter extends Fetcher {
     this.hConsts = {}; // support variable replacement
     
     // --- support peek(), etc.
-    //     items are {item, uobj}
     this.lCache = [];
   }
 
@@ -65,23 +64,24 @@ export var Getter = class Getter extends Fetcher {
   //    Cache Management
   // ..........................................................
   fetchFromCache() {
-    var hItem;
+    var hLine;
     assert(nonEmpty(this.lCache), "empty cache");
-    hItem = this.lCache.shift();
-    return hItem;
+    hLine = this.lCache.shift();
+    assert(defined(hLine), "undef item found in lCache");
+    return hLine;
   }
 
   // ..........................................................
   getFromCache() {
-    var hItem, uobj;
+    var hLine, uobj;
     while (nonEmpty(this.lCache)) {
-      hItem = this.fetchFromCache();
-      if (defined(hItem.uobj)) {
-        return hItem;
+      hLine = this.fetchFromCache();
+      if (defined(hLine.uobj)) {
+        return hLine;
       } else {
-        uobj = this.mapItem(hItem);
+        uobj = hLine.uobj = this.mapItem(hLine);
         if (defined(uobj)) {
-          return hItem;
+          return hLine;
         }
       }
     }
@@ -99,44 +99,48 @@ export var Getter = class Getter extends Fetcher {
   }
 
   // ..........................................................
-  unfetch(hItem) {
-    if (isEmpty(this.lCache)) {
-      return super.unfetch(hItem);
-    }
-    this.lCache.unshift(hItem);
+  unfetch(hLine) {
+    // --- I think these are wrong, so I'm commenting them out for now
+    //		if isEmpty(@lCache)
+    //			return super(hLine)
+    assert(defined(hLine), "attempt to put undef in lCache");
+    this.lCache.unshift(hLine);
   }
 
   // ..........................................................
   //        Mapped Data
+  // --- add keys:
+  //        type   - if a special type
+  //        uobj
   // ..........................................................
   get() {
-    var hItem, uobj;
+    var hLine, uobj;
     debug("enter Getter.get()");
     // --- return anything in @lCache
     //     NOTE: getFromCache() may return undef if all items
     //           in cache have not been mapped, and all of them
     //           map to undef
-    hItem = this.getFromCache();
-    if (defined(hItem)) {
-      debug("return from Getter.get() - cached hItem", hItem);
-      return hItem;
+    debug('lCache', this.lCache);
+    if (defined(hLine = this.getFromCache())) {
+      // --- NOTE: return value from getFromCache()
+      //           should always have a uobj key
+      assert(defined(hLine.uobj), "getFromCache() but no uobj");
+      debug("return from Getter.get() - cached hLine", hLine);
+      return hLine;
     }
-    debug("no lookahead");
-    debug(`source = ${this.sourceInfoStr()}`);
-    hItem = this.fetch();
-    debug("fetch() returned", hItem);
-    debug(`source = ${this.sourceInfoStr()}`);
-    if (hItem === undef) {
+    debug("no cached hLine");
+    hLine = this.fetch();
+    debug("fetch() returned", hLine);
+    if (hLine === undef) {
       debug("return from Getter.get() - at EOF", undef);
       return undef;
     }
-    uobj = this.mapItem(hItem);
-    debug("mapItem() returned", uobj);
+    uobj = hLine.uobj = this.mapItem(hLine);
     if (uobj === undef) {
-      hItem = this.get(); // recursive call
+      hLine = this.get(); // recursive call
     }
-    debug("return from Getter.get()", hItem);
-    return hItem;
+    debug("return from Getter.get()", hLine);
+    return hLine;
   }
 
   // ..........................................................
@@ -148,18 +152,18 @@ export var Getter = class Getter extends Fetcher {
 
   // ..........................................................
   eof() {
-    var hItem;
+    var hLine;
     debug("enter Getter.eof()");
     if (nonEmpty(this.lCache)) {
       debug("return from Getter.eof() - cache not empty", false);
       return false;
     }
-    hItem = this.fetch();
-    if (hItem === undef) {
+    hLine = this.fetch();
+    if (hLine === undef) {
       debug("return from Getter.eof()", true);
       return true;
     } else {
-      this.unfetch(hItem);
+      this.unfetch(hLine);
       debug("return from Getter.eof()", false);
       return false;
     }
@@ -167,98 +171,95 @@ export var Getter = class Getter extends Fetcher {
 
   // ..........................................................
   peek() {
-    var hItem, uobj;
+    var hLine, uobj;
     debug('enter Getter.peek()');
     // --- Any item in lCache that has uobj == undef has not
     //     been mapped. lCache may contain such items, but if
     //     they map to undef, they should be skipped
     while (nonEmpty(this.lCache)) {
-      hItem = this.lCache[0];
-      if (defined(hItem.uobj)) {
-        debug("return cached item from Getter.peek()", hItem);
-        return hItem;
+      hLine = this.lCache[0];
+      assert(defined(hLine), "hLine (from cache) is undef");
+      if (defined(hLine.uobj)) {
+        debug("return cached item from Getter.peek()", hLine);
+        return hLine;
       } else {
-        uobj = this.mapItem(hItem);
+        uobj = hLine.uobj = this.mapItem(hLine);
         if (defined(uobj)) {
-          debug("return cached item from Getter.peek()", hItem);
-          return hItem;
+          debug("return cached item from Getter.peek()", hLine);
+          return hLine;
         } else {
           this.lCache.shift(); // and continue loop
         }
       }
     }
     debug("no lookahead");
-    hItem = this.fetch();
-    if (hItem === undef) {
+    hLine = this.fetch();
+    if (hLine === undef) {
       debug("return undef from Getter.peek() - at EOF");
       return undef;
     }
-    debug("fetch() returned", hItem);
+    debug("fetch() returned", hLine);
     // --- @lCache is currently empty
-    uobj = this.mapItem(hItem);
-    debug("from mapItem()", uobj);
+    uobj = hLine.uobj = this.mapItem(hLine);
     // --- @lCache might be non-empty now!!!
 
     // --- if mapItem() returns undef, skip that item
     if (uobj === undef) {
       debug("mapItem() returned undef - recursive call");
-      hItem = this.peek(); // recursive call
-      debug("return from Getter.peek()", hItem);
-      return hItem;
+      hLine = this.peek(); // recursive call
+      debug("return from Getter.peek()", hLine);
+      return hLine;
     }
-    debug("set lookahead", hItem);
-    this.lCache.unshift(hItem);
-    debug("return from Getter.peek()", hItem);
-    return hItem;
+    debug("add to cache", hLine);
+    this.lCache.unshift(hLine);
+    debug("return from Getter.peek()", hLine);
+    return hLine;
   }
 
   // ..........................................................
   // --- return of undef doesn't mean EOF, it means skip this item
-  //     MUST set key 'uobj' to a defined value if not returning undef
-  mapItem(hItem) {
-    var hInfo, item, newitem, result, type, uobj;
-    debug("enter mapItem()", hItem);
-    debug(`source = ${this.sourceInfoStr()}`);
-    [type, hInfo] = this.getItemType(hItem);
-    if (defined(type)) {
+  //     sets key 'uobj' to a defined value if not returning undef
+  //     sets key 'type' if a special type
+  mapItem(hLine) {
+    var line, newline, newstr, prefix, str, type, uobj;
+    debug("enter Getter.mapItem()", hLine);
+    assert(defined(hLine), "hLine is undef");
+    if (defined(type = this.getItemType(hLine))) {
       debug(`item type is ${type}`);
       assert(isString(type) && nonEmpty(type), `bad type: ${OL(type)}`);
-      hInfo.type = type;
+      hLine.type = type;
       debug("call handleItemType()");
-      uobj = this.handleItemType(type, item, hInfo);
+      uobj = this.handleItemType(type, hLine);
       debug("from handleItemType()", uobj);
     } else {
       debug("no special type");
-      if (isString(item) && (item !== '__END__')) {
-        newitem = this.replaceConsts(item, this.hConsts);
-        if (newitem !== item) {
-          debug(`=> '${newitem}'`);
-          item = newitem;
+      ({line, str, prefix} = hLine);
+      if (isString(line)) {
+        assert(isString(str), `missing 'str' key in ${OL(line)}`);
+        assert(nonEmpty(str), "str is empty");
+        assert(line !== '__END__', "__END__ encountered");
+        newstr = this.replaceConsts(str, this.hConsts);
+        if (newstr !== str) {
+          newline = `${prefix}${newstr}`;
+          debug(`=> '${newline}'`);
+          hLine.str = newstr;
+          hLine.line = newline;
         }
       }
       debug("call map()");
-      uobj = this.map(item);
+      uobj = this.map(hLine);
       debug("from map()", uobj);
     }
     if (uobj === undef) {
-      debug("return undef from mapItem()");
+      debug("return from Getter.mapItem()", undef);
       return undef;
-    } else {
-      result = this.bundle(uobj, type);
-      assert(defined(result), "result is undef");
-      debug("return from mapItem()", result);
-      return result;
     }
+    debug("return from Getter.mapItem()", uobj);
+    return uobj;
   }
 
   // ..........................................................
-  bundle(result) {
-    // --- designed to override - NEVER return undef
-    return result;
-  }
-
-  // ..........................................................
-  replaceConsts(line, hVars = {}) {
+  replaceConsts(str, hVars = {}) {
     var replacerFunc;
     assert(isHash(hVars), "hVars is not a hash");
     replacerFunc = (match, prefix, name) => {
@@ -278,21 +279,18 @@ export var Getter = class Getter extends Fetcher {
         }
       }
     };
-    return line.replace(/__(env\.)?([A-Za-z_][A-Za-z0-9_]*)__/g, replacerFunc);
+    return str.replace(/__(env\.)?([A-Za-z_][A-Za-z0-9_]*)__/g, replacerFunc);
   }
 
   // ..........................................................
-  getItemType(item) {
-    return [
-      // --- return [<name of item type>, <additional info>]
-      undef,
-      undef // default: no special item types
-    ];
+  getItemType(hLine) {
+    // --- returns name of item type
+    return undef; // default: no special item types
   }
 
   
     // ..........................................................
-  handleItemType(type, item, hInfo) {
+  handleItemType(type, hLine) {
     return undef; // default - ignore any special item types
   }
 
@@ -300,77 +298,78 @@ export var Getter = class Getter extends Fetcher {
     // ..........................................................
   // --- designed to override
   //     override may use fetch(), unfetch(), fetchBlock(), etc.
-  //     should return undef to ignore line
-  //     technically, line does not have to be a string,
+  //     should return a uobj (undef to ignore line)
+  //     technically, hLine.line does not have to be a string,
   //        but it usually is
-  map(item) {
-    debug("enter Getter.map() - identity mapping", item);
-    assert(defined(item), "item is undef");
-    // --- by default, identity mapping
-    debug("return from Getter.map()", item);
-    return item;
-  }
-
-  // ..........................................................
-  // --- override to map back to a string, default returns arg
-  //     used in getBlock()
-  unmap(item) {
-    return item;
+  map(hLine) {
+    // --- returns a uobj or undef
+    //     uobj will be passed to visit() and endVisit() in TreeWalker
+    debug("enter Getter.map()", hLine);
+    assert(defined(hLine), "hLine is undef");
+    // --- by default, just returns line key
+    debug("return from Getter.map()", hLine.line);
+    return hLine.line;
   }
 
   // ..........................................................
   // --- a generator
   * allMapped() {
-    var item;
+    var hLine;
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
-    while (defined(item = this.get())) {
-      yield item;
+    while (defined(hLine = this.get())) {
+      yield hLine;
     }
   }
 
   // ..........................................................
   getAll() {
-    var item, lItems, ref;
+    var lLines;
     debug("enter Getter.getAll()");
-    lItems = [];
-    ref = this.allMapped();
-    for (item of ref) {
-      lItems.push(item);
-    }
-    debug("return from Getter.getAll()", lItems);
-    return lItems;
+    lLines = Array.from(this.allMapped());
+    debug("return from Getter.getAll()", lLines);
+    return lLines;
   }
 
   // ..........................................................
-  getUntil(end) {
-    var item, lItems;
+  getUntil(endLine) {
+    var hLine, lLines;
     debug("enter Getter.getUntil()");
-    lItems = [];
-    while (defined(item = this.get()) && (item !== end)) {
-      lItems.push(item);
+    lLines = [];
+    while (defined(hLine = this.get()) && (hLine.line !== endLine)) {
+      lLines.push(hLine.line);
     }
-    debug("return from Getter.getUntil()", lItems);
-    return lItems;
+    debug("return from Getter.getUntil()", lLines);
+    return lLines;
   }
 
   // ..........................................................
-  getBlock() {
-    var block, endStr, item, lStrings, ref;
+  getBlock(hOptions = {}) {
+    var block, endStr, hLine, i, lStrings, ref, uobj;
+    // --- Valid options: logLines
     debug("enter Getter.getBlock()");
     lStrings = [];
+    i = 0;
     ref = this.allMapped();
-    for (item of ref) {
-      debug("MAPPED", item);
-      item = this.unmap(item);
-      assert(isString(item), "mapped item not a string");
-      lStrings.push(item);
+    for (hLine of ref) {
+      if (hOptions.logLines) {
+        LOG(`hLine[${i}]`, hLine);
+      } else {
+        debug("hLine", hLine);
+      }
+      i += 1;
+      uobj = hLine.uobj;
+      assert(isString(uobj), "uobj not a string");
+      lStrings.push(uobj);
     }
     debug('lStrings', lStrings);
     endStr = this.endBlock();
-    if (defined(endStr)) {
+    if (defined(endStr = this.endBlock())) {
       debug('endStr', endStr);
       lStrings.push(endStr);
+    }
+    if (hOptions.logLines) {
+      LOG('lStrings', lStrings);
     }
     block = this.finalizeBlock(arrayToBlock(lStrings));
     debug("return from Getter.getBlock()", block);

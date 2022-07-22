@@ -54,8 +54,7 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TreeWalker,
-  TraceWalker
+  TreeWalker
 } from '@jdeighan/mapper/tree';
 
 import {
@@ -80,80 +79,91 @@ addStdHereDocTypes();
 // Test TreeWalker.get()
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `# --- a comment
+  walker = new TreeWalker(import.meta.url, `# --- a comment
 
 abc
 	def
 		ghi`);
-  // --- get() should return {uobj, level}
-  simple.equal(48, walker.get(), {
+  simple.like(48, walker.get(), {
+    line: '# --- a comment',
+    prefix: '',
+    str: '# --- a comment',
     level: 0,
-    item: '# --- a comment',
     type: 'comment'
   });
-  simple.equal(47, walker.get(), {
-    level: 0,
-    item: 'abc'
+  simple.like(55, walker.get(), {
+    line: 'abc',
+    prefix: '',
+    str: 'abc',
+    level: 0
   });
-  simple.equal(52, walker.get(), {
-    level: 1,
-    item: 'def'
+  simple.like(61, walker.get(), {
+    line: '\tdef',
+    prefix: '\t',
+    str: 'def',
+    level: 1
   });
-  simple.equal(57, walker.get(), {
-    level: 2,
-    item: 'ghi'
+  simple.like(67, walker.get(), {
+    line: '\t\tghi',
+    prefix: '\t\t',
+    str: 'ghi',
+    level: 2
   });
-  return simple.equal(62, walker.get(), undef);
+  return simple.equal(73, walker.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // Test __END__ and extension lines with TreeWalker.get()
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `abc
+  walker = new TreeWalker(import.meta.url, `abc
 		def
 	ghi
 __END__
 		ghi`);
   // --- get() should return {uobj, level}
-  simple.equal(79, walker.get(), {
-    level: 0,
-    item: 'abc def'
+  simple.like(90, walker.get(), {
+    line: 'abc def',
+    prefix: '',
+    str: 'abc def',
+    level: 0
   });
-  simple.equal(84, walker.get(), {
-    level: 1,
-    item: 'ghi'
+  simple.like(96, walker.get(), {
+    line: '\tghi',
+    prefix: '\t',
+    str: 'ghi',
+    level: 1
   });
-  return simple.equal(89, walker.get(), undef);
+  return simple.equal(102, walker.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // __END__ only works with no identation
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `abc
+  walker = new TreeWalker(import.meta.url, `abc
 		def
 	ghi
 	__END__
 		ghi`);
   // --- get() should return {uobj, level}
-  simple.equal(106, walker.get(), {
+  simple.like(119, walker.get(), {
     level: 0,
-    item: 'abc def'
+    str: 'abc def'
   });
-  simple.equal(111, walker.get(), {
+  simple.like(123, walker.get(), {
     level: 1,
-    item: 'ghi'
+    str: 'ghi'
   });
-  simple.equal(116, walker.get(), {
+  simple.like(127, walker.get(), {
     level: 1,
-    item: '__END__'
+    str: '__END__'
   });
-  simple.equal(121, walker.get(), {
+  simple.like(131, walker.get(), {
     level: 2,
-    item: 'ghi'
+    str: 'ghi'
   });
-  return simple.equal(126, walker.get(), undef);
+  return simple.equal(135, walker.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -168,10 +178,10 @@ __END__
   tester = new Tester();
   // ---------------------------------------------------------------------------
   // --- Test basic reading till EOF
-  tester.equal(144, `abc
+  tester.equal(153, `abc
 def`, `abc
 def`);
-  return tester.equal(152, `abc
+  return tester.equal(161, `abc
 
 def`, `abc
 def`);
@@ -201,9 +211,9 @@ def`);
   block = `abc
 
 def`;
-  simple.equal(192, doMap(MyWalker, import.meta.url, block), `abc
+  simple.equal(201, doMap(MyWalker, import.meta.url, block), `abc
 def`);
-  return tester.equal(197, block, `abc
+  return tester.equal(206, block, `abc
 def`);
 })();
 
@@ -237,10 +247,10 @@ def`);
 # not a comment
 abc
 def`;
-  simple.equal(240, doMap(MyWalker, import.meta.url, block), `# not a comment
+  simple.equal(249, doMap(MyWalker, import.meta.url, block), `# not a comment
 abc
 def`);
-  return tester.equal(246, block, `# not a comment
+  return tester.equal(255, block, `# not a comment
 abc
 def`);
 })();
@@ -250,27 +260,22 @@ def`);
 (function() {
   var MyTester, MyWalker, block, tester;
   MyWalker = class MyWalker extends TreeWalker {
-    isCmd(line) {
+    isCmd(str, hLine) {
       var _, cmd, lMatches;
-      // --- line includes any indentation
-
-      // --- commands only recognized if no indentation
-      //     AND consist of '-' + one whitespace char + word
-      if ((lMatches = line.match(/^-\s(\w+)$/))) {
+      // --- commands consist of '-' + one whitespace char + word
+      if ((lMatches = str.match(/^-\s(\w+)$/))) {
         [_, cmd] = lMatches;
-        return {
-          cmd,
-          argstr: '',
-          prefix: ''
-        };
+        hLine.cmd = cmd;
+        hLine.argstr = hLine.prefix = '';
+        return true;
       } else {
-        return undef;
+        return false;
       }
     }
 
     // .......................................................
-    handleCmd(cmd, argstr, prefix) {
-      return `COMMAND: ${cmd}`;
+    handleCmd(hLine) {
+      return `COMMAND: ${hLine.cmd}`;
     }
 
   };
@@ -288,7 +293,7 @@ def`);
 abc
 - command
 def`;
-  return tester.equal(300, block, `# don't remove this
+  return tester.equal(309, block, `# don't remove this
 abc
 COMMAND: command
 def`);
@@ -325,7 +330,7 @@ def`);
   };
   tester = new MyTester();
   // ..........................................................
-  return tester.equal(343, `abc
+  return tester.equal(353, `abc
 	def
 
 ghi`, `x
@@ -340,7 +345,7 @@ x`);
   var MyTester, MyWalker, tester;
   MyWalker = class MyWalker extends TreeWalker {
     // --- Remove blank lines PLUS the line following a blank line
-    handleEmptyLine(line) {
+    handleEmptyLine(hLine) {
       var follow;
       follow = this.fetch();
       return undef; // remove empty lines
@@ -357,7 +362,7 @@ x`);
   };
   tester = new MyTester();
   // ..........................................................
-  return tester.equal(381, `abc
+  return tester.equal(391, `abc
 
 def
 ghi`, `abc
@@ -376,7 +381,7 @@ ghi`);
   };
   // ..........................................................
   tester = new MyTester();
-  return tester.equal(407, `abc
+  return tester.equal(417, `abc
 	#include title.md
 def`, `abc
 	title
@@ -392,86 +397,86 @@ def`);
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
       var walker;
-      walker = new TreeWalker(undef, block);
+      walker = new TreeWalker(import.meta.url, block);
       return walker.getAll();
     }
 
   };
   tester = new MyTester();
-  return tester.equal(436, `abc
+  return tester.like(446, `abc
 	def
 		ghi
 jkl`, taml(`---
 -
 	level: 0
-	item: 'abc'
+	str: 'abc'
 -
 	level: 1
-	item: 'def'
+	str: 'def'
 -
 	level: 2
-	item: 'ghi'
+	str: 'ghi'
 -
 	level: 0
-	item: 'jkl'`));
+	str: 'jkl'`));
 })();
 
 // ---------------------------------------------------------------------------
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `if (x == 2)
+  walker = new TreeWalker(import.meta.url, `if (x == 2)
 	doThis
 	doThat
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(476, walker.peek(), {
+  simple.like(482, walker.peek(), {
     level: 0,
-    item: 'if (x == 2)'
+    str: 'if (x == 2)'
   });
-  simple.equal(477, walker.get(), {
+  simple.like(483, walker.get(), {
     level: 0,
-    item: 'if (x == 2)'
+    str: 'if (x == 2)'
   });
-  simple.equal(479, walker.peek(), {
+  simple.like(485, walker.peek(), {
     level: 1,
-    item: 'doThis'
+    str: 'doThis'
   });
-  simple.equal(480, walker.get(), {
+  simple.like(486, walker.get(), {
     level: 1,
-    item: 'doThis'
+    str: 'doThis'
   });
-  simple.equal(482, walker.peek(), {
+  simple.like(488, walker.peek(), {
     level: 1,
-    item: 'doThat'
+    str: 'doThat'
   });
-  simple.equal(483, walker.get(), {
+  simple.like(489, walker.get(), {
     level: 1,
-    item: 'doThat'
+    str: 'doThat'
   });
-  simple.equal(485, walker.peek(), {
+  simple.like(491, walker.peek(), {
     level: 2,
-    item: 'then this'
+    str: 'then this'
   });
-  simple.equal(486, walker.get(), {
+  simple.like(492, walker.get(), {
     level: 2,
-    item: 'then this'
+    str: 'then this'
   });
-  simple.equal(488, walker.peek(), {
+  simple.like(494, walker.peek(), {
     level: 0,
-    item: 'while (x > 2)'
+    str: 'while (x > 2)'
   });
-  simple.equal(489, walker.get(), {
+  simple.like(495, walker.get(), {
     level: 0,
-    item: 'while (x > 2)'
+    str: 'while (x > 2)'
   });
-  simple.equal(491, walker.peek(), {
+  simple.like(497, walker.peek(), {
     level: 1,
-    item: '--x'
+    str: '--x'
   });
-  return simple.equal(492, walker.get(), {
+  return simple.like(498, walker.get(), {
     level: 1,
-    item: '--x'
+    str: '--x'
   });
 })();
 
@@ -479,24 +484,24 @@ while (x > 2)
 // --- Test fetchBlockAtLevel()
 (function() {
   var walker;
-  walker = new TreeWalker(undef, `if (x == 2)
+  walker = new TreeWalker(import.meta.url, `if (x == 2)
 	doThis
 	doThat
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(510, walker.get(), {
+  simple.like(516, walker.get(), {
     level: 0,
-    item: 'if (x == 2)'
+    str: 'if (x == 2)'
   });
-  simple.equal(516, walker.fetchBlockAtLevel(1), `doThis
+  simple.equal(521, walker.fetchBlockAtLevel(1), `doThis
 doThat
 	then this`);
-  simple.equal(522, walker.get(), {
+  simple.like(527, walker.get(), {
     level: 0,
-    item: 'while (x > 2)'
+    str: 'while (x > 2)'
   });
-  return simple.equal(528, walker.fetchBlockAtLevel(1), "--x");
+  return simple.equal(532, walker.fetchBlockAtLevel(1), "--x");
 })();
 
 // ---------------------------------------------------------------------------
@@ -515,77 +520,31 @@ doThat
     }
 
   };
-  walker = new MyWalker(undef, `if (x == 2)
+  walker = new MyWalker(import.meta.url, `if (x == 2)
 	doThis
 	doThat
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(558, walker.get(), {
+  simple.like(562, walker.get(), {
     level: 0,
-    item: {
+    line: {
       cmd: 'if',
       cond: '(x == 2)'
     }
   });
-  simple.equal(566, walker.fetchBlockAtLevel(1), `doThis
+  simple.equal(569, walker.fetchBlockAtLevel(1), `doThis
 doThat
 	then this`);
-  simple.equal(571, walker.get(), {
+  simple.like(574, walker.get(), {
     level: 0,
-    item: {
+    line: {
       cmd: 'while',
       cond: '(x > 2)'
     }
   });
-  simple.equal(579, walker.fetchBlockAtLevel(1), "--x");
-  return simple.equal(580, walker.get(), undef);
-})();
-
-// ---------------------------------------------------------------------------
-// --- Test TraceWalker
-(function() {
-  var WalkTester, tester;
-  WalkTester = class WalkTester extends UnitTester {
-    transformValue(block) {
-      var walker;
-      walker = new TraceWalker(import.meta.url, block);
-      return walker.walk();
-    }
-
-  };
-  tester = new WalkTester();
-  // ..........................................................
-  tester.equal(599, `abc
-def`, `BEGIN WALK
-VISIT 0 'abc'
-END VISIT 0 'abc'
-VISIT 0 'def'
-END VISIT 0 'def'
-END WALK`);
-  tester.equal(611, `abc
-	def`, `BEGIN WALK
-VISIT 0 'abc'
-VISIT 1 'def'
-END VISIT 1 'def'
-END VISIT 0 'abc'
-END WALK`);
-  // --- 2 indents is treated as an extension line
-  tester.equal(624, `abc
-		def`, `BEGIN WALK
-VISIT 0 'abc˳def'
-END VISIT 0 'abc˳def'
-END WALK`);
-  return tester.equal(634, `abc
-	def
-ghi`, `BEGIN WALK
-VISIT 0 'abc'
-VISIT 1 'def'
-END VISIT 1 'def'
-END VISIT 0 'abc'
-VISIT 0 'ghi'
-END VISIT 0 'ghi'
-END WALK`);
+  simple.equal(581, walker.fetchBlockAtLevel(1), "--x");
+  return simple.equal(582, walker.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -600,7 +559,7 @@ END WALK`);
   };
   // ..........................................................
   tester = new MyTester();
-  tester.equal(665, `abc
+  tester.equal(667, `abc
 if x == <<<
 	abc
 	def
@@ -608,7 +567,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  tester.equal(678, `abc
+  tester.equal(680, `abc
 if x == <<<
 	===
 	abc
@@ -617,7 +576,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  return tester.equal(692, `abc
+  return tester.equal(694, `abc
 if x == <<<
 	...
 	abc
@@ -633,7 +592,7 @@ def`);
 HtmlMapper = class HtmlMapper extends TreeWalker {
   mapStr(str, level) {
     var _, body, hResult, lMatches, md, tag, text;
-    debug(`enter MyWalker.mapStr(${level})`, str);
+    debug("enter MyWalker.mapStr()", str, level);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
     // everything else
@@ -669,8 +628,18 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   }
 
   // .......................................................
-  visit(uobj, hUser, level) {
-    var lParts, result;
+  visit(hLine, hUser, lStack) {
+    var _, lMatches, lParts, level, result, str, type, uobj;
+    ({str, uobj, level, type} = hLine);
+    switch (type) {
+      case 'comment':
+        if (lMatches = str.match(/^\#(.*)$/)) {
+          [_, str] = lMatches;
+          return indented(`<!-- ${str.trim()} -->`, level);
+        } else {
+          return undef;
+        }
+    }
     lParts = [indented(`<${uobj.tag}>`, level)];
     if (nonEmpty(uobj.body)) {
       lParts.push(indented(uobj.body, level + 1));
@@ -681,20 +650,13 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   }
 
   // .......................................................
-  endVisit(uobj, hUser, level) {
-    return indented(`</${uobj.tag}>`, level);
-  }
-
-  // ..........................................................
-  visitSpecial(type, item, hUser, level, lStack) {
-    var _, lMatches, str;
+  endVisit(hLine, hUser, lStack) {
+    var level, type, uobj;
+    ({uobj, level, type} = hLine);
     if (type === 'comment') {
-      if (lMatches = item.match(/^\s*\#(.*)$/)) {
-        [_, str] = lMatches;
-        return indented(`<!-- ${str.trim()} -->`, level);
-      }
+      return undef;
     }
-    return undef;
+    return indented(`</${uobj.tag}>`, level);
   }
 
 };
@@ -710,7 +672,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(777, `body
+  return tester.equal(793, `body
 	# a comment
 
 	div:markdown
@@ -745,7 +707,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
 
   };
   tester = new MyTester();
-  return tester.equal(820, `abc
+  return tester.equal(835, `abc
 #ifdef something
 	def
 	ghi

@@ -1,13 +1,12 @@
 # markdown.test.coffee
 
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNorm, simple} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
+import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {
 	markdownify, SimpleMarkDownMapper,
 	} from '@jdeighan/mapper/markdown'
-
-simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 

@@ -16,7 +16,8 @@ import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {taml} from '@jdeighan/coffee-utils/taml'
 
 import {doMap} from '@jdeighan/mapper'
-import {TreeWalker, TraceWalker} from '@jdeighan/mapper/tree'
+import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TraceWalker} from '@jdeighan/mapper/trace'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 simple = new UnitTester()
@@ -36,7 +37,7 @@ tester.equal 35, """
 		abc
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		END WALK
 		"""
@@ -46,9 +47,9 @@ tester.equal 44, """
 		def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
-		VISIT 0 'def'
+		VISIT     0 'def'
 		END VISIT 0 'def'
 		END WALK
 		"""
@@ -58,8 +59,8 @@ tester.equal 56, """
 			def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
-		VISIT 1 'def'
+		VISIT     0 'abc'
+		VISIT     1 'def'
 		END VISIT 1 'def'
 		END VISIT 0 'abc'
 		END WALK
@@ -71,7 +72,7 @@ tester.equal 68, """
 			def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		END WALK
 		"""
@@ -82,9 +83,9 @@ tester.equal 79, """
 			def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
-		VISIT 0 'def'
+		VISIT     0 'def'
 		END VISIT 0 'def'
 		END WALK
 		"""
@@ -96,7 +97,7 @@ tester.equal 92, """
 			def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		END WALK
 		"""
@@ -108,9 +109,9 @@ tester.equal 104, """
 			def
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
-		VISIT 0 'def'
+		VISIT     0 'def'
 		END VISIT 0 'def'
 		END WALK
 		"""
@@ -125,11 +126,11 @@ tester.equal 118, """
 				ghi
 		""", """
 		BEGIN WALK
-		VISIT 0 'abc'
+		VISIT     0 'abc'
 		END VISIT 0 'abc'
-		VISIT 0 'def'
+		VISIT     0 'def'
 		END VISIT 0 'def'
-		VISIT 0 'ghi'
+		VISIT     0 'ghi'
 		END VISIT 0 'ghi'
 		END WALK
 		"""

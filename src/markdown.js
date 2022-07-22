@@ -75,35 +75,45 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
     this.prevLine = undef;
   }
 
-  mapItem(item) {
-    var result;
-    debug(`enter mapItem(${OL(item)})`);
-    assert(defined(item), "item is undef");
-    assert(isString(item), "item not a string");
-    if (isEmpty(item) || isHashComment(item)) {
-      debug("return undef from mapItem()");
-      return undef; // ignore empty lines and comments
-    } else if (item.match(/^={3,}$/) && defined(this.prevLine)) {
+  // ..........................................................
+  handleEmptyLine(hLine) {
+    return undef;
+  }
+
+  // ..........................................................
+  handleComment(hLine) {
+    return undef;
+  }
+
+  // ..........................................................
+  map(hLine) {
+    var line, result;
+    debug("enter SimpleMarkDownMapper.mapItem()", hLine);
+    assert(defined(hLine), "hLine is undef");
+    ({line} = hLine);
+    assert(isString(line), "line not a string");
+    if (line.match(/^={3,}$/) && defined(this.prevLine)) {
       result = `<h1>${this.prevLine}</h1>`;
       debug("set prevLine to undef");
       this.prevLine = undef;
-      debug("return from mapItem()", result);
+      debug("return from SimpleMarkDownMapper.mapItem()", result);
       return result;
     } else {
       result = this.prevLine;
-      debug(`set prevLine to ${OL(item)}`);
-      this.prevLine = item;
+      debug(`set prevLine to ${OL(line)}`);
+      this.prevLine = line;
       if (defined(result)) {
         result = `<p>${result}</p>`;
-        debug("return from mapItem()", result);
+        debug("return from SimpleMarkDownMapper.mapItem()", result);
         return result;
       } else {
-        debug("return undef from mapItem()");
+        debug("return undef from SimpleMarkDownMapper.mapItem()");
         return undef;
       }
     }
   }
 
+  // ..........................................................
   endBlock() {
     if (defined(this.prevLine)) {
       return `<p>${this.prevLine}</p>`;

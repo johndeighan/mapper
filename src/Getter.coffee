@@ -24,7 +24,6 @@ export class Getter extends Fetcher
 		@hConsts = {}   # support variable replacement
 
 		# --- support peek(), etc.
-		#     items are {item, uobj}
 		@lCache = []
 
 	# ..........................................................
@@ -49,21 +48,22 @@ export class Getter extends Fetcher
 	fetchFromCache: () ->
 
 		assert nonEmpty(@lCache), "empty cache"
-		hItem = @lCache.shift()
-		return hItem
+		hLine = @lCache.shift()
+		assert defined(hLine), "undef item found in lCache"
+		return hLine
 
 	# ..........................................................
 
 	getFromCache: () ->
 
 		while nonEmpty(@lCache)
-			hItem = @fetchFromCache()
-			if defined(hItem.uobj)
-				return hItem
+			hLine = @fetchFromCache()
+			if defined(hLine.uobj)
+				return hLine
 			else
-				uobj = @mapItem(hItem)
+				uobj = hLine.uobj = @mapItem(hLine)
 				if defined(uobj)
-					return hItem
+					return hLine
 
 		return undef
 
@@ -79,15 +79,20 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	unfetch: (hItem) ->
+	unfetch: (hLine) ->
 
-		if isEmpty(@lCache)
-			return super(hItem)
-		@lCache.unshift hItem
+# --- I think these are wrong, so I'm commenting them out for now
+#		if isEmpty(@lCache)
+#			return super(hLine)
+		assert defined(hLine), "attempt to put undef in lCache"
+		@lCache.unshift hLine
 		return
 
 	# ..........................................................
 	#        Mapped Data
+	# --- add keys:
+	#        type   - if a special type
+	#        uobj
 	# ..........................................................
 
 	get: () ->
@@ -98,30 +103,30 @@ export class Getter extends Fetcher
 		#     NOTE: getFromCache() may return undef if all items
 		#           in cache have not been mapped, and all of them
 		#           map to undef
-		hItem = @getFromCache()
-		if defined(hItem)
-			debug "return from Getter.get() - cached hItem", hItem
-			return hItem
+		debug 'lCache', @lCache
+		if defined(hLine = @getFromCache())
+			# --- NOTE: return value from getFromCache()
+			#           should always have a uobj key
+			assert defined(hLine.uobj), "getFromCache() but no uobj"
+			debug "return from Getter.get() - cached hLine", hLine
+			return hLine
 
-		debug "no lookahead"
+		debug "no cached hLine"
 
-		debug "source = #{@sourceInfoStr()}"
-		hItem = @fetch()
-		debug "fetch() returned", hItem
-		debug "source = #{@sourceInfoStr()}"
+		hLine = @fetch()
+		debug "fetch() returned", hLine
 
-		if (hItem == undef)
+		if (hLine == undef)
 			debug "return from Getter.get() - at EOF", undef
 			return undef
 
-		uobj = @mapItem(hItem)
-		debug "mapItem() returned", uobj
+		uobj = hLine.uobj = @mapItem(hLine)
 
 		if (uobj == undef)
-			hItem = @get()    # recursive call
+			hLine = @get()    # recursive call
 
-		debug "return from Getter.get()", hItem
-		return hItem
+		debug "return from Getter.get()", hLine
+		return hLine
 
 	# ..........................................................
 
@@ -142,12 +147,12 @@ export class Getter extends Fetcher
 			debug "return from Getter.eof() - cache not empty", false
 			return false
 
-		hItem = @fetch()
-		if (hItem == undef)
+		hLine = @fetch()
+		if (hLine == undef)
 			debug "return from Getter.eof()", true
 			return true
 		else
-			@unfetch hItem
+			@unfetch hLine
 			debug "return from Getter.eof()", false
 			return false
 
@@ -161,93 +166,91 @@ export class Getter extends Fetcher
 		#     been mapped. lCache may contain such items, but if
 		#     they map to undef, they should be skipped
 		while nonEmpty(@lCache)
-			hItem = @lCache[0]
-			if defined(hItem.uobj)
-				debug "return cached item from Getter.peek()", hItem
-				return hItem
+			hLine = @lCache[0]
+			assert defined(hLine), "hLine (from cache) is undef"
+			if defined(hLine.uobj)
+				debug "return cached item from Getter.peek()", hLine
+				return hLine
 			else
-				uobj = @mapItem(hItem)
+				uobj = hLine.uobj = @mapItem(hLine)
 				if defined(uobj)
-					debug "return cached item from Getter.peek()", hItem
-					return hItem
+					debug "return cached item from Getter.peek()", hLine
+					return hLine
 				else
 					@lCache.shift()   # and continue loop
 
 		debug "no lookahead"
 
-		hItem = @fetch()
-		if (hItem == undef)
+		hLine = @fetch()
+		if (hLine == undef)
 			debug "return undef from Getter.peek() - at EOF"
 			return undef
-		debug "fetch() returned", hItem
+		debug "fetch() returned", hLine
 
 		# --- @lCache is currently empty
-		uobj = @mapItem(hItem)
-		debug "from mapItem()", uobj
+		uobj = hLine.uobj = @mapItem(hLine)
 
 		# --- @lCache might be non-empty now!!!
 
 		# --- if mapItem() returns undef, skip that item
 		if (uobj == undef)
 			debug "mapItem() returned undef - recursive call"
-			hItem = @peek()    # recursive call
-			debug "return from Getter.peek()", hItem
-			return hItem
+			hLine = @peek()    # recursive call
+			debug "return from Getter.peek()", hLine
+			return hLine
 
-		debug "set lookahead", hItem
-		@lCache.unshift hItem
+		debug "add to cache", hLine
+		@lCache.unshift hLine
 
-		debug "return from Getter.peek()", hItem
-		return hItem
+		debug "return from Getter.peek()", hLine
+		return hLine
 
 	# ..........................................................
 	# --- return of undef doesn't mean EOF, it means skip this item
-	#     MUST set key 'uobj' to a defined value if not returning undef
+	#     sets key 'uobj' to a defined value if not returning undef
+	#     sets key 'type' if a special type
 
-	mapItem: (hItem) ->
+	mapItem: (hLine) ->
 
-		debug "enter mapItem()", hItem
-		debug "source = #{@sourceInfoStr()}"
+		debug "enter Getter.mapItem()", hLine
+		assert defined(hLine), "hLine is undef"
 
-		[type, hInfo] = @getItemType(hItem)
-		if defined(type)
+		if defined(type = @getItemType(hLine))
 			debug "item type is #{type}"
 			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
-			hInfo.type = type
+			hLine.type = type
 			debug "call handleItemType()"
-			uobj = @handleItemType(type, item, hInfo)
+			uobj = @handleItemType(type, hLine)
 			debug "from handleItemType()", uobj
 		else
 			debug "no special type"
-			if isString(item) && (item != '__END__')
-				newitem = @replaceConsts(item, @hConsts)
-				if (newitem != item)
-					debug "=> '#{newitem}'"
-					item = newitem
+			{line, str, prefix} = hLine
+			if isString(line)
+				assert isString(str), "missing 'str' key in #{OL(line)}"
+				assert nonEmpty(str), "str is empty"
+				assert (line != '__END__'), "__END__ encountered"
+				newstr = @replaceConsts(str, @hConsts)
+				if (newstr != str)
+					newline = "#{prefix}#{newstr}"
+					debug "=> '#{newline}'"
+
+					hLine.str = newstr
+					hLine.line = newline
 
 			debug "call map()"
-			uobj = @map(item)
+			uobj = @map(hLine)
 			debug "from map()", uobj
 
 		if (uobj == undef)
-			debug "return undef from mapItem()"
+			debug "return from Getter.mapItem()", undef
 			return undef
-		else
-			result = @bundle(uobj, type)
-			assert defined(result), "result is undef"
-			debug "return from mapItem()", result
-			return result
+
+		debug "return from Getter.mapItem()", uobj
+		return uobj
 
 	# ..........................................................
 
-	bundle: (result) ->
-		# --- designed to override - NEVER return undef
-
-		return result
-
-	# ..........................................................
-
-	replaceConsts: (line, hVars={}) ->
+	replaceConsts: (str, hVars={}) ->
 
 		assert isHash(hVars), "hVars is not a hash"
 
@@ -264,7 +267,7 @@ export class Getter extends Fetcher
 				else
 					return "__#{name}__"
 
-		return line.replace(///
+		return str.replace(///
 				__
 				(env\.)?
 				([A-Za-z_][A-Za-z0-9_]*)
@@ -273,40 +276,34 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	getItemType: (item) ->
-		# --- return [<name of item type>, <additional info>]
+	getItemType: (hLine) ->
+		# --- returns name of item type
 
-		return [undef, undef]   # default: no special item types
+		return undef   # default: no special item types
 
 	# ..........................................................
 
-	handleItemType: (type, item, hInfo) ->
+	handleItemType: (type, hLine) ->
 
 		return undef    # default - ignore any special item types
 
 	# ..........................................................
 	# --- designed to override
 	#     override may use fetch(), unfetch(), fetchBlock(), etc.
-	#     should return undef to ignore line
-	#     technically, line does not have to be a string,
+	#     should return a uobj (undef to ignore line)
+	#     technically, hLine.line does not have to be a string,
 	#        but it usually is
 
-	map: (item) ->
+	map: (hLine) ->
+		# --- returns a uobj or undef
+		#     uobj will be passed to visit() and endVisit() in TreeWalker
 
-		debug "enter Getter.map() - identity mapping", item
-		assert defined(item), "item is undef"
+		debug "enter Getter.map()", hLine
+		assert defined(hLine), "hLine is undef"
 
-		# --- by default, identity mapping
-		debug "return from Getter.map()", item
-		return item
-
-	# ..........................................................
-	# --- override to map back to a string, default returns arg
-	#     used in getBlock()
-
-	unmap: (item) ->
-
-		return item
+		# --- by default, just returns line key
+		debug "return from Getter.map()", hLine.line
+		return hLine.line
 
 	# ..........................................................
 	# --- a generator
@@ -315,8 +312,8 @@ export class Getter extends Fetcher
 
 		# --- NOTE: @get will skip items that are mapped to undef
 		#           and only returns undef when the input is exhausted
-		while defined(item = @get())
-			yield item
+		while defined(hLine = @get())
+			yield hLine
 		return
 
 	# ..........................................................
@@ -324,39 +321,48 @@ export class Getter extends Fetcher
 	getAll: () ->
 
 		debug "enter Getter.getAll()"
-		lItems = []
-		for item from @allMapped()
-			lItems.push item
-		debug "return from Getter.getAll()", lItems
-		return lItems
+		lLines = Array.from(@allMapped())
+		debug "return from Getter.getAll()", lLines
+		return lLines
 
 	# ..........................................................
 
-	getUntil: (end) ->
+	getUntil: (endLine) ->
 
 		debug "enter Getter.getUntil()"
-		lItems = []
-		while defined(item = @get()) && (item != end)
-			lItems.push item
-		debug "return from Getter.getUntil()", lItems
-		return lItems
+		lLines = []
+		while defined(hLine = @get()) && (hLine.line != endLine)
+			lLines.push hLine.line
+		debug "return from Getter.getUntil()", lLines
+		return lLines
 
 	# ..........................................................
 
-	getBlock: () ->
+	getBlock: (hOptions={}) ->
+		# --- Valid options: logLines
 
 		debug "enter Getter.getBlock()"
 		lStrings = []
-		for item from @allMapped()
-			debug "MAPPED", item
-			item = @unmap(item)
-			assert isString(item), "mapped item not a string"
-			lStrings.push item
+		i = 0
+		for hLine from @allMapped()
+			if hOptions.logLines
+				LOG "hLine[#{i}]", hLine
+			else
+				debug "hLine", hLine
+			i += 1
+
+			uobj = hLine.uobj
+			assert isString(uobj), "uobj not a string"
+			lStrings.push uobj
 		debug 'lStrings', lStrings
 		endStr = @endBlock()
-		if defined(endStr)
+		if defined(endStr = @endBlock())
 			debug 'endStr', endStr
 			lStrings.push endStr
+
+		if hOptions.logLines
+			LOG 'lStrings', lStrings
+
 		block = @finalizeBlock(arrayToBlock(lStrings))
 		debug "return from Getter.getBlock()", block
 		return block

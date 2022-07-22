@@ -168,17 +168,18 @@ SymbolParser = class SymbolParser extends Mapper {
 
   // ..........................................................
   // ignore empty lines and comments
-  handleEmptyLine(line) {
+  handleEmptyLine(hLine) {
     return undef;
   }
 
-  handleComment(line) {
+  handleComment(hLine) {
     return undef;
   }
 
   // ..........................................................
-  map(full_line) {
-    var _, alt, hDesc, i, isDefault, j, lMatches, lWords, len, level, line, numWords, src, symbol, word;
+  map(hLine) {
+    var _, alt, full_line, hDesc, i, isDefault, j, lMatches, lWords, len, level, line, numWords, src, symbol, word;
+    full_line = hLine.line;
     [level, line] = splitLine(full_line);
     if (level === 0) {
       this.curLib = line.trim();
@@ -214,6 +215,8 @@ SymbolParser = class SymbolParser extends Mapper {
     return undef; // doesn't matter what we return
   }
 
+  
+    // ..........................................................
   getAvailSymbols() {
     this.getBlock();
     return this.hSymbols;

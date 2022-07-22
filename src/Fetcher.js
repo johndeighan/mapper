@@ -21,6 +21,11 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  splitPrefix,
+  indentLevel
+} from '@jdeighan/coffee-utils/indent';
+
+import {
   arrayToBlock,
   blockToArray
 } from '@jdeighan/coffee-utils/block';
@@ -66,8 +71,9 @@ export var Fetcher = class Fetcher {
         filename: '<unknown>'
       };
     }
-    // --- Add current line number to hSourceInfo
+    this.altInput = undef;
     this.lineNum = 0;
+    this.oneIndent = undef; // set from 1st line with indentation
     if (hOptions.prefix != null) {
       this.hSourceInfo.prefix = hOptions.prefix;
     }
@@ -118,8 +124,8 @@ export var Fetcher = class Fetcher {
     var lParts;
     lParts = [];
     lParts.push(this.sourceStr());
-    if (defined(this.hSourceInfo.altInput)) {
-      lParts.push(this.hSourceInfo.altInput.sourceStr());
+    if (defined(this.altInput)) {
+      lParts.push(this.altInput.sourceStr());
     }
     return lParts.join(' ');
   }
@@ -130,23 +136,28 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  // --- returns a hash with keys:
+  // --- returns hLine with keys:
   //        line
+  //        source
+  //        lineNum
+  // --- if line is a string:
+  //        prefix
+  //        str
+  //        level
   fetch() {
-    var _, done, fname, hItem, lMatches, prefix, value;
+    var _, done, fname, hLine, lMatches, level, line, prefix, str, value;
     debug(`enter Fetcher.fetch() from ${this.hSourceInfo.filename}`);
-    if (defined(this.hSourceInfo.altInput)) {
+    if (defined(this.altInput)) {
       debug("has altInput");
-      value = this.hSourceInfo.altInput.fetch();
-      // --- NOTE: value will never be #include
+      hLine = this.altInput.fetch();
+      // --- NOTE: hLine.line will never be #include
       //           because altInput's fetch would handle it
-      if (defined(value)) {
-        debug("got alt value", value);
-        debug("return from Fetcher.fetch() - alt", value);
-        return value;
+      if (defined(hLine)) {
+        debug("return from Fetcher.fetch() - alt", hLine);
+        return hLine;
       }
       // --- alternate input is exhausted
-      this.hSourceInfo.altInput = undef;
+      this.altInput = undef;
       debug("alt EOF");
     } else {
       debug("there is no altInput");
@@ -154,59 +165,77 @@ export var Fetcher = class Fetcher {
     // --- return anything in lLookAhead,
     //     even if @forcedEOF is true
     if (this.lLookAhead.length > 0) {
-      value = this.lLookAhead.shift();
-      // --- NOTE: value will never be #include
+      hLine = this.lLookAhead.shift();
+      // --- NOTE: hLine.line will never be #include
       //           because anything that came from lLookAhead
       //           was put there by unfetch() which doesn't
       //           allow #include
-      assert(defined(value), "undef in lLookAhead");
+      assert(defined(hLine), "undef in lLookAhead");
       this.incLineNum(1);
-      debug("return from Fetcher.fetch() - lookahead", value);
-      return value;
+      debug("return from Fetcher.fetch() - lookahead", hLine);
+      return hLine;
     }
     debug("no lookahead");
     if (this.forcedEOF) {
-      debug("return undef from Fetcher.fetch() - forced EOF");
+      debug("return from Fetcher.fetch() - forced EOF", undef);
       return undef;
     }
-    debug("not at EOF");
+    debug("not at forced EOF");
     ({value, done} = this.iterator.next());
-    debug("iterator returned", {value, done});
+    line = value;
+    debug("iterator returned", {line, done});
     if (done) {
-      debug("return undef from Fetcher.fetch() - iterator DONE");
+      debug("return from Fetcher.fetch() - iterator DONE", undef);
       return undef;
     }
-    if (value === '__END__') {
+    if (line === '__END__') {
       this.forceEOF();
-      debug("return undef from Fetcher.fetch() - __END__");
+      debug("return from Fetcher.fetch() - __END__", undef);
       return undef;
     }
     this.incLineNum(1);
-    if (isString(value)) {
-      value = rtrim(value); // remove trailing whitespace
-      
-      // --- check for #include
-      if (lMatches = value.match(/(\s*)\#include\b\s*(.*)$/)) { // prefix
-        [_, prefix, fname] = lMatches;
-        debug(`#include ${fname} with prefix '${escapeStr(prefix)}'`);
-        assert(nonEmpty(fname), "missing file name in #include");
-        this.createAltInput(fname, prefix);
-        value = this.fetch(); // recursive call
-        debug("return from Fetcher.fetch()", value);
-        return value;
-      }
-    }
-    if (this.prefix.length > 0) {
-      assert(isString(value), "prefix with non-string value");
-      value = this.prefix + value;
-    }
-    hItem = {
-      item: value,
+    // --- this object is returned at the end
+    hLine = {
+      line,
       lineNum: this.lineNum,
       source: this.sourceInfoStr()
     };
-    debug("return from Fetcher.fetch()", hItem);
-    return hItem;
+    if (isString(line)) {
+      line = rtrim(line); // remove trailing whitespace
+      
+      // --- check for #include
+      if (lMatches = line.match(/(\s*)\#include\b\s*(.*)$/)) { // prefix
+        [_, prefix, fname] = lMatches;
+        debug(`#include ${fname} with prefix '${OL(prefix)}'`);
+        assert(nonEmpty(fname), "missing file name in #include");
+        this.createAltInput(fname, prefix);
+        hLine = this.fetch(); // recursive call
+        debug("return from Fetcher.fetch()", hLine);
+        return hLine;
+      }
+      // --- Check if we're adding a prefix to each line
+      if (this.prefix.length > 0) {
+        line = this.prefix + line;
+      }
+      [prefix, str] = splitPrefix(line);
+      if (defined(this.oneIndent)) {
+        level = indentLevel(line, this.oneIndent);
+      } else if (prefix === '') {
+        level = 0;
+      } else if (lMatches = prefix.match(/^\t+$/)) {
+        this.oneIndent = "\t";
+        level = lMatches[0].length;
+      } else {
+        level = 1;
+        this.oneIndent = prefix;
+      }
+      hLine.line = line; // trimmed version
+      hLine.prefix = prefix;
+      hLine.str = str;
+      hLine.level = level;
+    }
+    debug("return from Fetcher.fetch()", hLine);
+    return hLine;
   }
 
   // ..........................................................
@@ -229,28 +258,28 @@ export var Fetcher = class Fetcher {
       croak(`Can't find include file ${fname} in dir ${dir}`);
     }
     assert(fs.existsSync(fullpath), `${fullpath} does not exist`);
-    this.hSourceInfo.altInput = new Fetcher(fullpath, undef, {prefix});
+    this.altInput = new Fetcher(fullpath, undef, {prefix});
     debug("return from createAltInput()");
   }
 
   // ..........................................................
-  unfetch(value) {
-    var item, lMatches;
-    debug("enter Fetcher.unfetch()", value);
-    assert(defined(value), "value must be defined");
-    ({item} = value);
-    if (isString(item)) {
-      lMatches = item.match(/^\s*\#include\b/);
+  unfetch(hLine) {
+    var lMatches, line;
+    debug("enter Fetcher.unfetch()", hLine);
+    assert(defined(hLine), "hLine must be defined");
+    ({line} = hLine);
+    if (isString(line)) {
+      lMatches = line.match(/^\s*\#include\b/);
       assert(isEmpty(lMatches), "unfetch() of a #include");
     }
-    if (defined(this.hSourceInfo.altInput)) {
+    if (defined(this.altInput)) {
       debug("has alt input");
-      this.hSourceInfo.altInput.unfetch(value);
+      this.altInput.unfetch(hLine);
       this.incLineNum(-1);
       debug("return from Fetcher.unfetch() - alt");
       return;
     }
-    this.lLookAhead.unshift(value);
+    this.lLookAhead.unshift(hLine);
     this.incLineNum(-1);
     debug("return from Fetcher.unfetch()");
   }
@@ -271,51 +300,50 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   // --- a generator
   * all() {
-    var item;
+    var hLine;
     debug("enter Fetcher.all()");
-    while (defined(item = this.fetch())) {
-      debug("GOT", item);
-      yield item;
+    while (defined(hLine = this.fetch())) {
+      debug("GOT", hLine);
+      yield hLine;
     }
-    debug("GOT", item);
+    debug("GOT", hLine);
     debug("return from Fetcher.all()");
   }
 
   // ..........................................................
   fetchAll() {
-    var item, lItems, ref;
+    var hLine, lLines, ref;
     debug("enter Fetcher.fetchAll()");
-    lItems = [];
+    lLines = [];
     ref = this.all();
-    for (item of ref) {
-      lItems.push(item);
+    for (hLine of ref) {
+      lLines.push(hLine);
     }
-    debug("return from Fetcher.fetchAll()", lItems);
-    return lItems;
+    debug("return from Fetcher.fetchAll()", lLines);
+    return lLines;
   }
 
   // ..........................................................
   fetchUntil(end) {
-    var h, lItems;
+    var hLine, lLines;
     debug("enter Fetcher.fetchUntil()");
-    lItems = [];
-    while (defined(h = this.fetch()) && (h.item !== end)) {
-      lItems.push(h);
+    lLines = [];
+    while (defined(hLine = this.fetch()) && (hLine.line !== end)) {
+      lLines.push(hLine);
     }
-    debug("return from Fetcher.fetchUntil()", lItems);
-    return lItems;
+    debug("return from Fetcher.fetchUntil()", lLines);
+    return lLines;
   }
 
   // ..........................................................
   fetchBlock() {
-    var block, h, lStrings, ref, str;
+    var block, hLine, lStrings, ref;
     debug("enter Fetcher.fetchBlock()");
     lStrings = [];
     ref = this.all();
-    for (h of ref) {
-      str = h.item;
-      assert(isString(str), `fetchBlock(): non-string ${OL(str)}`);
-      lStrings.push(str);
+    for (hLine of ref) {
+      assert(isString(hLine.line), `fetchBlock(): non-string ${OL(hLine.line)}`);
+      lStrings.push(hLine.line);
     }
     debug('lStrings', lStrings);
     block = arrayToBlock(lStrings);

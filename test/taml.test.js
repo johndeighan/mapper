@@ -90,8 +90,9 @@ simple.equal(55, slurpTAML('./test/data_structure.taml'), [
 
 // --- Test providing a premapper
 StoryMapper = class StoryMapper extends Mapper {
-  map(line, level) {
-    var _, ident, lMatches, str;
+  map(hLine) {
+    var _, ident, lMatches, level, line, str;
+    ({line, level} = hLine);
     if (lMatches = line.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
       // colon
       // optional whitespace

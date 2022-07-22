@@ -46,31 +46,135 @@ import {
 // ---------------------------------------------------------------------------
 (function() {
   var fetcher;
-  fetcher = new Fetcher(undef, [1, 2, 3]);
-  simple.hashhas(33, fetcher.fetch(), {
-    item: 1,
+  fetcher = new Fetcher(undef, ['line1', 'line2', 'line3']);
+  simple.like(33, fetcher.fetch(), {
+    line: 'line1',
     lineNum: 1
   });
   simple.equal(34, fetcher.lineNum, 1);
   simple.succeeds(35, function() {
     return fetcher.unfetch({
-      item: 1,
+      line: 'line1',
       lineNum: 1
     });
   });
   simple.equal(36, fetcher.lineNum, 0);
-  simple.hashhas(37, fetcher.fetch(), {
-    item: 1,
+  simple.like(37, fetcher.fetch(), {
+    line: 'line1',
     lineNum: 1
   });
-  simple.hashhas(38, fetcher.fetch(), {
-    item: 2,
+  simple.like(38, fetcher.fetch(), {
+    line: 'line2',
     lineNum: 2
   });
   simple.equal(39, fetcher.lineNum, 2);
-  simple.hashhas(40, fetcher.fetch(), {
-    item: 3,
+  simple.like(40, fetcher.fetch(), {
+    line: 'line3',
     lineNum: 3
+  });
+  simple.equal(41, fetcher.lineNum, 3);
+  simple.equal(42, fetcher.fetch(), undef);
+  simple.equal(43, fetcher.lineNum, 3);
+  simple.equal(44, fetcher.fetch(), undef);
+  return simple.equal(45, fetcher.lineNum, 3);
+})();
+
+// ---------------------------------------------------------------------------
+// --- Test TAB indentation
+(function() {
+  var fetcher;
+  fetcher = new Fetcher(import.meta.url, ['line1', '\tline2', '\t\tline3']);
+  simple.like(33, fetcher.fetch(), {
+    line: 'line1',
+    lineNum: 1,
+    prefix: '',
+    str: 'line1',
+    level: 0
+  });
+  simple.equal(34, fetcher.lineNum, 1);
+  simple.succeeds(35, function() {
+    return fetcher.unfetch({
+      line: 'line1',
+      lineNum: 1,
+      prefix: '',
+      str: 'line1',
+      level: 0
+    });
+  });
+  simple.equal(36, fetcher.lineNum, 0);
+  simple.like(37, fetcher.fetch(), {
+    line: 'line1',
+    lineNum: 1,
+    prefix: '',
+    str: 'line1',
+    level: 0
+  });
+  simple.like(38, fetcher.fetch(), {
+    line: '\tline2',
+    lineNum: 2,
+    prefix: "\t",
+    str: 'line2',
+    level: 1
+  });
+  simple.equal(39, fetcher.lineNum, 2);
+  simple.like(40, fetcher.fetch(), {
+    line: '\t\tline3',
+    lineNum: 3,
+    prefix: "\t\t",
+    str: 'line3',
+    level: 2
+  });
+  simple.equal(41, fetcher.lineNum, 3);
+  simple.equal(42, fetcher.fetch(), undef);
+  simple.equal(43, fetcher.lineNum, 3);
+  simple.equal(44, fetcher.fetch(), undef);
+  return simple.equal(45, fetcher.lineNum, 3);
+})();
+
+// ---------------------------------------------------------------------------
+// --- Test space indentation
+(function() {
+  var fetcher;
+  fetcher = new Fetcher(import.meta.url, ['line1', '   line2', '      line3']);
+  simple.like(33, fetcher.fetch(), {
+    line: 'line1',
+    lineNum: 1,
+    prefix: '',
+    str: 'line1',
+    level: 0
+  });
+  simple.equal(34, fetcher.lineNum, 1);
+  simple.succeeds(35, function() {
+    return fetcher.unfetch({
+      line: 'line1',
+      lineNum: 1,
+      prefix: '',
+      str: 'line1',
+      level: 0
+    });
+  });
+  simple.equal(36, fetcher.lineNum, 0);
+  simple.like(37, fetcher.fetch(), {
+    line: 'line1',
+    lineNum: 1,
+    prefix: '',
+    str: 'line1',
+    level: 0
+  });
+  simple.like(38, fetcher.fetch(), {
+    line: '   line2',
+    lineNum: 2,
+    prefix: "   ",
+    str: 'line2',
+    level: 1
+  });
+  simple.equal(39, fetcher.lineNum, 2);
+  simple.like(40, fetcher.fetch(), {
+    line: '      line3',
+    lineNum: 3,
+    prefix: "      ",
+    str: 'line3',
+    level: 2
   });
   simple.equal(41, fetcher.lineNum, 3);
   simple.equal(42, fetcher.fetch(), undef);
@@ -86,12 +190,12 @@ import {
   fetcher = new Fetcher(undef, ['abc', 'def', 'ghi'], {
     prefix: '>'
   });
-  simple.hashhas(53, fetcher.fetch(), {
-    item: '>abc',
+  simple.like(53, fetcher.fetch(), {
+    line: '>abc',
     lineNum: 1
   });
-  return simple.hashhas(54, fetcher.fetch(), {
-    item: '>def',
+  return simple.like(54, fetcher.fetch(), {
+    line: '>def',
     lineNum: 2
   });
 })();
@@ -101,12 +205,12 @@ import {
 (function() {
   var fetcher;
   fetcher = new Fetcher(undef, ['abc', 'def', '__END__', 'ghi']);
-  simple.hashhas(63, fetcher.fetch(), {
-    item: 'abc',
+  simple.like(63, fetcher.fetch(), {
+    line: 'abc',
     lineNum: 1
   });
-  simple.hashhas(64, fetcher.fetch(), {
-    item: 'def',
+  simple.like(64, fetcher.fetch(), {
+    line: 'def',
     lineNum: 2
   });
   simple.equal(65, fetcher.fetch(), undef);
@@ -120,12 +224,12 @@ import {
   fetcher = new Fetcher(undef, ['abc  ', 'def  '], {
     prefix: '>'
   });
-  simple.hashhas(75, fetcher.fetch(), {
-    item: '>abc',
+  simple.like(75, fetcher.fetch(), {
+    line: '>abc',
     lineNum: 1
   });
-  return simple.hashhas(76, fetcher.fetch(), {
-    item: '>def',
+  return simple.like(76, fetcher.fetch(), {
+    line: '>def',
     lineNum: 2
   });
 })();
@@ -146,13 +250,13 @@ import {
     }
     return results;
   })();
-  return simple.hashhas(86, lItems, [
+  return simple.like(86, lItems, [
     {
-      item: '>abc',
+      line: '>abc',
       lineNum: 1
     },
     {
-      item: '>def',
+      line: '>def',
       lineNum: 2
     }
   ]);
@@ -163,17 +267,17 @@ import {
 (function() {
   var fetcher;
   fetcher = new Fetcher(undef, ['abc  ', 'def  ', 'ghi']);
-  return simple.hashhas(97, fetcher.fetchAll(), [
+  return simple.like(97, fetcher.fetchAll(), [
     {
-      item: 'abc',
+      line: 'abc',
       lineNum: 1
     },
     {
-      item: 'def',
+      line: 'def',
       lineNum: 2
     },
     {
-      item: 'ghi',
+      line: 'ghi',
       lineNum: 3
     }
   ]);
@@ -184,9 +288,9 @@ import {
 (function() {
   var fetcher;
   fetcher = new Fetcher(undef, ['abc  ', 'def  ', 'ghi']);
-  return simple.hashhas(109, fetcher.fetchUntil('def'), [
+  return simple.like(109, fetcher.fetchUntil('def'), [
     {
-      item: 'abc',
+      line: 'abc',
       lineNum: 1
     }
   ]);
@@ -211,17 +315,17 @@ ghi`);
   fetcher = new Fetcher(undef, `abc
 def
 ghi`);
-  return simple.hashhas(137, fetcher.fetchAll(), [
+  return simple.like(137, fetcher.fetchAll(), [
     {
-      item: 'abc',
+      line: 'abc',
       lineNum: 1
     },
     {
-      item: 'def',
+      line: 'def',
       lineNum: 2
     },
     {
-      item: 'ghi',
+      line: 'ghi',
       lineNum: 3
     }
   ]);
@@ -234,9 +338,9 @@ ghi`);
   fetcher = new Fetcher(undef, `abc
 def
 ghi`);
-  return simple.hashhas(153, fetcher.fetchUntil('def'), [
+  return simple.like(153, fetcher.fetchUntil('def'), [
     {
-      item: 'abc',
+      line: 'abc',
       lineNum: 1
     }
   ]);
@@ -312,56 +416,54 @@ def`);
 // ---------------------------------------------------------------------------
 // --- test @hSourceInfo
 (function() {
-  var fetcher, h, hItem;
+  var fetcher, hLine;
   fetcher = new Fetcher(import.meta.url, `abc
 #include title.md
 def`);
-  while (defined(hItem = fetcher.fetch()) && (hItem.item !== '=====')) {
+  while (defined(hLine = fetcher.fetch()) && (hLine.line !== '=====')) {
     pass;
   }
-  simple.hashhas(261, hItem, {
-    item: '=====',
+  simple.like(261, hLine, {
+    line: '=====',
     lineNum: 2
   });
-  h = fetcher.hSourceInfo;
-  simple.equal(263, h.altInput.hSourceInfo.filename, 'title.md');
-  return simple.equal(264, h.altInput.lineNum, 2);
+  simple.equal(263, fetcher.altInput.hSourceInfo.filename, 'title.md');
+  return simple.equal(264, fetcher.altInput.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------
 // --- test @hSourceInfo with indentation
 (function() {
-  var altInput, fetcher, hItem;
+  var fetcher, hLine;
   fetcher = new Fetcher(import.meta.url, `abc
 	#include title.md
 def`);
-  while (defined(hItem = fetcher.fetch()) && (hItem.item !== '\t=====')) {
+  while (defined(hLine = fetcher.fetch()) && (hLine.line !== '\t=====')) {
     pass;
   }
-  simple.equal(282, hItem.item, '\t=====');
-  altInput = fetcher.hSourceInfo.altInput;
-  simple.equal(284, altInput.hSourceInfo.filename, 'title.md');
-  return simple.equal(285, altInput.lineNum, 2);
+  simple.equal(282, hLine.line, '\t=====');
+  simple.equal(284, fetcher.altInput.hSourceInfo.filename, 'title.md');
+  return simple.equal(285, fetcher.altInput.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------
 // --- test @sourceInfoStr
 (function() {
-  var fetcher, hItem;
+  var fetcher, hLine;
   fetcher = new Fetcher('test.txt', `abc
 #include title.md
 def`);
   simple.equal(298, fetcher.sourceInfoStr(), "test.txt/0");
-  hItem = fetcher.fetch();
-  simple.equal(301, hItem.item, 'abc');
+  hLine = fetcher.fetch();
+  simple.equal(301, hLine.line, 'abc');
   simple.equal(302, fetcher.sourceInfoStr(), "test.txt/1");
-  hItem = fetcher.fetch();
-  simple.equal(305, hItem.item, 'title');
+  hLine = fetcher.fetch();
+  simple.equal(305, hLine.line, 'title');
   simple.equal(306, fetcher.sourceInfoStr(), "test.txt/2 title.md/1");
-  hItem = fetcher.fetch();
-  simple.equal(309, hItem.item, '=====');
+  hLine = fetcher.fetch();
+  simple.equal(309, hLine.line, '=====');
   simple.equal(310, fetcher.sourceInfoStr(), "test.txt/2 title.md/2");
-  hItem = fetcher.fetch();
-  simple.equal(313, hItem.item, 'def');
+  hLine = fetcher.fetch();
+  simple.equal(313, hLine.line, 'def');
   return simple.equal(314, fetcher.sourceInfoStr(), "test.txt/3");
 })();

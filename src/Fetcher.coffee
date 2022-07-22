@@ -7,6 +7,7 @@ import {
 	escapeStr, isString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
+import {splitPrefix, indentLevel} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -41,8 +42,9 @@ export class Fetcher
 				filename: '<unknown>'
 				}
 
-		# --- Add current line number to hSourceInfo
+		@altInput = undef
 		@lineNum = 0
+		@oneIndent = undef   # set from 1st line with indentation
 
 		if hOptions.prefix?
 			@hSourceInfo.prefix = hOptions.prefix
@@ -96,8 +98,8 @@ export class Fetcher
 
 		lParts = []
 		lParts.push @sourceStr()
-		if defined(@hSourceInfo.altInput)
-			lParts.push @hSourceInfo.altInput.sourceStr()
+		if defined(@altInput)
+			lParts.push @altInput.sourceStr()
 		return lParts.join(' ')
 
 	# ..........................................................
@@ -107,27 +109,32 @@ export class Fetcher
 		return "#{@hSourceInfo.filename}/#{@lineNum}"
 
 	# ..........................................................
-	# --- returns a hash with keys:
+	# --- returns hLine with keys:
 	#        line
+	#        source
+	#        lineNum
+	# --- if line is a string:
+	#        prefix
+	#        str
+	#        level
 
 	fetch: () ->
 
 		debug "enter Fetcher.fetch() from #{@hSourceInfo.filename}"
 
-		if defined(@hSourceInfo.altInput)
+		if defined(@altInput)
 			debug "has altInput"
-			value = @hSourceInfo.altInput.fetch()
+			hLine = @altInput.fetch()
 
-			# --- NOTE: value will never be #include
+			# --- NOTE: hLine.line will never be #include
 			#           because altInput's fetch would handle it
 
-			if defined(value)
-				debug "got alt value", value
-				debug "return from Fetcher.fetch() - alt", value
-				return value
+			if defined(hLine)
+				debug "return from Fetcher.fetch() - alt", hLine
+				return hLine
 
 			# --- alternate input is exhausted
-			@hSourceInfo.altInput = undef
+			@altInput = undef
 			debug "alt EOF"
 		else
 			debug "there is no altInput"
@@ -135,45 +142,53 @@ export class Fetcher
 		# --- return anything in lLookAhead,
 		#     even if @forcedEOF is true
 		if (@lLookAhead.length > 0)
-			value = @lLookAhead.shift()
+			hLine = @lLookAhead.shift()
 
-			# --- NOTE: value will never be #include
+			# --- NOTE: hLine.line will never be #include
 			#           because anything that came from lLookAhead
 			#           was put there by unfetch() which doesn't
 			#           allow #include
 
-			assert defined(value), "undef in lLookAhead"
+			assert defined(hLine), "undef in lLookAhead"
 			@incLineNum 1
-			debug "return from Fetcher.fetch() - lookahead", value
-			return value
+			debug "return from Fetcher.fetch() - lookahead", hLine
+			return hLine
 
 		debug "no lookahead"
 
 		if @forcedEOF
-			debug "return undef from Fetcher.fetch() - forced EOF"
+			debug "return from Fetcher.fetch() - forced EOF", undef
 			return undef
 
-		debug "not at EOF"
+		debug "not at forced EOF"
 
 		{value, done} = @iterator.next()
-		debug "iterator returned", {value, done}
+		line = value
+		debug "iterator returned", {line, done}
 		if (done)
-			debug "return undef from Fetcher.fetch() - iterator DONE"
+			debug "return from Fetcher.fetch() - iterator DONE", undef
 			return undef
 
-		if (value == '__END__')
+		if (line == '__END__')
 			@forceEOF()
-			debug "return undef from Fetcher.fetch() - __END__"
+			debug "return from Fetcher.fetch() - __END__", undef
 			return undef
 
 		@incLineNum 1
 
-		if isString(value)
+		# --- this object is returned at the end
+		hLine = {
+			line
+			lineNum: @lineNum
+			source: @sourceInfoStr()
+			}
 
-			value = rtrim(value)  # remove trailing whitespace
+		if isString(line)
+
+			line = rtrim(line)  # remove trailing whitespace
 
 			# --- check for #include
-			if lMatches = value.match(///
+			if lMatches = line.match(///
 					(\s*)      # prefix
 					\#
 					include \b
@@ -181,24 +196,36 @@ export class Fetcher
 					(.*)
 					$///)
 				[_, prefix, fname] = lMatches
-				debug "#include #{fname} with prefix '#{escapeStr(prefix)}'"
+				debug "#include #{fname} with prefix '#{OL(prefix)}'"
 				assert nonEmpty(fname), "missing file name in #include"
 				@createAltInput fname, prefix
-				value = @fetch()    # recursive call
-				debug "return from Fetcher.fetch()", value
-				return value
+				hLine = @fetch()    # recursive call
+				debug "return from Fetcher.fetch()", hLine
+				return hLine
 
-		if (@prefix.length > 0)
-			assert isString(value), "prefix with non-string value"
-			value = @prefix + value
+			# --- Check if we're adding a prefix to each line
+			if (@prefix.length > 0)
+				line = @prefix + line
 
-		hItem = {
-			item: value
-			lineNum: @lineNum
-			source: @sourceInfoStr()
-			}
-		debug "return from Fetcher.fetch()", hItem
-		return hItem
+			[prefix, str] = splitPrefix(line)
+			if defined(@oneIndent)
+				level = indentLevel(line, @oneIndent)
+			else if (prefix == '')
+				level = 0
+			else if lMatches = prefix.match(/^\t+$/)
+				@oneIndent = "\t"
+				level = lMatches[0].length
+			else
+				level = 1
+				@oneIndent = prefix
+
+			hLine.line = line      # trimmed version
+			hLine.prefix = prefix
+			hLine.str = str
+			hLine.level = level
+
+		debug "return from Fetcher.fetch()", hLine
+		return hLine
 
 	# ..........................................................
 
@@ -224,34 +251,34 @@ export class Fetcher
 			croak "Can't find include file #{fname} in dir #{dir}"
 		assert fs.existsSync(fullpath), "#{fullpath} does not exist"
 
-		@hSourceInfo.altInput = new Fetcher(fullpath, undef, {prefix})
+		@altInput = new Fetcher(fullpath, undef, {prefix})
 
 		debug "return from createAltInput()"
 		return
 
 	# ..........................................................
 
-	unfetch: (value) ->
+	unfetch: (hLine) ->
 
-		debug "enter Fetcher.unfetch()", value
-		assert defined(value), "value must be defined"
-		{item} = value
-		if isString(item)
-			lMatches = item.match(///^
+		debug "enter Fetcher.unfetch()", hLine
+		assert defined(hLine), "hLine must be defined"
+		{line} = hLine
+		if isString(line)
+			lMatches = line.match(///^
 					\s*
 					\#include
 					\b
 					///)
 			assert isEmpty(lMatches), "unfetch() of a #include"
 
-		if defined(@hSourceInfo.altInput)
+		if defined(@altInput)
 			debug "has alt input"
-			@hSourceInfo.altInput.unfetch value
+			@altInput.unfetch hLine
 			@incLineNum -1
 			debug "return from Fetcher.unfetch() - alt"
 			return
 
-		@lLookAhead.unshift value
+		@lLookAhead.unshift hLine
 		@incLineNum -1
 		debug "return from Fetcher.unfetch()"
 		return
@@ -279,10 +306,10 @@ export class Fetcher
 	all: () ->
 
 		debug "enter Fetcher.all()"
-		while defined(item = @fetch())
-			debug "GOT", item
-			yield item
-		debug "GOT", item
+		while defined(hLine = @fetch())
+			debug "GOT", hLine
+			yield hLine
+		debug "GOT", hLine
 		debug "return from Fetcher.all()"
 		return
 
@@ -291,22 +318,22 @@ export class Fetcher
 	fetchAll: () ->
 
 		debug "enter Fetcher.fetchAll()"
-		lItems = []
-		for item from @all()
-			lItems.push item
-		debug "return from Fetcher.fetchAll()", lItems
-		return lItems
+		lLines = []
+		for hLine from @all()
+			lLines.push hLine
+		debug "return from Fetcher.fetchAll()", lLines
+		return lLines
 
 	# ..........................................................
 
 	fetchUntil: (end) ->
 
 		debug "enter Fetcher.fetchUntil()"
-		lItems = []
-		while defined(h = @fetch()) && (h.item != end)
-			lItems.push h
-		debug "return from Fetcher.fetchUntil()", lItems
-		return lItems
+		lLines = []
+		while defined(hLine = @fetch()) && (hLine.line != end)
+			lLines.push hLine
+		debug "return from Fetcher.fetchUntil()", lLines
+		return lLines
 
 	# ..........................................................
 
@@ -314,10 +341,10 @@ export class Fetcher
 
 		debug "enter Fetcher.fetchBlock()"
 		lStrings = []
-		for h from @all()
-			str = h.item
-			assert isString(str), "fetchBlock(): non-string #{OL(str)}"
-			lStrings.push(str)
+		for hLine from @all()
+			assert isString(hLine.line),
+					"fetchBlock(): non-string #{OL(hLine.line)}"
+			lStrings.push(hLine.line)
 		debug 'lStrings', lStrings
 		block = arrayToBlock(lStrings)
 		debug "return from Fetcher.fetchBlock()", block

@@ -49,9 +49,12 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TreeWalker,
-  TraceWalker
+  TreeWalker
 } from '@jdeighan/mapper/tree';
+
+import {
+  TraceWalker
+} from '@jdeighan/mapper/trace';
 
 import {
   SimpleMarkDownMapper
@@ -72,22 +75,22 @@ tester = new WalkTester();
 
 // ..........................................................
 tester.equal(35, `abc`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
 tester.equal(44, `abc
 def`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
-VISIT 0 'def'
+VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
 tester.equal(56, `abc
 	def`, `BEGIN WALK
-VISIT 0 'abc'
-VISIT 1 'def'
+VISIT     0 'abc'
+VISIT     1 'def'
 END VISIT 1 'def'
 END VISIT 0 'abc'
 END WALK`);
@@ -95,7 +98,7 @@ END WALK`);
 tester.equal(68, `abc
 #ifdef NOPE
 	def`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
@@ -103,9 +106,9 @@ END WALK`);
 tester.equal(79, `abc
 #ifndef NOPE
 	def`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
-VISIT 0 'def'
+VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
@@ -113,7 +116,7 @@ tester.equal(92, `#define NOPE 42
 abc
 #ifndef NOPE
 	def`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
@@ -121,9 +124,9 @@ tester.equal(104, `#define NOPE 42
 abc
 #ifdef NOPE
 	def`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
-VISIT 0 'def'
+VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
@@ -134,10 +137,10 @@ abc
 	def
 	#ifdef name
 		ghi`, `BEGIN WALK
-VISIT 0 'abc'
+VISIT     0 'abc'
 END VISIT 0 'abc'
-VISIT 0 'def'
+VISIT     0 'def'
 END VISIT 0 'def'
-VISIT 0 'ghi'
+VISIT     0 'ghi'
 END VISIT 0 'ghi'
 END WALK`);

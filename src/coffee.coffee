@@ -167,16 +167,16 @@ expand = (qstr) ->
 
 export class CoffeePreProcessor extends Mapper
 
-	handleComment: (line, prefix) ->
+	handleComment: (hLine) ->
 		# --- Retain comments
 
-		return line
+		return hLine.line
 
 	# ..........................................................
 
-	map: (item) ->
+	map: (hLine) ->
 
-		result = item.replace(///
+		result = hLine.line.replace(///
 				\"
 				[^"]*     # sequence of non-quote characters
 				\"

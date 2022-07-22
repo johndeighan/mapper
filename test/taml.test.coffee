@@ -57,7 +57,9 @@ simple.equal 55, slurpTAML('./test/data_structure.taml'), [
 
 class StoryMapper extends Mapper
 
-	map: (line, level) ->
+	map: (hLine) ->
+
+		{line, level} = hLine
 		if lMatches = line.match(///
 				([A-Za-z_][A-Za-z0-9_]*)  # identifier
 				\:                        # colon

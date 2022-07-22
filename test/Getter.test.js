@@ -44,32 +44,60 @@ simple = new UnitTester();
 // ---------------------------------------------------------------------------
 (function() {
   var getter;
-  getter = new Getter(undef, [1, 2, 3]);
-  simple.equal(25, getter.peek(), 1);
-  simple.equal(26, getter.peek(), 1);
-  simple.falsy(27, getter.eof());
-  simple.equal(28, getter.get(), 1);
-  simple.equal(29, getter.get(), 2);
-  simple.equal(30, getter.hSourceInfo.lineNum, 2);
-  simple.falsy(32, getter.eof());
-  simple.succeeds(33, function() {
-    return getter.unfetch(5);
+  getter = new Getter(undef, ['line1', 'line2', 'line3']);
+  simple.like(26, getter.peek(), {
+    line: 'line1'
   });
+  simple.like(27, getter.peek(), {
+    line: 'line1'
+  });
+  simple.falsy(28, getter.eof());
+  simple.like(29, getter.get(), {
+    line: 'line1'
+  });
+  simple.like(30, getter.get(), {
+    line: 'line2'
+  });
+  simple.equal(31, getter.lineNum, 2);
+  simple.falsy(33, getter.eof());
   simple.succeeds(34, function() {
-    return getter.unfetch(6);
+    return getter.unfetch({
+      line: 'line5',
+      str: 'line5',
+      prefix: ''
+    });
   });
-  simple.equal(35, getter.get(), 6);
-  simple.equal(36, getter.get(), 5);
-  simple.falsy(37, getter.eof());
-  simple.equal(39, getter.get(), 3);
-  simple.equal(40, getter.hSourceInfo.lineNum, 3);
-  simple.truthy(41, getter.eof());
-  simple.succeeds(42, function() {
-    return getter.unfetch(13);
+  simple.succeeds(35, function() {
+    return getter.unfetch({
+      line: 'line6',
+      str: 'line6',
+      prefix: ''
+    });
   });
-  simple.falsy(43, getter.eof());
-  simple.equal(44, getter.get(), 13);
-  return simple.truthy(45, getter.eof());
+  simple.like(36, getter.get(), {
+    line: 'line6'
+  });
+  simple.like(37, getter.get(), {
+    line: 'line5'
+  });
+  simple.falsy(38, getter.eof());
+  simple.like(40, getter.get(), {
+    line: 'line3'
+  });
+  simple.equal(41, getter.lineNum, 3);
+  simple.truthy(42, getter.eof());
+  simple.succeeds(43, function() {
+    return getter.unfetch({
+      line: 'line13',
+      str: 'line13',
+      prefix: ''
+    });
+  });
+  simple.falsy(44, getter.eof());
+  simple.like(45, getter.get(), {
+    line: 'line13'
+  });
+  return simple.truthy(46, getter.eof());
 })();
 
 // ---------------------------------------------------------------------------
@@ -77,13 +105,23 @@ simple = new UnitTester();
 (function() {
   var getter;
   getter = new Getter(undef, ['abc', 'def  ', 'ghi\t\t']);
-  simple.equal(55, getter.peek(), 'abc');
-  simple.equal(56, getter.peek(), 'abc');
-  simple.falsy(57, getter.eof());
-  simple.equal(58, getter.get(), 'abc');
-  simple.equal(59, getter.get(), 'def');
-  simple.equal(60, getter.get(), 'ghi');
-  return simple.equal(61, getter.hSourceInfo.lineNum, 3);
+  simple.like(56, getter.peek(), {
+    line: 'abc'
+  });
+  simple.like(57, getter.peek(), {
+    line: 'abc'
+  });
+  simple.falsy(58, getter.eof());
+  simple.like(59, getter.get(), {
+    line: 'abc'
+  });
+  simple.like(60, getter.get(), {
+    line: 'def'
+  });
+  simple.like(61, getter.get(), {
+    line: 'ghi'
+  });
+  return simple.equal(62, getter.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -95,11 +133,22 @@ def
 ghi
 jkl
 mno`);
-  simple.equal(77, getter.fetch(), 'abc');
+  simple.like(78, getter.fetch(), {
+    line: 'abc'
+  });
   // 'jkl' will be discarded
-  simple.equal(80, getter.fetchUntil('jkl'), ['def', 'ghi']);
-  simple.equal(82, getter.fetch(), 'mno');
-  return simple.equal(83, getter.hSourceInfo.lineNum, 5);
+  simple.like(81, getter.fetchUntil('jkl'), [
+    {
+      line: 'def'
+    },
+    {
+      line: 'ghi'
+    }
+  ]);
+  simple.like(86, getter.fetch(), {
+    line: 'mno'
+  });
+  return simple.equal(87, getter.lineNum, 5);
 })();
 
 // ---------------------------------------------------------------------------
@@ -108,37 +157,65 @@ mno`);
   // --- A generator is a function that, when you call it,
   //     it returns an iterator
   generator = function*() {
-    yield 1;
-    yield 2;
-    yield 3;
+    yield 'line1';
+    yield 'line2';
+    yield 'line3';
   };
   // --- You can pass any iterator to the Getter() constructor
   getter = new Getter(undef, generator());
-  simple.equal(102, getter.peek(), 1);
-  simple.equal(103, getter.peek(), 1);
-  simple.falsy(104, getter.eof());
-  simple.equal(105, getter.get(), 1);
-  simple.equal(106, getter.get(), 2);
-  simple.equal(107, getter.hSourceInfo.lineNum, 2);
-  simple.falsy(109, getter.eof());
-  simple.succeeds(110, function() {
-    return getter.unfetch(5);
+  simple.like(106, getter.peek(), {
+    line: 'line1'
   });
-  simple.succeeds(111, function() {
-    return getter.unfetch(6);
+  simple.like(107, getter.peek(), {
+    line: 'line1'
   });
-  simple.equal(112, getter.get(), 6);
-  simple.equal(113, getter.get(), 5);
-  simple.falsy(114, getter.eof());
-  simple.equal(116, getter.get(), 3);
-  simple.truthy(117, getter.eof());
-  simple.succeeds(118, function() {
-    return getter.unfetch(13);
+  simple.falsy(108, getter.eof());
+  simple.like(109, getter.get(), {
+    line: 'line1'
   });
-  simple.falsy(119, getter.eof());
-  simple.equal(120, getter.get(), 13);
+  simple.like(110, getter.get(), {
+    line: 'line2'
+  });
+  simple.equal(111, getter.lineNum, 2);
+  simple.falsy(113, getter.eof());
+  simple.succeeds(114, function() {
+    return getter.unfetch({
+      line: 'line5',
+      str: 'line5',
+      prefix: ''
+    });
+  });
+  simple.succeeds(115, function() {
+    return getter.unfetch({
+      line: 'line6',
+      str: 'line6',
+      prefix: ''
+    });
+  });
+  simple.like(116, getter.get(), {
+    line: 'line6'
+  });
+  simple.like(117, getter.get(), {
+    line: 'line5'
+  });
+  simple.falsy(118, getter.eof());
+  simple.like(120, getter.get(), {
+    line: 'line3'
+  });
   simple.truthy(121, getter.eof());
-  return simple.equal(122, getter.hSourceInfo.lineNum, 3);
+  simple.succeeds(122, function() {
+    return getter.unfetch({
+      line: 'line13',
+      str: 'line13',
+      prefix: ''
+    });
+  });
+  simple.falsy(123, getter.eof());
+  simple.like(124, getter.get(), {
+    line: 'line13'
+  });
+  simple.truthy(125, getter.eof());
+  return simple.equal(126, getter.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -159,40 +236,64 @@ mno`);
     'xyz'
   ];
   getter = new Getter(undef, lItems);
-  simple.equal(142, getter.peek(), {
-    a: 1,
-    b: 2
+  simple.like(146, getter.peek(), {
+    line: {
+      a: 1,
+      b: 2
+    }
   });
-  simple.equal(143, getter.peek(), {
-    a: 1,
-    b: 2
+  simple.like(147, getter.peek(), {
+    line: {
+      a: 1,
+      b: 2
+    }
   });
-  simple.falsy(144, getter.eof());
-  simple.equal(145, getter.get(), {
-    a: 1,
-    b: 2
-  });
-  simple.equal(146, getter.get(), ['a', 'b']);
   simple.falsy(148, getter.eof());
-  simple.succeeds(149, function() {
-    return getter.unfetch([]);
+  simple.like(149, getter.get(), {
+    line: {
+      a: 1,
+      b: 2
+    }
   });
-  simple.succeeds(150, function() {
-    return getter.unfetch({});
+  simple.like(150, getter.get(), {
+    line: ['a', 'b']
   });
-  simple.equal(151, getter.get(), {});
-  simple.equal(152, getter.get(), []);
-  simple.falsy(153, getter.eof());
-  simple.equal(155, getter.get(), 42);
-  simple.equal(156, getter.get(), 'xyz');
-  simple.truthy(157, getter.eof());
-  simple.succeeds(158, function() {
-    return getter.unfetch(13);
+  simple.falsy(152, getter.eof());
+  simple.succeeds(153, function() {
+    return getter.unfetch({
+      line: []
+    });
   });
-  simple.falsy(159, getter.eof());
-  simple.equal(160, getter.get(), 13);
+  simple.succeeds(154, function() {
+    return getter.unfetch({
+      line: {}
+    });
+  });
+  simple.like(155, getter.get(), {
+    line: {}
+  });
+  simple.like(156, getter.get(), {
+    line: []
+  });
+  simple.falsy(157, getter.eof());
+  simple.like(159, getter.get(), {
+    line: 42
+  });
+  simple.like(160, getter.get(), {
+    line: 'xyz'
+  });
   simple.truthy(161, getter.eof());
-  return simple.equal(162, getter.hSourceInfo.lineNum, 4);
+  simple.succeeds(162, function() {
+    return getter.unfetch({
+      line: 13
+    });
+  });
+  simple.falsy(163, getter.eof());
+  simple.like(164, getter.get(), {
+    line: 13
+  });
+  simple.truthy(165, getter.eof());
+  return simple.equal(166, getter.lineNum, 4);
 })();
 
 // ---------------------------------------------------------------------------
@@ -202,7 +303,7 @@ mno`);
 def`, {
     prefix: '---'
   });
-  return simple.equal(173, getter.getBlock(), `---abc
+  return simple.equal(177, getter.getBlock(), `---abc
 ---def`);
 })();
 
@@ -213,23 +314,23 @@ def`, {
   numLines = undef;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      var getter, lAll;
+      var getter;
       getter = new Getter(import.meta.url, block);
-      lAll = getter.getAll();
-      numLines = getter.hSourceInfo.lineNum; // set variable numLines
-      return arrayToBlock(lAll);
+      block = getter.getBlock();
+      numLines = getter.lineNum; // set variable numLines
+      return block;
     }
 
   };
   // ..........................................................
   tester = new MyTester();
-  tester.equal(199, `abc
+  tester.equal(203, `abc
 def
 __END__
 ghi
 jkl`, `abc
 def`);
-  return simple.equal(210, numLines, 2);
+  return simple.equal(214, numLines, 2);
 })();
 
 // ---------------------------------------------------------------------------
@@ -241,18 +342,42 @@ def`);
 		then this
 while (x > 2)
 	--x`);
-  simple.equal(226, getter.peek(), 'if (x == 2)');
-  simple.equal(227, getter.get(), 'if (x == 2)');
-  simple.equal(229, getter.peek(), '\tdoThis');
-  simple.equal(230, getter.get(), '\tdoThis');
-  simple.equal(232, getter.peek(), '\tdoThat');
-  simple.equal(233, getter.get(), '\tdoThat');
-  simple.equal(235, getter.peek(), '\t\tthen this');
-  simple.equal(236, getter.get(), '\t\tthen this');
-  simple.equal(238, getter.peek(), 'while (x > 2)');
-  simple.equal(239, getter.get(), 'while (x > 2)');
-  simple.equal(241, getter.peek(), '\t--x');
-  return simple.equal(242, getter.get(), '\t--x');
+  simple.like(230, getter.peek(), {
+    line: 'if (x == 2)'
+  });
+  simple.like(231, getter.get(), {
+    line: 'if (x == 2)'
+  });
+  simple.like(233, getter.peek(), {
+    line: '\tdoThis'
+  });
+  simple.like(234, getter.get(), {
+    line: '\tdoThis'
+  });
+  simple.like(236, getter.peek(), {
+    line: '\tdoThat'
+  });
+  simple.like(237, getter.get(), {
+    line: '\tdoThat'
+  });
+  simple.like(239, getter.peek(), {
+    line: '\t\tthen this'
+  });
+  simple.like(240, getter.get(), {
+    line: '\t\tthen this'
+  });
+  simple.like(242, getter.peek(), {
+    line: 'while (x > 2)'
+  });
+  simple.like(243, getter.get(), {
+    line: 'while (x > 2)'
+  });
+  simple.like(245, getter.peek(), {
+    line: '\t--x'
+  });
+  return simple.like(246, getter.get(), {
+    line: '\t--x'
+  });
 })();
 
 // ---------------------------------------------------------------------------
@@ -265,13 +390,13 @@ while (x > 2)
     }
 
     // .......................................................
-    map(item) {
+    map(hLine) {
       var _, lMatches, varName;
-      if (lMatches = item.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/)) { // an identifier
+      if (lMatches = hLine.line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/)) { // an identifier
         [_, varName] = lMatches;
         this.lVars.push(varName);
       }
-      return item;
+      return hLine.line;
     }
 
     // .......................................................
@@ -289,7 +414,7 @@ while (x > 2)
 x = 2
 y = 3`);
   result = getter.getBlock();
-  return simple.equal(263, result, `var x,y
+  return simple.equal(292, result, `var x,y
 x = 2
 y = 3`);
 })();

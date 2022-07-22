@@ -1,6 +1,6 @@
 # cielo.test.coffee
 
-import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester, simple} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
@@ -15,8 +15,6 @@ import {
 import {TreeWalker} from '@jdeighan/mapper/tree'
 
 addStdHereDocTypes()
-
-simple = new UnitTesterNorm(import.meta.url)
 
 # ---------------------------------------------------------------------------
 # --- Features:
@@ -40,7 +38,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# --- test retaining comments
 
-	tester.equal 43, """
+	tester.equal 41, """
 			# --- a comment
 			y = x
 			""", """
@@ -51,9 +49,9 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 53, """
-
+	tester.equal 52, """
 			y = x
+
 			""", """
 			y = x
 			"""
@@ -64,7 +62,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 66, """
+	tester.equal 65, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -77,7 +75,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 79, """
+	tester.equal 78, """
 			x = 23
 			y = x
 					+ 5
@@ -89,7 +87,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	tester.equal 91, """
+	tester.equal 90, """
 			x = 23
 			y = x \
 			+ 5
@@ -102,7 +100,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 104, """
+	tester.equal 103, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -112,7 +110,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			+ 5
 			"""
 
-	tester.equal 114, """
+	tester.equal 113, """
 			str = <<<
 				abc
 				def
@@ -123,7 +121,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			x = 42
 			"""
 
-	tester.equal 125, """
+	tester.equal 124, """
 			str = <<<
 				===
 				abc
@@ -135,7 +133,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			x = 42
 			"""
 
-	tester.equal 137, """
+	tester.equal 136, """
 			str = <<<
 				...this is a
 					long line
@@ -143,7 +141,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			str = "this is a long line"
 			"""
 
-	tester.equal 145, """
+	tester.equal 144, """
 			lItems = <<<
 				---
 				- a
@@ -152,7 +150,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 154, """
+	tester.equal 153, """
 			hItems = <<<
 				---
 				a: 13
@@ -161,7 +159,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 163, """
+	tester.equal 162, """
 			lItems = <<<
 				---
 				-
@@ -174,7 +172,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 176, """
+	tester.equal 175, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -190,7 +188,7 @@ simple = new UnitTesterNorm(import.meta.url)
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 192, """
+	tester.equal 191, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -203,7 +201,7 @@ simple = new UnitTesterNorm(import.meta.url)
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 205, """
+	tester.equal 204, """
 			str = \"\"\"
 				this is a
 				long string
@@ -217,7 +215,7 @@ simple = new UnitTesterNorm(import.meta.url)
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 219, '''
+	tester.equal 218, '''
 			str = """
 				this is a
 				long string
@@ -231,7 +229,7 @@ simple = new UnitTesterNorm(import.meta.url)
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 233, """
+	tester.equal 232, """
 			str = '''
 				this is a
 				long string
@@ -259,7 +257,7 @@ simple = new UnitTesterNorm(import.meta.url)
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 261, """
+	tester.equal 260, """
 			handler = <<<
 				() ->
 					return 42
@@ -268,7 +266,7 @@ simple = new UnitTesterNorm(import.meta.url)
 				return 42
 			"""
 
-	tester.equal 270, """
+	tester.equal 269, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -290,12 +288,12 @@ simple = new UnitTesterNorm(import.meta.url)
 
 	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
 
-	simple.equal 292, jsCode, """
+	simple.equal 291, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
 			if (fs.existsSync('file.txt')) {
-				logger("file exists");
+			  logger("file exists");
 			}
 			"""
 	)()

@@ -10,7 +10,8 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 
 import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
-import {TreeWalker, TraceWalker} from '@jdeighan/mapper/tree'
+import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TraceWalker} from '@jdeighan/mapper/trace'
 
 addStdHereDocTypes()
 
@@ -34,7 +35,7 @@ addStdHereDocTypes()
 	# --- remove comments and blank lines
 	#     create user object from simple line
 
-	tester.equal 46, """
+	tester.like 46, """
 			# --- comment, followed by blank line
 
 			abc
@@ -54,7 +55,7 @@ addStdHereDocTypes()
 	# --- remove comments and blank lines
 	#     create user object from simple line
 
-	tester.equal 61, """
+	tester.like 61, """
 			# --- comment, followed by blank line
 
 			abc
@@ -86,7 +87,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- level
 
-	tester.equal 83, """
+	tester.like 83, """
 			abc
 				def
 					ghi
@@ -167,10 +168,9 @@ addStdHereDocTypes()
 
 	tester = new Tester()
 
-
 	# ------------------------------------------------------------------------
 
-	tester.equal 167, """
+	tester.like 167, """
 			abc
 				def
 					ghi
@@ -183,7 +183,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- const replacement
 
-	tester.equal 182, """
+	tester.like 182, """
 			#define name John Deighan
 			abc
 			__name__
@@ -195,7 +195,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- extension lines
 
-	tester.equal 194, """
+	tester.like 194, """
 			abc
 					&& def
 					&& ghi
@@ -208,7 +208,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (default)
 
-	tester.equal 207, """
+	tester.like 207, """
 			func(<<<)
 				abc
 				def
@@ -222,7 +222,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (explicit)
 
-	tester.equal 221, """
+	tester.like 221, """
 			func(<<<)
 				===
 				abc
@@ -237,7 +237,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	tester.equal 236, """
+	tester.like 236, """
 			func(<<<)
 				...
 				abc
@@ -252,10 +252,10 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	tester.equal 251, """
+	tester.like 251, """
 			func(<<<)
 				...abc
-				   def
+					def
 
 			xyz
 			""", """
@@ -266,7 +266,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - TAML
 
-	tester.equal 265, """
+	tester.like 265, """
 			func(<<<)
 				---
 				- abc
@@ -281,7 +281,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - function
 
-	tester.equal 280, """
+	tester.like 280, """
 			handleClick(<<<)
 				(event) ->
 					event.preventDefault()
@@ -297,7 +297,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- using __END__
 
-	tester.equal 296, """
+	tester.like 296, """
 			abc
 			def
 			__END__
@@ -312,7 +312,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value not defined
 
-	tester.equal 311, """
+	tester.like 311, """
 			#ifdef mobile
 				abc
 			def
@@ -323,7 +323,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value defined
 
-	tester.equal 322, """
+	tester.like 322, """
 			#define mobile anything
 			#ifdef mobile
 				abc
@@ -337,7 +337,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value not defined
 
-	tester.equal 336, """
+	tester.like 336, """
 			#ifdef mobile samsung
 				abc
 			def
@@ -348,7 +348,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined, but different
 
-	tester.equal 347, """
+	tester.like 347, """
 			#define mobile apple
 			#ifdef mobile samsung
 				abc
@@ -360,7 +360,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined and same
 
-	tester.equal 359, """
+	tester.like 359, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -374,7 +374,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - not defined
 
-	tester.equal 373, """
+	tester.like 373, """
 			#ifndef mobile
 				abc
 			def
@@ -386,7 +386,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - defined
 
-	tester.equal 385, """
+	tester.like 385, """
 			#define mobile anything
 			#ifndef mobile
 				abc
@@ -399,7 +399,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - not defined
 
-	tester.equal 398, """
+	tester.like 398, """
 			#ifndef mobile samsung
 				abc
 			def
@@ -411,7 +411,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined, but different
 
-	tester.equal 410, """
+	tester.like 410, """
 			#define mobile apple
 			#ifndef mobile samsung
 				abc
@@ -424,7 +424,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined and same
 
-	tester.equal 423, """
+	tester.like 423, """
 			#define mobile samsung
 			#ifndef mobile samsung
 				abc
@@ -437,7 +437,7 @@ addStdHereDocTypes()
 	# ------------------------------------------------------------------------
 	# --- nested commands
 
-	tester.equal 436, """
+	tester.like 436, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -451,7 +451,7 @@ addStdHereDocTypes()
 
 	# --- nested commands
 
-	tester.equal 450, """
+	tester.like 450, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
@@ -462,7 +462,7 @@ addStdHereDocTypes()
 
 	# --- nested commands
 
-	tester.equal 461, """
+	tester.like 461, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -473,7 +473,7 @@ addStdHereDocTypes()
 
 	# --- nested commands
 
-	tester.equal 472, """
+	tester.like 472, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
@@ -485,7 +485,7 @@ addStdHereDocTypes()
 	# ----------------------------------------------------------
 	# --- nested commands - every combination
 
-	tester.equal 484, """
+	tester.like 484, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -501,7 +501,7 @@ addStdHereDocTypes()
 
 	# --- nested commands - every combination
 
-	tester.equal 500, """
+	tester.like 500, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -515,7 +515,7 @@ addStdHereDocTypes()
 
 	# --- nested commands - every combination
 
-	tester.equal 514, """
+	tester.like 514, """
 			#define large anything
 			#ifdef mobile samsung
 				abc
@@ -528,7 +528,7 @@ addStdHereDocTypes()
 
 	# --- nested commands - every combination
 
-	tester.equal 527, """
+	tester.like 527, """
 			#ifdef mobile samsung
 				abc
 				#ifdef large

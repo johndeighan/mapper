@@ -179,15 +179,15 @@ expand = function(qstr) {
 
 // ---------------------------------------------------------------------------
 export var CoffeePreProcessor = class CoffeePreProcessor extends Mapper {
-  handleComment(line, prefix) {
+  handleComment(hLine) {
     // --- Retain comments
-    return line;
+    return hLine.line;
   }
 
   // ..........................................................
-  map(item) {
+  map(hLine) {
     var result;
-    result = item.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
+    result = hLine.line.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
     return result;

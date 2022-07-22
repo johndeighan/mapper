@@ -13,6 +13,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 # ---------------------------------------------------------------------------
 #   class Mapper
 #       handles:
+#          #include
 #          #define
 #          const replacement
 
@@ -23,9 +24,13 @@ export class Mapper extends Getter
 		debug "enter Mapper()"
 		super source, collection, hOptions
 
+		# --- These never change
 		@setConst 'FILE', @hSourceInfo.filename
 		@setConst 'DIR', @hSourceInfo.dir
-		@setConst 'LINE', @hSourceInfo.lineNum
+
+		# --- This needs to be kept updated
+		@setConst 'LINE', @lineNum
+
 		debug "return from Mapper()"
 
 	# ..........................................................
@@ -35,57 +40,104 @@ export class Mapper extends Getter
 
 		debug "enter incLineNum(#{inc})"
 		super inc
-		@setConst 'LINE', @hSourceInfo.lineNum
+		@setConst 'LINE', @lineNum
 		debug "return from incLineNum()"
 		return
 
 	# ..........................................................
 	# --- override
+	#     LATER: maintain an ordered hash of types along with
+	#            methods to check for those types
 
-	getItemType: (item) ->
+	getItemType: (hLine) ->
 
-		debug "enter Mapper.getItemType()", item
+		debug "enter Mapper.getItemType()", hLine
+		super hLine     # sets 'prefix' and 'str' for strings
 
-		# --- only strings may have an item type
-		if isString(item)
+		{line, str} = hLine
 
-			# --- check for empty item
-			if @isEmptyLine(item)
-				result = ['empty', undef]
+		if isString(line)
+			assert isString(str), "str is #{OL(str)}"
+
+			# --- check for empty line
+			if @isEmptyLine(str, hLine)
+				debug "return from getItemType()", 'empty'
+				return 'empty'
 
 			# --- check for comment
-			else if @isComment(item)
-				result = ['comment', undef]
+			else if @isComment(str, hLine)
+				debug "return from getItemType()", 'comment'
+				return 'comment'
 
 			# --- check for cmd
-			else if defined(h = @isCmd(item))
-				assert isHash(h, ['cmd','argstr','prefix']),
-						"isCmd() returned bad hash #{OL(h)}"
-				result = ['cmd', h]
+			else if @isCmd(str, hLine)
+				debug "return from getItemType()", 'cmd'
+				return 'cmd'
 
-		if (result == undef)
-			result = [undef, undef]
+		debug "return from getItemType()", undef
+		return undef
 
-		debug "return from Mapper.getItemType()", result
-		return result
+	# ..........................................................
+
+	isEmptyLine: (str, hLine) ->
+
+		return (str == '')
+
+	# ..........................................................
+
+	isComment: (str, hLine) ->
+
+		if lMatches = str.match(///^
+				\s*
+				\#      # a hash character
+				(?:
+					\s+
+					(.*)
+					)?
+				$///)
+			[_, comment] = lMatches
+			hLine.comment = comment
+			return true
+		else
+			return false
+
+	# ..........................................................
+
+	isCmd: (str, hLine) ->
+
+		debug "enter Mapper.isCmd()"
+		if lMatches = str.match(///^
+				\#
+				([A-Za-z_]\w*)   # name of the command
+				\s*
+				(.*)             # argstr for command
+				$///)
+			[_, cmd, argstr] = lMatches
+			hLine.cmd = cmd
+			hLine.argstr = argstr
+			flag = true
+		else
+			# --- not a command
+			flag = false
+
+		debug "return from Mapper.isCmd()", flag
+		return flag
 
 	# ..........................................................
 	# --- override
 
-	handleItemType: (type, item, h) ->
+	handleItemType: (type, hLine) ->
 
-		debug "enter Mapper.handleItemType()", type, item
-		[prefix, str] = splitPrefix(item)
+		debug "enter Mapper.handleItemType()", type, hLine
+		assert defined(hLine), "hLine is undef"
+		{line} = hLine
 		switch type
 			when 'empty'
-				uobj = @handleEmptyLine()
+				uobj = @handleEmptyLine(hLine)
 			when 'comment'
-				uobj = @handleComment(item, prefix)
+				uobj = @handleComment(hLine)
 			when 'cmd'
-				{cmd, argstr} = h
-				assert isString(cmd), "cmd not a string"
-				assert isString(argstr), "argstr not a string"
-				uobj = @handleCmd(cmd, argstr, prefix, h)
+				uobj = @handleCmd(hLine)
 			else
 				croak "Unknown item type: #{OL(type)}"
 
@@ -94,13 +146,7 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	isEmptyLine: (line) ->
-
-		return isEmpty(line)
-
-	# ..........................................................
-
-	handleEmptyLine: (line) ->
+	handleEmptyLine: (hLine) ->
 		# --- can override
 		#     line may contain whitespace
 
@@ -109,54 +155,12 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	isComment: (line) ->
-
-		if (lMatches = line.match(///^
-				\s*
-				\#      # a # character
-				(.|$)   # following character, if any
-				///))
-			ch = lMatches[1]
-			return (ch == undef) || (ch in [' ','\t',''])
-		else
-			return false
-
-	# ..........................................................
-
-	handleComment: (line, prefix) ->
+	handleComment: (hLine) ->
 
 		debug "in Mapper.handleComment()"
 
 		# --- return undef to remove comments
-		return line
-
-	# ..........................................................
-
-	isCmd: (line) ->
-		# --- Must return either undef or {prefix, cmd, argstr}
-
-		debug "enter Mapper.isCmd()"
-		if lMatches = line.match(///^
-				(\s*)
-				\#
-				([A-Za-z_]\w*)   # name of the command
-				\s*
-				(.*)             # argstr for command
-				$///)
-			[_, prefix, cmd, argstr] = lMatches
-			if !prefix
-				prefix = ''
-			hResult = {
-				cmd
-				argstr: if argstr then argstr.trim() else ''
-				prefix
-				}
-			debug "return from Mapper.isCmd()", hResult
-			return hResult
-
-		# --- not a command
-		debug "return undef from Mapper.isCmd()"
-		return undef
+		return hLine.line
 
 	# ..........................................................
 	# --- handleCmd returns a mapped object, or
@@ -164,14 +168,12 @@ export class Mapper extends Getter
 	# Override must 1st handle its own commands,
 	#    then call the base class handleCmd
 
-	handleCmd: (cmd, argstr, prefix, h) ->
-		# --- h has keys 'cmd','argstr' and 'prefix'
-		#     but may contain additional keys
+	handleCmd: (hLine) ->
 
-		debug "enter Mapper.handleCmd ##{cmd} '#{argstr}'"
-		assert isString(prefix), "prefix not a string"
-		if (prefix.length > 0)
-			debug "   prefix = '#{escapeStr(prefix)}'"
+		debug "enter Mapper.handleCmd()", hLine
+
+		# --- isCmd() put these keys here
+		{cmd, argstr} = hLine
 
 		# --- Each case should return
 		switch cmd
@@ -192,7 +194,7 @@ export class Mapper extends Getter
 						debug "set var #{name} to '#{tail}'"
 						@setConst name, tail
 
-				debug "return undef from Mapper.handleCmd()"
+				debug "return from Mapper.handleCmd()", undef
 				return undef
 
 			else
@@ -202,15 +204,16 @@ export class Mapper extends Getter
 
 # ===========================================================================
 
-export doMap = (inputClass, source, content=undef) ->
+export doMap = (inputClass, source, content=undef, hOptions={}) ->
+	# --- Valid options:
+	#        logLines
 
+	debug "enter doMap()", inputClass, source, content
 	assert inputClass?, "Missing input class"
-	name = className(inputClass)
-	debug "enter doMap()", name, source, content
 	oInput = new inputClass(source, content)
 	assert oInput instanceof Mapper,
 		"doMap() requires a Mapper or subclass"
 	debug "got oInput object"
-	result = oInput.getBlock()
+	result = oInput.getBlock(hOptions)
 	debug "return from doMap()", result
 	return result

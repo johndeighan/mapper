@@ -20,29 +20,33 @@ simple = new UnitTester()
 
 (() ->
 
-	mapper = new Mapper(undef, [1, 2, 3])
+	mapper = new Mapper(undef, """
+		line1
+		line2
+		line3
+		""")
 
-	simple.equal 25, mapper.peek(), 1
-	simple.equal 26, mapper.peek(), 1
-	simple.falsy 27, mapper.eof()
-	simple.equal 28, mapper.get(), 1
-	simple.equal 29, mapper.get(), 2
-	simple.equal 30, mapper.hSourceInfo.lineNum, 2
+	simple.like 29, mapper.peek(), {line: 'line1'}
+	simple.like 30, mapper.peek(), {line: 'line1'}
+	simple.falsy 31, mapper.eof()
+	simple.like 32, token0 = mapper.get(), {line: 'line1'}
+	simple.like 33, token1 = mapper.get(), {line: 'line2'}
+	simple.equal 34, mapper.lineNum, 2
 
-	simple.falsy 32, mapper.eof()
-	simple.succeeds 33, () -> mapper.unfetch(5)
-	simple.succeeds 34, () -> mapper.unfetch(6)
-	simple.equal 35, mapper.get(), 6
-	simple.equal 36, mapper.get(), 5
-	simple.falsy 37, mapper.eof()
+	simple.falsy 36, mapper.eof()
+	simple.succeeds 37, () -> mapper.unfetch(token1)
+	simple.succeeds 38, () -> mapper.unfetch(token0)
+	simple.like 39, mapper.get(), {line: 'line6'}
+	simple.like 40, mapper.get(), {line: 'line5'}
+	simple.falsy 41, mapper.eof()
 
-	simple.equal 39, mapper.get(), 3
-	simple.equal 40, mapper.hSourceInfo.lineNum, 3
-	simple.truthy 41, mapper.eof()
-	simple.succeeds 42, () -> mapper.unfetch(13)
-	simple.falsy 43, mapper.eof()
-	simple.equal 44, mapper.get(), 13
+	simple.like 43, token0 = mapper.get(), {line: 'line3'}
+	simple.equal 44, mapper.lineNum, 3
 	simple.truthy 45, mapper.eof()
+	simple.succeeds 46, () -> mapper.unfetch(token0)
+	simple.falsy 47, mapper.eof()
+	simple.equal 48, mapper.get(), token0
+	simple.truthy 49, mapper.eof()
 	)()
 
 # ---------------------------------------------------------------------------
@@ -52,13 +56,13 @@ simple = new UnitTester()
 
 	mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t'])
 
-	simple.equal 55, mapper.peek(), 'abc'
-	simple.equal 56, mapper.peek(), 'abc'
-	simple.falsy 57, mapper.eof()
-	simple.equal 58, mapper.get(), 'abc'
-	simple.equal 59, mapper.get(), 'def'
-	simple.equal 60, mapper.get(), 'ghi'
-	simple.equal 61, mapper.hSourceInfo.lineNum, 3
+	simple.like 59, mapper.peek(), {line: 'abc'}
+	simple.like 60, mapper.peek(), {line: 'abc'}
+	simple.falsy 61, mapper.eof()
+	simple.like 62, mapper.get(), {line: 'abc'}
+	simple.like 63, mapper.get(), {line: 'def'}
+	simple.like 64, mapper.get(), {line: 'ghi'}
+	simple.equal 65, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -74,13 +78,16 @@ simple = new UnitTester()
 			mno
 			""")
 
-	simple.equal 77, mapper.fetch(), 'abc'
+	simple.like 81, mapper.fetch(), {line: 'abc'}
 
 	# 'jkl' will be discarded
-	simple.equal 80, mapper.fetchUntil('jkl'), ['def','ghi']
+	simple.like 84, mapper.fetchUntil('jkl'), [
+		{line: 'def'}
+		{line: 'ghi'}
+		]
 
-	simple.equal 82, mapper.fetch(), 'mno'
-	simple.equal 83, mapper.hSourceInfo.lineNum, 5
+	simple.like 89, mapper.fetch(), {line: 'mno'}
+	simple.equal 90, mapper.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
@@ -91,35 +98,35 @@ simple = new UnitTester()
 	#     it returns an iterator
 
 	generator = () ->
-		yield 1
-		yield 2
-		yield 3
+		yield 'line1'
+		yield 'line2'
+		yield 'line3'
 		return
 
 	# --- You can pass any iterator to the Mapper() constructor
 	mapper = new Mapper(undef, generator())
 
-	simple.equal 102, mapper.peek(), 1
-	simple.equal 103, mapper.peek(), 1
-	simple.falsy 104, mapper.eof()
-	simple.equal 105, mapper.get(), 1
-	simple.equal 106, mapper.get(), 2
-	simple.equal 107, mapper.hSourceInfo.lineNum, 2
+	simple.like 109, mapper.peek(), {line: 'line1'}
+	simple.like 110, mapper.peek(), {line: 'line1'}
+	simple.falsy 111, mapper.eof()
+	simple.like 112, token0 = mapper.get(), {line: 'line1'}
+	simple.like 113, token1 = mapper.get(), {line: 'line2'}
+	simple.equal 114, mapper.lineNum, 2
 
-	simple.falsy 109, mapper.eof()
-	simple.succeeds 110, () -> mapper.unfetch(5)
-	simple.succeeds 111, () -> mapper.unfetch(6)
-	simple.equal 112, mapper.get(), 6
-	simple.equal 113, mapper.get(), 5
-	simple.falsy 114, mapper.eof()
+	simple.falsy 116, mapper.eof()
+	simple.succeeds 117, () -> mapper.unfetch(token1)
+	simple.succeeds 118, () -> mapper.unfetch(token0)
+	simple.like 119, mapper.get(), {line: 'line1'}
+	simple.like 120, mapper.get(), {line: 'line2'}
+	simple.falsy 121, mapper.eof()
 
-	simple.equal 116, mapper.get(), 3
-	simple.truthy 117, mapper.eof()
-	simple.succeeds 118, () -> mapper.unfetch(13)
-	simple.falsy 119, mapper.eof()
-	simple.equal 120, mapper.get(), 13
-	simple.truthy 121, mapper.eof()
-	simple.equal 122, mapper.hSourceInfo.lineNum, 3
+	simple.like 123, token13 = mapper.get(), {line: 'line3'}
+	simple.truthy 124, mapper.eof()
+	simple.succeeds 125, () -> mapper.unfetch(token13)
+	simple.falsy 126, mapper.eof()
+	simple.equal 127, mapper.get(), token13
+	simple.truthy 128, mapper.eof()
+	simple.equal 129, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -139,27 +146,27 @@ simple = new UnitTester()
 
 	mapper = new Mapper(undef, lItems)
 
-	simple.equal 142, mapper.peek(), {a:1, b:2}
-	simple.equal 143, mapper.peek(), {a:1, b:2}
-	simple.falsy 144, mapper.eof()
-	simple.equal 145, mapper.get(), {a:1, b:2}
-	simple.equal 146, mapper.get(), ['a','b']
+	simple.like 149, mapper.peek(), {line: {a:1, b:2}}
+	simple.like 150, mapper.peek(), {line: {a:1, b:2}}
+	simple.falsy 151, mapper.eof()
+	simple.like 152, token0 = mapper.get(), {line: {a:1, b:2}}
+	simple.like 153, token1 = mapper.get(), {line: ['a','b']}
 
-	simple.falsy 148, mapper.eof()
-	simple.succeeds 149, () -> mapper.unfetch([])
-	simple.succeeds 150, () -> mapper.unfetch({})
-	simple.equal 151, mapper.get(), {}
-	simple.equal 152, mapper.get(), []
-	simple.falsy 153, mapper.eof()
+	simple.falsy 155, mapper.eof()
+	simple.succeeds 156, () -> mapper.unfetch(token1)
+	simple.succeeds 157, () -> mapper.unfetch(token0)
+	simple.equal 158, mapper.get(), token0
+	simple.equal 159, mapper.get(), token1
+	simple.falsy 160, mapper.eof()
 
-	simple.equal 155, mapper.get(), 42
-	simple.equal 156, mapper.get(), 'xyz'
-	simple.truthy 157, mapper.eof()
-	simple.succeeds 158, () -> mapper.unfetch(13)
-	simple.falsy 159, mapper.eof()
-	simple.equal 160, mapper.get(), 13
-	simple.truthy 161, mapper.eof()
-	simple.equal 162, mapper.hSourceInfo.lineNum, 4
+	simple.like 162, mapper.get(), {line: 42}
+	simple.like 163, token2 = mapper.get(), {line: 'xyz'}
+	simple.truthy 164, mapper.eof()
+	simple.succeeds 165, () -> mapper.unfetch(token2)
+	simple.falsy 166, mapper.eof()
+	simple.equal 167, mapper.get(), token2
+	simple.truthy 168, mapper.eof()
+	simple.equal 169, mapper.lineNum, 4
 	)()
 
 # ---------------------------------------------------------------------------
@@ -178,15 +185,15 @@ simple = new UnitTester()
 		transformValue: (block) ->
 
 			mapper = new Mapper(import.meta.url, block)
-			lAll = mapper.getAll()
-			numLines = mapper.hSourceInfo.lineNum   # set variable numLines
-			return arrayToBlock(lAll)
+			block = mapper.getBlock()
+			numLines = mapper.lineNum   # set variable numLines
+			return block
 
 	# ..........................................................
 
 	tester = new MyTester()
 
-	tester.equal 189, """
+	tester.equal 196, """
 			abc
 				#include title.md
 			def
@@ -197,7 +204,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 200, numLines, 3
+	simple.equal 207, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -208,7 +215,7 @@ simple = new UnitTester()
 			def
 			""", {prefix: '---'})
 
-	simple.equal 211, mapper.getBlock(), """
+	simple.equal 218, mapper.getBlock(), """
 			---abc
 			---def
 			"""
@@ -224,7 +231,7 @@ simple = new UnitTester()
 			def
 			""")
 
-	simple.equal 227, mapper.getBlock(), """
+	simple.equal 234, mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -244,15 +251,15 @@ simple = new UnitTester()
 		transformValue: (block) ->
 
 			mapper = new Mapper(import.meta.url, block)
-			lAll = mapper.getAll()
-			numLines = mapper.hSourceInfo.lineNum   # set variable numLines
-			return arrayToBlock(lAll)
+			block = mapper.getBlock()
+			numLines = mapper.lineNum   # set variable numLines
+			return block
 
 	# ..........................................................
 
 	tester = new MyTester()
 
-	tester.equal 255, """
+	tester.equal 262, """
 			abc
 			def
 			__END__
@@ -263,7 +270,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 266, numLines, 2
+	simple.equal 273, numLines, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -276,14 +283,14 @@ simple = new UnitTester()
 		transformValue: (block) ->
 
 			mapper = new Mapper(import.meta.url, block)
-			lAll = mapper.getAll()
-			return arrayToBlock(lAll)
+			block = mapper.getBlock()
+			return block
 
 	# ..........................................................
 
 	tester = new MyTester()
 
-	tester.equal 286, """
+	tester.equal 293, """
 			abc
 				#include ended.md
 			def
@@ -305,14 +312,14 @@ simple = new UnitTester()
 		transformValue: (block) ->
 
 			mapper = new Mapper(import.meta.url, block)
-			lAll = mapper.getAll()
-			return arrayToBlock(lAll)
+			block = mapper.getBlock()
+			return block
 
 	# ..........................................................
 
 	tester = new MyTester()
 
-	tester.equal 315, """
+	tester.equal 322, """
 			abc
 			#define meaning 42
 			meaning is __meaning__
@@ -341,7 +348,7 @@ simple = new UnitTester()
 			The meaning of life is __meaning__
 			""")
 
-	simple.equal 344, result, """
+	simple.equal 351, result, """
 			# - test.txt
 			abc
 			The meaning of life is 42
@@ -353,14 +360,16 @@ simple = new UnitTester()
 	#        3. implements a '#for <args>' cmd that outputs '{#for <args>}'
 
 	class MyMapper extends Mapper
-		handleEmptyLine: () -> return undef
-		isComment: (line) -> return line.match(/\s*\/\//)
-		handleComment: (line) -> return undef
-		handleCmd: (cmd, argstr, prefix, h) ->
+		isComment: (line, hLine) -> return line.match(///^ \s* \/ \/ ///)
+
+		handleEmptyLine: (hLine) -> return undef
+		handleComment: (hLine) -> return undef
+		handleCmd: (hLine) ->
+			{cmd, argstr, prefix} = hLine
 			if (cmd == 'for')
 				return "#{prefix}{#for #{argstr}}"
 			else
-				return super(cmd, argstr, prefix, h)
+				return super(hLine)
 
 	result = doMap(MyMapper, import.meta.url, """
 			// test.txt
@@ -371,7 +380,7 @@ simple = new UnitTester()
 			#for x in lItems
 			""")
 
-	simple.equal 344, result, """
+	simple.equal 383, result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -380,22 +389,18 @@ simple = new UnitTester()
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test map/unmap
+# --- Test map
 
 (() ->
 
 	class MyMapper extends Mapper
 
-		handleEmptyLine: () -> return undef
-		isComment: (line) -> return line.match(/\s*\/\//)
-		handleComment: (line) -> return undef
-		map: (line) ->
-			return {
-				line
-				len: line.length
-				}
-		unmap: (obj) ->
-			return "#{obj.len}"
+		isComment: (line, hLine) -> return line.match(/// \s* \/ \/ ///)
+
+		handleEmptyLine: (hLine) -> return undef
+		handleComment: (hLine) -> return undef
+		map: (hLine) ->
+			return hLine.line.length.toString()
 
 	result = doMap(MyMapper, import.meta.url, """
 			// test.txt
@@ -404,7 +409,7 @@ simple = new UnitTester()
 
 			defghi
 			""")
-	simple.equal 407, result, """
+	simple.equal 412, result, """
 			3
 			6
 			"""
@@ -423,22 +428,22 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.equal 226, mapper.peek(), 'if (x == 2)'
-	simple.equal 227, mapper.get(),  'if (x == 2)'
+	simple.like 431, mapper.peek(), {line: 'if (x == 2)'}
+	simple.like 432, mapper.get(),  {line: 'if (x == 2)'}
 
-	simple.equal 229, mapper.peek(), '\tdoThis'
-	simple.equal 230, mapper.get(),  '\tdoThis'
+	simple.like 434, mapper.peek(), {line: '\tdoThis'}
+	simple.like 435, mapper.get(),  {line: '\tdoThis'}
 
-	simple.equal 232, mapper.peek(), '\tdoThat'
-	simple.equal 233, mapper.get(),  '\tdoThat'
+	simple.like 437, mapper.peek(), {line: '\tdoThat'}
+	simple.like 438, mapper.get(),  {line: '\tdoThat'}
 
-	simple.equal 235, mapper.peek(), '\t\tthen this'
-	simple.equal 236, mapper.get(),  '\t\tthen this'
+	simple.like 440, mapper.peek(), {line: '\t\tthen this'}
+	simple.like 441, mapper.get(),  {line: '\t\tthen this'}
 
-	simple.equal 238, mapper.peek(), 'while (x > 2)'
-	simple.equal 239, mapper.get(),  'while (x > 2)'
+	simple.like 443, mapper.peek(), {line: 'while (x > 2)'}
+	simple.like 444, mapper.get(),  {line: 'while (x > 2)'}
 
-	simple.equal 241, mapper.peek(), '\t--x'
-	simple.equal 242, mapper.get(),  '\t--x'
+	simple.like 446, mapper.peek(), {line: '\t--x'}
+	simple.like 447, mapper.get(),  {line: '\t--x'}
 
 	)()

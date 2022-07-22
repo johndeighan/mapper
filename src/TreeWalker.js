@@ -189,8 +189,8 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  handleHereDoc(cieloExpr, block) {
-    return cieloExpr;
+  handleHereDoc(expr, block) {
+    return expr;
   }
 
   // ..........................................................

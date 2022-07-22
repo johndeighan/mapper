@@ -158,9 +158,9 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	handleHereDoc: (cieloExpr, block) ->
+	handleHereDoc: (expr, block) ->
 
-		return cieloExpr
+		return expr
 
 	# ..........................................................
 

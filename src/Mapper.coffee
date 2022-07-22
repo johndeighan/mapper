@@ -31,7 +31,26 @@ export class Mapper extends Getter
 		# --- This needs to be kept updated
 		@setConst 'LINE', @lineNum
 
+		# --- These must be bound to a specific object
+		#     when called
+		@hSpecials = {}
+		@lSpecials = []    # checked in this order
+
+		@addSpecial('empty', @isEmptyLine, @handleEmptyLine)
+		@addSpecial('comment', @isComment, @handleComment)
+		@addSpecial('cmd', @isCmd, @handleCmd)
 		debug "return from Mapper()"
+
+	# ..........................................................
+
+	addSpecial: (type, recognizer, handler) ->
+
+		@lSpecials.push(type)
+		@hSpecials[type] = {
+			recognizer
+			handler
+			}
+		return
 
 	# ..........................................................
 	# --- override to keep variable LINE updated
@@ -59,23 +78,27 @@ export class Mapper extends Getter
 		if isString(line)
 			assert isString(str), "str is #{OL(str)}"
 
-			# --- check for empty line
-			if @isEmptyLine(str, hLine)
-				debug "return from getItemType()", 'empty'
-				return 'empty'
-
-			# --- check for comment
-			else if @isComment(str, hLine)
-				debug "return from getItemType()", 'comment'
-				return 'comment'
-
-			# --- check for cmd
-			else if @isCmd(str, hLine)
-				debug "return from getItemType()", 'cmd'
-				return 'cmd'
+			for type in @lSpecials
+				recognizer = @hSpecials[type].recognizer
+				if recognizer.bind(this)(str, hLine)
+					debug "return from getItemType()", type
+					return type
 
 		debug "return from getItemType()", undef
 		return undef
+
+	# ..........................................................
+
+	handleItemType: (type, hLine) ->
+
+		debug "enter Mapper.handleItemType()", type, hLine
+		assert defined(hLine), "hLine is undef"
+		handler = @hSpecials[type].handler.bind(this)
+		assert isFunction(handler), "Unknown type #{OL(type)}"
+
+		uobj = handler(hLine)
+		debug "return from Mapper.handleItemType()", uobj
+		return uobj
 
 	# ..........................................................
 
@@ -122,27 +145,6 @@ export class Mapper extends Getter
 
 		debug "return from Mapper.isCmd()", flag
 		return flag
-
-	# ..........................................................
-	# --- override
-
-	handleItemType: (type, hLine) ->
-
-		debug "enter Mapper.handleItemType()", type, hLine
-		assert defined(hLine), "hLine is undef"
-		{line} = hLine
-		switch type
-			when 'empty'
-				uobj = @handleEmptyLine(hLine)
-			when 'comment'
-				uobj = @handleComment(hLine)
-			when 'cmd'
-				uobj = @handleCmd(hLine)
-			else
-				croak "Unknown item type: #{OL(type)}"
-
-		debug "return from Mapper.handleItemType()", uobj
-		return uobj
 
 	# ..........................................................
 

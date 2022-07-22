@@ -107,7 +107,6 @@ export class Getter extends Fetcher
 			debug "item type is #{type}"
 			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
 			hLine.type = type
-			debug "call handleItemType()"
 			uobj = @handleItemType(type, hLine)
 			debug "from handleItemType()", uobj
 		else

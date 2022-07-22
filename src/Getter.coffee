@@ -23,9 +23,6 @@ export class Getter extends Fetcher
 
 		@hConsts = {}   # support variable replacement
 
-		# --- support peek(), etc.
-		@lCache = []
-
 	# ..........................................................
 
 	setConst: (name, value) ->
@@ -42,91 +39,26 @@ export class Getter extends Fetcher
 		return @hConsts[name]
 
 	# ..........................................................
-	#    Cache Management
-	# ..........................................................
-
-	fetchFromCache: () ->
-
-		assert nonEmpty(@lCache), "empty cache"
-		hLine = @lCache.shift()
-		assert defined(hLine), "undef item found in lCache"
-		return hLine
-
-	# ..........................................................
-
-	getFromCache: () ->
-
-		while nonEmpty(@lCache)
-			hLine = @fetchFromCache()
-			if defined(hLine.uobj)
-				return hLine
-			else
-				uobj = hLine.uobj = @mapItem(hLine)
-				if defined(uobj)
-					return hLine
-
-		return undef
-
-	# ..........................................................
-	#        We override fetch(), unfetch()
-	# ..........................................................
-
-	fetch: () ->
-
-		if nonEmpty(@lCache)
-			return @fetchFromCache()
-		return super()
-
-	# ..........................................................
-
-	unfetch: (hLine) ->
-
-# --- I think these are wrong, so I'm commenting them out for now
-#		if isEmpty(@lCache)
-#			return super(hLine)
-		assert defined(hLine), "attempt to put undef in lCache"
-		@lCache.unshift hLine
-		return
-
-	# ..........................................................
 	#        Mapped Data
-	# --- add keys:
-	#        type   - if a special type
-	#        uobj
 	# ..........................................................
 
 	get: () ->
 
 		debug "enter Getter.get()"
 
-		# --- return anything in @lCache
-		#     NOTE: getFromCache() may return undef if all items
-		#           in cache have not been mapped, and all of them
-		#           map to undef
-		debug 'lCache', @lCache
-		if defined(hLine = @getFromCache())
-			# --- NOTE: return value from getFromCache()
-			#           should always have a uobj key
-			assert defined(hLine.uobj), "getFromCache() but no uobj"
-			debug "return from Getter.get() - cached hLine", hLine
-			return hLine
+		while defined(hLine = @fetch())
+			if defined(hLine.uobj)
+				# --- It's already been mapped
+				debug "return from Getter.get() - was mapped", hLine
+				return hLine
+			uobj = @mapItem(hLine)
+			if defined(uobj)
+				hLine.uobj = uobj
+				debug "return from Getter.get() - newly mapped", hLine
+				return hLine
 
-		debug "no cached hLine"
-
-		hLine = @fetch()
-		debug "fetch() returned", hLine
-
-		if (hLine == undef)
-			debug "return from Getter.get() - at EOF", undef
-			return undef
-
-		uobj = hLine.uobj = @mapItem(hLine)
-
-		if (uobj == undef)
-			hLine = @get()    # recursive call
-
-		debug "return from Getter.get()", hLine
-		return hLine
+		debug "return from Getter.get() - EOF", undef
+		return undef
 
 	# ..........................................................
 
@@ -139,71 +71,27 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
+	peek: () ->
+
+		debug 'enter Getter.peek()'
+		hLine = @get()
+		if (hLine == undef)
+			debug "return from Getter.peek()", undef
+			return undef
+		else
+			@unfetch hLine
+			debug "return from Getter.peek()", hLine
+			return hLine
+
+	# ..........................................................
+
 	eof: () ->
 
 		debug "enter Getter.eof()"
 
-		if nonEmpty(@lCache)
-			debug "return from Getter.eof() - cache not empty", false
-			return false
-
-		hLine = @fetch()
-		if (hLine == undef)
-			debug "return from Getter.eof()", true
-			return true
-		else
-			@unfetch hLine
-			debug "return from Getter.eof()", false
-			return false
-
-	# ..........................................................
-
-	peek: () ->
-
-		debug 'enter Getter.peek()'
-
-		# --- Any item in lCache that has uobj == undef has not
-		#     been mapped. lCache may contain such items, but if
-		#     they map to undef, they should be skipped
-		while nonEmpty(@lCache)
-			hLine = @lCache[0]
-			assert defined(hLine), "hLine (from cache) is undef"
-			if defined(hLine.uobj)
-				debug "return cached item from Getter.peek()", hLine
-				return hLine
-			else
-				uobj = hLine.uobj = @mapItem(hLine)
-				if defined(uobj)
-					debug "return cached item from Getter.peek()", hLine
-					return hLine
-				else
-					@lCache.shift()   # and continue loop
-
-		debug "no lookahead"
-
-		hLine = @fetch()
-		if (hLine == undef)
-			debug "return undef from Getter.peek() - at EOF"
-			return undef
-		debug "fetch() returned", hLine
-
-		# --- @lCache is currently empty
-		uobj = hLine.uobj = @mapItem(hLine)
-
-		# --- @lCache might be non-empty now!!!
-
-		# --- if mapItem() returns undef, skip that item
-		if (uobj == undef)
-			debug "mapItem() returned undef - recursive call"
-			hLine = @peek()    # recursive call
-			debug "return from Getter.peek()", hLine
-			return hLine
-
-		debug "add to cache", hLine
-		@lCache.unshift hLine
-
-		debug "return from Getter.peek()", hLine
-		return hLine
+		result = (@peek() == undef)
+		debug "return from Getter.eof()", result
+		return result
 
 	# ..........................................................
 	# --- return of undef doesn't mean EOF, it means skip this item

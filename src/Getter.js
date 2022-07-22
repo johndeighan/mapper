@@ -44,12 +44,10 @@ export var Getter = class Getter extends Fetcher {
   constructor(source = undef, collection = undef, hOptions = {}) {
     super(source, collection, hOptions);
     this.hConsts = {}; // support variable replacement
-    
-    // --- support peek(), etc.
-    this.lCache = [];
   }
 
-  // ..........................................................
+  
+    // ..........................................................
   setConst(name, value) {
     assert((name === 'LINE') || (this.hConsts[name] === undef), `cannot set constant ${name} twice`);
     this.hConsts[name] = value;
@@ -61,86 +59,26 @@ export var Getter = class Getter extends Fetcher {
   }
 
   // ..........................................................
-  //    Cache Management
-  // ..........................................................
-  fetchFromCache() {
-    var hLine;
-    assert(nonEmpty(this.lCache), "empty cache");
-    hLine = this.lCache.shift();
-    assert(defined(hLine), "undef item found in lCache");
-    return hLine;
-  }
-
-  // ..........................................................
-  getFromCache() {
-    var hLine, uobj;
-    while (nonEmpty(this.lCache)) {
-      hLine = this.fetchFromCache();
-      if (defined(hLine.uobj)) {
-        return hLine;
-      } else {
-        uobj = hLine.uobj = this.mapItem(hLine);
-        if (defined(uobj)) {
-          return hLine;
-        }
-      }
-    }
-    return undef;
-  }
-
-  // ..........................................................
-  //        We override fetch(), unfetch()
-  // ..........................................................
-  fetch() {
-    if (nonEmpty(this.lCache)) {
-      return this.fetchFromCache();
-    }
-    return super.fetch();
-  }
-
-  // ..........................................................
-  unfetch(hLine) {
-    // --- I think these are wrong, so I'm commenting them out for now
-    //		if isEmpty(@lCache)
-    //			return super(hLine)
-    assert(defined(hLine), "attempt to put undef in lCache");
-    this.lCache.unshift(hLine);
-  }
-
-  // ..........................................................
   //        Mapped Data
-  // --- add keys:
-  //        type   - if a special type
-  //        uobj
   // ..........................................................
   get() {
     var hLine, uobj;
     debug("enter Getter.get()");
-    // --- return anything in @lCache
-    //     NOTE: getFromCache() may return undef if all items
-    //           in cache have not been mapped, and all of them
-    //           map to undef
-    debug('lCache', this.lCache);
-    if (defined(hLine = this.getFromCache())) {
-      // --- NOTE: return value from getFromCache()
-      //           should always have a uobj key
-      assert(defined(hLine.uobj), "getFromCache() but no uobj");
-      debug("return from Getter.get() - cached hLine", hLine);
-      return hLine;
+    while (defined(hLine = this.fetch())) {
+      if (defined(hLine.uobj)) {
+        // --- It's already been mapped
+        debug("return from Getter.get() - was mapped", hLine);
+        return hLine;
+      }
+      uobj = this.mapItem(hLine);
+      if (defined(uobj)) {
+        hLine.uobj = uobj;
+        debug("return from Getter.get() - newly mapped", hLine);
+        return hLine;
+      }
     }
-    debug("no cached hLine");
-    hLine = this.fetch();
-    debug("fetch() returned", hLine);
-    if (hLine === undef) {
-      debug("return from Getter.get() - at EOF", undef);
-      return undef;
-    }
-    uobj = hLine.uobj = this.mapItem(hLine);
-    if (uobj === undef) {
-      hLine = this.get(); // recursive call
-    }
-    debug("return from Getter.get()", hLine);
-    return hLine;
+    debug("return from Getter.get() - EOF", undef);
+    return undef;
   }
 
   // ..........................................................
@@ -151,69 +89,27 @@ export var Getter = class Getter extends Fetcher {
   }
 
   // ..........................................................
-  eof() {
+  peek() {
     var hLine;
-    debug("enter Getter.eof()");
-    if (nonEmpty(this.lCache)) {
-      debug("return from Getter.eof() - cache not empty", false);
-      return false;
-    }
-    hLine = this.fetch();
+    debug('enter Getter.peek()');
+    hLine = this.get();
     if (hLine === undef) {
-      debug("return from Getter.eof()", true);
-      return true;
+      debug("return from Getter.peek()", undef);
+      return undef;
     } else {
       this.unfetch(hLine);
-      debug("return from Getter.eof()", false);
-      return false;
+      debug("return from Getter.peek()", hLine);
+      return hLine;
     }
   }
 
   // ..........................................................
-  peek() {
-    var hLine, uobj;
-    debug('enter Getter.peek()');
-    // --- Any item in lCache that has uobj == undef has not
-    //     been mapped. lCache may contain such items, but if
-    //     they map to undef, they should be skipped
-    while (nonEmpty(this.lCache)) {
-      hLine = this.lCache[0];
-      assert(defined(hLine), "hLine (from cache) is undef");
-      if (defined(hLine.uobj)) {
-        debug("return cached item from Getter.peek()", hLine);
-        return hLine;
-      } else {
-        uobj = hLine.uobj = this.mapItem(hLine);
-        if (defined(uobj)) {
-          debug("return cached item from Getter.peek()", hLine);
-          return hLine;
-        } else {
-          this.lCache.shift(); // and continue loop
-        }
-      }
-    }
-    debug("no lookahead");
-    hLine = this.fetch();
-    if (hLine === undef) {
-      debug("return undef from Getter.peek() - at EOF");
-      return undef;
-    }
-    debug("fetch() returned", hLine);
-    // --- @lCache is currently empty
-    uobj = hLine.uobj = this.mapItem(hLine);
-    // --- @lCache might be non-empty now!!!
-
-    // --- if mapItem() returns undef, skip that item
-    if (uobj === undef) {
-      debug("mapItem() returned undef - recursive call");
-      hLine = this.peek(); // recursive call
-      debug("return from Getter.peek()", hLine);
-      return hLine;
-    }
-    debug("add to cache", hLine);
-    this.lCache.unshift(hLine);
-    debug("return from Getter.peek()", hLine);
-    return hLine;
+  eof() {
+    var result;
+    debug("enter Getter.eof()");
+    result = this.peek() === undef;
+    debug("return from Getter.eof()", result);
+    return result;
   }
 
   // ..........................................................

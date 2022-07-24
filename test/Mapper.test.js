@@ -389,24 +389,14 @@ meaning is 42`);
 abc
 #define meaning 42
 The meaning of life is __meaning__`);
-  simple.equal(351, result, `# - test.txt
-abc
+  simple.equal(351, result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
-  //        1. removes empty lines
-  //        2. recognizes '//' style comments and removes them
-  //        3. implements a '#for <args>' cmd that outputs '{#for <args>}'
+  //        1. recognizes '//' style comments and removes them
+  //        2. implements a '#for <args>' cmd that outputs '{#for <args>}'
   MyMapper = class MyMapper extends Mapper {
     isComment(line, hLine) {
       return line.match(/^\s*\/\//);
-    }
-
-    mapEmptyLine(hLine) {
-      return undef;
-    }
-
-    mapComment(hLine) {
-      return undef;
     }
 
     mapCmd(hLine) {

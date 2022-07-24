@@ -164,9 +164,8 @@ export var Mapper = class Mapper extends Getter {
 
   // ..........................................................
   mapComment(hLine) {
-    debug("in Mapper.mapComment()");
-    // --- return undef to remove comments
-    return hLine.line;
+    // --- return hLine.line to keep comments
+    return undef;
   }
 
   // ..........................................................

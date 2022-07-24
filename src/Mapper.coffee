@@ -35,9 +35,9 @@ export class Mapper extends Getter
 		@lSpecials = []    # checked in this order
 
 		# --- These must be bound to a specific object when called
-		@registerSpecialType 'empty', @isEmptyLine, @mapEmptyLine
+		@registerSpecialType 'empty',   @isEmptyLine, @mapEmptyLine
 		@registerSpecialType 'comment', @isComment, @mapComment
-		@registerSpecialType 'cmd', @isCmd, @mapCmd
+		@registerSpecialType 'cmd',     @isCmd, @mapCmd
 
 		debug "return from Mapper()"
 
@@ -162,10 +162,8 @@ export class Mapper extends Getter
 
 	mapComment: (hLine) ->
 
-		debug "in Mapper.mapComment()"
-
-		# --- return undef to remove comments
-		return hLine.line
+		# --- return hLine.line to keep comments
+		return undef
 
 	# ..........................................................
 	# --- mapCmd returns a mapped object, or

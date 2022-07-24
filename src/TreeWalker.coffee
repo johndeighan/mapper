@@ -5,7 +5,7 @@ import {
 	isString, isNumber, isEmpty, nonEmpty, isArray, isHash, isInteger,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
-import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
+import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
 	splitLine, indentLevel, indented, undented,
 	} from '@jdeighan/coffee-utils/indent'
@@ -21,8 +21,8 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 #      mapStr(str, srcLevel) - returns user object, default returns str
 #      mapCmd(hLine)
 #      beginWalk()
-#      visit(hLine, hUser, lStack)
-#      endVisit(hLine, hUser, lStack)
+#      visit(hNode, hUser, lStack)
+#      endVisit(hNode, hUser, lStack)
 #      endWalk() -
 
 export class TreeWalker extends Mapper
@@ -31,7 +31,35 @@ export class TreeWalker extends Mapper
 
 		super source, collection, hOptions
 
+		@hSpecialVisitTypes = {}
+
+		@registerVisitType 'empty',   @visitEmptyLine, @endVisitEmptyLine
+		@registerVisitType 'comment', @visitComment, @endVisitComment
+		@registerVisitType 'cmd',     @visitCmd, @endVisitCmd
+
 		@lMinuses = []   # used to adjust level in #ifdef and #ifndef
+
+	# ..........................................................
+
+	registerVisitType: (type, visiter, endVisiter) ->
+
+		@hSpecialVisitTypes[type] = {
+			visiter
+			endVisiter
+			}
+		return
+
+	# ..........................................................
+
+	visitSpecial: (type, hNode) ->
+
+		return @hSpecialVisitTypes[type].visiter.bind(this)(hNode)
+
+	# ..........................................................
+
+	endVisitSpecial: (type, hNode) ->
+
+		return @hSpecialVisitTypes[type].endVisiter.bind(this)(hNode)
 
 	# ..........................................................
 	# --- Should always return either:
@@ -350,10 +378,10 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visit: (hLine, hUser, lStack) ->
+	visit: (hNode, hUser, lStack) ->
 
-		debug "enter visit()", hLine, hUser, lStack
-		{uobj, level} = hLine
+		debug "enter visit()", hNode, hUser, lStack
+		{uobj, level} = hNode
 		assert isString(uobj), "uobj not a string"
 		result = indented(uobj, level)
 		debug "return from visit()", result
@@ -361,10 +389,46 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	endVisit:  (hLine, hUser, lStack) ->
+	endVisit:  (hNode, hUser, lStack) ->
 
-		debug "enter endVisit()", hLine, hUser, lStack
+		debug "enter endVisit()", hNode, hUser, lStack
 		debug "return undef from endVisit()"
+		return undef
+
+	# ..........................................................
+
+	visitEmptyLine: (hNode) ->
+
+		return undef
+
+	# ..........................................................
+
+	endVisitEmptyLine: (hNode) ->
+
+		return undef
+
+	# ..........................................................
+
+	visitComment: (hNode) ->
+
+		return undef
+
+	# ..........................................................
+
+	endVisitComment: (hNode) ->
+
+		return undef
+
+	# ..........................................................
+
+	visitCmd: (hNode) ->
+
+		return undef
+
+	# ..........................................................
+
+	endVisitCmd: (hNode) ->
+
 		return undef
 
 	# ..........................................................
@@ -415,12 +479,12 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	walk: (hOptions={}) ->
-		# --- Valid options: logLines
+		# --- Valid options: logNodes
 
 		debug "enter walk()"
 
 		# --- lStack is stack of node = {
-		#        hLine: {line, type, level, uobj}
+		#        hNode: {line, type, level, uobj}
 		#        hUser: {}
 		#        }
 		@lLines = []  # --- resulting lines - added via @addText()
@@ -432,34 +496,34 @@ export class TreeWalker extends Mapper
 
 		debug "getting lines"
 		i = 0
-		for hLine from @allMapped()
-			if hOptions.logLines
-				LOG "hLine[#{i}]", hLine
+		for hNode from @allMapped()
+			if hOptions.logNodes
+				log "hNode[#{i}]", hNode
 			else
-				debug "hLine", hLine
+				debug "hNode[#{i}]", hNode
 			i += 1
 
-			{level} = hLine
+			{level} = hNode
 			while (lStack.length > level)
 				node = lStack.pop()
 				debug "popped node", node
-				{hLine: hLine2, hUser: hUser2} = node
-				assert defined(hLine2), "hLine2 is undef"
-				if defined(text = @endVisit(hLine2, hUser2, lStack))
+				{hNode: hNode2, hUser: hUser2} = node
+				assert defined(hNode2), "hNode2 is undef"
+				if defined(text = @endVisit(hNode2, hUser2, lStack))
 					@addText text
 
 			# --- Create a user hash that the user can add to/modify
 			#     and will see again at endVisit
 			hUser = {}
-			if defined(text = @visit(hLine, hUser, lStack))
+			if defined(text = @visit(hNode, hUser, lStack))
 				@addText text
-			lStack.push {hLine, hUser}
+			lStack.push {hNode, hUser}
 
 		while (lStack.length > 0)
 			node = lStack.pop()
-			{hLine: hLine3, hUser: hUser3} = node
-			assert defined(hLine3), "hLine3 is undef"
-			if defined(text = @endVisit(hLine3, hUser3, lStack))
+			{hNode: hNode3, hUser: hUser3} = node
+			assert defined(hNode3), "hNode3 is undef"
+			if defined(text = @endVisit(hNode3, hUser3, lStack))
 				@addText text
 
 		if defined(text = @endWalk())
@@ -472,7 +536,7 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	getBlock: (hOptions={}) ->
-		# --- Valid options: logLines
+		# --- Valid options: logNodes
 
 		debug "enter getBlock()"
 		block = @walk(hOptions)

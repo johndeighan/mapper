@@ -23,6 +23,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
+  log,
   LOG,
   DEBUG
 } from '@jdeighan/coffee-utils/log';
@@ -54,17 +55,36 @@ import {
 //      mapStr(str, srcLevel) - returns user object, default returns str
 //      mapCmd(hLine)
 //      beginWalk()
-//      visit(hLine, hUser, lStack)
-//      endVisit(hLine, hUser, lStack)
+//      visit(hNode, hUser, lStack)
+//      endVisit(hNode, hUser, lStack)
 //      endWalk() -
 export var TreeWalker = class TreeWalker extends Mapper {
   constructor(source = undef, collection = undef, hOptions = {}) {
     super(source, collection, hOptions);
+    this.hSpecialVisitTypes = {};
+    this.registerVisitType('empty', this.visitEmptyLine, this.endVisitEmptyLine);
+    this.registerVisitType('comment', this.visitComment, this.endVisitComment);
+    this.registerVisitType('cmd', this.visitCmd, this.endVisitCmd);
     this.lMinuses = []; // used to adjust level in #ifdef and #ifndef
   }
 
   
     // ..........................................................
+  registerVisitType(type, visiter, endVisiter) {
+    this.hSpecialVisitTypes[type] = {visiter, endVisiter};
+  }
+
+  // ..........................................................
+  visitSpecial(type, hNode) {
+    return this.hSpecialVisitTypes[type].visiter.bind(this)(hNode);
+  }
+
+  // ..........................................................
+  endVisitSpecial(type, hNode) {
+    return this.hSpecialVisitTypes[type].endVisiter.bind(this)(hNode);
+  }
+
+  // ..........................................................
   // --- Should always return either:
   //        undef
   //        uobj - mapped object
@@ -374,10 +394,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visit(hLine, hUser, lStack) {
+  visit(hNode, hUser, lStack) {
     var level, result, uobj;
-    debug("enter visit()", hLine, hUser, lStack);
-    ({uobj, level} = hLine);
+    debug("enter visit()", hNode, hUser, lStack);
+    ({uobj, level} = hNode);
     assert(isString(uobj), "uobj not a string");
     result = indented(uobj, level);
     debug("return from visit()", result);
@@ -385,9 +405,39 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  endVisit(hLine, hUser, lStack) {
-    debug("enter endVisit()", hLine, hUser, lStack);
+  endVisit(hNode, hUser, lStack) {
+    debug("enter endVisit()", hNode, hUser, lStack);
     debug("return undef from endVisit()");
+    return undef;
+  }
+
+  // ..........................................................
+  visitEmptyLine(hNode) {
+    return undef;
+  }
+
+  // ..........................................................
+  endVisitEmptyLine(hNode) {
+    return undef;
+  }
+
+  // ..........................................................
+  visitComment(hNode) {
+    return undef;
+  }
+
+  // ..........................................................
+  endVisitComment(hNode) {
+    return undef;
+  }
+
+  // ..........................................................
+  visitCmd(hNode) {
+    return undef;
+  }
+
+  // ..........................................................
+  endVisitCmd(hNode) {
     return undef;
   }
 
@@ -438,11 +488,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   walk(hOptions = {}) {
-    var hLine, hLine2, hLine3, hUser, hUser2, hUser3, i, lStack, level, node, ref, result, text;
-    // --- Valid options: logLines
+    var hNode, hNode2, hNode3, hUser, hUser2, hUser3, i, lStack, level, node, ref, result, text;
+    // --- Valid options: logNodes
     debug("enter walk()");
     // --- lStack is stack of node = {
-    //        hLine: {line, type, level, uobj}
+    //        hNode: {line, type, level, uobj}
     //        hUser: {}
     //        }
     this.lLines = []; // --- resulting lines - added via @addText()
@@ -454,42 +504,42 @@ export var TreeWalker = class TreeWalker extends Mapper {
     debug("getting lines");
     i = 0;
     ref = this.allMapped();
-    for (hLine of ref) {
-      if (hOptions.logLines) {
-        LOG(`hLine[${i}]`, hLine);
+    for (hNode of ref) {
+      if (hOptions.logNodes) {
+        log(`hNode[${i}]`, hNode);
       } else {
-        debug("hLine", hLine);
+        debug(`hNode[${i}]`, hNode);
       }
       i += 1;
-      ({level} = hLine);
+      ({level} = hNode);
       while (lStack.length > level) {
         node = lStack.pop();
         debug("popped node", node);
         ({
-          hLine: hLine2,
+          hNode: hNode2,
           hUser: hUser2
         } = node);
-        assert(defined(hLine2), "hLine2 is undef");
-        if (defined(text = this.endVisit(hLine2, hUser2, lStack))) {
+        assert(defined(hNode2), "hNode2 is undef");
+        if (defined(text = this.endVisit(hNode2, hUser2, lStack))) {
           this.addText(text);
         }
       }
       // --- Create a user hash that the user can add to/modify
       //     and will see again at endVisit
       hUser = {};
-      if (defined(text = this.visit(hLine, hUser, lStack))) {
+      if (defined(text = this.visit(hNode, hUser, lStack))) {
         this.addText(text);
       }
-      lStack.push({hLine, hUser});
+      lStack.push({hNode, hUser});
     }
     while (lStack.length > 0) {
       node = lStack.pop();
       ({
-        hLine: hLine3,
+        hNode: hNode3,
         hUser: hUser3
       } = node);
-      assert(defined(hLine3), "hLine3 is undef");
-      if (defined(text = this.endVisit(hLine3, hUser3, lStack))) {
+      assert(defined(hNode3), "hNode3 is undef");
+      if (defined(text = this.endVisit(hNode3, hUser3, lStack))) {
         this.addText(text);
       }
     }
@@ -504,7 +554,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   getBlock(hOptions = {}) {
     var block, result;
-    // --- Valid options: logLines
+    // --- Valid options: logNodes
     debug("enter getBlock()");
     block = this.walk(hOptions);
     debug('block', block);

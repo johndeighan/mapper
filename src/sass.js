@@ -19,7 +19,7 @@ import {
 // ---------------------------------------------------------------------------
 export var SassMapper = class SassMapper extends Mapper {
   // --- only removes comments
-  handleComment() {
+  mapComment() {
     return undef;
   }
 

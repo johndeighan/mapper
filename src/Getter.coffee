@@ -51,7 +51,7 @@ export class Getter extends Fetcher
 				# --- It's already been mapped
 				debug "return from Getter.get() - was mapped", hLine
 				return hLine
-			uobj = @mapItem(hLine)
+			uobj = @mapLine(hLine)
 			if defined(uobj)
 				hLine.uobj = uobj
 				debug "return from Getter.get() - newly mapped", hLine
@@ -98,17 +98,17 @@ export class Getter extends Fetcher
 	#     sets key 'uobj' to a defined value if not returning undef
 	#     sets key 'type' if a special type
 
-	mapItem: (hLine) ->
+	mapLine: (hLine) ->
 
-		debug "enter Getter.mapItem()", hLine
+		debug "enter Getter.mapLine()", hLine
 		assert defined(hLine), "hLine is undef"
 
 		if defined(type = @getItemType(hLine))
-			debug "item type is #{type}"
+			debug "item type is #{OL(type)}"
 			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
 			hLine.type = type
-			uobj = @handleItemType(type, hLine)
-			debug "from handleItemType()", uobj
+			uobj = @mapItemType(type, hLine)
+			debug "from mapItemType()", uobj
 		else
 			debug "no special type"
 			{line, str, prefix} = hLine
@@ -129,10 +129,10 @@ export class Getter extends Fetcher
 			debug "from map()", uobj
 
 		if (uobj == undef)
-			debug "return from Getter.mapItem()", undef
+			debug "return from Getter.mapLine()", undef
 			return undef
 
-		debug "return from Getter.mapItem()", uobj
+		debug "return from Getter.mapLine()", uobj
 		return uobj
 
 	# ..........................................................
@@ -170,7 +170,7 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	handleItemType: (type, hLine) ->
+	mapItemType: (type, hLine) ->
 
 		return undef    # default - ignore any special item types
 

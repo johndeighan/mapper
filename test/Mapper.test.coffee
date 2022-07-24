@@ -362,9 +362,9 @@ simple = new UnitTester()
 	class MyMapper extends Mapper
 		isComment: (line, hLine) -> return line.match(///^ \s* \/ \/ ///)
 
-		handleEmptyLine: (hLine) -> return undef
-		handleComment: (hLine) -> return undef
-		handleCmd: (hLine) ->
+		mapEmptyLine: (hLine) -> return undef
+		mapComment: (hLine) -> return undef
+		mapCmd: (hLine) ->
 			{cmd, argstr, prefix} = hLine
 			if (cmd == 'for')
 				return "#{prefix}{#for #{argstr}}"
@@ -397,8 +397,8 @@ simple = new UnitTester()
 
 		isComment: (line, hLine) -> return line.match(/// \s* \/ \/ ///)
 
-		handleEmptyLine: (hLine) -> return undef
-		handleComment: (hLine) -> return undef
+		mapEmptyLine: (hLine) -> return undef
+		mapComment: (hLine) -> return undef
 		map: (hLine) ->
 			return hLine.line.length.toString()
 

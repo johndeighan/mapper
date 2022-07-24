@@ -167,7 +167,7 @@ expand = (qstr) ->
 
 export class CoffeePreProcessor extends Mapper
 
-	handleComment: (hLine) ->
+	mapComment: (hLine) ->
 		# --- Retain comments
 
 		return hLine.line

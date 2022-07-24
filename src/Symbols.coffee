@@ -130,8 +130,8 @@ class SymbolParser extends Mapper
 	# ..........................................................
 	# ignore empty lines and comments
 
-	handleEmptyLine: (hLine) -> return undef
-	handleComment:   (hLine) -> return undef
+	mapEmptyLine: (hLine) -> return undef
+	mapComment:   (hLine) -> return undef
 
 	# ..........................................................
 

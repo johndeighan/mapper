@@ -70,7 +70,7 @@ export var Getter = class Getter extends Fetcher {
         debug("return from Getter.get() - was mapped", hLine);
         return hLine;
       }
-      uobj = this.mapItem(hLine);
+      uobj = this.mapLine(hLine);
       if (defined(uobj)) {
         hLine.uobj = uobj;
         debug("return from Getter.get() - newly mapped", hLine);
@@ -116,16 +116,16 @@ export var Getter = class Getter extends Fetcher {
   // --- return of undef doesn't mean EOF, it means skip this item
   //     sets key 'uobj' to a defined value if not returning undef
   //     sets key 'type' if a special type
-  mapItem(hLine) {
+  mapLine(hLine) {
     var line, newline, newstr, prefix, str, type, uobj;
-    debug("enter Getter.mapItem()", hLine);
+    debug("enter Getter.mapLine()", hLine);
     assert(defined(hLine), "hLine is undef");
     if (defined(type = this.getItemType(hLine))) {
-      debug(`item type is ${type}`);
+      debug(`item type is ${OL(type)}`);
       assert(isString(type) && nonEmpty(type), `bad type: ${OL(type)}`);
       hLine.type = type;
-      uobj = this.handleItemType(type, hLine);
-      debug("from handleItemType()", uobj);
+      uobj = this.mapItemType(type, hLine);
+      debug("from mapItemType()", uobj);
     } else {
       debug("no special type");
       ({line, str, prefix} = hLine);
@@ -146,10 +146,10 @@ export var Getter = class Getter extends Fetcher {
       debug("from map()", uobj);
     }
     if (uobj === undef) {
-      debug("return from Getter.mapItem()", undef);
+      debug("return from Getter.mapLine()", undef);
       return undef;
     }
-    debug("return from Getter.mapItem()", uobj);
+    debug("return from Getter.mapLine()", uobj);
     return uobj;
   }
 
@@ -185,7 +185,7 @@ export var Getter = class Getter extends Fetcher {
 
   
     // ..........................................................
-  handleItemType(type, hLine) {
+  mapItemType(type, hLine) {
     return undef; // default - ignore any special item types
   }
 

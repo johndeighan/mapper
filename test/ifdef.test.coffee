@@ -76,7 +76,6 @@ tester.equal 68, """
 		END VISIT 0 'abc'
 		END WALK
 		"""
-# setDebugging 'handleCmd'
 tester.equal 79, """
 		abc
 		#ifndef NOPE

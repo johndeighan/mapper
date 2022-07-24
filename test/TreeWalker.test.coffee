@@ -174,9 +174,9 @@ addStdHereDocTypes()
 	class MyWalker extends TreeWalker
 
 		# --- This removes blank lines
-		handleEmptyLine: () ->
+		mapEmptyLine: () ->
 
-			debug "in MyWalker.handleEmptyLine()"
+			debug "in MyWalker.mapEmptyLine()"
 			return undef
 
 	# ..........................................................
@@ -220,7 +220,7 @@ addStdHereDocTypes()
 			# --- comments start with //
 			return line.match(///^ \s* \/ \/ ///)
 
-		handleComment: (line) ->
+		mapComment: (line) ->
 
 			# --- remove comments
 			return undef
@@ -277,7 +277,7 @@ addStdHereDocTypes()
 
 		# .......................................................
 
-		handleCmd: (hLine) ->
+		mapCmd: (hLine) ->
 
 			return "COMMAND: #{hLine.cmd}"
 
@@ -365,7 +365,7 @@ addStdHereDocTypes()
 	class MyWalker extends TreeWalker
 
 		# --- Remove blank lines PLUS the line following a blank line
-		handleEmptyLine: (hLine) ->
+		mapEmptyLine: (hLine) ->
 
 			follow = @fetch()
 			return undef    # remove empty lines

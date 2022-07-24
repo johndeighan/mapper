@@ -31,21 +31,22 @@ export class Mapper extends Getter
 		# --- This needs to be kept updated
 		@setConst 'LINE', @lineNum
 
-		# --- These must be bound to a specific object
-		#     when called
 		@hSpecials = {}
 		@lSpecials = []    # checked in this order
 
-		@addSpecial('empty', @isEmptyLine, @handleEmptyLine)
-		@addSpecial('comment', @isComment, @handleComment)
-		@addSpecial('cmd', @isCmd, @handleCmd)
+		# --- These must be bound to a specific object when called
+		@registerSpecialType 'empty', @isEmptyLine, @mapEmptyLine
+		@registerSpecialType 'comment', @isComment, @mapComment
+		@registerSpecialType 'cmd', @isCmd, @mapCmd
+
 		debug "return from Mapper()"
 
 	# ..........................................................
 
-	addSpecial: (type, recognizer, handler) ->
+	registerSpecialType: (type, recognizer, handler) ->
 
-		@lSpecials.push(type)
+		if ! @lSpecials.includes(type)
+			@lSpecials.push(type)
 		@hSpecials[type] = {
 			recognizer
 			handler
@@ -89,15 +90,17 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	handleItemType: (type, hLine) ->
+	mapItemType: (type, hLine) ->
 
-		debug "enter Mapper.handleItemType()", type, hLine
-		assert defined(hLine), "hLine is undef"
-		handler = @hSpecials[type].handler.bind(this)
-		assert isFunction(handler), "Unknown type #{OL(type)}"
-
+		debug "enter Mapper.mapItemType()", type, hLine
+		assert isHash(hLine), "hLine is #{OL(hLine)}"
+		assert (hLine.type == type), "hLine is #{OL(hLine)}"
+		h = @hSpecials[type]
+		assert isHash(h), "Unknown type #{OL(type)}"
+		handler = h.handler.bind(this)
+		assert isFunction(handler), "Bad handler for #{OL(type)}"
 		uobj = handler(hLine)
-		debug "return from Mapper.handleItemType()", uobj
+		debug "return from Mapper.mapItemType()", uobj
 		return uobj
 
 	# ..........................................................
@@ -148,7 +151,7 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	handleEmptyLine: (hLine) ->
+	mapEmptyLine: (hLine) ->
 		# --- can override
 		#     line may contain whitespace
 
@@ -157,22 +160,22 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	handleComment: (hLine) ->
+	mapComment: (hLine) ->
 
-		debug "in Mapper.handleComment()"
+		debug "in Mapper.mapComment()"
 
 		# --- return undef to remove comments
 		return hLine.line
 
 	# ..........................................................
-	# --- handleCmd returns a mapped object, or
+	# --- mapCmd returns a mapped object, or
 	#        undef to produce no output
 	# Override must 1st handle its own commands,
-	#    then call the base class handleCmd
+	#    then call the base class mapCmd
 
-	handleCmd: (hLine) ->
+	mapCmd: (hLine) ->
 
-		debug "enter Mapper.handleCmd()", hLine
+		debug "enter Mapper.mapCmd()", hLine
 
 		# --- isCmd() put these keys here
 		{cmd, argstr} = hLine
@@ -196,7 +199,7 @@ export class Mapper extends Getter
 						debug "set var #{name} to '#{tail}'"
 						@setConst name, tail
 
-				debug "return from Mapper.handleCmd()", undef
+				debug "return from Mapper.mapCmd()", undef
 				return undef
 
 			else

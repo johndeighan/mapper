@@ -179,7 +179,7 @@ expand = function(qstr) {
 
 // ---------------------------------------------------------------------------
 export var CoffeePreProcessor = class CoffeePreProcessor extends Mapper {
-  handleComment(hLine) {
+  mapComment(hLine) {
     // --- Retain comments
     return hLine.line;
   }

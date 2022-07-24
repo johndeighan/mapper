@@ -19,7 +19,7 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 #      - map() returns mapped item (i.e. uobj) or undef
 #   to use, override:
 #      mapStr(str, srcLevel) - returns user object, default returns str
-#      handleCmd(hLine)
+#      mapCmd(hLine)
 #      beginWalk()
 #      visit(hLine, hUser, lStack)
 #      endVisit(hLine, hUser, lStack)
@@ -176,24 +176,24 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	handleComment: (hLine) ->
+	mapComment: (hLine) ->
 
-		debug "enter TreeWalker.handleComment()", hLine
+		debug "enter TreeWalker.mapComment()", hLine
 		if @adjustLevel(hLine)
 			debug "hLine adjusted", hLine
 
 		{line, prefix, level, srcLevel} = hLine
 		debug "srcLevel = #{srcLevel}"
 
-		debug "return from TreeWalker.handleComment()", line
+		debug "return from TreeWalker.mapComment()", line
 		return line
 
 	# ..........................................................
 	# --- We define commands 'ifdef' and 'ifndef'
 
-	handleCmd: (hLine) ->
+	mapCmd: (hLine) ->
 
-		debug "enter TreeWalker.handleCmd()", hLine
+		debug "enter TreeWalker.mapCmd()", hLine
 		if @adjustLevel(hLine)
 			debug "hLine adjusted", hLine
 
@@ -215,13 +215,13 @@ export class TreeWalker extends Mapper
 				else
 					lSkipLines = @fetchLinesAtLevel(srcLevel+1)
 					debug "Skip #{lSkipLines.length} lines"
-				debug "return undef from TreeWalker.handleCmd()"
+				debug "return undef from TreeWalker.mapCmd()"
 				return undef
 
 		debug "call super"
 		item = super(hLine)
 
-		debug "return from TreeWalker.handleCmd()", item
+		debug "return from TreeWalker.mapCmd()", item
 		return item
 
 	# ..........................................................

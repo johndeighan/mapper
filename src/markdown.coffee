@@ -49,13 +49,13 @@ export class SimpleMarkDownMapper extends Mapper
 
 	# ..........................................................
 
-	handleEmptyLine: (hLine) ->
+	mapEmptyLine: (hLine) ->
 
 		return undef
 
 	# ..........................................................
 
-	handleComment: (hLine) ->
+	mapComment: (hLine) ->
 
 		return undef
 
@@ -63,7 +63,7 @@ export class SimpleMarkDownMapper extends Mapper
 
 	map: (hLine) ->
 
-		debug "enter SimpleMarkDownMapper.mapItem()", hLine
+		debug "enter SimpleMarkDownMapper.map()", hLine
 		assert defined(hLine), "hLine is undef"
 		{line} = hLine
 		assert isString(line), "line not a string"
@@ -71,7 +71,7 @@ export class SimpleMarkDownMapper extends Mapper
 			result = "<h1>#{@prevLine}</h1>"
 			debug "set prevLine to undef"
 			@prevLine = undef
-			debug "return from SimpleMarkDownMapper.mapItem()", result
+			debug "return from SimpleMarkDownMapper.map()", result
 			return result
 		else
 			result = @prevLine
@@ -79,10 +79,10 @@ export class SimpleMarkDownMapper extends Mapper
 			@prevLine = line
 			if defined(result)
 				result = "<p>#{result}</p>"
-				debug "return from SimpleMarkDownMapper.mapItem()", result
+				debug "return from SimpleMarkDownMapper.map()", result
 				return result
 			else
-				debug "return undef from SimpleMarkDownMapper.mapItem()"
+				debug "return undef from SimpleMarkDownMapper.map()"
 				return undef
 
 	# ..........................................................

@@ -12,7 +12,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 export class SassMapper extends Mapper
 	# --- only removes comments
 
-	handleComment: () ->
+	mapComment: () ->
 
 		return undef
 

@@ -168,11 +168,11 @@ SymbolParser = class SymbolParser extends Mapper {
 
   // ..........................................................
   // ignore empty lines and comments
-  handleEmptyLine(hLine) {
+  mapEmptyLine(hLine) {
     return undef;
   }
 
-  handleComment(hLine) {
+  mapComment(hLine) {
     return undef;
   }
 

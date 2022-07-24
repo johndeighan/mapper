@@ -193,8 +193,8 @@ def`);
   var MyTester, MyWalker, block, tester;
   MyWalker = class MyWalker extends TreeWalker {
     // --- This removes blank lines
-    handleEmptyLine() {
-      debug("in MyWalker.handleEmptyLine()");
+    mapEmptyLine() {
+      debug("in MyWalker.mapEmptyLine()");
       return undef;
     }
 
@@ -227,7 +227,7 @@ def`);
       return line.match(/^\s*\/\//);
     }
 
-    handleComment(line) {
+    mapComment(line) {
       // --- remove comments
       return undef;
     }
@@ -274,7 +274,7 @@ def`);
     }
 
     // .......................................................
-    handleCmd(hLine) {
+    mapCmd(hLine) {
       return `COMMAND: ${hLine.cmd}`;
     }
 
@@ -345,7 +345,7 @@ x`);
   var MyTester, MyWalker, tester;
   MyWalker = class MyWalker extends TreeWalker {
     // --- Remove blank lines PLUS the line following a blank line
-    handleEmptyLine(hLine) {
+    mapEmptyLine(hLine) {
       var follow;
       follow = this.fetch();
       return undef; // remove empty lines

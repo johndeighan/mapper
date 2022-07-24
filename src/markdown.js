@@ -76,19 +76,19 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
   }
 
   // ..........................................................
-  handleEmptyLine(hLine) {
+  mapEmptyLine(hLine) {
     return undef;
   }
 
   // ..........................................................
-  handleComment(hLine) {
+  mapComment(hLine) {
     return undef;
   }
 
   // ..........................................................
   map(hLine) {
     var line, result;
-    debug("enter SimpleMarkDownMapper.mapItem()", hLine);
+    debug("enter SimpleMarkDownMapper.map()", hLine);
     assert(defined(hLine), "hLine is undef");
     ({line} = hLine);
     assert(isString(line), "line not a string");
@@ -96,7 +96,7 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
       result = `<h1>${this.prevLine}</h1>`;
       debug("set prevLine to undef");
       this.prevLine = undef;
-      debug("return from SimpleMarkDownMapper.mapItem()", result);
+      debug("return from SimpleMarkDownMapper.map()", result);
       return result;
     } else {
       result = this.prevLine;
@@ -104,10 +104,10 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
       this.prevLine = line;
       if (defined(result)) {
         result = `<p>${result}</p>`;
-        debug("return from SimpleMarkDownMapper.mapItem()", result);
+        debug("return from SimpleMarkDownMapper.map()", result);
         return result;
       } else {
-        debug("return undef from SimpleMarkDownMapper.mapItem()");
+        debug("return undef from SimpleMarkDownMapper.map()");
         return undef;
       }
     }

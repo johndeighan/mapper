@@ -52,7 +52,7 @@ import {
 //      - map() returns mapped item (i.e. uobj) or undef
 //   to use, override:
 //      mapStr(str, srcLevel) - returns user object, default returns str
-//      handleCmd(hLine)
+//      mapCmd(hLine)
 //      beginWalk()
 //      visit(hLine, hUser, lStack)
 //      endVisit(hLine, hUser, lStack)
@@ -204,23 +204,23 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  handleComment(hLine) {
+  mapComment(hLine) {
     var level, line, prefix, srcLevel;
-    debug("enter TreeWalker.handleComment()", hLine);
+    debug("enter TreeWalker.mapComment()", hLine);
     if (this.adjustLevel(hLine)) {
       debug("hLine adjusted", hLine);
     }
     ({line, prefix, level, srcLevel} = hLine);
     debug(`srcLevel = ${srcLevel}`);
-    debug("return from TreeWalker.handleComment()", line);
+    debug("return from TreeWalker.mapComment()", line);
     return line;
   }
 
   // ..........................................................
   // --- We define commands 'ifdef' and 'ifndef'
-  handleCmd(hLine) {
+  mapCmd(hLine) {
     var argstr, cmd, isEnv, item, keep, lSkipLines, name, ok, prefix, srcLevel, value;
-    debug("enter TreeWalker.handleCmd()", hLine);
+    debug("enter TreeWalker.mapCmd()", hLine);
     if (this.adjustLevel(hLine)) {
       debug("hLine adjusted", hLine);
     }
@@ -243,12 +243,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
           lSkipLines = this.fetchLinesAtLevel(srcLevel + 1);
           debug(`Skip ${lSkipLines.length} lines`);
         }
-        debug("return undef from TreeWalker.handleCmd()");
+        debug("return undef from TreeWalker.mapCmd()");
         return undef;
     }
     debug("call super");
-    item = super.handleCmd(hLine);
-    debug("return from TreeWalker.handleCmd()", item);
+    item = super.mapCmd(hLine);
+    debug("return from TreeWalker.mapCmd()", item);
     return item;
   }
 

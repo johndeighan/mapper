@@ -51,19 +51,21 @@ export var Mapper = class Mapper extends Getter {
     this.setConst('DIR', this.hSourceInfo.dir);
     // --- This needs to be kept updated
     this.setConst('LINE', this.lineNum);
-    // --- These must be bound to a specific object
-    //     when called
     this.hSpecials = {};
     this.lSpecials = []; // checked in this order
-    this.addSpecial('empty', this.isEmptyLine, this.handleEmptyLine);
-    this.addSpecial('comment', this.isComment, this.handleComment);
-    this.addSpecial('cmd', this.isCmd, this.handleCmd);
+    
+    // --- These must be bound to a specific object when called
+    this.registerSpecialType('empty', this.isEmptyLine, this.mapEmptyLine);
+    this.registerSpecialType('comment', this.isComment, this.mapComment);
+    this.registerSpecialType('cmd', this.isCmd, this.mapCmd);
     debug("return from Mapper()");
   }
 
   // ..........................................................
-  addSpecial(type, recognizer, handler) {
-    this.lSpecials.push(type);
+  registerSpecialType(type, recognizer, handler) {
+    if (!this.lSpecials.includes(type)) {
+      this.lSpecials.push(type);
+    }
     this.hSpecials[type] = {recognizer, handler};
   }
 
@@ -102,14 +104,17 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  handleItemType(type, hLine) {
-    var handler, uobj;
-    debug("enter Mapper.handleItemType()", type, hLine);
-    assert(defined(hLine), "hLine is undef");
-    handler = this.hSpecials[type].handler.bind(this);
-    assert(isFunction(handler), `Unknown type ${OL(type)}`);
+  mapItemType(type, hLine) {
+    var h, handler, uobj;
+    debug("enter Mapper.mapItemType()", type, hLine);
+    assert(isHash(hLine), `hLine is ${OL(hLine)}`);
+    assert(hLine.type === type, `hLine is ${OL(hLine)}`);
+    h = this.hSpecials[type];
+    assert(isHash(h), `Unknown type ${OL(type)}`);
+    handler = h.handler.bind(this);
+    assert(isFunction(handler), `Bad handler for ${OL(type)}`);
     uobj = handler(hLine);
-    debug("return from Mapper.handleItemType()", uobj);
+    debug("return from Mapper.mapItemType()", uobj);
     return uobj;
   }
 
@@ -149,7 +154,7 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  handleEmptyLine(hLine) {
+  mapEmptyLine(hLine) {
     // --- can override
     //     line may contain whitespace
 
@@ -158,20 +163,20 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  handleComment(hLine) {
-    debug("in Mapper.handleComment()");
+  mapComment(hLine) {
+    debug("in Mapper.mapComment()");
     // --- return undef to remove comments
     return hLine.line;
   }
 
   // ..........................................................
-  // --- handleCmd returns a mapped object, or
+  // --- mapCmd returns a mapped object, or
   //        undef to produce no output
   // Override must 1st handle its own commands,
-  //    then call the base class handleCmd
-  handleCmd(hLine) {
+  //    then call the base class mapCmd
+  mapCmd(hLine) {
     var _, argstr, cmd, isEnv, lMatches, name, tail;
-    debug("enter Mapper.handleCmd()", hLine);
+    debug("enter Mapper.mapCmd()", hLine);
     // --- isCmd() put these keys here
     ({cmd, argstr} = hLine);
     // --- Each case should return
@@ -190,7 +195,7 @@ export var Mapper = class Mapper extends Getter {
             this.setConst(name, tail);
           }
         }
-        debug("return from Mapper.handleCmd()", undef);
+        debug("return from Mapper.mapCmd()", undef);
         return undef;
       default:
         croak(`Unknown command: #${cmd}`);

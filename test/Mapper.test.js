@@ -401,21 +401,21 @@ The meaning of life is 42`);
       return line.match(/^\s*\/\//);
     }
 
-    handleEmptyLine(hLine) {
+    mapEmptyLine(hLine) {
       return undef;
     }
 
-    handleComment(hLine) {
+    mapComment(hLine) {
       return undef;
     }
 
-    handleCmd(hLine) {
+    mapCmd(hLine) {
       var argstr, cmd, prefix;
       ({cmd, argstr, prefix} = hLine);
       if (cmd === 'for') {
         return `${prefix}{#for ${argstr}}`;
       } else {
-        return super.handleCmd(hLine);
+        return super.mapCmd(hLine);
       }
     }
 
@@ -440,11 +440,11 @@ The meaning of life is 42
       return line.match(/\s*\/\//);
     }
 
-    handleEmptyLine(hLine) {
+    mapEmptyLine(hLine) {
       return undef;
     }
 
-    handleComment(hLine) {
+    mapComment(hLine) {
       return undef;
     }
 

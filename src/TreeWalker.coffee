@@ -2,7 +2,8 @@
 
 import {
 	assert, undef, pass, croak, defined, OL, rtrim, words,
-	isString, isNumber, isEmpty, nonEmpty, isArray, isHash, isInteger,
+	isString, isNumber, isFunction, isArray, isHash, isInteger,
+	isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
@@ -34,8 +35,8 @@ export class TreeWalker extends Mapper
 		@hSpecialVisitTypes = {}
 
 		@registerVisitType 'empty',   @visitEmptyLine, @endVisitEmptyLine
-		@registerVisitType 'comment', @visitComment, @endVisitComment
-		@registerVisitType 'cmd',     @visitCmd, @endVisitCmd
+		@registerVisitType 'comment', @visitComment,   @endVisitComment
+		@registerVisitType 'cmd',     @visitCmd,       @endVisitCmd
 
 		@lMinuses = []   # used to adjust level in #ifdef and #ifndef
 
@@ -51,15 +52,11 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visitSpecial: (type, hNode) ->
+	mapLine: (hLine) ->
 
-		return @hSpecialVisitTypes[type].visiter.bind(this)(hNode)
-
-	# ..........................................................
-
-	endVisitSpecial: (type, hNode) ->
-
-		return @hSpecialVisitTypes[type].endVisiter.bind(this)(hNode)
+		if @adjustLevel(hLine)
+			debug "hLine.level adjusted", hLine
+		return super(hLine)
 
 	# ..........................................................
 	# --- Should always return either:
@@ -77,8 +74,6 @@ export class TreeWalker extends Mapper
 		#           If not, the level defaults to 0
 
 		debug "enter TreeWalker.map()", hLine
-		if @adjustLevel(hLine)
-			debug "hLine adjusted", hLine
 
 		{line, prefix, str, level, srcLevel} = hLine
 
@@ -203,27 +198,11 @@ export class TreeWalker extends Mapper
 		return (str == '.')
 
 	# ..........................................................
-
-	mapComment: (hLine) ->
-
-		debug "enter TreeWalker.mapComment()", hLine
-		if @adjustLevel(hLine)
-			debug "hLine adjusted", hLine
-
-		{line, prefix, level, srcLevel} = hLine
-		debug "srcLevel = #{srcLevel}"
-
-		debug "return from TreeWalker.mapComment()", line
-		return line
-
-	# ..........................................................
 	# --- We define commands 'ifdef' and 'ifndef'
 
 	mapCmd: (hLine) ->
 
 		debug "enter TreeWalker.mapCmd()", hLine
-		if @adjustLevel(hLine)
-			debug "hLine adjusted", hLine
 
 		{cmd, argstr, prefix, srcLevel} = hLine
 		debug "srcLevel = #{srcLevel}"
@@ -372,7 +351,7 @@ export class TreeWalker extends Mapper
 	# ========================================================================
 	# --- override these for tree walking
 
-	beginWalk: () ->
+	beginWalk: (lStack) ->
 
 		return undef
 
@@ -397,44 +376,51 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visitEmptyLine: (hNode) ->
+	visitEmptyLine: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.visitEmptyLine()"
 		return undef
 
 	# ..........................................................
 
-	endVisitEmptyLine: (hNode) ->
+	endVisitEmptyLine: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.endVisitEmptyLine()"
 		return undef
 
 	# ..........................................................
 
-	visitComment: (hNode) ->
+	visitComment: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.visitComment()"
 		return undef
 
 	# ..........................................................
 
-	endVisitComment: (hNode) ->
+	endVisitComment: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.endVisitComment()"
 		return undef
 
 	# ..........................................................
 
-	visitCmd: (hNode) ->
+	visitCmd: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.visitCmd()"
 		return undef
 
 	# ..........................................................
 
-	endVisitCmd: (hNode) ->
+	endVisitCmd: (hNode, hUser, lStack) ->
 
+		debug "in TreeWalker.endVisitCmd()"
 		return undef
 
 	# ..........................................................
 
-	endWalk: () ->
+	endWalk: (lStack) ->
 
+		debug "in TreeWalker.endVisitCmd()"
 		return undef
 
 	# ..........................................................
@@ -472,6 +458,7 @@ export class TreeWalker extends Mapper
 			debug "text is an array"
 			@lLines.push text...
 		else
+			debug "add text #{OL(text)}"
 			@lLines.push text
 		debug "return from addText()"
 		return
@@ -491,47 +478,101 @@ export class TreeWalker extends Mapper
 		lStack = []
 
 		debug "begin walk"
-		if defined(text = @beginWalk())
+		if defined(text = @beginWalk(lStack))
 			@addText(text)
 
 		debug "getting lines"
 		i = 0
 		for hNode from @allMapped()
 			if hOptions.logNodes
-				log "hNode[#{i}]", hNode
+				LOG "hNode[#{i}]", hNode
 			else
 				debug "hNode[#{i}]", hNode
 			i += 1
 
 			{level} = hNode
 			while (lStack.length > level)
-				node = lStack.pop()
-				debug "popped node", node
-				{hNode: hNode2, hUser: hUser2} = node
-				assert defined(hNode2), "hNode2 is undef"
-				if defined(text = @endVisit(hNode2, hUser2, lStack))
-					@addText text
+				@endVisitNode lStack
 
-			# --- Create a user hash that the user can add to/modify
-			#     and will see again at endVisit
-			hUser = {}
-			if defined(text = @visit(hNode, hUser, lStack))
-				@addText text
-			lStack.push {hNode, hUser}
+			@visitNode hNode, lStack
 
 		while (lStack.length > 0)
-			node = lStack.pop()
-			{hNode: hNode3, hUser: hUser3} = node
-			assert defined(hNode3), "hNode3 is undef"
-			if defined(text = @endVisit(hNode3, hUser3, lStack))
-				@addText text
+			@endVisitNode lStack
 
-		if defined(text = @endWalk())
+		if defined(text = @endWalk(lStack))
 			@addText text
-		result = arrayToBlock(@lLines)
+
+		if nonEmpty(@lLines)
+			result = arrayToBlock(@lLines)
+		else
+			result = ''
 
 		debug "return from walk()", result
 		return result
+
+	# ..........................................................
+
+	visitNode: (hNode, lStack) ->
+
+		debug "enter visitNode()", hNode, lStack
+
+		# --- Create a user hash that the user can add to/modify
+		#     and will see again at endVisit
+		hUser = {}
+
+		if (type = hNode.type)
+			debug "type = #{type}"
+			text = @visitSpecial(type, hNode, hUser, lStack)
+		else
+			debug "no type"
+			text = @visit(hNode, hUser, lStack)
+
+		if defined(text)
+			@addText text
+
+		lStack.push {hNode, hUser}
+		debug "return from visitNode()"
+		return
+
+	# ..........................................................
+
+	endVisitNode: (lStack) ->
+
+		debug "enter endVisitNode()", lStack
+		assert nonEmpty(lStack), "stack is empty"
+		{hNode, hUser} = lStack.pop()
+
+		if (type = hNode.type)
+			text = @endVisitSpecial(type, hNode, hUser, lStack)
+		else
+			text = @endVisit(hNode, hUser, lStack)
+
+		if defined(text)
+			@addText text
+
+		debug "return from endVisitNode()"
+		return
+
+	# ..........................................................
+
+	visitSpecial: (type, hNode, hUser, lStack) ->
+
+		debug "enter TreeWalker.visitSpecial()",
+				type, hNode, hUser, lStack
+		visiter = @hSpecialVisitTypes[type].visiter
+		assert defined(visiter), "No such type: #{OL(type)}"
+		func = visiter.bind(this)
+		assert isFunction(func), "not a function"
+		result = func(hNode, hUser, lStack)
+		debug "return from TreeWalker.visitSpecial()", result
+		return result
+
+	# ..........................................................
+
+	endVisitSpecial: (type, hNode, hUser, lStack) ->
+
+		func = @hSpecialVisitTypes[type].endVisiter.bind(this)
+		return func(hNode, hUser, lStack)
 
 	# ..........................................................
 

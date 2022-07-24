@@ -1,6 +1,6 @@
 # ifdef.test.coffee
 
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {
 	assert, croak, undef, pass, OL, defined,
 	isEmpty, nonEmpty, isString,
@@ -19,8 +19,6 @@ import {doMap} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 import {TraceWalker} from '@jdeighan/mapper/trace'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
-
-simple = new UnitTester()
 
 class WalkTester extends UnitTester
 

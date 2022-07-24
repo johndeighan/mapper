@@ -11,11 +11,12 @@ import {
   words,
   isString,
   isNumber,
-  isEmpty,
-  nonEmpty,
+  isFunction,
   isArray,
   isHash,
-  isInteger
+  isInteger,
+  isEmpty,
+  nonEmpty
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -75,13 +76,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visitSpecial(type, hNode) {
-    return this.hSpecialVisitTypes[type].visiter.bind(this)(hNode);
-  }
-
-  // ..........................................................
-  endVisitSpecial(type, hNode) {
-    return this.hSpecialVisitTypes[type].endVisiter.bind(this)(hNode);
+  mapLine(hLine) {
+    if (this.adjustLevel(hLine)) {
+      debug("hLine.level adjusted", hLine);
+    }
+    return super.mapLine(hLine);
   }
 
   // ..........................................................
@@ -99,9 +98,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
     //           the objects being iterated should have a level key
     //           If not, the level defaults to 0
     debug("enter TreeWalker.map()", hLine);
-    if (this.adjustLevel(hLine)) {
-      debug("hLine adjusted", hLine);
-    }
     ({line, prefix, str, level, srcLevel} = hLine);
     if (!isString(line)) {
       // --- may return undef
@@ -224,26 +220,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  mapComment(hLine) {
-    var level, line, prefix, srcLevel;
-    debug("enter TreeWalker.mapComment()", hLine);
-    if (this.adjustLevel(hLine)) {
-      debug("hLine adjusted", hLine);
-    }
-    ({line, prefix, level, srcLevel} = hLine);
-    debug(`srcLevel = ${srcLevel}`);
-    debug("return from TreeWalker.mapComment()", line);
-    return line;
-  }
-
-  // ..........................................................
   // --- We define commands 'ifdef' and 'ifndef'
   mapCmd(hLine) {
     var argstr, cmd, isEnv, item, keep, lSkipLines, name, ok, prefix, srcLevel, value;
     debug("enter TreeWalker.mapCmd()", hLine);
-    if (this.adjustLevel(hLine)) {
-      debug("hLine adjusted", hLine);
-    }
     ({cmd, argstr, prefix, srcLevel} = hLine);
     debug(`srcLevel = ${srcLevel}`);
     // --- Handle our commands, returning if found
@@ -389,7 +369,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ========================================================================
   // --- override these for tree walking
-  beginWalk() {
+  beginWalk(lStack) {
     return undef;
   }
 
@@ -412,37 +392,44 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visitEmptyLine(hNode) {
+  visitEmptyLine(hNode, hUser, lStack) {
+    debug("in TreeWalker.visitEmptyLine()");
     return undef;
   }
 
   // ..........................................................
-  endVisitEmptyLine(hNode) {
+  endVisitEmptyLine(hNode, hUser, lStack) {
+    debug("in TreeWalker.endVisitEmptyLine()");
     return undef;
   }
 
   // ..........................................................
-  visitComment(hNode) {
+  visitComment(hNode, hUser, lStack) {
+    debug("in TreeWalker.visitComment()");
     return undef;
   }
 
   // ..........................................................
-  endVisitComment(hNode) {
+  endVisitComment(hNode, hUser, lStack) {
+    debug("in TreeWalker.endVisitComment()");
     return undef;
   }
 
   // ..........................................................
-  visitCmd(hNode) {
+  visitCmd(hNode, hUser, lStack) {
+    debug("in TreeWalker.visitCmd()");
     return undef;
   }
 
   // ..........................................................
-  endVisitCmd(hNode) {
+  endVisitCmd(hNode, hUser, lStack) {
+    debug("in TreeWalker.endVisitCmd()");
     return undef;
   }
 
   // ..........................................................
-  endWalk() {
+  endWalk(lStack) {
+    debug("in TreeWalker.endVisitCmd()");
     return undef;
   }
 
@@ -481,6 +468,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
       debug("text is an array");
       this.lLines.push(...text);
     } else {
+      debug(`add text ${OL(text)}`);
       this.lLines.push(text);
     }
     debug("return from addText()");
@@ -488,7 +476,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   walk(hOptions = {}) {
-    var hNode, hNode2, hNode3, hUser, hUser2, hUser3, i, lStack, level, node, ref, result, text;
+    var hNode, i, lStack, level, ref, result, text;
     // --- Valid options: logNodes
     debug("enter walk()");
     // --- lStack is stack of node = {
@@ -498,7 +486,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     this.lLines = []; // --- resulting lines - added via @addText()
     lStack = [];
     debug("begin walk");
-    if (defined(text = this.beginWalk())) {
+    if (defined(text = this.beginWalk(lStack))) {
       this.addText(text);
     }
     debug("getting lines");
@@ -506,49 +494,88 @@ export var TreeWalker = class TreeWalker extends Mapper {
     ref = this.allMapped();
     for (hNode of ref) {
       if (hOptions.logNodes) {
-        log(`hNode[${i}]`, hNode);
+        LOG(`hNode[${i}]`, hNode);
       } else {
         debug(`hNode[${i}]`, hNode);
       }
       i += 1;
       ({level} = hNode);
       while (lStack.length > level) {
-        node = lStack.pop();
-        debug("popped node", node);
-        ({
-          hNode: hNode2,
-          hUser: hUser2
-        } = node);
-        assert(defined(hNode2), "hNode2 is undef");
-        if (defined(text = this.endVisit(hNode2, hUser2, lStack))) {
-          this.addText(text);
-        }
+        this.endVisitNode(lStack);
       }
-      // --- Create a user hash that the user can add to/modify
-      //     and will see again at endVisit
-      hUser = {};
-      if (defined(text = this.visit(hNode, hUser, lStack))) {
-        this.addText(text);
-      }
-      lStack.push({hNode, hUser});
+      this.visitNode(hNode, lStack);
     }
     while (lStack.length > 0) {
-      node = lStack.pop();
-      ({
-        hNode: hNode3,
-        hUser: hUser3
-      } = node);
-      assert(defined(hNode3), "hNode3 is undef");
-      if (defined(text = this.endVisit(hNode3, hUser3, lStack))) {
-        this.addText(text);
-      }
+      this.endVisitNode(lStack);
     }
-    if (defined(text = this.endWalk())) {
+    if (defined(text = this.endWalk(lStack))) {
       this.addText(text);
     }
-    result = arrayToBlock(this.lLines);
+    if (nonEmpty(this.lLines)) {
+      result = arrayToBlock(this.lLines);
+    } else {
+      result = '';
+    }
     debug("return from walk()", result);
     return result;
+  }
+
+  // ..........................................................
+  visitNode(hNode, lStack) {
+    var hUser, text, type;
+    debug("enter visitNode()", hNode, lStack);
+    // --- Create a user hash that the user can add to/modify
+    //     and will see again at endVisit
+    hUser = {};
+    if ((type = hNode.type)) {
+      debug(`type = ${type}`);
+      text = this.visitSpecial(type, hNode, hUser, lStack);
+    } else {
+      debug("no type");
+      text = this.visit(hNode, hUser, lStack);
+    }
+    if (defined(text)) {
+      this.addText(text);
+    }
+    lStack.push({hNode, hUser});
+    debug("return from visitNode()");
+  }
+
+  // ..........................................................
+  endVisitNode(lStack) {
+    var hNode, hUser, text, type;
+    debug("enter endVisitNode()", lStack);
+    assert(nonEmpty(lStack), "stack is empty");
+    ({hNode, hUser} = lStack.pop());
+    if ((type = hNode.type)) {
+      text = this.endVisitSpecial(type, hNode, hUser, lStack);
+    } else {
+      text = this.endVisit(hNode, hUser, lStack);
+    }
+    if (defined(text)) {
+      this.addText(text);
+    }
+    debug("return from endVisitNode()");
+  }
+
+  // ..........................................................
+  visitSpecial(type, hNode, hUser, lStack) {
+    var func, result, visiter;
+    debug("enter TreeWalker.visitSpecial()", type, hNode, hUser, lStack);
+    visiter = this.hSpecialVisitTypes[type].visiter;
+    assert(defined(visiter), `No such type: ${OL(type)}`);
+    func = visiter.bind(this);
+    assert(isFunction(func), "not a function");
+    result = func(hNode, hUser, lStack);
+    debug("return from TreeWalker.visitSpecial()", result);
+    return result;
+  }
+
+  // ..........................................................
+  endVisitSpecial(type, hNode, hUser, lStack) {
+    var func;
+    func = this.hSpecialVisitTypes[type].endVisiter.bind(this);
+    return func(hNode, hUser, lStack);
   }
 
   // ..........................................................

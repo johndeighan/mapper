@@ -178,7 +178,6 @@ export var Mapper = class Mapper extends Getter {
     debug("enter Mapper.mapCmd()", hLine);
     // --- isCmd() put these keys here
     ({cmd, argstr} = hLine);
-    // --- Each case should return
     switch (cmd) {
       case 'define':
         if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
@@ -194,12 +193,9 @@ export var Mapper = class Mapper extends Getter {
             this.setConst(name, tail);
           }
         }
-        debug("return from Mapper.mapCmd()", undef);
-        return undef;
-      default:
-        croak(`Unknown command: #${cmd}`);
     }
-    return croak("Not all cases return");
+    debug("return from Mapper.mapCmd()", undef);
+    return undef;
   }
 
 };

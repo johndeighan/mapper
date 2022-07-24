@@ -67,8 +67,6 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
-			VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-			END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 			VISIT     0 'abc'
 			VISIT     1 'def'
 			END VISIT 1 'def'
@@ -83,8 +81,6 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
-			VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-			END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 			VISIT     0 'abc'
 			END VISIT 0 'abc'
 			END WALK
@@ -96,8 +92,6 @@ simple = new UnitTester()
 					def
 			""", """
 			BEGIN WALK
-			VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-			END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 			VISIT     0 'abc˳def'
 			END VISIT 0 'abc˳def'
 			END WALK

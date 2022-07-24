@@ -36,13 +36,12 @@ addStdHereDocTypes()
 	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
-	# --- test retaining comments
+	# --- test removing comments
 
 	tester.equal 41, """
 			# --- a comment
 			y = x
 			""", """
-			# --- a comment
 			y = x
 			"""
 
@@ -291,7 +290,6 @@ addStdHereDocTypes()
 	simple.equal 291, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
-			// --- temp.cielo
 			if (fs.existsSync('file.txt')) {
 			  logger("file exists");
 			}

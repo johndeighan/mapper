@@ -25,25 +25,31 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
   }
 
   // ..........................................................
-  visit(hLine, hUser, lStack) {
-    var level, type, uobj;
-    ({uobj, level, type} = hLine);
-    if (defined(type)) {
-      this.lTrace.push(`VISIT     ${level} ${OL(uobj)} (${type})`);
-    } else {
-      this.lTrace.push(`VISIT     ${level} ${OL(uobj)}`);
-    }
+  visit(hNode, hUser, lStack) {
+    var level, uobj;
+    ({uobj, level} = hNode);
+    this.lTrace.push(`VISIT     ${level} ${OL(uobj)}`);
   }
 
   // ..........................................................
-  endVisit(hLine, hUser, lStack) {
-    var level, type, uobj;
-    ({uobj, level, type} = hLine);
-    if (defined(type)) {
-      this.lTrace.push(`END VISIT ${level} ${OL(uobj)} (${type})`);
-    } else {
-      this.lTrace.push(`END VISIT ${level} ${OL(uobj)}`);
-    }
+  endVisit(hNode, hUser, lStack) {
+    var level, uobj;
+    ({uobj, level} = hNode);
+    this.lTrace.push(`END VISIT ${level} ${OL(uobj)}`);
+  }
+
+  // ..........................................................
+  visitSpecial(type, hNode, hUser, lStack) {
+    var level, uobj;
+    ({uobj, level} = hNode);
+    this.lTrace.push(`VISIT     ${level} ${OL(uobj)} (${type})`);
+  }
+
+  // ..........................................................
+  endVisitSpecial(type, hNode, hUser, lStack) {
+    var level, uobj;
+    ({uobj, level} = hNode);
+    this.lTrace.push(`END VISIT ${level} ${OL(uobj)} (${type})`);
   }
 
   // ..........................................................
@@ -56,5 +62,3 @@ export var TraceWalker = class TraceWalker extends TreeWalker {
   }
 
 };
-
-// ---------------------------------------------------------------------------

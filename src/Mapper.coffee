@@ -178,7 +178,6 @@ export class Mapper extends Getter
 		# --- isCmd() put these keys here
 		{cmd, argstr} = hLine
 
-		# --- Each case should return
 		switch cmd
 
 			when 'define'
@@ -197,13 +196,8 @@ export class Mapper extends Getter
 						debug "set var #{name} to '#{tail}'"
 						@setConst name, tail
 
-				debug "return from Mapper.mapCmd()", undef
-				return undef
-
-			else
-				croak "Unknown command: ##{cmd}"
-
-		croak "Not all cases return"
+		debug "return from Mapper.mapCmd()", undef
+		return undef
 
 # ===========================================================================
 

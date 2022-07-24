@@ -25,7 +25,7 @@ addStdHereDocTypes()
 
 ###
 	class TreeWalker should handle the following:
-		- remove empty lines, retain comments
+		- remove empty linesand comments
 		- extension lines
 		- can override @mapStr() - used in @getAll()
 		- call @walk() to walk the tree
@@ -44,32 +44,32 @@ addStdHereDocTypes()
 					ghi
 			""")
 
-	simple.like 48, walker.get(), {
+	simple.like 47, walker.get(), {
 		line:  '# --- a comment'
 		prefix: ''
 		str:  '# --- a comment'
 		level: 0
 		type:  'comment'
 		}
-	simple.like 55, walker.get(), {
+	simple.like 54, walker.get(), {
 		line:  'abc'
 		prefix: ''
 		str:  'abc'
 		level: 0
 		}
-	simple.like 61, walker.get(), {
+	simple.like 60, walker.get(), {
 		line:  '\tdef'
 		prefix: '\t'
 		str:  'def'
 		level: 1
 		}
-	simple.like 67, walker.get(), {
+	simple.like 66, walker.get(), {
 		line:  '\t\tghi'
 		prefix: '\t\t'
 		str:  'ghi'
 		level: 2
 		}
-	simple.equal 73, walker.get(), undef
+	simple.equal 72, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -86,19 +86,19 @@ addStdHereDocTypes()
 
 	# --- get() should return {uobj, level}
 
-	simple.like 90, walker.get(), {
+	simple.like 89, walker.get(), {
 		line:   'abc def'
 		prefix: ''
 		str: 'abc def'
 		level: 0
 		}
-	simple.like 96, walker.get(), {
+	simple.like 95, walker.get(), {
 		line:   '\tghi'
 		prefix: '\t'
 		str: 'ghi'
 		level: 1
 		}
-	simple.equal 102, walker.get(), undef
+	simple.equal 101, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -115,23 +115,23 @@ addStdHereDocTypes()
 
 	# --- get() should return {uobj, level}
 
-	simple.like 119, walker.get(), {
+	simple.like 118, walker.get(), {
 		level: 0
 		str:   'abc def'
 		}
-	simple.like 123, walker.get(), {
+	simple.like 122, walker.get(), {
 		level: 1
 		str:   'ghi'
 		}
-	simple.like 127, walker.get(), {
+	simple.like 126, walker.get(), {
 		level: 1
 		str:   '__END__'
 		}
-	simple.like 131, walker.get(), {
+	simple.like 130, walker.get(), {
 		level: 2
 		str:   'ghi'
 		}
-	simple.equal 135, walker.get(), undef
+	simple.equal 134, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ addStdHereDocTypes()
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	tester.equal 153, """
+	tester.equal 152, """
 			abc
 			def
 			""", """
@@ -157,7 +157,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 161, """
+	tester.equal 160, """
 			abc
 
 			def
@@ -197,12 +197,12 @@ addStdHereDocTypes()
 			def
 			"""
 
-	simple.equal 201, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 200, doMap(MyWalker, import.meta.url, block), """
 			abc
 			def
 			"""
 
-	tester.equal 206, block, """
+	tester.equal 205, block, """
 			abc
 			def
 			"""
@@ -245,13 +245,13 @@ addStdHereDocTypes()
 			def
 			"""
 
-	simple.equal 249, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 248, doMap(MyWalker, import.meta.url, block), """
 			# not a comment
 			abc
 			def
 			"""
 
-	tester.equal 255, block, """
+	tester.equal 254, block, """
 			# not a comment
 			abc
 			def
@@ -279,7 +279,19 @@ addStdHereDocTypes()
 
 		mapCmd: (hLine) ->
 
-			return "COMMAND: #{hLine.cmd}"
+			# --- NOTE: this disables handling all commands,
+			#           i.e. #define, etc.
+			# --- Returning any non-undef value prevents discarding hLine
+			return ''
+
+		# .......................................................
+
+		visitCmd: (hLine) ->
+
+			debug "enter MyWalker.visitCmd()"
+			result = "COMMAND: #{hLine.cmd}"
+			debug "return from MyWalker.visitCmd()", result
+			return result
 
 	# ..........................................................
 
@@ -293,15 +305,14 @@ addStdHereDocTypes()
 	# ..........................................................
 
 	block = """
-			# don't remove this
+			# remove this
 
 			abc
 			- command
 			def
 			"""
 
-	tester.equal 309, block, """
-			# don't remove this
+	tester.equal 306, block, """
 			abc
 			COMMAND: command
 			def
@@ -344,7 +355,7 @@ addStdHereDocTypes()
 
 	# ..........................................................
 
-	tester.equal 353, """
+	tester.equal 349, """
 			abc
 				def
 
@@ -382,7 +393,7 @@ addStdHereDocTypes()
 
 	# ..........................................................
 
-	tester.equal 391, """
+	tester.equal 387, """
 			abc
 
 			def
@@ -408,7 +419,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.equal 417, """
+	tester.equal 413, """
 			abc
 				#include title.md
 			def
@@ -437,7 +448,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.like 446, """
+	tester.like 442, """
 			abc
 				def
 					ghi
@@ -473,23 +484,23 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 482, walker.peek(), {level:0, str: 'if (x == 2)'}
-	simple.like 483, walker.get(),  {level:0, str: 'if (x == 2)'}
+	simple.like 478, walker.peek(), {level:0, str: 'if (x == 2)'}
+	simple.like 479, walker.get(),  {level:0, str: 'if (x == 2)'}
 
-	simple.like 485, walker.peek(), {level:1, str: 'doThis'}
-	simple.like 486, walker.get(),  {level:1, str: 'doThis'}
+	simple.like 481, walker.peek(), {level:1, str: 'doThis'}
+	simple.like 482, walker.get(),  {level:1, str: 'doThis'}
 
-	simple.like 488, walker.peek(), {level:1, str: 'doThat'}
-	simple.like 489, walker.get(),  {level:1, str: 'doThat'}
+	simple.like 484, walker.peek(), {level:1, str: 'doThat'}
+	simple.like 485, walker.get(),  {level:1, str: 'doThat'}
 
-	simple.like 491, walker.peek(), {level:2, str: 'then this'}
-	simple.like 492, walker.get(),  {level:2, str: 'then this'}
+	simple.like 487, walker.peek(), {level:2, str: 'then this'}
+	simple.like 488, walker.get(),  {level:2, str: 'then this'}
 
-	simple.like 494, walker.peek(), {level:0, str: 'while (x > 2)'}
-	simple.like 495, walker.get(),  {level:0, str: 'while (x > 2)'}
+	simple.like 490, walker.peek(), {level:0, str: 'while (x > 2)'}
+	simple.like 491, walker.get(),  {level:0, str: 'while (x > 2)'}
 
-	simple.like 497, walker.peek(), {level:1, str: '--x'}
-	simple.like 498, walker.get(),  {level:1, str: '--x'}
+	simple.like 493, walker.peek(), {level:1, str: '--x'}
+	simple.like 494, walker.get(),  {level:1, str: '--x'}
 
 	)()
 
@@ -507,23 +518,23 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 516, walker.get(), {
+	simple.like 512, walker.get(), {
 		level: 0
 		str:   'if (x == 2)'
 		}
 
-	simple.equal 521, walker.fetchBlockAtLevel(1), """
+	simple.equal 517, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
 
-	simple.like 527, walker.get(), {
+	simple.like 523, walker.get(), {
 		level: 0
 		str:   'while (x > 2)'
 		}
 
-	simple.equal 532, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 528, walker.fetchBlockAtLevel(1), "--x"
 	)()
 
 # ---------------------------------------------------------------------------
@@ -553,27 +564,27 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 562, walker.get(), {
+	simple.like 558, walker.get(), {
 			level: 0
 			line: {
 				cmd: 'if'
 				cond: '(x == 2)'
 				}
 			}
-	simple.equal 569, walker.fetchBlockAtLevel(1), """
+	simple.equal 565, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
-	simple.like 574, walker.get(), {
+	simple.like 570, walker.get(), {
 			level: 0
 			line: {
 				cmd: 'while',
 				cond: '(x > 2)'
 				}
 			}
-	simple.equal 581, walker.fetchBlockAtLevel(1), "--x"
-	simple.equal 582, walker.get(), undef
+	simple.equal 577, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 578, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -591,7 +602,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.equal 667, """
+	tester.equal 596, """
 			abc
 			if x == <<<
 				abc
@@ -604,7 +615,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 680, """
+	tester.equal 609, """
 			abc
 			if x == <<<
 				===
@@ -618,7 +629,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 694, """
+	tester.equal 623, """
 			abc
 			if x == <<<
 				...
@@ -718,7 +729,7 @@ class HtmlMapper extends TreeWalker
 
 	# ----------------------------------------------------------
 
-	tester.equal 793, """
+	tester.equal 723, """
 			body
 				# a comment
 
@@ -732,7 +743,6 @@ class HtmlMapper extends TreeWalker
 					p more text
 			""", """
 			<body>
-				<!-- a comment -->
 				<div>
 					<h1>A title</h1>
 					<p>some text</p>
@@ -760,7 +770,7 @@ class HtmlMapper extends TreeWalker
 
 	tester = new MyTester()
 
-	tester.equal 835, """
+	tester.equal 764, """
 			abc
 			#ifdef something
 				def

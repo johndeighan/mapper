@@ -20,24 +20,34 @@ export class TraceWalker extends TreeWalker
 
 	# ..........................................................
 
-	visit: (hLine, hUser, lStack) ->
+	visit: (hNode, hUser, lStack) ->
 
-		{uobj, level, type} = hLine
-		if defined(type)
-			@lTrace.push "VISIT     #{level} #{OL(uobj)} (#{type})"
-		else
-			@lTrace.push "VISIT     #{level} #{OL(uobj)}"
+		{uobj, level} = hNode
+		@lTrace.push "VISIT     #{level} #{OL(uobj)}"
 		return
 
 	# ..........................................................
 
-	endVisit: (hLine, hUser, lStack) ->
+	endVisit: (hNode, hUser, lStack) ->
 
-		{uobj, level, type} = hLine
-		if defined(type)
-			@lTrace.push "END VISIT #{level} #{OL(uobj)} (#{type})"
-		else
-			@lTrace.push "END VISIT #{level} #{OL(uobj)}"
+		{uobj, level} = hNode
+		@lTrace.push "END VISIT #{level} #{OL(uobj)}"
+		return
+
+	# ..........................................................
+
+	visitSpecial: (type, hNode, hUser, lStack) ->
+
+		{uobj, level} = hNode
+		@lTrace.push "VISIT     #{level} #{OL(uobj)} (#{type})"
+		return
+
+	# ..........................................................
+
+	endVisitSpecial: (type, hNode, hUser, lStack) ->
+
+		{uobj, level} = hNode
+		@lTrace.push "END VISIT #{level} #{OL(uobj)} (#{type})"
 		return
 
 	# ..........................................................
@@ -48,5 +58,3 @@ export class TraceWalker extends TreeWalker
 		block = arrayToBlock(@lTrace)
 		@lTrace = undef
 		return block
-
-# ---------------------------------------------------------------------------

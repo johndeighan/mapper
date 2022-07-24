@@ -66,8 +66,6 @@ END WALK`);
 abc
 
 	def`, `BEGIN WALK
-VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 VISIT     0 'abc'
 VISIT     1 'def'
 END VISIT 1 'def'
@@ -77,16 +75,12 @@ END WALK`);
 abc
 __END__
 	def`, `BEGIN WALK
-VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
   return tester.equal(92, `# this is a unit test
 abc
 		def`, `BEGIN WALK
-VISIT     0 '#˳this˳is˳a˳unit˳test' (comment)
-END VISIT 0 '#˳this˳is˳a˳unit˳test' (comment)
 VISIT     0 'abc˳def'
 END VISIT 0 'abc˳def'
 END WALK`);

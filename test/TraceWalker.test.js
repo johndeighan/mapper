@@ -25,7 +25,7 @@ WalkTester = class WalkTester extends UnitTester {
 tester = new WalkTester();
 
 // ..........................................................
-tester.equal(601, `abc
+tester.equal(20, `abc
 def`, `BEGIN WALK
 VISIT     0 'abc'
 END VISIT 0 'abc'
@@ -33,7 +33,7 @@ VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
-tester.equal(613, `abc
+tester.equal(32, `abc
 	def`, `BEGIN WALK
 VISIT     0 'abc'
 VISIT     1 'def'
@@ -42,13 +42,13 @@ END VISIT 0 'abc'
 END WALK`);
 
 // --- 2 indents is treated as an extension line
-tester.equal(626, `abc
+tester.equal(45, `abc
 		def`, `BEGIN WALK
 VISIT     0 'abc˳def'
 END VISIT 0 'abc˳def'
 END WALK`);
 
-tester.equal(636, `abc
+tester.equal(55, `abc
 	def
 ghi`, `BEGIN WALK
 VISIT     0 'abc'
@@ -59,11 +59,9 @@ VISIT     0 'ghi'
 END VISIT 0 'ghi'
 END WALK`);
 
-tester.equal(601, `# --- a comment
+tester.equal(70, `# --- a comment
 abc
 def`, `BEGIN WALK
-VISIT     0 '#˳---˳a˳comment' (comment)
-END VISIT 0 '#˳---˳a˳comment' (comment)
 VISIT     0 'abc'
 END VISIT 0 'abc'
 VISIT     0 'def'

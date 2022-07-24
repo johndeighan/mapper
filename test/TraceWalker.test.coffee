@@ -17,7 +17,7 @@ tester = new WalkTester()
 
 # ..........................................................
 
-tester.equal 601, """
+tester.equal 20, """
 		abc
 		def
 		""", """
@@ -29,7 +29,7 @@ tester.equal 601, """
 		END WALK
 		"""
 
-tester.equal 613, """
+tester.equal 32, """
 		abc
 			def
 		""", """
@@ -42,7 +42,7 @@ tester.equal 613, """
 		"""
 
 # --- 2 indents is treated as an extension line
-tester.equal 626, """
+tester.equal 45, """
 		abc
 				def
 		""", """
@@ -52,7 +52,7 @@ tester.equal 626, """
 		END WALK
 		"""
 
-tester.equal 636, """
+tester.equal 55, """
 		abc
 			def
 		ghi
@@ -67,18 +67,15 @@ tester.equal 636, """
 		END WALK
 		"""
 
-tester.equal 601, """
+tester.equal 70, """
 		# --- a comment
 		abc
 		def
 		""", """
 		BEGIN WALK
-		VISIT     0 '#˳---˳a˳comment' (comment)
-		END VISIT 0 '#˳---˳a˳comment' (comment)
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		VISIT     0 'def'
 		END VISIT 0 'def'
 		END WALK
 		"""
-

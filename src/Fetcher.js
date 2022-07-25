@@ -143,6 +143,7 @@ export var Fetcher = class Fetcher {
   // --- if line is a string:
   //        prefix
   //        str
+  //        srcLevel
   //        level
   fetch() {
     var _, done, fname, hLine, lMatches, level, line, prefix, str, value;
@@ -232,6 +233,7 @@ export var Fetcher = class Fetcher {
       hLine.line = line; // trimmed version
       hLine.prefix = prefix;
       hLine.str = str;
+      hLine.srcLevel = level;
       hLine.level = level;
     }
     debug("return from Fetcher.fetch()", hLine);

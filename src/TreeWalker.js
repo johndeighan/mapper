@@ -53,7 +53,7 @@ import {
 //   class TreeWalker
 //      - map() returns mapped item (i.e. uobj) or undef
 //   to use, override:
-//      mapStr(str, srcLevel) - returns user object, default returns str
+//      mapStr(str, srcLevel, hLine) - returns user object, def: returns str
 //      mapCmd(hLine)
 //      beginWalk()
 //      visit(hNode, hUser, lStack)
@@ -134,14 +134,14 @@ export var TreeWalker = class TreeWalker extends Mapper {
     }
     // --- NOTE: mapStr() may return undef, meaning to ignore
     //     We must pass srcLevel since mapStr() may use fetch()
-    uobj = this.mapStr(str, srcLevel);
+    uobj = this.mapStr(str, srcLevel, hLine);
     debug("return from TreeWalker.map()", uobj);
     return uobj;
   }
 
   // ..........................................................
   // --- designed to override
-  mapStr(str, srcLevel) {
+  mapStr(str, srcLevel, hLine) {
     return str;
   }
 
@@ -256,13 +256,14 @@ export var TreeWalker = class TreeWalker extends Mapper {
   adjustLevel(hLine) {
     var adjust, i, j, lNewMinuses, len, newLevel, ref, srcLevel;
     debug("enter adjustLevel()", hLine);
-    if (defined(hLine.level)) {
-      hLine.srcLevel = srcLevel = hLine.level;
-      assert(isInteger(srcLevel), `level is ${OL(srcLevel)}`);
-    } else {
-      // --- if we're iterating non-strings, there won't be a level
-      hLine.srcLevel = srcLevel = 0;
+    if (!isString(hLine.line)) {
+      debug("return false from adjustLevel() - not a string");
+      return false;
     }
+    srcLevel = hLine.level;
+    assert(isInteger(srcLevel, {
+      min: 0
+    }), `level is ${OL(srcLevel)}`);
     // --- Calculate the needed adjustment and new level
     lNewMinuses = [];
     adjust = 0;
@@ -277,17 +278,15 @@ export var TreeWalker = class TreeWalker extends Mapper {
     this.lMinuses = lNewMinuses;
     debug('lMinuses', this.lMinuses);
     if (adjust === 0) {
-      debug("return false from adjustLevel()");
+      debug("return false from adjustLevel() - zero adjustment");
       return false;
     }
     assert(srcLevel >= adjust, `srcLevel=${srcLevel}, adjust=${adjust}`);
     newLevel = srcLevel - adjust;
     // --- Make adjustments to hLine
     hLine.level = newLevel;
-    if (isString(hLine.line)) {
-      hLine.line = undented(hLine.line, adjust);
-      hLine.prefix = undented(hLine.prefix, adjust);
-    }
+    hLine.line = undented(hLine.line, adjust);
+    hLine.prefix = undented(hLine.prefix, adjust);
     debug(`level adjusted ${srcLevel} => ${newLevel}`);
     debug("return true from adjustLevel()");
     return true;

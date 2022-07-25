@@ -83,8 +83,10 @@ export class TreeWalker extends Mapper
 			debug "return from TreeWalker.map()", uobj
 			return uobj
 
-		# --- from here on, line is a string
+		# --- from here on, line and str are non-empty strings
+		assert nonEmpty(line), "empty string should be special"
 		assert nonEmpty(str), "empty string should be special"
+		assert isInteger(srcLevel, {min: 0}), "srcLevel is #{OL(srcLevel)}"
 
 		# --- check for extension lines, stop on blank line if found
 		debug "check for extension lines"

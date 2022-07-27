@@ -2,6 +2,7 @@
 
 import {UnitTester, UnitTesterNorm, simple} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
+import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 import {

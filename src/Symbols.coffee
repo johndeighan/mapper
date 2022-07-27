@@ -1,8 +1,9 @@
 # Symbols.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, defined, isString, isArray, isEmpty, nonEmpty,
-	croak, uniq, words, escapeStr, OL,
+	undef, defined, isString, isArray, isEmpty, nonEmpty,
+	uniq, words, escapeStr, OL,
 	} from '@jdeighan/coffee-utils'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {
@@ -12,6 +13,7 @@ import {debug} from '@jdeighan/coffee-utils/debug'
 import {splitLine, isUndented} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
@@ -118,32 +120,32 @@ getAvailSymbolsFrom = (filepath) ->
 
 # ---------------------------------------------------------------------------
 
-class SymbolParser extends Mapper
+class SymbolParser extends TreeWalker
 	# --- Parse a .symbols file
 
-	constructor: (content, source) ->
+	init: () ->
 
-		super content, source
 		@curLib = undef
 		@hSymbols = {}
 
 	# ..........................................................
 	# ignore empty lines and comments
 
-	mapEmptyLine: (hLine) -> return undef
-	mapComment:   (hLine) -> return undef
+#	mapEmptyLine: (hLine) -> return undef
+#	mapComment:   (hLine) -> return undef
 
 	# ..........................................................
 
 	map: (hLine) ->
 
-		full_line = hLine.line
-		[level, line] = splitLine(full_line)
+		debug "enter SymbolParser.map()", hLine
+
+		{str, level} = hLine
 		if level==0
-			@curLib = line.trim()
+			@curLib = str
 		else if level==1
 			assert @curLib?, "mapString(): curLib not defined"
-			lWords = words(line)
+			lWords = words(str)
 			numWords = lWords.length
 
 			for word,i in lWords
@@ -171,6 +173,7 @@ class SymbolParser extends Mapper
 				@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
+		debug "return from SymbolParser.map()", undef
 		return undef   # doesn't matter what we return
 
 	# ..........................................................

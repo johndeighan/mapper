@@ -2,9 +2,13 @@
   // Getter.coffee
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass,
-  croak,
   OL,
   rtrim,
   defined,
@@ -34,6 +38,10 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  Node
+} from '@jdeighan/mapper/node';
+
+import {
   Fetcher
 } from '@jdeighan/mapper/fetcher';
 
@@ -41,8 +49,8 @@ import {
 //   class Getter
 //      - get(), peek(), eof(), skip() for mapped data
 export var Getter = class Getter extends Fetcher {
-  constructor(source = undef, collection = undef, hOptions = {}) {
-    super(source, collection, hOptions);
+  constructor(source = undef, collection = undef) {
+    super(source, collection);
     this.hConsts = {}; // support variable replacement
   }
 
@@ -62,19 +70,20 @@ export var Getter = class Getter extends Fetcher {
   //        Mapped Data
   // ..........................................................
   get() {
-    var hLine, uobj;
+    var hNode, uobj;
     debug("enter Getter.get()");
-    while (defined(hLine = this.fetch())) {
-      if (defined(hLine.uobj)) {
-        // --- It's already been mapped
-        debug("return from Getter.get() - was mapped", hLine);
-        return hLine;
+    while (defined(hNode = this.fetch())) {
+      assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
+      if (hNode.isMapped()) {
+        // --- This can happen when the node was previously unfetched
+        debug("return from Getter.get() - already mapped", hNode);
+        return hNode;
       }
-      uobj = this.mapLine(hLine);
+      uobj = this.mapNode(hNode);
       if (defined(uobj)) {
-        hLine.uobj = uobj;
-        debug("return from Getter.get() - newly mapped", hLine);
-        return hLine;
+        hNode.setUserObj(uobj);
+        debug("return from Getter.get() - newly mapped", hNode);
+        return hNode;
       }
     }
     debug("return from Getter.get() - EOF", undef);
@@ -90,16 +99,16 @@ export var Getter = class Getter extends Fetcher {
 
   // ..........................................................
   peek() {
-    var hLine;
+    var hNode;
     debug('enter Getter.peek()');
-    hLine = this.get();
-    if (hLine === undef) {
+    hNode = this.get();
+    if (hNode === undef) {
       debug("return from Getter.peek()", undef);
       return undef;
     } else {
-      this.unfetch(hLine);
-      debug("return from Getter.peek()", hLine);
-      return hLine;
+      this.unfetch(hNode);
+      debug("return from Getter.peek()", hNode);
+      return hNode;
     }
   }
 
@@ -116,40 +125,35 @@ export var Getter = class Getter extends Fetcher {
   // --- return of undef doesn't mean EOF, it means skip this item
   //     sets key 'uobj' to a defined value if not returning undef
   //     sets key 'type' if a special type
-  mapLine(hLine) {
-    var line, newline, newstr, prefix, str, type, uobj;
-    debug("enter Getter.mapLine()", hLine);
-    assert(defined(hLine), "hLine is undef");
-    if (defined(type = this.getItemType(hLine))) {
+  mapNode(hNode) {
+    var level, newstr, str, type, uobj;
+    debug("enter Getter.mapNode()", hNode);
+    assert(defined(hNode), "hNode is undef");
+    type = this.getItemType(hNode);
+    if (defined(type)) {
       debug(`item type is ${OL(type)}`);
       assert(isString(type) && nonEmpty(type), `bad type: ${OL(type)}`);
-      hLine.type = type;
-      uobj = this.mapItemType(type, hLine);
-      debug("from mapItemType()", uobj);
+      hNode.type = type;
+      uobj = this.mapSpecial(type, hNode);
+      debug(`mapped ${type}`, uobj);
     } else {
       debug("no special type");
-      ({line, str, prefix} = hLine);
-      if (isString(line)) {
-        assert(isString(str), `missing 'str' key in ${OL(line)}`);
-        assert(nonEmpty(str), "str is empty");
-        assert(line !== '__END__', "__END__ encountered");
-        newstr = this.replaceConsts(str, this.hConsts);
-        if (newstr !== str) {
-          newline = `${prefix}${newstr}`;
-          debug(`=> '${newline}'`);
-          hLine.str = newstr;
-          hLine.line = newline;
-        }
+      ({str, level} = hNode);
+      assert(nonEmpty(str), "str is empty");
+      assert(str !== '__END__', "__END__ encountered");
+      newstr = this.replaceConsts(str, this.hConsts);
+      if (newstr !== str) {
+        debug(`${OL(str)} => ${OL(newstr)}`);
+        hNode.str = newstr;
       }
-      debug("call map()");
-      uobj = this.map(hLine);
-      debug("from map()", uobj);
+      uobj = this.mapNonSpecial(hNode);
+      debug("mapped", uobj);
     }
     if (uobj === undef) {
-      debug("return from Getter.mapLine()", undef);
+      debug("return from Getter.mapNode()", undef);
       return undef;
     }
-    debug("return from Getter.mapLine()", uobj);
+    debug("return from Getter.mapNode()", uobj);
     return uobj;
   }
 
@@ -178,14 +182,15 @@ export var Getter = class Getter extends Fetcher {
   }
 
   // ..........................................................
-  getItemType(hLine) {
+  getItemType(hNode) {
     // --- returns name of item type
+    debug("in Getter.getItemType()");
     return undef; // default: no special item types
   }
 
   
     // ..........................................................
-  mapItemType(type, hLine) {
+  mapSpecial(type, hNode) {
     return undef; // default - ignore any special item types
   }
 
@@ -194,77 +199,75 @@ export var Getter = class Getter extends Fetcher {
   // --- designed to override
   //     override may use fetch(), unfetch(), fetchBlock(), etc.
   //     should return a uobj (undef to ignore line)
-  //     technically, hLine.line does not have to be a string,
-  //        but it usually is
-  map(hLine) {
+  mapNonSpecial(hNode) {
+    var uobj;
     // --- returns a uobj or undef
     //     uobj will be passed to visit() and endVisit() in TreeWalker
-    debug("enter Getter.map()", hLine);
-    assert(defined(hLine), "hLine is undef");
-    // --- by default, just returns line key
-    debug("return from Getter.map()", hLine.line);
-    return hLine.line;
+    debug("enter Getter.mapNonSpecial()", hNode);
+    assert(defined(hNode), "hNode is undef");
+    // --- by default, just returns str key
+    uobj = hNode.str;
+    debug("return from Getter.mapNonSpecial()", uobj);
+    return uobj;
   }
 
   // ..........................................................
   // --- a generator
   * allMapped() {
-    var hLine;
+    var hNode;
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
-    while (defined(hLine = this.get())) {
-      yield hLine;
+    while (defined(hNode = this.get())) {
+      yield hNode;
     }
   }
 
   // ..........................................................
   getAll() {
-    var lLines;
+    var lNodes;
     debug("enter Getter.getAll()");
-    lLines = Array.from(this.allMapped());
-    debug("return from Getter.getAll()", lLines);
-    return lLines;
+    lNodes = Array.from(this.allMapped());
+    debug("return from Getter.getAll()", lNodes);
+    return lNodes;
   }
 
   // ..........................................................
   getUntil(endLine) {
-    var hLine, lLines;
+    var hNode, lNodes;
     debug("enter Getter.getUntil()");
-    lLines = [];
-    while (defined(hLine = this.get()) && (hLine.line !== endLine)) {
-      lLines.push(hLine.line);
+    lNodes = [];
+    while (defined(hNode = this.get()) && (hNode.str !== endLine)) {
+      lNodes.push(hNode.str);
     }
-    debug("return from Getter.getUntil()", lLines);
-    return lLines;
+    debug("return from Getter.getUntil()", lNodes);
+    return lNodes;
   }
 
   // ..........................................................
+  // --- Rarely used - requires that strings are mapped to strings
   getBlock(hOptions = {}) {
-    var block, endStr, hLine, i, lStrings, ref, uobj;
-    // --- Valid options: logLines
+    var block, endStr, hNode, i, lStrings, ref;
+    // --- Valid options: logNodes
     debug("enter Getter.getBlock()");
     lStrings = [];
     i = 0;
     ref = this.allMapped();
-    for (hLine of ref) {
-      if (hOptions.logLines) {
-        LOG(`hLine[${i}]`, hLine);
+    for (hNode of ref) {
+      if (hOptions.logNodes) {
+        LOG(`hNode[${i}]`, hNode);
       } else {
-        debug("hLine", hLine);
+        debug(`hNode[${i}]`, hNode);
       }
       i += 1;
-      uobj = hLine.uobj;
-      assert(isString(uobj), "uobj not a string");
-      lStrings.push(uobj);
+      lStrings.push(hNode.getMappedLine(this.oneIndent));
     }
     debug('lStrings', lStrings);
-    endStr = this.endBlock();
     if (defined(endStr = this.endBlock())) {
       debug('endStr', endStr);
       lStrings.push(endStr);
     }
-    if (hOptions.logLines) {
-      LOG('lStrings', lStrings);
+    if (hOptions.logNodes) {
+      LOG('logNodes', lStrings);
     }
     block = this.finalizeBlock(arrayToBlock(lStrings));
     debug("return from Getter.getBlock()", block);

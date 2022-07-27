@@ -2,8 +2,9 @@
 
 import {marked} from 'marked'
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, defined, OL, isEmpty, nonEmpty, isString,
+	undef, defined, OL, isEmpty, nonEmpty, isString,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
@@ -39,44 +40,34 @@ export markdownify = (block) ->
 	return result
 
 # ---------------------------------------------------------------------------
+# --- Does not use marked!!!
+#     just simulates markdown processing
 
 export class SimpleMarkDownMapper extends Mapper
 
 	init: () ->
 
-		@prevLine = undef
+		@prevStr = undef
 		return
 
 	# ..........................................................
 
-	mapEmptyLine: (hLine) ->
-
-		return undef
-
-	# ..........................................................
-
-	mapComment: (hLine) ->
-
-		return undef
-
-	# ..........................................................
-
-	map: (hLine) ->
+	mapNonSpecial: (hLine) ->
 
 		debug "enter SimpleMarkDownMapper.map()", hLine
 		assert defined(hLine), "hLine is undef"
-		{line} = hLine
-		assert isString(line), "line not a string"
-		if line.match(/^={3,}$/) && defined(@prevLine)
-			result = "<h1>#{@prevLine}</h1>"
-			debug "set prevLine to undef"
-			@prevLine = undef
+		{str} = hLine
+		assert isString(str), "str not a string"
+		if str.match(/^={3,}$/) && defined(@prevStr)
+			result = "<h1>#{@prevStr}</h1>"
+			debug "set prevStr to undef"
+			@prevStr = undef
 			debug "return from SimpleMarkDownMapper.map()", result
 			return result
 		else
-			result = @prevLine
-			debug "set prevLine to #{OL(line)}"
-			@prevLine = line
+			result = @prevStr
+			debug "set prevStr to #{OL(str)}"
+			@prevStr = str
 			if defined(result)
 				result = "<p>#{result}</p>"
 				debug "return from SimpleMarkDownMapper.map()", result
@@ -89,7 +80,7 @@ export class SimpleMarkDownMapper extends Mapper
 
 	endBlock: () ->
 
-		if defined(@prevLine)
-			return "<p>#{@prevLine}</p>"
+		if defined(@prevStr)
+			return "<p>#{@prevStr}</p>"
 		else
 			return undef

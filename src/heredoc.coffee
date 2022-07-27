@@ -1,7 +1,8 @@
 # heredoc.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, defined, notdefined, pass, croak,
+	undef, defined, notdefined, pass,
 	isString, isHash, isEmpty, nonEmpty,
 	escapeStr, CWS, OL, className,
 	} from '@jdeighan/coffee-utils'

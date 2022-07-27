@@ -2,17 +2,19 @@
 // Mapper.test.coffee
 var simple;
 
-import assert from 'assert';
-
 import {
   UnitTester,
   UnitTesterNorm
 } from '@jdeighan/unit-tester';
 
 import {
-  undef,
+  assert,
   error,
-  warn,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
+  undef,
   rtrim,
   replaceVars
 } from '@jdeighan/coffee-utils';
@@ -44,17 +46,17 @@ simple = new UnitTester();
 line2
 line3`);
   simple.like(29, mapper.peek(), {
-    line: 'line1'
+    str: 'line1'
   });
   simple.like(30, mapper.peek(), {
-    line: 'line1'
+    str: 'line1'
   });
   simple.falsy(31, mapper.eof());
   simple.like(32, token0 = mapper.get(), {
-    line: 'line1'
+    str: 'line1'
   });
   simple.like(33, token1 = mapper.get(), {
-    line: 'line2'
+    str: 'line2'
   });
   simple.equal(34, mapper.lineNum, 2);
   simple.falsy(36, mapper.eof());
@@ -65,14 +67,14 @@ line3`);
     return mapper.unfetch(token0);
   });
   simple.like(39, mapper.get(), {
-    line: 'line6'
+    str: 'line6'
   });
   simple.like(40, mapper.get(), {
-    line: 'line5'
+    str: 'line5'
   });
   simple.falsy(41, mapper.eof());
   simple.like(43, token0 = mapper.get(), {
-    line: 'line3'
+    str: 'line3'
   });
   simple.equal(44, mapper.lineNum, 3);
   simple.truthy(45, mapper.eof());
@@ -90,22 +92,62 @@ line3`);
   var mapper;
   mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t']);
   simple.like(59, mapper.peek(), {
-    line: 'abc'
+    str: 'abc'
   });
   simple.like(60, mapper.peek(), {
-    line: 'abc'
+    str: 'abc'
   });
   simple.falsy(61, mapper.eof());
   simple.like(62, mapper.get(), {
-    line: 'abc'
+    str: 'abc'
   });
   simple.like(63, mapper.get(), {
-    line: 'def'
+    str: 'def'
   });
   simple.like(64, mapper.get(), {
-    line: 'ghi'
+    str: 'ghi'
   });
   return simple.equal(65, mapper.lineNum, 3);
+})();
+
+// ---------------------------------------------------------------------------
+// --- Special lines
+(function() {
+  var mapper;
+  mapper = new Mapper(undef, `line1
+# a comment
+line2
+
+line3`);
+  simple.like(79, mapper.get(), {
+    str: 'line1',
+    level: 0,
+    lineNum: 1
+  });
+  simple.like(84, mapper.get(), {
+    str: '# a comment',
+    level: 0,
+    lineNum: 1,
+    type: 'comment',
+    comment: 'a comment'
+  });
+  simple.like(91, mapper.get(), {
+    str: 'line2',
+    level: 0,
+    lineNum: 3
+  });
+  simple.like(96, mapper.get(), {
+    str: '',
+    level: 0,
+    lineNum: 4,
+    type: 'empty'
+  });
+  simple.like(102, mapper.get(), {
+    str: 'line3',
+    level: 0,
+    lineNum: 5
+  });
+  return simple.equal(107, mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -117,27 +159,27 @@ def
 ghi
 jkl
 mno`);
-  simple.like(81, mapper.fetch(), {
-    line: 'abc'
+  simple.like(124, mapper.fetch(), {
+    str: 'abc'
   });
   // 'jkl' will be discarded
-  simple.like(84, mapper.fetchUntil('jkl'), [
+  simple.like(127, mapper.fetchUntil('jkl'), [
     {
-      line: 'def'
+      str: 'def'
     },
     {
-      line: 'ghi'
+      str: 'ghi'
     }
   ]);
-  simple.like(89, mapper.fetch(), {
-    line: 'mno'
+  simple.like(132, mapper.fetch(), {
+    str: 'mno'
   });
-  return simple.equal(90, mapper.lineNum, 5);
+  return simple.equal(133, mapper.lineNum, 5);
 })();
 
 // ---------------------------------------------------------------------------
 (function() {
-  var generator, mapper, token0, token1, token13;
+  var generator, mapper, token0, token1, token3;
   // --- A generator is a function that, when you call it,
   //     it returns an iterator
   generator = function*() {
@@ -147,111 +189,45 @@ mno`);
   };
   // --- You can pass any iterator to the Mapper() constructor
   mapper = new Mapper(undef, generator());
-  simple.like(109, mapper.peek(), {
-    line: 'line1'
+  simple.like(152, mapper.peek(), {
+    str: 'line1'
   });
-  simple.like(110, mapper.peek(), {
-    line: 'line1'
+  simple.like(153, mapper.peek(), {
+    str: 'line1'
   });
-  simple.falsy(111, mapper.eof());
-  simple.like(112, token0 = mapper.get(), {
-    line: 'line1'
+  simple.falsy(154, mapper.eof());
+  simple.like(155, token0 = mapper.get(), {
+    str: 'line1'
   });
-  simple.like(113, token1 = mapper.get(), {
-    line: 'line2'
+  simple.like(156, token1 = mapper.get(), {
+    str: 'line2'
   });
-  simple.equal(114, mapper.lineNum, 2);
-  simple.falsy(116, mapper.eof());
-  simple.succeeds(117, function() {
+  simple.equal(157, mapper.lineNum, 2);
+  simple.falsy(159, mapper.eof());
+  simple.succeeds(160, function() {
     return mapper.unfetch(token1);
   });
-  simple.succeeds(118, function() {
+  simple.succeeds(161, function() {
     return mapper.unfetch(token0);
   });
-  simple.like(119, mapper.get(), {
-    line: 'line1'
-  });
-  simple.like(120, mapper.get(), {
-    line: 'line2'
-  });
-  simple.falsy(121, mapper.eof());
-  simple.like(123, token13 = mapper.get(), {
-    line: 'line3'
-  });
-  simple.truthy(124, mapper.eof());
-  simple.succeeds(125, function() {
-    return mapper.unfetch(token13);
-  });
-  simple.falsy(126, mapper.eof());
-  simple.equal(127, mapper.get(), token13);
-  simple.truthy(128, mapper.eof());
-  return simple.equal(129, mapper.lineNum, 3);
-})();
-
-// ---------------------------------------------------------------------------
-(function() {
-  var lItems, mapper, token0, token1, token2;
-  // --- Mapper should work with any types of objects
-
-  // --- A generator is a function that, when you call it,
-  //     it returns an iterator
-  lItems = [
-    {
-      a: 1,
-      b: 2
-    },
-    ['a',
-    'b'],
-    42,
-    'xyz'
-  ];
-  mapper = new Mapper(undef, lItems);
-  simple.like(149, mapper.peek(), {
-    line: {
-      a: 1,
-      b: 2
-    }
-  });
-  simple.like(150, mapper.peek(), {
-    line: {
-      a: 1,
-      b: 2
-    }
-  });
-  simple.falsy(151, mapper.eof());
-  simple.like(152, token0 = mapper.get(), {
-    line: {
-      a: 1,
-      b: 2
-    }
-  });
-  simple.like(153, token1 = mapper.get(), {
-    line: ['a', 'b']
-  });
-  simple.falsy(155, mapper.eof());
-  simple.succeeds(156, function() {
-    return mapper.unfetch(token1);
-  });
-  simple.succeeds(157, function() {
-    return mapper.unfetch(token0);
-  });
-  simple.equal(158, mapper.get(), token0);
-  simple.equal(159, mapper.get(), token1);
-  simple.falsy(160, mapper.eof());
   simple.like(162, mapper.get(), {
-    line: 42
+    str: 'line1'
   });
-  simple.like(163, token2 = mapper.get(), {
-    line: 'xyz'
+  simple.like(163, mapper.get(), {
+    str: 'line2'
   });
-  simple.truthy(164, mapper.eof());
-  simple.succeeds(165, function() {
-    return mapper.unfetch(token2);
+  simple.falsy(164, mapper.eof());
+  simple.like(166, token3 = mapper.get(), {
+    str: 'line3'
   });
-  simple.falsy(166, mapper.eof());
-  simple.equal(167, mapper.get(), token2);
-  simple.truthy(168, mapper.eof());
-  return simple.equal(169, mapper.lineNum, 4);
+  simple.truthy(167, mapper.eof());
+  simple.succeeds(168, function() {
+    return mapper.unfetch(token3);
+  });
+  simple.falsy(169, mapper.eof());
+  simple.equal(170, mapper.get(), token3);
+  simple.truthy(171, mapper.eof());
+  return simple.equal(172, mapper.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -275,24 +251,13 @@ mno`);
   };
   // ..........................................................
   tester = new MyTester();
-  tester.equal(196, `abc
+  tester.equal(199, `abc
 	#include title.md
 def`, `abc
 	title
 	=====
 def`);
-  return simple.equal(207, numLines, 3);
-})();
-
-// ---------------------------------------------------------------------------
-(function() {
-  var mapper;
-  mapper = new Mapper(import.meta.url, `abc
-def`, {
-    prefix: '---'
-  });
-  return simple.equal(218, mapper.getBlock(), `---abc
----def`);
+  return simple.equal(210, numLines, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -301,7 +266,7 @@ def`, {
   mapper = new Mapper(import.meta.url, `abc
 	#include title.md
 def`);
-  return simple.equal(234, mapper.getBlock(), `abc
+  return simple.equal(223, mapper.getBlock(), `abc
 	title
 	=====
 def`);
@@ -324,13 +289,13 @@ def`);
   };
   // ..........................................................
   tester = new MyTester();
-  tester.equal(262, `abc
+  tester.equal(251, `abc
 def
 __END__
 ghi
 jkl`, `abc
 def`);
-  return simple.equal(273, numLines, 2);
+  return simple.equal(262, numLines, 2);
 })();
 
 // ---------------------------------------------------------------------------
@@ -348,7 +313,7 @@ def`);
   };
   // ..........................................................
   tester = new MyTester();
-  return tester.equal(293, `abc
+  return tester.equal(282, `abc
 	#include ended.md
 def`, `abc
 	ghi
@@ -370,7 +335,7 @@ def`);
   };
   // ..........................................................
   tester = new MyTester();
-  return tester.equal(322, `abc
+  return tester.equal(311, `abc
 #define meaning 42
 meaning is __meaning__`, `abc
 meaning is 42`);
@@ -389,23 +354,23 @@ meaning is 42`);
 abc
 #define meaning 42
 The meaning of life is __meaning__`);
-  simple.equal(351, result, `abc
+  simple.equal(340, result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
   //        1. recognizes '//' style comments and removes them
   //        2. implements a '#for <args>' cmd that outputs '{#for <args>}'
   MyMapper = class MyMapper extends Mapper {
-    isComment(line, hLine) {
-      return line.match(/^\s*\/\//);
+    isComment(hNode) {
+      return hNode.str.match(/^\s*\/\//);
     }
 
-    mapCmd(hLine) {
-      var argstr, cmd, prefix;
-      ({cmd, argstr, prefix} = hLine);
+    mapCmd(hNode) {
+      var argstr, cmd;
+      ({cmd, argstr} = hNode);
       if (cmd === 'for') {
-        return `${prefix}{#for ${argstr}}`;
+        return `${hNode.getIndent()}{#for ${argstr}}`;
       } else {
-        return super.mapCmd(hLine);
+        return super.mapCmd(hNode);
       }
     }
 
@@ -416,30 +381,30 @@ abc
 #define meaning 42
 The meaning of life is __meaning__
 #for x in lItems`);
-  return simple.equal(383, result, `abc
+  return simple.equal(368, result, `abc
 The meaning of life is 42
 {#for x in lItems}`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- Test map
+// --- Test mapNonSpecial
 (function() {
   var MyMapper, result;
   MyMapper = class MyMapper extends Mapper {
-    isComment(line, hLine) {
-      return line.match(/\s*\/\//);
+    isComment(hNode) {
+      return hNode.str.match(/\s*\/\//);
     }
 
-    mapEmptyLine(hLine) {
+    mapEmptyLine(hNode) {
       return undef;
     }
 
-    mapComment(hLine) {
+    mapComment(hNode) {
       return undef;
     }
 
-    map(hLine) {
-      return hLine.line.length.toString();
+    mapNonSpecial(hNode) {
+      return hNode.str.length.toString();
     }
 
   };
@@ -448,7 +413,7 @@ The meaning of life is 42
 abc
 
 defghi`);
-  return simple.equal(412, result, `3
+  return simple.equal(397, result, `3
 6`);
 })();
 
@@ -461,40 +426,40 @@ defghi`);
 		then this
 while (x > 2)
 	--x`);
+  simple.like(416, mapper.peek(), {
+    str: 'if (x == 2)'
+  });
+  simple.like(417, mapper.get(), {
+    str: 'if (x == 2)'
+  });
+  simple.like(419, mapper.peek(), {
+    str: '\tdoThis'
+  });
+  simple.like(420, mapper.get(), {
+    str: '\tdoThis'
+  });
+  simple.like(422, mapper.peek(), {
+    str: '\tdoThat'
+  });
+  simple.like(423, mapper.get(), {
+    str: '\tdoThat'
+  });
+  simple.like(425, mapper.peek(), {
+    str: '\t\tthen this'
+  });
+  simple.like(426, mapper.get(), {
+    str: '\t\tthen this'
+  });
+  simple.like(428, mapper.peek(), {
+    str: 'while (x > 2)'
+  });
+  simple.like(429, mapper.get(), {
+    str: 'while (x > 2)'
+  });
   simple.like(431, mapper.peek(), {
-    line: 'if (x == 2)'
+    str: '\t--x'
   });
-  simple.like(432, mapper.get(), {
-    line: 'if (x == 2)'
-  });
-  simple.like(434, mapper.peek(), {
-    line: '\tdoThis'
-  });
-  simple.like(435, mapper.get(), {
-    line: '\tdoThis'
-  });
-  simple.like(437, mapper.peek(), {
-    line: '\tdoThat'
-  });
-  simple.like(438, mapper.get(), {
-    line: '\tdoThat'
-  });
-  simple.like(440, mapper.peek(), {
-    line: '\t\tthen this'
-  });
-  simple.like(441, mapper.get(), {
-    line: '\t\tthen this'
-  });
-  simple.like(443, mapper.peek(), {
-    line: 'while (x > 2)'
-  });
-  simple.like(444, mapper.get(), {
-    line: 'while (x > 2)'
-  });
-  simple.like(446, mapper.peek(), {
-    line: '\t--x'
-  });
-  return simple.like(447, mapper.get(), {
-    line: '\t--x'
+  return simple.like(432, mapper.get(), {
+    str: '\t--x'
   });
 })();

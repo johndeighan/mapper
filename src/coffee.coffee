@@ -2,8 +2,9 @@
 
 import CoffeeScript from 'coffeescript'
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, croak, CWS, undef, defined, OL,
+	CWS, undef, defined, OL,
 	} from '@jdeighan/coffee-utils'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -174,14 +175,16 @@ export class CoffeePreProcessor extends Mapper
 
 	# ..........................................................
 
-	map: (hLine) ->
+	mapNonSpecial: (hLine) ->
 
-		result = hLine.line.replace(///
+		debug "enter CoffeePreProcessor.mapNonSpecial()", hLine
+		result = hLine.str.replace(///
 				\"
 				[^"]*     # sequence of non-quote characters
 				\"
 				///g,
 			(qstr) -> expand(qstr)
 			)
+		debug "return from CoffeePreProcessor.mapNonSpecial()", result
 		return result
 

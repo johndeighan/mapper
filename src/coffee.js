@@ -6,7 +6,11 @@ import CoffeeScript from 'coffeescript';
 
 import {
   assert,
-  croak,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   CWS,
   undef,
   defined,
@@ -70,8 +74,8 @@ export var coffeeExprToJS = function(coffeeExpr) {
     if (jsExpr.substr(pos, 1) === ';') {
       jsExpr = jsExpr.substr(0, pos);
     }
-  } catch (error) {
-    err = error;
+  } catch (error1) {
+    err = error1;
     croak(err, "coffeeExprToJS", coffeeExpr);
   }
   debug("return from coffeeExprToJS()", jsExpr);
@@ -98,8 +102,8 @@ export var coffeeCodeToJS = function(coffeeCode, source = undef, hOptions = {}) 
     //        1. remove blank lines
     //        2. remove trailing newline
     jsCode = cleanJS(jsCode);
-  } catch (error) {
-    err = error;
+  } catch (error1) {
+    err = error1;
     croak(err, "Original Code", coffeeCode);
   }
   debug("return from coffeeCodeToJS()", jsCode);
@@ -144,8 +148,8 @@ export var coffeeCodeToAST = function(coffeeCode, source = undef) {
   try {
     ast = getAST(coffeeCode, source);
     assert(ast != null, "ast is empty");
-  } catch (error) {
-    err = error;
+  } catch (error1) {
+    err = error1;
     croak(err, "in coffeeCodeToAST", coffeeCode);
   }
   debug("return from coffeeCodeToAST()", ast);
@@ -185,11 +189,13 @@ export var CoffeePreProcessor = class CoffeePreProcessor extends Mapper {
   }
 
   // ..........................................................
-  map(hLine) {
+  mapNonSpecial(hLine) {
     var result;
-    result = hLine.line.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
+    debug("enter CoffeePreProcessor.mapNonSpecial()", hLine);
+    result = hLine.str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
+    debug("return from CoffeePreProcessor.mapNonSpecial()", result);
     return result;
   }
 

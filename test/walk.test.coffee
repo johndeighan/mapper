@@ -1,7 +1,8 @@
 # walk.test.coffee
 
 import {UnitTester} from '@jdeighan/unit-tester'
-import {assert, croak, undef, pass} from '@jdeighan/coffee-utils'
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {undef, pass} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 
@@ -105,9 +106,9 @@ simple = new UnitTester()
 (() ->
 	class MyTraceWalker extends TraceWalker
 
-		mapStr: (str, level) ->
+		map: (hNode) ->
 
-			return {text: str}
+			return {text: hNode.str}
 
 	class Tester extends UnitTester
 

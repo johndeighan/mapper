@@ -54,15 +54,13 @@ simple = new UnitTesterNorm();
   // ------------------------------------------------------------------------
   tester.equal(28, `# --- a comment
 
-y = x`, `// --- a comment
-var y;
+y = x`, `var y;
 y = x;`);
   return tester.equal(38, `# --- a comment
 
 x = 3
 callme 'a', 3, [1,2,3]
-y = if x==3 then 'OK' else 'Bad'`, `// --- a comment
-var x, y;
+y = if x==3 then 'OK' else 'Bad'`, `var x, y;
 x = 3;
 callme('a', 3, [1, 2, 3]);
 y = x === 3 ? 'OK' : 'Bad';`);

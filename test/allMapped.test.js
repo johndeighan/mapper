@@ -7,7 +7,11 @@ import {
 
 import {
   assert,
-  croak,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass,
   OL,

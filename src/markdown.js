@@ -8,6 +8,11 @@ import {
 
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   defined,
   OL,
@@ -70,38 +75,30 @@ export var markdownify = function(block) {
 };
 
 // ---------------------------------------------------------------------------
+// --- Does not use marked!!!
+//     just simulates markdown processing
 export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
   init() {
-    this.prevLine = undef;
+    this.prevStr = undef;
   }
 
   // ..........................................................
-  mapEmptyLine(hLine) {
-    return undef;
-  }
-
-  // ..........................................................
-  mapComment(hLine) {
-    return undef;
-  }
-
-  // ..........................................................
-  map(hLine) {
-    var line, result;
+  mapNonSpecial(hLine) {
+    var result, str;
     debug("enter SimpleMarkDownMapper.map()", hLine);
     assert(defined(hLine), "hLine is undef");
-    ({line} = hLine);
-    assert(isString(line), "line not a string");
-    if (line.match(/^={3,}$/) && defined(this.prevLine)) {
-      result = `<h1>${this.prevLine}</h1>`;
-      debug("set prevLine to undef");
-      this.prevLine = undef;
+    ({str} = hLine);
+    assert(isString(str), "str not a string");
+    if (str.match(/^={3,}$/) && defined(this.prevStr)) {
+      result = `<h1>${this.prevStr}</h1>`;
+      debug("set prevStr to undef");
+      this.prevStr = undef;
       debug("return from SimpleMarkDownMapper.map()", result);
       return result;
     } else {
-      result = this.prevLine;
-      debug(`set prevLine to ${OL(line)}`);
-      this.prevLine = line;
+      result = this.prevStr;
+      debug(`set prevStr to ${OL(str)}`);
+      this.prevStr = str;
       if (defined(result)) {
         result = `<p>${result}</p>`;
         debug("return from SimpleMarkDownMapper.map()", result);
@@ -115,8 +112,8 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
 
   // ..........................................................
   endBlock() {
-    if (defined(this.prevLine)) {
-      return `<p>${this.prevLine}</p>`;
+    if (defined(this.prevStr)) {
+      return `<p>${this.prevStr}</p>`;
     } else {
       return undef;
     }

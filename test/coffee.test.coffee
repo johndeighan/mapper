@@ -30,7 +30,6 @@ simple = new UnitTesterNorm()
 
 			y = x
 			""", """
-			// --- a comment
 			var y;
 			y = x;
 			"""
@@ -42,7 +41,6 @@ simple = new UnitTesterNorm()
 			callme 'a', 3, [1,2,3]
 			y = if x==3 then 'OK' else 'Bad'
 			""", """
-			// --- a comment
 			var x, y;
 			x = 3;
 			callme('a', 3, [1, 2, 3]);

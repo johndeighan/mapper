@@ -9,7 +9,11 @@ import {
 
 import {
   assert,
-  croak,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass,
   OL,
@@ -25,6 +29,10 @@ import {
   splitLine,
   indented
 } from '@jdeighan/coffee-utils/indent';
+
+import {
+  LOG
+} from '@jdeighan/coffee-utils/log';
 
 import {
   debug,
@@ -72,12 +80,12 @@ WalkTester = class WalkTester extends UnitTester {
 tester = new WalkTester();
 
 // ..........................................................
-tester.equal(35, `abc`, `BEGIN WALK
+tester.equal(34, `abc`, `BEGIN WALK
 VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
-tester.equal(44, `abc
+tester.equal(43, `abc
 def`, `BEGIN WALK
 VISIT     0 'abc'
 END VISIT 0 'abc'
@@ -85,7 +93,7 @@ VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
-tester.equal(56, `abc
+tester.equal(55, `abc
 	def`, `BEGIN WALK
 VISIT     0 'abc'
 VISIT     1 'def'
@@ -93,14 +101,14 @@ END VISIT 1 'def'
 END VISIT 0 'abc'
 END WALK`);
 
-tester.equal(68, `abc
+tester.equal(67, `abc
 #ifdef NOPE
 	def`, `BEGIN WALK
 VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
-tester.equal(79, `abc
+tester.equal(78, `abc
 #ifndef NOPE
 	def`, `BEGIN WALK
 VISIT     0 'abc'
@@ -109,7 +117,7 @@ VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
-tester.equal(92, `#define NOPE 42
+tester.equal(91, `#define NOPE 42
 abc
 #ifndef NOPE
 	def`, `BEGIN WALK
@@ -117,7 +125,7 @@ VISIT     0 'abc'
 END VISIT 0 'abc'
 END WALK`);
 
-tester.equal(104, `#define NOPE 42
+tester.equal(103, `#define NOPE 42
 abc
 #ifdef NOPE
 	def`, `BEGIN WALK
@@ -127,7 +135,7 @@ VISIT     0 'def'
 END VISIT 0 'def'
 END WALK`);
 
-tester.equal(118, `#define NOPE 42
+tester.equal(117, `#define NOPE 42
 #define name John
 abc
 #ifdef NOPE

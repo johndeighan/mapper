@@ -4,13 +4,17 @@ var SymbolParser, getAvailSymbolsFrom;
 
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   defined,
   isString,
   isArray,
   isEmpty,
   nonEmpty,
-  croak,
   uniq,
   words,
   escapeStr,
@@ -42,6 +46,10 @@ import {
 import {
   Mapper
 } from '@jdeighan/mapper';
+
+import {
+  TreeWalker
+} from '@jdeighan/mapper/tree';
 
 import {
   coffeeCodeToAST
@@ -158,34 +166,29 @@ getAvailSymbolsFrom = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
-SymbolParser = class SymbolParser extends Mapper {
+SymbolParser = class SymbolParser extends TreeWalker {
   // --- Parse a .symbols file
-  constructor(content, source) {
-    super(content, source);
+  init() {
     this.curLib = undef;
-    this.hSymbols = {};
+    return this.hSymbols = {};
   }
 
   // ..........................................................
   // ignore empty lines and comments
-  mapEmptyLine(hLine) {
-    return undef;
-  }
 
-  mapComment(hLine) {
-    return undef;
-  }
+    //	mapEmptyLine: (hLine) -> return undef
+  //	mapComment:   (hLine) -> return undef
 
-  // ..........................................................
+    // ..........................................................
   map(hLine) {
-    var _, alt, full_line, hDesc, i, isDefault, j, lMatches, lWords, len, level, line, numWords, src, symbol, word;
-    full_line = hLine.line;
-    [level, line] = splitLine(full_line);
+    var _, alt, hDesc, i, isDefault, j, lMatches, lWords, len, level, numWords, src, str, symbol, word;
+    debug("enter SymbolParser.map()", hLine);
+    ({str, level} = hLine);
     if (level === 0) {
-      this.curLib = line.trim();
+      this.curLib = str;
     } else if (level === 1) {
       assert(this.curLib != null, "mapString(): curLib not defined");
-      lWords = words(line);
+      lWords = words(str);
       numWords = lWords.length;
       for (i = j = 0, len = lWords.length; j < len; i = ++j) {
         word = lWords[i];
@@ -212,6 +215,7 @@ SymbolParser = class SymbolParser extends Mapper {
     } else {
       croak(`Bad .symbols file - level = ${level}`);
     }
+    debug("return from SymbolParser.map()", undef);
     return undef; // doesn't matter what we return
   }
 

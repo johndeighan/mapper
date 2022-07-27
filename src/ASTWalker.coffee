@@ -1,7 +1,8 @@
 # ASTWalker.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, pass, croak, isArray, isHash, isArrayOfHashes,
+	undef, pass, isArray, isHash, isArrayOfHashes,
 	} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'

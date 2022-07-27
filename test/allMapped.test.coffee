@@ -1,8 +1,9 @@
 # allMapped.test.coffee
 
 import {UnitTester, simple} from '@jdeighan/unit-tester'
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, croak, undef, pass, OL, defined,
+	undef, pass, OL, defined,
 	isEmpty, nonEmpty, isString, eval_expr,
 	} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'

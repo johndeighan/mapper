@@ -3,10 +3,14 @@
 var atom, atomList, checkArgs, getNode, getSVG, hCommands, isIdentifier, isIntegerStr, matching;
 
 import {
+  assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass,
-  assert,
-  croak,
   isEmpty,
   isArray,
   isNumber,

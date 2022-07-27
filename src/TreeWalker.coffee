@@ -1,7 +1,8 @@
 # TreeWalker.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, pass, croak, defined, OL, rtrim, words,
+	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,
 	isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
@@ -17,10 +18,10 @@ import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 
 # ===========================================================================
 #   class TreeWalker
-#      - map() returns mapped item (i.e. uobj) or undef
+#      - mapNonSpecial() returns mapped item (i.e. uobj) or undef
 #   to use, override:
-#      mapStr(str, srcLevel, hLine) - returns user object, def: returns str
-#      mapCmd(hLine)
+#      map(hNode) - returns user object, def: returns hNode.str
+#      mapCmd(hNode)
 #      beginWalk()
 #      visit(hNode, hUser, lStack)
 #      endVisit(hNode, hUser, lStack)
@@ -52,11 +53,16 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	mapLine: (hLine) ->
+	mapNode: (hNode) ->
 
-		if @adjustLevel(hLine)
-			debug "hLine.level adjusted", hLine
-		return super(hLine)
+		debug "enter TreeWalker.mapNode()", hNode
+		if @adjustLevel(hNode)
+			debug "hNode.level adjusted", hNode
+		else
+			debug "no adjustment"
+		uobj = super(hNode)
+		debug "return from TreeWalker.mapNode()", uobj
+		return uobj
 
 	# ..........................................................
 	# --- Should always return either:
@@ -65,83 +71,67 @@ export class TreeWalker extends Mapper
 	# --- Will only receive non-special lines
 	#     1. add extension lines
 	#     2. replace HEREDOCs
-	#     3. call mapStr()
+	#     3. call map()
 
-	map: (hLine) ->
-		# --- NOTE: We allow hLine.line to be a non-string
-		#           But, in that case, to get tree functionality,
-		#           the objects being iterated should have a level key
-		#           If not, the level defaults to 0
+	mapNonSpecial: (hNode) ->
 
-		debug "enter TreeWalker.map()", hLine
+		debug "enter TreeWalker.mapNonSpecial()", hNode
+		assert notdefined(hNode.type), "hNode is #{OL(hNode)}"
 
-		{line, prefix, str, level, srcLevel} = hLine
+		{str, level, srcLevel} = hNode
 
-		if ! isString(line)
-			# --- may return undef
-			uobj = mapNonStr(line)
-			debug "return from TreeWalker.map()", uobj
-			return uobj
-
-		# --- from here on, line and str are non-empty strings
-		assert nonEmpty(line), "empty string should be special"
-		assert nonEmpty(str), "empty string should be special"
-		assert isInteger(srcLevel, {min: 0}), "srcLevel is #{OL(srcLevel)}"
+		# --- from here on, str is a non-empty string
+		assert nonEmpty(str), "hNode is #{OL(hNode)}"
+		assert isInteger(srcLevel, {min: 0}), "hNode is #{OL(hNode)}"
 
 		# --- check for extension lines, stop on blank line if found
 		debug "check for extension lines"
 		lExtLines = @fetchLinesAtLevel(srcLevel+2, {stopOn: ''})
 		assert isArray(lExtLines), "lExtLines not an array"
 		debug "#{lExtLines.length} extension lines"
-		if isEmpty(lExtLines)
-			debug "no extension lines"
-		else
-			@joinExtensionLines(hLine, lExtLines)
-			debug "with ext lines", hLine
-			{line, prefix, str} = hLine
+		if ! isEmpty(lExtLines)
+			@joinExtensionLines(hNode, lExtLines)
+			debug "with ext lines", hNode
+			{str} = hNode
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
 		if (str.indexOf('<<<') >= 0)
 			newStr = @handleHereDocsInLine(str, srcLevel)
-			if (newStr != str)
-				str = newStr
-				debug "=> #{OL(str)}"
+			str = newStr
+			debug "=> #{OL(str)}"
 		else
 			debug "no HEREDOCs"
 
-		# --- NOTE: mapStr() may return undef, meaning to ignore
-		#     We must pass srcLevel since mapStr() may use fetch()
-		uobj = @mapStr(str, srcLevel, hLine)
-		debug "return from TreeWalker.map()", uobj
+		hNode.str = str
+
+		# --- NOTE: map() may return undef, meaning to ignore
+		#     We must pass srcLevel since map() may use fetch()
+		uobj = @map(hNode)
+		debug "return from TreeWalker.mapNonSpecial()", uobj
 		return uobj
 
 	# ..........................................................
 	# --- designed to override
 
-	mapStr: (str, srcLevel, hLine) ->
+	map: (hNode) ->
 
-		return str
-
-	# ..........................................................
-	# --- designed to override
-
-	mapNonStr: (item) ->
-
-		return item
+		return hNode.str
 
 	# ..........................................................
 	# --- can override to change how lines are joined
 
-	joinExtensionLines: (hLine, lExtLines) ->
-		# --- modifies keys line & str
+	joinExtensionLines: (hNode, lExtLines) ->
+		# --- modifies key str
 
 		# --- There might be empty lines in lExtLines
 		#     but we'll skip them here
+		str = hNode.str
 		for hContLine in lExtLines
-			if nonEmpty(hContLine.str)
-				hLine.line += ' ' + hContLine.str
-				hLine.str  += ' ' + hContLine.str
+			nextStr = hContLine.str
+			if nonEmpty(nextStr)
+				str += @extSep(str, nextStr) + nextStr
+		hNode.str = str
 		return
 
 	# ..........................................................
@@ -202,11 +192,11 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 	# --- We define commands 'ifdef' and 'ifndef'
 
-	mapCmd: (hLine) ->
+	mapCmd: (hNode) ->
 
-		debug "enter TreeWalker.mapCmd()", hLine
+		debug "enter TreeWalker.mapCmd()", hNode
 
-		{cmd, argstr, prefix, srcLevel} = hLine
+		{cmd, argstr, prefix, srcLevel} = hNode
 		debug "srcLevel = #{srcLevel}"
 
 		# --- Handle our commands, returning if found
@@ -228,24 +218,23 @@ export class TreeWalker extends Mapper
 				return undef
 
 		debug "call super"
-		item = super(hLine)
+		item = super(hNode)
 
 		debug "return from TreeWalker.mapCmd()", item
 		return item
 
 	# ..........................................................
 
-	adjustLevel: (hLine) ->
+	adjustLevel: (hNode) ->
 
-		debug "enter adjustLevel()", hLine
-		if ! isString(hLine.line)
-			debug "return false from adjustLevel() - not a string"
-			return false
+		debug "enter adjustLevel()", hNode
 
-		srcLevel = hLine.level
+		srcLevel = hNode.srcLevel
+		debug "srcLevel", srcLevel
 		assert isInteger(srcLevel, {min: 0}), "level is #{OL(srcLevel)}"
 
 		# --- Calculate the needed adjustment and new level
+		debug "lMinuses", @lMinuses
 		lNewMinuses = []
 		adjust = 0
 		for i in @lMinuses
@@ -253,7 +242,7 @@ export class TreeWalker extends Mapper
 				adjust += 1
 				lNewMinuses.push i
 		@lMinuses = lNewMinuses
-		debug 'lMinuses', @lMinuses
+		debug 'new lMinuses', @lMinuses
 
 		if (adjust == 0)
 			debug "return false from adjustLevel() - zero adjustment"
@@ -262,10 +251,8 @@ export class TreeWalker extends Mapper
 		assert (srcLevel >= adjust), "srcLevel=#{srcLevel}, adjust=#{adjust}"
 		newLevel = srcLevel - adjust
 
-		# --- Make adjustments to hLine
-		hLine.level = newLevel
-		hLine.line = undented(hLine.line, adjust)
-		hLine.prefix = undented(hLine.prefix, adjust)
+		# --- Make adjustments to hNode
+		hNode.level = newLevel
 
 		debug "level adjusted #{srcLevel} => #{newLevel}"
 		debug "return true from adjustLevel()"
@@ -293,12 +280,11 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	fetchLinesAtLevel: (atLevel, hOptions={}) ->
-		# --- Does NOT remove any indentation
 		#     Valid options:
 		#        discard - discard ending line
 
 		debug "enter TreeWalker.fetchLinesAtLevel()", atLevel, hOptions
-		assert (atLevel > 0), "atLevel is #{atLevel}"
+		assert (atLevel > 0), "atLevel is #{OL(atLevel)}"
 
 		discardStopLine = hOptions.discard || false
 		stopOn = hOptions.stopOn
@@ -306,14 +292,13 @@ export class TreeWalker extends Mapper
 			assert isString(stopOn), "stopOn is #{OL(stopOn)}"
 
 		lLines = []
-		while defined(hLine = @fetch()) \
-				&& debug('hLine', hLine) \
-				&& isString(hLine.line) \
-				&& ((stopOn == undef) || (hLine.line != stopOn)) \
-				&& (isEmpty(hLine.line) || (hLine.level >= atLevel))
+		while defined(hNode = @fetch()) \
+				&& debug('hNode from fetch()', hNode) \
+				&& ((stopOn == undef) || (hNode.str != stopOn)) \
+				&& (isEmpty(hNode.str) || (hNode.level >= atLevel))
 
-			debug "add to lLines", hLine
-			lLines.push hLine
+			debug "add to lLines", hNode
+			lLines.push hNode
 
 		# --- Cases:                            unfetch?
 		#        1. line is undef                 NO
@@ -321,12 +306,12 @@ export class TreeWalker extends Mapper
 		#        3. line == stopOn (& defined)    NO
 		#        4. line nonEmpty and undented    YES
 
-		if defined(hLine)
-			if discardStopLine && (hLine.line == stopOn)
+		if defined(hNode)
+			if discardStopLine && (hNode.str == stopOn)
 				debug "discard stop line #{OL(stopOn)}"
 			else
-				debug "unfetch last line", hLine
-				@unfetch hLine
+				debug "unfetch last line", hNode
+				@unfetch hNode
 
 		debug "return from TreeWalker.fetchLinesAtLevel()", lLines
 		return lLines
@@ -339,8 +324,8 @@ export class TreeWalker extends Mapper
 		lLines = @fetchLinesAtLevel(atLevel, hOptions)
 		debug 'lLines', lLines
 
-		lRawLines = for hLine in lLines
-			hLine.line
+		lRawLines = for hNode in lLines
+			hNode.getLine(@oneIndent)
 		debug 'lRawLines', lRawLines
 
 		lUndentedLines = undented(lRawLines, atLevel)
@@ -471,8 +456,8 @@ export class TreeWalker extends Mapper
 
 		debug "enter walk()"
 
-		# --- lStack is stack of node = {
-		#        hNode: {line, type, level, uobj}
+		# --- lStack is stack of:
+		#        hNode: Node object
 		#        hUser: {}
 		#        }
 		@lLines = []  # --- resulting lines - added via @addText()

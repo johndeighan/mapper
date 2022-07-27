@@ -4,6 +4,11 @@ import sass from 'sass';
 
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef
 } from '@jdeighan/coffee-utils';
 

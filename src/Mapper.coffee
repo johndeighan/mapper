@@ -1,32 +1,33 @@
 # Mapper.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, pass, croak, OL, rtrim, defined, escapeStr, className,
+	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
+import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
 
 # ---------------------------------------------------------------------------
-#   class Mapper
-#       handles:
-#          #include
-#          #define
-#          const replacement
 
 export class Mapper extends Getter
+	# --- handles #define
+	#     performs const substitution
+	#     splits mapping into special lines and non-special lines
 
-	constructor: (source=undef, collection=undef, hOptions={}) ->
+	constructor: (source=undef, collection=undef) ->
 
 		debug "enter Mapper()"
-		super source, collection, hOptions
+		super source, collection
 
 		# --- These never change
 		@setConst 'FILE', @hSourceInfo.filename
 		@setConst 'DIR', @hSourceInfo.dir
+		@setConst 'SRC', @sourceInfoStr()
 
 		# --- This needs to be kept updated
 		@setConst 'LINE', @lineNum
@@ -43,13 +44,13 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	registerSpecialType: (type, recognizer, handler) ->
+	registerSpecialType: (type, recognizer, mapper) ->
 
 		if ! @lSpecials.includes(type)
 			@lSpecials.push(type)
 		@hSpecials[type] = {
 			recognizer
-			handler
+			mapper
 			}
 		return
 
@@ -66,55 +67,48 @@ export class Mapper extends Getter
 
 	# ..........................................................
 	# --- override
-	#     LATER: maintain an ordered hash of types along with
-	#            methods to check for those types
 
-	getItemType: (hLine) ->
+	getItemType: (hNode) ->
 
-		debug "enter Mapper.getItemType()", hLine
-		super hLine     # sets 'prefix' and 'str' for strings
+		debug "enter Mapper.getItemType()", hNode
+		{str} = hNode
 
-		{line, str} = hLine
-
-		if isString(line)
-			assert isString(str), "str is #{OL(str)}"
-
-			for type in @lSpecials
-				recognizer = @hSpecials[type].recognizer
-				if recognizer.bind(this)(str, hLine)
-					debug "return from getItemType()", type
-					return type
+		assert isString(str), "str is #{OL(str)}"
+		for type in @lSpecials
+			recognizer = @hSpecials[type].recognizer
+			if recognizer.bind(this)(hNode)
+				debug "return from getItemType()", type
+				return type
 
 		debug "return from getItemType()", undef
 		return undef
 
 	# ..........................................................
 
-	mapItemType: (type, hLine) ->
+	mapSpecial: (type, hNode) ->
 
-		debug "enter Mapper.mapItemType()", type, hLine
-		assert isHash(hLine), "hLine is #{OL(hLine)}"
-		assert (hLine.type == type), "hLine is #{OL(hLine)}"
+		debug "enter Mapper.mapSpecial()", type, hNode
+		assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
+		assert (hNode.type == type), "hNode is #{OL(hNode)}"
 		h = @hSpecials[type]
 		assert isHash(h), "Unknown type #{OL(type)}"
-		handler = h.handler.bind(this)
-		assert isFunction(handler), "Bad handler for #{OL(type)}"
-		uobj = handler(hLine)
-		debug "return from Mapper.mapItemType()", uobj
+		mapper = h.mapper.bind(this)
+		assert isFunction(mapper), "Bad mapper for #{OL(type)}"
+		uobj = mapper(hNode)
+		debug "return from Mapper.mapSpecial()", uobj
 		return uobj
 
 	# ..........................................................
 
-	isEmptyLine: (str, hLine) ->
+	isEmptyLine: (hNode) ->
 
-		return (str == '')
+		return (hNode.str == '')
 
 	# ..........................................................
 
-	isComment: (str, hLine) ->
+	isComment: (hNode) ->
 
-		if lMatches = str.match(///^
-				\s*
+		if lMatches = hNode.str.match(///^
 				\#      # a hash character
 				(?:
 					\s+
@@ -122,25 +116,25 @@ export class Mapper extends Getter
 					)?
 				$///)
 			[_, comment] = lMatches
-			hLine.comment = comment
+			hNode.comment = comment
 			return true
 		else
 			return false
 
 	# ..........................................................
 
-	isCmd: (str, hLine) ->
+	isCmd: (hNode) ->
 
 		debug "enter Mapper.isCmd()"
-		if lMatches = str.match(///^
+		if lMatches = hNode.str.match(///^
 				\#
 				([A-Za-z_]\w*)   # name of the command
 				\s*
 				(.*)             # argstr for command
 				$///)
 			[_, cmd, argstr] = lMatches
-			hLine.cmd = cmd
-			hLine.argstr = argstr
+			hNode.cmd = cmd
+			hNode.argstr = argstr
 			flag = true
 		else
 			# --- not a command
@@ -151,18 +145,18 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	mapEmptyLine: (hLine) ->
-		# --- can override
-		#     line may contain whitespace
+	mapEmptyLine: (hNode) ->
 
-		# --- return '' to keep empty lines
+		# --- default: remove empty lines
+		#     return '' to keep empty lines
 		return undef
 
 	# ..........................................................
 
-	mapComment: (hLine) ->
+	mapComment: (hNode) ->
 
-		# --- return hLine.line to keep comments
+		# --- default: remove comments
+		# --- return hNode.str to keep comments
 		return undef
 
 	# ..........................................................
@@ -171,15 +165,13 @@ export class Mapper extends Getter
 	# Override must 1st handle its own commands,
 	#    then call the base class mapCmd
 
-	mapCmd: (hLine) ->
+	mapCmd: (hNode) ->
 
-		debug "enter Mapper.mapCmd()", hLine
+		debug "enter Mapper.mapCmd()", hNode
 
 		# --- isCmd() put these keys here
-		{cmd, argstr} = hLine
-
+		{cmd, argstr} = hNode
 		switch cmd
-
 			when 'define'
 				if lMatches = argstr.match(///^
 						(env\.)?
@@ -208,8 +200,7 @@ export doMap = (inputClass, source, content=undef, hOptions={}) ->
 	debug "enter doMap()", inputClass, source, content
 	assert inputClass?, "Missing input class"
 	oInput = new inputClass(source, content)
-	assert oInput instanceof Mapper,
-		"doMap() requires a Mapper or subclass"
+	assert oInput instanceof Mapper, "Mapper or subclass required"
 	debug "got oInput object"
 	result = oInput.getBlock(hOptions)
 	debug "return from doMap()", result

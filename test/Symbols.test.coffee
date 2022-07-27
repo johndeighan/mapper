@@ -155,10 +155,10 @@ simple.equal 121, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
-	simple.equal 159, buildImportList([]), []
+	simple.equal 158, buildImportList([]), []
 
 	lNeeded = words('say undef logger slurp barf fs')
-	simple.equal 159, buildImportList(lNeeded, import.meta.url), [
+	simple.equal 161, buildImportList(lNeeded, import.meta.url), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"

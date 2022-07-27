@@ -2,6 +2,11 @@
   // TraceWalker.coffee
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   defined,
   OL

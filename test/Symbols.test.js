@@ -180,7 +180,7 @@ say "Answer is 42"`);
 // ----------------------------------------------------------------------------
 (function() {
   var lNeeded;
-  simple.equal(159, buildImportList([]), []);
+  simple.equal(158, buildImportList([]), []);
   lNeeded = words('say undef logger slurp barf fs');
-  return simple.equal(159, buildImportList(lNeeded, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+  return simple.equal(161, buildImportList(lNeeded, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
 })();

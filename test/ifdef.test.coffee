@@ -1,13 +1,15 @@
 # ifdef.test.coffee
 
 import {UnitTester, simple} from '@jdeighan/unit-tester'
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, croak, undef, pass, OL, defined,
+	undef, pass, OL, defined,
 	isEmpty, nonEmpty, isString,
 	} from '@jdeighan/coffee-utils'
 import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
+import {LOG} from '@jdeighan/coffee-utils/log'
 import {
 	debug, setDebugging,
 	} from '@jdeighan/coffee-utils/debug'
@@ -31,7 +33,7 @@ tester = new WalkTester()
 
 # ..........................................................
 
-tester.equal 35, """
+tester.equal 34, """
 		abc
 		""", """
 		BEGIN WALK
@@ -40,7 +42,7 @@ tester.equal 35, """
 		END WALK
 		"""
 
-tester.equal 44, """
+tester.equal 43, """
 		abc
 		def
 		""", """
@@ -52,7 +54,7 @@ tester.equal 44, """
 		END WALK
 		"""
 
-tester.equal 56, """
+tester.equal 55, """
 		abc
 			def
 		""", """
@@ -64,7 +66,7 @@ tester.equal 56, """
 		END WALK
 		"""
 
-tester.equal 68, """
+tester.equal 67, """
 		abc
 		#ifdef NOPE
 			def
@@ -74,7 +76,8 @@ tester.equal 68, """
 		END VISIT 0 'abc'
 		END WALK
 		"""
-tester.equal 79, """
+
+tester.equal 78, """
 		abc
 		#ifndef NOPE
 			def
@@ -87,7 +90,7 @@ tester.equal 79, """
 		END WALK
 		"""
 
-tester.equal 92, """
+tester.equal 91, """
 		#define NOPE 42
 		abc
 		#ifndef NOPE
@@ -99,7 +102,7 @@ tester.equal 92, """
 		END WALK
 		"""
 
-tester.equal 104, """
+tester.equal 103, """
 		#define NOPE 42
 		abc
 		#ifdef NOPE
@@ -113,7 +116,7 @@ tester.equal 104, """
 		END WALK
 		"""
 
-tester.equal 118, """
+tester.equal 117, """
 		#define NOPE 42
 		#define name John
 		abc

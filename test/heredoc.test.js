@@ -9,6 +9,11 @@ import {
 
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   isString,
   extractMatches,

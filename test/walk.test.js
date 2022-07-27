@@ -8,7 +8,11 @@ import {
 
 import {
   assert,
-  croak,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass
 } from '@jdeighan/coffee-utils';
@@ -91,9 +95,9 @@ END WALK`);
 (function() {
   var MyTraceWalker, Tester, tester;
   MyTraceWalker = class MyTraceWalker extends TraceWalker {
-    mapStr(str, level) {
+    map(hNode) {
       return {
-        text: str
+        text: hNode.str
       };
     }
 

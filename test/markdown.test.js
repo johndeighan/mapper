@@ -11,6 +11,10 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  LOG
+} from '@jdeighan/coffee-utils/log';
+
+import {
   setDebugging
 } from '@jdeighan/coffee-utils/debug';
 

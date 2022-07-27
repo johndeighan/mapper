@@ -4,11 +4,15 @@ var hHereDocs, lHereDocs;
 
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   defined,
   notdefined,
   pass,
-  croak,
   isString,
   isHash,
   isEmpty,

@@ -1,7 +1,8 @@
 # cielo.coffee
 
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	undef, assert, croak, OL, replaceVars, className,
+	undef, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'

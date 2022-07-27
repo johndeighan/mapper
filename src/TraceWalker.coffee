@@ -1,6 +1,7 @@
 # TraceWalker.coffee
 
-import {assert, undef, defined, OL} from '@jdeighan/coffee-utils'
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {undef, defined, OL} from '@jdeighan/coffee-utils'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 
 import {TreeWalker} from '@jdeighan/mapper/tree'

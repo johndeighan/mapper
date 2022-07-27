@@ -8,6 +8,7 @@
 	"description": "A class to help parse text files",
 	"main": "./StringInput.js",
 	"exports": {
+		"./node": "./src/Node.js",
 		"./fetcher": "./src/Fetcher.js",
 		"./getter": "./src/Getter.js",
 		".": "./src/Mapper.js",
@@ -49,11 +50,11 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^2.0.16",
+		"@jdeighan/unit-tester": "^2.0.18",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^8.0.16",
+		"@jdeighan/coffee-utils": "^9.0.0",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.18",
 		"sass": "^1.54.0"

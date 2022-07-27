@@ -2,12 +2,16 @@
 // MathML.test.coffee
 var MathTester, simple, tester;
 
-import assert from 'assert';
-
 import {
   UnitTesterNorm,
   UnitTester
 } from '@jdeighan/unit-tester';
+
+import {
+  assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
 
 import {
   undef,

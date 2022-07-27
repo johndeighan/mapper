@@ -2,9 +2,13 @@
   // Mapper.coffee
 import {
   assert,
+  error,
+  croak
+} from '@jdeighan/unit-tester/utils';
+
+import {
   undef,
   pass,
-  croak,
   OL,
   rtrim,
   defined,
@@ -33,22 +37,25 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
+  Node
+} from '@jdeighan/mapper/node';
+
+import {
   Getter
 } from '@jdeighan/mapper/getter';
 
 // ---------------------------------------------------------------------------
-//   class Mapper
-//       handles:
-//          #include
-//          #define
-//          const replacement
 export var Mapper = class Mapper extends Getter {
-  constructor(source = undef, collection = undef, hOptions = {}) {
+  // --- handles #define
+  //     performs const substitution
+  //     splits mapping into special lines and non-special lines
+  constructor(source = undef, collection = undef) {
     debug("enter Mapper()");
-    super(source, collection, hOptions);
+    super(source, collection);
     // --- These never change
     this.setConst('FILE', this.hSourceInfo.filename);
     this.setConst('DIR', this.hSourceInfo.dir);
+    this.setConst('SRC', this.sourceInfoStr());
     // --- This needs to be kept updated
     this.setConst('LINE', this.lineNum);
     this.hSpecials = {};
@@ -62,11 +69,11 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  registerSpecialType(type, recognizer, handler) {
+  registerSpecialType(type, recognizer, mapper) {
     if (!this.lSpecials.includes(type)) {
       this.lSpecials.push(type);
     }
-    this.hSpecials[type] = {recognizer, handler};
+    this.hSpecials[type] = {recognizer, mapper};
   }
 
   // ..........................................................
@@ -80,23 +87,18 @@ export var Mapper = class Mapper extends Getter {
 
   // ..........................................................
   // --- override
-  //     LATER: maintain an ordered hash of types along with
-  //            methods to check for those types
-  getItemType(hLine) {
-    var i, len, line, recognizer, ref, str, type;
-    debug("enter Mapper.getItemType()", hLine);
-    super.getItemType(hLine); // sets 'prefix' and 'str' for strings
-    ({line, str} = hLine);
-    if (isString(line)) {
-      assert(isString(str), `str is ${OL(str)}`);
-      ref = this.lSpecials;
-      for (i = 0, len = ref.length; i < len; i++) {
-        type = ref[i];
-        recognizer = this.hSpecials[type].recognizer;
-        if (recognizer.bind(this)(str, hLine)) {
-          debug("return from getItemType()", type);
-          return type;
-        }
+  getItemType(hNode) {
+    var i, len, recognizer, ref, str, type;
+    debug("enter Mapper.getItemType()", hNode);
+    ({str} = hNode);
+    assert(isString(str), `str is ${OL(str)}`);
+    ref = this.lSpecials;
+    for (i = 0, len = ref.length; i < len; i++) {
+      type = ref[i];
+      recognizer = this.hSpecials[type].recognizer;
+      if (recognizer.bind(this)(hNode)) {
+        debug("return from getItemType()", type);
+        return type;
       }
     }
     debug("return from getItemType()", undef);
@@ -104,31 +106,31 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  mapItemType(type, hLine) {
-    var h, handler, uobj;
-    debug("enter Mapper.mapItemType()", type, hLine);
-    assert(isHash(hLine), `hLine is ${OL(hLine)}`);
-    assert(hLine.type === type, `hLine is ${OL(hLine)}`);
+  mapSpecial(type, hNode) {
+    var h, mapper, uobj;
+    debug("enter Mapper.mapSpecial()", type, hNode);
+    assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
+    assert(hNode.type === type, `hNode is ${OL(hNode)}`);
     h = this.hSpecials[type];
     assert(isHash(h), `Unknown type ${OL(type)}`);
-    handler = h.handler.bind(this);
-    assert(isFunction(handler), `Bad handler for ${OL(type)}`);
-    uobj = handler(hLine);
-    debug("return from Mapper.mapItemType()", uobj);
+    mapper = h.mapper.bind(this);
+    assert(isFunction(mapper), `Bad mapper for ${OL(type)}`);
+    uobj = mapper(hNode);
+    debug("return from Mapper.mapSpecial()", uobj);
     return uobj;
   }
 
   // ..........................................................
-  isEmptyLine(str, hLine) {
-    return str === '';
+  isEmptyLine(hNode) {
+    return hNode.str === '';
   }
 
   // ..........................................................
-  isComment(str, hLine) {
+  isComment(hNode) {
     var _, comment, lMatches;
-    if (lMatches = str.match(/^\s*\#(?:\s+(.*))?$/)) { // a hash character
+    if (lMatches = hNode.str.match(/^\#(?:\s+(.*))?$/)) { // a hash character
       [_, comment] = lMatches;
-      hLine.comment = comment;
+      hNode.comment = comment;
       return true;
     } else {
       return false;
@@ -136,14 +138,14 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  isCmd(str, hLine) {
+  isCmd(hNode) {
     var _, argstr, cmd, flag, lMatches;
     debug("enter Mapper.isCmd()");
-    if (lMatches = str.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
+    if (lMatches = hNode.str.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
       // argstr for command
       [_, cmd, argstr] = lMatches;
-      hLine.cmd = cmd;
-      hLine.argstr = argstr;
+      hNode.cmd = cmd;
+      hNode.argstr = argstr;
       flag = true;
     } else {
       // --- not a command
@@ -154,17 +156,16 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  mapEmptyLine(hLine) {
-    // --- can override
-    //     line may contain whitespace
-
-    // --- return '' to keep empty lines
+  mapEmptyLine(hNode) {
+    // --- default: remove empty lines
+    //     return '' to keep empty lines
     return undef;
   }
 
   // ..........................................................
-  mapComment(hLine) {
-    // --- return hLine.line to keep comments
+  mapComment(hNode) {
+    // --- default: remove comments
+    // --- return hNode.str to keep comments
     return undef;
   }
 
@@ -173,11 +174,11 @@ export var Mapper = class Mapper extends Getter {
   //        undef to produce no output
   // Override must 1st handle its own commands,
   //    then call the base class mapCmd
-  mapCmd(hLine) {
+  mapCmd(hNode) {
     var _, argstr, cmd, isEnv, lMatches, name, tail;
-    debug("enter Mapper.mapCmd()", hLine);
+    debug("enter Mapper.mapCmd()", hNode);
     // --- isCmd() put these keys here
-    ({cmd, argstr} = hLine);
+    ({cmd, argstr} = hNode);
     switch (cmd) {
       case 'define':
         if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
@@ -208,7 +209,7 @@ export var doMap = function(inputClass, source, content = undef, hOptions = {}) 
   debug("enter doMap()", inputClass, source, content);
   assert(inputClass != null, "Missing input class");
   oInput = new inputClass(source, content);
-  assert(oInput instanceof Mapper, "doMap() requires a Mapper or subclass");
+  assert(oInput instanceof Mapper, "Mapper or subclass required");
   debug("got oInput object");
   result = oInput.getBlock(hOptions);
   debug("return from doMap()", result);

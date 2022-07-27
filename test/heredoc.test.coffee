@@ -1,8 +1,9 @@
 # heredoc.test.coffee
 
 import {UnitTester, simple} from '@jdeighan/unit-tester'
+import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	assert, undef, isString, extractMatches, CWS, OL,
+	undef, isString, extractMatches, CWS, OL,
 	defined, notdefined,
 	} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'

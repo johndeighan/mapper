@@ -99,13 +99,11 @@ export addHereDocType = (type, inputClass) ->
 	return
 
 # ---------------------------------------------------------------------------
+# --- Keep for backward compatibility
+#     but now does nothing because this module automatically loads them
 
 export addStdHereDocTypes = () ->
 
-	addHereDocType 'one line', OneLineHereDoc
-	addHereDocType 'block', ExplicitBlockHereDoc
-	addHereDocType 'taml', TAMLHereDoc
-	addHereDocType 'func', FuncHereDoc
 	return
 
 # ---------------------------------------------------------------------------
@@ -179,3 +177,11 @@ export class FuncHereDoc extends BaseHereDoc
 		else
 			debug "return from isFunctionDef - no match"
 			return false
+
+# ---------------------------------------------------------------------------
+
+# --- Add the standard HEREDOC types
+addHereDocType 'one line', OneLineHereDoc
+addHereDocType 'block', ExplicitBlockHereDoc
+addHereDocType 'taml', TAMLHereDoc
+addHereDocType 'func', FuncHereDoc

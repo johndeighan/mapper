@@ -132,12 +132,9 @@ export var addHereDocType = function(type, inputClass) {
 };
 
 // ---------------------------------------------------------------------------
-export var addStdHereDocTypes = function() {
-  addHereDocType('one line', OneLineHereDoc);
-  addHereDocType('block', ExplicitBlockHereDoc);
-  addHereDocType('taml', TAMLHereDoc);
-  addHereDocType('func', FuncHereDoc);
-};
+// --- Keep for backward compatibility
+//     but now does nothing because this module automatically loads them
+export var addStdHereDocTypes = function() {};
 
 // ---------------------------------------------------------------------------
 export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc {
@@ -198,3 +195,14 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
   }
 
 };
+
+// ---------------------------------------------------------------------------
+
+// --- Add the standard HEREDOC types
+addHereDocType('one line', OneLineHereDoc);
+
+addHereDocType('block', ExplicitBlockHereDoc);
+
+addHereDocType('taml', TAMLHereDoc);
+
+addHereDocType('func', FuncHereDoc);

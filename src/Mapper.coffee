@@ -173,23 +173,26 @@ export class Mapper extends Getter
 		{cmd, argstr} = hNode
 		switch cmd
 			when 'define'
-				if lMatches = argstr.match(///^
+				lMatches = argstr.match(///^
 						(env\.)?
 						([A-Za-z_][\w\.]*)   # name of the variable
 						(.*)
 						$///)
-					[_, isEnv, name, tail] = lMatches
-					if tail
-						tail = tail.trim()
-					if isEnv
-						debug "set env var #{name} to '#{tail}'"
-						process.env[name] = tail
-					else
-						debug "set var #{name} to '#{tail}'"
-						@setConst name, tail
+				assert defined(lMatches), "Bad #define cmd: #{cmd} #{argstr}"
+				[_, isEnv, name, tail] = lMatches
+				if tail
+					tail = tail.trim()
+				if isEnv
+					debug "set env var #{name} to '#{tail}'"
+					process.env[name] = tail
+				else
+					debug "set var #{name} to '#{tail}'"
+					@setConst name, tail
+				debug "return undef from Mapper.mapCmd()"
+				return undef
 
 		debug "return from Mapper.mapCmd()", undef
-		return undef
+		return {cmd, argstr}
 
 # ===========================================================================
 

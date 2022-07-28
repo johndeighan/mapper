@@ -218,10 +218,9 @@ export class TreeWalker extends Mapper
 				return undef
 
 		debug "call super"
-		item = super(hNode)
-
-		debug "return from TreeWalker.mapCmd()", item
-		return item
+		uobj = super(hNode)
+		debug "return from TreeWalker.mapCmd()", uobj
+		return uobj
 
 	# ..........................................................
 

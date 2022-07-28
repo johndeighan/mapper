@@ -181,22 +181,24 @@ export var Mapper = class Mapper extends Getter {
     ({cmd, argstr} = hNode);
     switch (cmd) {
       case 'define':
-        if (lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/)) { // name of the variable
-          [_, isEnv, name, tail] = lMatches;
-          if (tail) {
-            tail = tail.trim();
-          }
-          if (isEnv) {
-            debug(`set env var ${name} to '${tail}'`);
-            process.env[name] = tail;
-          } else {
-            debug(`set var ${name} to '${tail}'`);
-            this.setConst(name, tail);
-          }
+        lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/); // name of the variable
+        assert(defined(lMatches), `Bad #define cmd: ${cmd} ${argstr}`);
+        [_, isEnv, name, tail] = lMatches;
+        if (tail) {
+          tail = tail.trim();
         }
+        if (isEnv) {
+          debug(`set env var ${name} to '${tail}'`);
+          process.env[name] = tail;
+        } else {
+          debug(`set var ${name} to '${tail}'`);
+          this.setConst(name, tail);
+        }
+        debug("return undef from Mapper.mapCmd()");
+        return undef;
     }
     debug("return from Mapper.mapCmd()", undef);
-    return undef;
+    return {cmd, argstr};
   }
 
 };

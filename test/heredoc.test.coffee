@@ -82,45 +82,51 @@ simple.equal 72, lineToParts('<<<<<<'), [
 simple.equal 82, mapHereDoc("""
 		abc
 		def
-		"""), '"abc\\ndef"'
+		"""),
+		'"abc\\ndef"'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 89, mapHereDoc("""
+simple.equal 90, mapHereDoc("""
 		===
 		abc
 		def
-		"""), '"abc\\ndef"'
+		"""),
+		'"abc\\ndef"'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 97, mapHereDoc("""
+simple.equal 99, mapHereDoc("""
 		...
 		abc
 		def
-		"""), '"abc def"'
+		"""),
+		'"abc def"'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 105, mapHereDoc("""
+simple.equal 108, mapHereDoc("""
 		() -> count += 1
-		"""), '() -> count += 1'
+		"""),
+		'() -> count += 1'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 111, mapHereDoc("""
+simple.equal 115, mapHereDoc("""
 		---
 		a: 1
 		b: 2
-		"""), '{"a":1,"b":2}'
+		"""),
+		'{"a":1,"b":2}'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 119, mapHereDoc("""
+simple.equal 124, mapHereDoc("""
 		---
 		- a
 		- b
-		"""), '["a","b"]'
+		"""),
+		'["a","b"]'
 
 # ---------------------------------------------------------------------------
 
@@ -135,7 +141,7 @@ tester = new HereDocTester()
 # ------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal 138, """
+tester.equal 144, """
 		this is a
 		block of text
 		""",
@@ -144,7 +150,7 @@ tester.equal 138, """
 # ------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal 147, """
+tester.equal 153, """
 		===
 		this is a
 		block of text
@@ -154,7 +160,7 @@ tester.equal 147, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 157, """
+tester.equal 163, """
 		...this is a
 		line of text
 		""",
@@ -163,7 +169,7 @@ tester.equal 157, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 166, """
+tester.equal 172, """
 		...
 		this is a
 		line of text
@@ -190,7 +196,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType 'matrix', MatrixHereDoc
 
-tester.equal 193, """
+tester.equal 199, """
 		1 2 3
 		2 4 6
 		""",
@@ -216,7 +222,7 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType 'upper case', UCHereDoc
 
-tester.equal 219, """
+tester.equal 225, """
 		^^^
 		This is a
 		block of text
@@ -248,7 +254,7 @@ addHereDocType 'upper case 2', UCHereDoc2
 
 # ---------------------------------------------------------------------------
 
-tester.equal 251, """
+tester.equal 257, """
 		***
 		select ID,Name
 		from Users
@@ -267,7 +273,7 @@ tester = new HereDocTester()
 # ---------------------------------------------------------------------------
 # TAML block
 
-tester.equal 270, """
+tester.equal 276, """
 		---
 		- abc
 		- def
@@ -277,7 +283,7 @@ tester.equal 270, """
 # ---------------------------------------------------------------------------
 # TAML-like block, but actually a block
 
-tester.equal 280, """
+tester.equal 286, """
 		===
 		---
 		- abc
@@ -288,7 +294,7 @@ tester.equal 280, """
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-tester.equal 291, """
+tester.equal 297, """
 		---
 		-
 			label: Help
@@ -317,7 +323,7 @@ replacer = new HereDocReplacer()
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 320, """
+replacer.equal 326, """
 		TopMenu lItems={<<<}
 			---
 			-
@@ -332,7 +338,7 @@ replacer.equal 320, """
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 335, """
+replacer.equal 341, """
 		<TopMenu lItems={<<<}>
 			---
 			-
@@ -358,7 +364,7 @@ replacer.equal 335, """
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 361, """
+	tester.equal 367, """
 			(evt) ->
 				log 'click'
 			""",
@@ -370,7 +376,7 @@ replacer.equal 335, """
 	# ------------------------------------------------------------------------
 	# Function block, with no name or parameters
 
-	tester.equal 373, """
+	tester.equal 379, """
 			() ->
 				return true
 			""", """
@@ -381,7 +387,7 @@ replacer.equal 335, """
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 384, """
+	tester.equal 390, """
 			(evt) ->
 				console.log 'click'
 			""", """
@@ -392,7 +398,7 @@ replacer.equal 335, """
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 395, """
+	tester.equal 401, """
 			(  evt  )     ->
 				log 'click'
 			""", """

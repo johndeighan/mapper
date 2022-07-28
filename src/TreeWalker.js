@@ -168,7 +168,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   handleHereDocsInLine(line, srcLevel) {
-    var block, expr, hOptions, j, lNewParts, lParts, len, part, result, str;
+    var block, hOptions, j, lNewParts, lParts, len, part, result, str, uobj;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
     debug("enter handleHereDocsInLine()", line);
@@ -187,11 +187,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
         // --- block will be undented
         block = this.fetchBlockAtLevel(srcLevel + 1, hOptions);
         debug('block', block);
-        expr = mapHereDoc(block);
-        assert(defined(expr), "mapHereDoc returned undef");
-        debug('mapped block', expr);
-        str = this.handleHereDoc(expr, block);
-        assert(defined(str), "handleHereDoc returned undef");
+        uobj = mapHereDoc(block);
+        assert(defined(uobj), "mapHereDoc returned undef");
+        debug('mapped block', uobj);
+        str = this.handleHereDoc(uobj, block);
+        assert(isString(str), `str is ${OL(str)}`);
         lNewParts.push(str);
       } else {
         lNewParts.push(part); // keep as is
@@ -203,8 +203,8 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  handleHereDoc(expr, block) {
-    return expr;
+  handleHereDoc(uobj, block) {
+    return uobj;
   }
 
   // ..........................................................

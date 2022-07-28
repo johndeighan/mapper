@@ -157,12 +157,12 @@ export class TreeWalker extends Mapper
 				block = @fetchBlockAtLevel(srcLevel+1, hOptions)
 				debug 'block', block
 
-				expr = mapHereDoc(block)
-				assert defined(expr), "mapHereDoc returned undef"
-				debug 'mapped block', expr
+				uobj = mapHereDoc(block)
+				assert defined(uobj), "mapHereDoc returned undef"
+				debug 'mapped block', uobj
 
-				str = @handleHereDoc(expr, block)
-				assert defined(str), "handleHereDoc returned undef"
+				str = @handleHereDoc(uobj, block)
+				assert isString(str), "str is #{OL(str)}"
 				lNewParts.push str
 			else
 				lNewParts.push part    # keep as is
@@ -173,9 +173,9 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	handleHereDoc: (expr, block) ->
+	handleHereDoc: (uobj, block) ->
 
-		return expr
+		return uobj
 
 	# ..........................................................
 

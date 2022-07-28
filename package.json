@@ -26,6 +26,7 @@
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
 		"./math": "./src/MathML.js",
+		"./story": "./src/StoryMapper.js",
 		"./utils": "./src/utils.js",
 		"./package.json": "./package.json"
 	},

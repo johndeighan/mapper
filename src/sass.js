@@ -21,8 +21,12 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
+import {
+  TreeWalker
+} from '@jdeighan/mapper/tree';
+
 // ---------------------------------------------------------------------------
-export var SassMapper = class SassMapper extends Mapper {
+export var SassPreProcessor = class SassPreProcessor extends TreeWalker {
   // --- only removes comments
   mapComment() {
     return undef;
@@ -33,7 +37,7 @@ export var SassMapper = class SassMapper extends Mapper {
 // ---------------------------------------------------------------------------
 export var sassify = function(block, source) {
   var newblock, result;
-  newblock = doMap(SassMapper, source, block);
+  newblock = doMap(SassPreProcessor, source, block);
   result = sass.renderSync({
     data: newblock,
     indentedSyntax: true,

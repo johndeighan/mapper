@@ -11,6 +11,7 @@ import {debug} from '@jdeighan/coffee-utils/debug'
 import {indentLevel, isUndented} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
@@ -166,25 +167,25 @@ expand = (qstr) ->
 
 # ---------------------------------------------------------------------------
 
-export class CoffeePreProcessor extends Mapper
+export class CoffeePreProcessor extends TreeWalker
 
-	mapComment: (hLine) ->
+	mapComment: (hNode) ->
+
 		# --- Retain comments
-
-		return hLine.line
+		return hNode.str
 
 	# ..........................................................
 
-	mapNonSpecial: (hLine) ->
+	map: (hNode) ->
 
-		debug "enter CoffeePreProcessor.mapNonSpecial()", hLine
-		result = hLine.str.replace(///
+		debug "enter CoffeePreProcessor.map()", hNode
+		result = hNode.str.replace(///
 				\"
 				[^"]*     # sequence of non-quote characters
 				\"
 				///g,
 			(qstr) -> expand(qstr)
 			)
-		debug "return from CoffeePreProcessor.mapNonSpecial()", result
+		debug "return from CoffeePreProcessor.map()", result
 		return result
 

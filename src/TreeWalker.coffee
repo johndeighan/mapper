@@ -365,7 +365,7 @@ export class TreeWalker extends Mapper
 	visitEmptyLine: (hNode, hUser, lStack) ->
 
 		debug "in TreeWalker.visitEmptyLine()"
-		return undef
+		return ''
 
 	# ..........................................................
 
@@ -379,7 +379,7 @@ export class TreeWalker extends Mapper
 	visitComment: (hNode, hUser, lStack) ->
 
 		debug "in TreeWalker.visitComment()"
-		return undef
+		return @visit(hNode, hUser, lStack)
 
 	# ..........................................................
 

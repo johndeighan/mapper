@@ -42,8 +42,8 @@ import {
 } from '@jdeighan/mapper/utils';
 
 import {
-  Mapper
-} from '@jdeighan/mapper';
+  TreeWalker
+} from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
 stripComments = function(block) {
@@ -77,23 +77,27 @@ export var markdownify = function(block) {
 // ---------------------------------------------------------------------------
 // --- Does not use marked!!!
 //     just simulates markdown processing
-export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
-  init() {
+export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeWalker {
+  beginWalk() {
     this.prevStr = undef;
   }
 
   // ..........................................................
-  mapNonSpecial(hLine) {
+  visit(hNode) {
     var result, str;
-    debug("enter SimpleMarkDownMapper.map()", hLine);
-    assert(defined(hLine), "hLine is undef");
-    ({str} = hLine);
-    assert(isString(str), "str not a string");
+    debug("enter SimpleMarkDownMapper.visit()", hNode);
+    ({str} = hNode);
     if (str.match(/^={3,}$/) && defined(this.prevStr)) {
       result = `<h1>${this.prevStr}</h1>`;
       debug("set prevStr to undef");
       this.prevStr = undef;
-      debug("return from SimpleMarkDownMapper.map()", result);
+      debug("return from SimpleMarkDownMapper.visit()", result);
+      return result;
+    } else if (str.match(/^-{3,}$/) && defined(this.prevStr)) {
+      result = `<h2>${this.prevStr}</h2>`;
+      debug("set prevStr to undef");
+      this.prevStr = undef;
+      debug("return from SimpleMarkDownMapper.visit()", result);
       return result;
     } else {
       result = this.prevStr;
@@ -101,17 +105,17 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends Mapper {
       this.prevStr = str;
       if (defined(result)) {
         result = `<p>${result}</p>`;
-        debug("return from SimpleMarkDownMapper.map()", result);
+        debug("return from SimpleMarkDownMapper.visit()", result);
         return result;
       } else {
-        debug("return undef from SimpleMarkDownMapper.map()");
+        debug("return undef from SimpleMarkDownMapper.visit()");
         return undef;
       }
     }
   }
 
   // ..........................................................
-  endBlock() {
+  endWalk() {
     if (defined(this.prevStr)) {
       return `<p>${this.prevStr}</p>`;
     } else {

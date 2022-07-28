@@ -98,7 +98,7 @@ import {
 
 	# ..........................................................
 
-	tester.equal 112, """
+	tester.equal 101, """
 		A title
 		=======
 
@@ -109,7 +109,22 @@ import {
 		<p>some text</p>
 		"""
 
-	tester.equal 125, """
+	tester.equal 112, """
+		A title
+		=======
+
+		A subtitle
+		----------
+
+		some text
+
+		""", """
+		<h1>A title</h1>
+		<h2>A subtitle</h2>
+		<p>some text</p>
+		"""
+
+	tester.equal 127, """
 		=======
 
 		some text
@@ -119,7 +134,7 @@ import {
 		<p>some text</p>
 		"""
 
-	tester.equal 133, """
+	tester.equal 137, """
 		A title
 		=======
 		# this is a comment

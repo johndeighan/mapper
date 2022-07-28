@@ -37,7 +37,7 @@ tester = new SassTester();
 
 // ---------------------------------------------------------------------------
 (function() {
-  return tester.equal(50, `# --- here, we should use the real sass processor
+  return tester.equal(50, `# --- a comment
 p
 	margin: 0
 	span

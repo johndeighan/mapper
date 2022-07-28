@@ -80,18 +80,28 @@ fallback: null,
   };
   tester = new MarkdownTester();
   // ..........................................................
-  tester.equal(112, `A title
+  tester.equal(101, `A title
 =======
 
 some text
 `, `<h1>A title</h1>
 <p>some text</p>`);
-  tester.equal(125, `=======
+  tester.equal(112, `A title
+=======
+
+A subtitle
+----------
+
+some text
+`, `<h1>A title</h1>
+<h2>A subtitle</h2>
+<p>some text</p>`);
+  tester.equal(127, `=======
 
 some text
 `, `<p>=======</p>
 <p>some text</p>`);
-  return tester.equal(133, `A title
+  return tester.equal(137, `A title
 =======
 # this is a comment
 some text

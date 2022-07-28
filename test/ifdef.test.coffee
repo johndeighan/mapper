@@ -20,7 +20,6 @@ import {taml} from '@jdeighan/coffee-utils/taml'
 import {doMap} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 import {TraceWalker} from '@jdeighan/mapper/trace'
-import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 class WalkTester extends UnitTester
 

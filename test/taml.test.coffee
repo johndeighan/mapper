@@ -8,6 +8,7 @@ import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
 import {Mapper} from '@jdeighan/mapper'
 import {isTAML, taml, slurpTAML} from '@jdeighan/mapper/taml'
+import {StoryMapper} from '@jdeighan/mapper/story'
 
 # ---------------------------------------------------------------------------
 
@@ -88,38 +89,38 @@ simple.equal 80, slurpTAML('./test/data_structure.taml'), [
 # ---------------------------------------------------------------------------
 # --- Test providing a premapper
 
-class StoryMapper extends Mapper
+(() ->
 
-	mapNonSpecial: (hLine) ->
+	class StoryTester extends UnitTester
 
-		if lMatches = hLine.str.match(///
-				([A-Za-z_][A-Za-z0-9_]*)  # identifier
-				\:                        # colon
-				\s*                       # optional whitespace
-				(.+)                      # a non-empty string
-				$///)
-			[_, ident, str] = lMatches
+		transformValue: (block) ->
 
-			if str.match(///
-					\d+
-					(?:
-						\.
-						\d*
-						)?
-					$///)
-				return str
-			else
-				# --- surround with single quotes, double internal single quotes
-				str = "'" + str.replace(/\'/g, "''") + "'"
-				return "#{ident}: #{str}"
-		else
-			return hLine.str
+			hOptions = {
+				premapper: StoryMapper
+				source: import.meta.url
+				}
+			return taml(block, hOptions)
 
-simple.equal 116, taml("""
-		---
-		first: "Hi", Sally said
-		second: "Hello to you", Mike said
-		""", {premapper: StoryMapper, source: import.meta.url}), {
-			first: '"Hi", Sally said'
-			second: '"Hello to you", Mike said'
-			}
+	tester = new StoryTester()
+
+	# ---------------------------------------------------------------------------
+
+	simple.equal 108, taml("""
+			---
+			first: "Hi", Sally said
+			second: "Hello to you", Mike said
+			""", {premapper: StoryMapper, source: import.meta.url}), {
+				first: '"Hi", Sally said'
+				second: '"Hello to you", Mike said'
+				}
+
+	tester.equal 117, """
+			---
+			first: "Hi", Sally said
+			second: "Hello to you", Mike said
+			""", {
+				first: '"Hi", Sally said'
+				second: '"Hello to you", Mike said'
+				}
+
+	)()

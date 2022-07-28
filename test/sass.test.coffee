@@ -22,7 +22,7 @@ tester = new SassTester()
 (() ->
 
 	tester.equal 50, """
-	# --- here, we should use the real sass processor
+	# --- a comment
 	p
 		margin: 0
 		span

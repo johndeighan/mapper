@@ -12,7 +12,7 @@ import {undented} from '@jdeighan/coffee-utils/indent'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
-import {Mapper} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
@@ -43,26 +43,30 @@ export markdownify = (block) ->
 # --- Does not use marked!!!
 #     just simulates markdown processing
 
-export class SimpleMarkDownMapper extends Mapper
+export class SimpleMarkDownMapper extends TreeWalker
 
-	init: () ->
+	beginWalk: () ->
 
 		@prevStr = undef
 		return
 
 	# ..........................................................
 
-	mapNonSpecial: (hLine) ->
+	visit: (hNode) ->
 
-		debug "enter SimpleMarkDownMapper.map()", hLine
-		assert defined(hLine), "hLine is undef"
-		{str} = hLine
-		assert isString(str), "str not a string"
+		debug "enter SimpleMarkDownMapper.visit()", hNode
+		{str} = hNode
 		if str.match(/^={3,}$/) && defined(@prevStr)
 			result = "<h1>#{@prevStr}</h1>"
 			debug "set prevStr to undef"
 			@prevStr = undef
-			debug "return from SimpleMarkDownMapper.map()", result
+			debug "return from SimpleMarkDownMapper.visit()", result
+			return result
+		else if str.match(/^-{3,}$/) && defined(@prevStr)
+			result = "<h2>#{@prevStr}</h2>"
+			debug "set prevStr to undef"
+			@prevStr = undef
+			debug "return from SimpleMarkDownMapper.visit()", result
 			return result
 		else
 			result = @prevStr
@@ -70,15 +74,15 @@ export class SimpleMarkDownMapper extends Mapper
 			@prevStr = str
 			if defined(result)
 				result = "<p>#{result}</p>"
-				debug "return from SimpleMarkDownMapper.map()", result
+				debug "return from SimpleMarkDownMapper.visit()", result
 				return result
 			else
-				debug "return undef from SimpleMarkDownMapper.map()"
+				debug "return undef from SimpleMarkDownMapper.visit()"
 				return undef
 
 	# ..........................................................
 
-	endBlock: () ->
+	endWalk: () ->
 
 		if defined(@prevStr)
 			return "<p>#{@prevStr}</p>"

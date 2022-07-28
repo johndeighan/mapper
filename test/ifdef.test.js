@@ -64,10 +64,6 @@ import {
   TraceWalker
 } from '@jdeighan/mapper/trace';
 
-import {
-  SimpleMarkDownMapper
-} from '@jdeighan/mapper/markdown';
-
 WalkTester = class WalkTester extends UnitTester {
   transformValue(block) {
     var walker;

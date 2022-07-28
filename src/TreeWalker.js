@@ -386,7 +386,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   visitEmptyLine(hNode, hUser, lStack) {
     debug("in TreeWalker.visitEmptyLine()");
-    return undef;
+    return '';
   }
 
   // ..........................................................
@@ -398,7 +398,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   visitComment(hNode, hUser, lStack) {
     debug("in TreeWalker.visitComment()");
-    return undef;
+    return this.visit(hNode, hUser, lStack);
   }
 
   // ..........................................................

@@ -7,10 +7,11 @@ import {undef} from '@jdeighan/coffee-utils'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
 import {Mapper, doMap} from '@jdeighan/mapper'
+import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
-export class SassMapper extends Mapper
+export class SassPreProcessor extends TreeWalker
 	# --- only removes comments
 
 	mapComment: () ->
@@ -21,7 +22,7 @@ export class SassMapper extends Mapper
 
 export sassify = (block, source) ->
 
-	newblock = doMap(SassMapper, source, block)
+	newblock = doMap(SassPreProcessor, source, block)
 	result = sass.renderSync({
 		data: newblock,
 		indentedSyntax: true,

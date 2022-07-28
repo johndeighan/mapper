@@ -37,6 +37,10 @@ import {
   doMap
 } from '@jdeighan/mapper';
 
+import {
+  TreeWalker
+} from '@jdeighan/mapper/tree';
+
 // ---------------------------------------------------------------------------
 export var brew = function(code, source = 'internal') {
   var hCoffeeOptions, mapped, result;
@@ -182,20 +186,20 @@ expand = function(qstr) {
 };
 
 // ---------------------------------------------------------------------------
-export var CoffeePreProcessor = class CoffeePreProcessor extends Mapper {
-  mapComment(hLine) {
+export var CoffeePreProcessor = class CoffeePreProcessor extends TreeWalker {
+  mapComment(hNode) {
     // --- Retain comments
-    return hLine.line;
+    return hNode.str;
   }
 
   // ..........................................................
-  mapNonSpecial(hLine) {
+  map(hNode) {
     var result;
-    debug("enter CoffeePreProcessor.mapNonSpecial()", hLine);
-    result = hLine.str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
+    debug("enter CoffeePreProcessor.map()", hNode);
+    result = hNode.str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
-    debug("return from CoffeePreProcessor.mapNonSpecial()", result);
+    debug("return from CoffeePreProcessor.map()", result);
     return result;
   }
 

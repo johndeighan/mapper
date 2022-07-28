@@ -58,40 +58,53 @@ import {
 addStdHereDocTypes();
 
 // ---------------------------------------------------------------------------
-simple.truthy(23, isHereDocType('one line'));
+simple.truthy(24, isHereDocType('one line'));
 
-simple.truthy(24, isHereDocType('taml'));
+simple.truthy(25, isHereDocType('taml'));
 
-simple.falsy(25, isHereDocType('two line'));
-
-// ---------------------------------------------------------------------------
-simple.equal(29, lineToParts('this is not a heredoc'), ['this is not a heredoc']);
-
-simple.equal(33, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
-
-simple.equal(41, lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
-
-simple.equal(49, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
-
-simple.equal(57, lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
-
-simple.equal(65, lineToParts('<<<'), ['', '<<<', '']);
-
-simple.equal(71, lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
+simple.falsy(26, isHereDocType('two line'));
 
 // ---------------------------------------------------------------------------
-simple.equal(81, mapHereDoc(`abc
+simple.equal(30, lineToParts('this is not a heredoc'), ['this is not a heredoc']);
+
+simple.equal(34, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
+
+simple.equal(42, lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
+
+simple.equal(50, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
+
+simple.equal(58, lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
+
+simple.equal(66, lineToParts('<<<'), ['', '<<<', '']);
+
+simple.equal(72, lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
+
+// ---------------------------------------------------------------------------
+simple.equal(82, mapHereDoc(`abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-simple.equal(88, mapHereDoc(`===
+simple.equal(89, mapHereDoc(`===
 abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-simple.equal(96, mapHereDoc(`...
+simple.equal(97, mapHereDoc(`...
 abc
 def`), '"abc def"');
+
+// ---------------------------------------------------------------------------
+simple.equal(105, mapHereDoc(`() -> count += 1`), '() -> count += 1');
+
+// ---------------------------------------------------------------------------
+simple.equal(111, mapHereDoc(`---
+a: 1
+b: 2`), '{"a":1,"b":2}');
+
+// ---------------------------------------------------------------------------
+simple.equal(119, mapHereDoc(`---
+- a
+- b`), '["a","b"]');
 
 // ---------------------------------------------------------------------------
 HereDocTester = class HereDocTester extends UnitTester {
@@ -105,23 +118,23 @@ tester = new HereDocTester();
 
 // ------------------------------------------------------------------------
 // Default heredoc type is a block
-tester.equal(115, `this is a
+tester.equal(138, `this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ------------------------------------------------------------------------
 // Make explicit that the heredoc type is a block
-tester.equal(124, `===
+tester.equal(147, `===
 this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ------------------------------------------------------------------------
 // One Line block
-tester.equal(134, `...this is a
+tester.equal(157, `...this is a
 line of text`, '"this is a line of text"');
 
 // ------------------------------------------------------------------------
 // One Line block
-tester.equal(143, `...
+tester.equal(166, `...
 this is a
 line of text`, '"this is a line of text"');
 
@@ -151,7 +164,7 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
 
 addHereDocType('matrix', MatrixHereDoc);
 
-tester.equal(170, `1 2 3
+tester.equal(193, `1 2 3
 2 4 6`, '[[1,2,3],[2,4,6]]');
 
 // ------------------------------------------------------------------------
@@ -175,7 +188,7 @@ UCHereDoc = class UCHereDoc extends BaseHereDoc {
 
 addHereDocType('upper case', UCHereDoc);
 
-tester.equal(196, `^^^
+tester.equal(219, `^^^
 This is a
 block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
 
@@ -204,7 +217,7 @@ UCHereDoc2 = class UCHereDoc2 extends BaseHereDoc {
 addHereDocType('upper case 2', UCHereDoc2);
 
 // ---------------------------------------------------------------------------
-tester.equal(228, `***
+tester.equal(251, `***
 select ID,Name
 from Users`, '"SELECT ID,NAME FROM USERS"');
 
@@ -220,20 +233,20 @@ tester = new HereDocTester();
 
 // ---------------------------------------------------------------------------
 // TAML block
-tester.equal(247, `---
+tester.equal(270, `---
 - abc
 - def`, '["abc","def"]');
 
 // ---------------------------------------------------------------------------
 // TAML-like block, but actually a block
-tester.equal(257, `===
+tester.equal(280, `===
 ---
 - abc
 - def`, '"---\\n- abc\\n- def"');
 
 // ---------------------------------------------------------------------------
 // TAML block 2
-tester.equal(268, `---
+tester.equal(291, `---
 -
 	label: Help
 	url: /help
@@ -268,7 +281,7 @@ HereDocReplacer = class HereDocReplacer extends UnitTester {
 replacer = new HereDocReplacer();
 
 // ---------------------------------------------------------------------------
-replacer.equal(297, `TopMenu lItems={<<<}
+replacer.equal(320, `TopMenu lItems={<<<}
 	---
 	-
 		label: Help
@@ -278,7 +291,7 @@ replacer.equal(297, `TopMenu lItems={<<<}
 		url: /books`, `TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}`);
 
 // ---------------------------------------------------------------------------
-replacer.equal(312, `<TopMenu lItems={<<<}>
+replacer.equal(335, `<TopMenu lItems={<<<}>
 	---
 	-
 		label: Help
@@ -298,22 +311,22 @@ replacer.equal(312, `<TopMenu lItems={<<<}>
   };
   tester = new HereDocMapper();
   // ------------------------------------------------------------------------
-  tester.equal(338, `(evt) ->
+  tester.equal(361, `(evt) ->
 	log 'click'`, `(evt) ->
 	log 'click'`);
   // ------------------------------------------------------------------------
   // Function block, with no name or parameters
-  tester.equal(350, `() ->
+  tester.equal(373, `() ->
 	return true`, `() ->
 	return true`);
   // ------------------------------------------------------------------------
   // Function block, with no name but one parameter
-  tester.equal(361, `(evt) ->
+  tester.equal(384, `(evt) ->
 	console.log 'click'`, `(evt) ->
 	console.log 'click'`);
   // ------------------------------------------------------------------------
   // Function block, with no name but one parameter
-  return tester.equal(372, `(  evt  )     ->
+  return tester.equal(395, `(  evt  )     ->
 	log 'click'`, `(  evt  )     ->
 	log 'click'`);
 })();

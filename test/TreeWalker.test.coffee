@@ -20,9 +20,6 @@ import {taml} from '@jdeighan/coffee-utils/taml'
 import {doMap} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
-import {addStdHereDocTypes} from '@jdeighan/mapper/heredoc'
-
-addStdHereDocTypes()
 
 ###
 	class TreeWalker should handle the following:
@@ -44,35 +41,22 @@ addStdHereDocTypes()
 
 		line3
 		""")
-	simple.like 47, walker.get(), {
+	simple.like 44, walker.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	simple.like 52, walker.get(), {
-		str: '# a comment'
-		level: 0
-		lineNum: 1
-		type: 'comment'
-		comment: 'a comment'
-		}
-	simple.like 59, walker.get(), {
+	simple.like 49, walker.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	simple.like 64, walker.get(), {
-		str: ''
-		level: 0
-		lineNum: 4
-		type: 'empty'
-		}
-	simple.like 70, walker.get(), {
+	simple.like 54, walker.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	simple.equal 75, walker.get(), undef
+	simple.equal 59, walker.get(), undef
 
 	)()
 
@@ -88,19 +72,19 @@ addStdHereDocTypes()
 					ghi
 			""")
 
-	simple.like 91, walker.get(), {
+	simple.like 75, walker.get(), {
 		str:  'abc'
 		level: 0
 		}
-	simple.like 95, walker.get(), {
+	simple.like 79, walker.get(), {
 		str:  'def'
 		level: 1
 		}
-	simple.like 99, walker.get(), {
+	simple.like 83, walker.get(), {
 		str:  'ghi'
 		level: 2
 		}
-	simple.equal 103, walker.get(), undef
+	simple.equal 87, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -117,22 +101,22 @@ addStdHereDocTypes()
 
 	# --- get() should return {uobj, level}
 
-	simple.like 120, walker.get(), {
+	simple.like 104, walker.get(), {
 		str: 'abc def'
 		level: 0
 		}
-	simple.like 124, walker.get(), {
+	simple.like 108, walker.get(), {
 		str: 'ghi'
 		level: 1
 		}
-	simple.equal 128, walker.get(), undef
+	simple.equal 112, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # __END__ only works with no identation
 
 (() ->
-	simple.fails 135, () -> doMap(TreeWalker, import.meta.url, """
+	simple.fails 119, () -> doMap(TreeWalker, import.meta.url, """
 			abc
 					def
 				ghi
@@ -156,7 +140,7 @@ addStdHereDocTypes()
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	tester.equal 159, """
+	tester.equal 143, """
 			abc
 			def
 			""", """
@@ -164,7 +148,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 167, """
+	tester.equal 151, """
 			abc
 
 			def
@@ -204,12 +188,12 @@ addStdHereDocTypes()
 			def
 			"""
 
-	simple.equal 207, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 191, doMap(MyWalker, import.meta.url, block), """
 			abc
 			def
 			"""
 
-	tester.equal 212, block, """
+	tester.equal 196, block, """
 			abc
 			def
 			"""
@@ -252,13 +236,13 @@ addStdHereDocTypes()
 			def
 			"""
 
-	simple.equal 255, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 239, doMap(MyWalker, import.meta.url, block), """
 			# not a comment
 			abc
 			def
 			"""
 
-	tester.equal 261, block, """
+	tester.equal 245, block, """
 			# not a comment
 			abc
 			def
@@ -319,7 +303,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 322, block, """
+	tester.equal 306, block, """
 			abc
 			COMMAND: command
 			def
@@ -362,7 +346,7 @@ addStdHereDocTypes()
 
 	# ..........................................................
 
-	tester.equal 365, """
+	tester.equal 349, """
 			abc
 				def
 
@@ -400,7 +384,7 @@ addStdHereDocTypes()
 
 	# ..........................................................
 
-	tester.equal 403, """
+	tester.equal 387, """
 			abc
 
 			def
@@ -426,7 +410,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.equal 429, """
+	tester.equal 413, """
 			abc
 				#include title.md
 			def
@@ -455,7 +439,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.like 458, """
+	tester.like 442, """
 			abc
 				def
 					ghi
@@ -491,23 +475,23 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 494, walker.peek(), {level:0, str: 'if (x == 2)'}
-	simple.like 495, walker.get(),  {level:0, str: 'if (x == 2)'}
+	simple.like 478, walker.peek(), {level:0, str: 'if (x == 2)'}
+	simple.like 479, walker.get(),  {level:0, str: 'if (x == 2)'}
 
-	simple.like 497, walker.peek(), {level:1, str: 'doThis'}
-	simple.like 498, walker.get(),  {level:1, str: 'doThis'}
+	simple.like 481, walker.peek(), {level:1, str: 'doThis'}
+	simple.like 482, walker.get(),  {level:1, str: 'doThis'}
 
-	simple.like 500, walker.peek(), {level:1, str: 'doThat'}
-	simple.like 501, walker.get(),  {level:1, str: 'doThat'}
+	simple.like 484, walker.peek(), {level:1, str: 'doThat'}
+	simple.like 485, walker.get(),  {level:1, str: 'doThat'}
 
-	simple.like 503, walker.peek(), {level:2, str: 'then this'}
-	simple.like 504, walker.get(),  {level:2, str: 'then this'}
+	simple.like 487, walker.peek(), {level:2, str: 'then this'}
+	simple.like 488, walker.get(),  {level:2, str: 'then this'}
 
-	simple.like 506, walker.peek(), {level:0, str: 'while (x > 2)'}
-	simple.like 507, walker.get(),  {level:0, str: 'while (x > 2)'}
+	simple.like 490, walker.peek(), {level:0, str: 'while (x > 2)'}
+	simple.like 491, walker.get(),  {level:0, str: 'while (x > 2)'}
 
-	simple.like 509, walker.peek(), {level:1, str: '--x'}
-	simple.like 510, walker.get(),  {level:1, str: '--x'}
+	simple.like 493, walker.peek(), {level:1, str: '--x'}
+	simple.like 494, walker.get(),  {level:1, str: '--x'}
 
 	)()
 
@@ -525,23 +509,23 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 528, walker.get(), {
+	simple.like 512, walker.get(), {
 		level: 0
 		str:   'if (x == 2)'
 		}
 
-	simple.equal 533, walker.fetchBlockAtLevel(1), """
+	simple.equal 517, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
 
-	simple.like 539, walker.get(), {
+	simple.like 523, walker.get(), {
 		level: 0
 		str:   'while (x > 2)'
 		}
 
-	simple.equal 544, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 528, walker.fetchBlockAtLevel(1), "--x"
 	)()
 
 # ---------------------------------------------------------------------------
@@ -572,27 +556,29 @@ addStdHereDocTypes()
 				--x
 			""")
 
-	simple.like 575, walker.get(), {
+	simple.like 559, walker.get(), {
 			level: 0
-			line: {
+			str: 'if (x == 2)'
+			uobj: {
 				cmd: 'if'
 				cond: '(x == 2)'
 				}
 			}
-	simple.equal 582, walker.fetchBlockAtLevel(1), """
+	simple.equal 566, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
-	simple.like 587, walker.get(), {
+	simple.like 571, walker.get(), {
 			level: 0
-			line: {
+			str: 'while (x > 2)'
+			uobj: {
 				cmd: 'while',
 				cond: '(x > 2)'
 				}
 			}
-	simple.equal 594, walker.fetchBlockAtLevel(1), "--x"
-	simple.equal 595, walker.get(), undef
+	simple.equal 578, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 579, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -610,7 +596,7 @@ addStdHereDocTypes()
 
 	tester = new MyTester()
 
-	tester.equal 613, """
+	tester.equal 597, """
 			abc
 			if x == <<<
 				abc
@@ -623,7 +609,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 626, """
+	tester.equal 610, """
 			abc
 			if x == <<<
 				===
@@ -637,7 +623,7 @@ addStdHereDocTypes()
 			def
 			"""
 
-	tester.equal 640, """
+	tester.equal 624, """
 			abc
 			if x == <<<
 				...
@@ -738,7 +724,7 @@ class HtmlMapper extends TreeWalker
 
 	# ----------------------------------------------------------
 
-	tester.equal 741, """
+	tester.equal 725, """
 			body
 				# a comment
 
@@ -779,7 +765,7 @@ class HtmlMapper extends TreeWalker
 
 	tester = new MyTester()
 
-	tester.equal 782, """
+	tester.equal 766, """
 			abc
 			#ifdef something
 				def

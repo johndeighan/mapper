@@ -397,8 +397,13 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visitComment(hNode, hUser, lStack) {
-    debug("in TreeWalker.visitComment()");
-    return this.visit(hNode, hUser, lStack);
+    var level, result, uobj;
+    debug("enter visitComment()", hNode, hUser, lStack);
+    ({uobj, level} = hNode);
+    assert(isString(uobj), "uobj not a string");
+    result = indented(uobj, level);
+    debug("return from visitComment()", result);
+    return result;
   }
 
   // ..........................................................

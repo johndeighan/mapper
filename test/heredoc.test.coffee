@@ -13,11 +13,8 @@ import {undented} from '@jdeighan/coffee-utils/indent'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
 import {
-	lineToParts, mapHereDoc, addHereDocType, isHereDocType,
-	BaseHereDoc, addStdHereDocTypes,
+	lineToParts, mapHereDoc, addHereDocType, isHereDocType, BaseHereDoc,
 	} from '@jdeighan/mapper/heredoc'
-
-addStdHereDocTypes()
 
 # ---------------------------------------------------------------------------
 

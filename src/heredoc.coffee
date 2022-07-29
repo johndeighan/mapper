@@ -99,14 +99,6 @@ export addHereDocType = (type, inputClass) ->
 	return
 
 # ---------------------------------------------------------------------------
-# --- Keep for backward compatibility
-#     but now does nothing because this module automatically loads them
-
-export addStdHereDocTypes = () ->
-
-	return
-
-# ---------------------------------------------------------------------------
 
 export class ExplicitBlockHereDoc extends BaseHereDoc
 

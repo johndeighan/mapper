@@ -173,23 +173,23 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.like 230, getter.peek(), {str: 'if (x == 2)'}
-	simple.like 231, getter.get(),  {str: 'if (x == 2)'}
+	simple.like 230, getter.peek(), {str: 'if (x == 2)', level: 0}
+	simple.like 231, getter.get(),  {str: 'if (x == 2)', level: 0}
 
-	simple.like 233, getter.peek(), {str: '\tdoThis'}
-	simple.like 234, getter.get(),  {str: '\tdoThis'}
+	simple.like 233, getter.peek(), {str: 'doThis', level: 1}
+	simple.like 234, getter.get(),  {str: 'doThis', level: 1}
 
-	simple.like 236, getter.peek(), {str: '\tdoThat'}
-	simple.like 237, getter.get(),  {str: '\tdoThat'}
+	simple.like 236, getter.peek(), {str: 'doThat', level: 1}
+	simple.like 237, getter.get(),  {str: 'doThat', level: 1}
 
-	simple.like 239, getter.peek(), {str: '\t\tthen this'}
-	simple.like 240, getter.get(),  {str: '\t\tthen this'}
+	simple.like 239, getter.peek(), {str: 'then this', level: 2}
+	simple.like 240, getter.get(),  {str: 'then this', level: 2}
 
-	simple.like 242, getter.peek(), {str: 'while (x > 2)'}
-	simple.like 243, getter.get(),  {str: 'while (x > 2)'}
+	simple.like 242, getter.peek(), {str: 'while (x > 2)', level: 0}
+	simple.like 243, getter.get(),  {str: 'while (x > 2)', level: 0}
 
-	simple.like 245, getter.peek(), {str: '\t--x'}
-	simple.like 246, getter.get(),  {str: '\t--x'}
+	simple.like 245, getter.peek(), {str: '--x', level: 1}
+	simple.like 246, getter.get(),  {str: '--x', level: 1}
 
 	)()
 

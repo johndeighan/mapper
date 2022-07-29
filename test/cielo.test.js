@@ -32,10 +32,6 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  addStdHereDocTypes
-} from '@jdeighan/mapper/heredoc';
-
-import {
   doMap
 } from '@jdeighan/mapper';
 
@@ -47,8 +43,6 @@ import {
 import {
   TreeWalker
 } from '@jdeighan/mapper/tree';
-
-addStdHereDocTypes();
 
 // ---------------------------------------------------------------------------
 // --- Features:

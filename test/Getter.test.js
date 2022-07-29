@@ -236,40 +236,52 @@ def`);
 while (x > 2)
 	--x`);
   simple.like(230, getter.peek(), {
-    str: 'if (x == 2)'
+    str: 'if (x == 2)',
+    level: 0
   });
   simple.like(231, getter.get(), {
-    str: 'if (x == 2)'
+    str: 'if (x == 2)',
+    level: 0
   });
   simple.like(233, getter.peek(), {
-    str: '\tdoThis'
+    str: 'doThis',
+    level: 1
   });
   simple.like(234, getter.get(), {
-    str: '\tdoThis'
+    str: 'doThis',
+    level: 1
   });
   simple.like(236, getter.peek(), {
-    str: '\tdoThat'
+    str: 'doThat',
+    level: 1
   });
   simple.like(237, getter.get(), {
-    str: '\tdoThat'
+    str: 'doThat',
+    level: 1
   });
   simple.like(239, getter.peek(), {
-    str: '\t\tthen this'
+    str: 'then this',
+    level: 2
   });
   simple.like(240, getter.get(), {
-    str: '\t\tthen this'
+    str: 'then this',
+    level: 2
   });
   simple.like(242, getter.peek(), {
-    str: 'while (x > 2)'
+    str: 'while (x > 2)',
+    level: 0
   });
   simple.like(243, getter.get(), {
-    str: 'while (x > 2)'
+    str: 'while (x > 2)',
+    level: 0
   });
   simple.like(245, getter.peek(), {
-    str: '\t--x'
+    str: '--x',
+    level: 1
   });
   return simple.like(246, getter.get(), {
-    str: '\t--x'
+    str: '--x',
+    level: 1
   });
 })();
 

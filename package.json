@@ -51,11 +51,11 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^2.0.18",
+		"@jdeighan/unit-tester": "^2.0.21",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/coffee-utils": "^9.0.0",
+		"@jdeighan/coffee-utils": "^9.0.3",
 		"cross-env": "^7.0.3",
 		"marked": "^4.0.18",
 		"sass": "^1.54.0"

@@ -51,11 +51,8 @@ import {
   mapHereDoc,
   addHereDocType,
   isHereDocType,
-  BaseHereDoc,
-  addStdHereDocTypes
+  BaseHereDoc
 } from '@jdeighan/mapper/heredoc';
-
-addStdHereDocTypes();
 
 // ---------------------------------------------------------------------------
 simple.truthy(24, isHereDocType('one line'));

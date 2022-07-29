@@ -377,8 +377,12 @@ export class TreeWalker extends Mapper
 
 	visitComment: (hNode, hUser, lStack) ->
 
-		debug "in TreeWalker.visitComment()"
-		return @visit(hNode, hUser, lStack)
+		debug "enter visitComment()", hNode, hUser, lStack
+		{uobj, level} = hNode
+		assert isString(uobj), "uobj not a string"
+		result = indented(uobj, level)
+		debug "return from visitComment()", result
+		return result
 
 	# ..........................................................
 

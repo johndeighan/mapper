@@ -132,11 +132,6 @@ export var addHereDocType = function(type, inputClass) {
 };
 
 // ---------------------------------------------------------------------------
-// --- Keep for backward compatibility
-//     but now does nothing because this module automatically loads them
-export var addStdHereDocTypes = function() {};
-
-// ---------------------------------------------------------------------------
 export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc {
   doMap(block) {
     if (firstLine(block) !== '===') {

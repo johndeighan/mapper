@@ -2,7 +2,7 @@
 
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	undef, OL, replaceVars, className,
+	undef, defined, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
@@ -42,11 +42,14 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 
 	if hOptions.premapper
 		premapper = hOptions.premapper
-		assert (premapper.prototype instanceof TreeWalker) || (premapper == TreeWalker),
-				"premapper should be a TreeWalker"
+		assert (premapper.prototype instanceof Mapper) || (premapper == Mapper),
+				"premapper not a Mapper"
 	else
 		premapper = TreeWalker
 	postmapper = hOptions.postmapper   # may be undef
+	if defined(postmapper)
+		assert (postmapper.prototype instanceof Mapper) || (postmapper == Mapper),
+				"postmapper not a Mapper"
 
 	# --- Handles extension lines, HEREDOCs, etc.
 	debug "Apply premapper #{className(premapper)}"
@@ -107,12 +110,15 @@ export cieloCodeToCoffee = (cieloCode, source=undef, hOptions={}) ->
 
 	if hOptions.premapper
 		premapper = hOptions.premapper
-		assert (premapper.prototype instanceof TreeWalker) || (premapper == TreeWalker),
-				"premapper should be a TreeWalker"
+		assert (premapper.prototype instanceof Mapper) || (premapper == Mapper),
+				"premapper not a Mapper"
 	else
 		premapper = TreeWalker
 
 	postmapper = hOptions.postmapper   # may be undef
+	if defined(postmapper)
+		assert (postmapper.prototype instanceof Mapper) || (postmapper == Mapper),
+				"postmapper not a Mapper"
 
 	# --- Handles extension lines, HEREDOCs, etc.
 	debug "Apply premapper #{className(premapper)}"

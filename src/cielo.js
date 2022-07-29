@@ -8,6 +8,7 @@ import {
 
 import {
   undef,
+  defined,
   OL,
   replaceVars,
   className,
@@ -80,12 +81,14 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   assert(isHash(hOptions), "hOptions not a hash");
   if (hOptions.premapper) {
     premapper = hOptions.premapper;
-    assert((premapper.prototype instanceof TreeWalker) || (premapper === TreeWalker), "premapper should be a TreeWalker");
+    assert((premapper.prototype instanceof Mapper) || (premapper === Mapper), "premapper not a Mapper");
   } else {
     premapper = TreeWalker;
   }
   postmapper = hOptions.postmapper; // may be undef
-  
+  if (defined(postmapper)) {
+    assert((postmapper.prototype instanceof Mapper) || (postmapper === Mapper), "postmapper not a Mapper");
+  }
   // --- Handles extension lines, HEREDOCs, etc.
   debug(`Apply premapper ${className(premapper)}`);
   coffeeCode = doMap(premapper, source, cieloCode);
@@ -150,12 +153,14 @@ export var cieloCodeToCoffee = function(cieloCode, source = undef, hOptions = {}
   assert(isHash(hOptions), "hOptions not a hash");
   if (hOptions.premapper) {
     premapper = hOptions.premapper;
-    assert((premapper.prototype instanceof TreeWalker) || (premapper === TreeWalker), "premapper should be a TreeWalker");
+    assert((premapper.prototype instanceof Mapper) || (premapper === Mapper), "premapper not a Mapper");
   } else {
     premapper = TreeWalker;
   }
   postmapper = hOptions.postmapper; // may be undef
-  
+  if (defined(postmapper)) {
+    assert((postmapper.prototype instanceof Mapper) || (postmapper === Mapper), "postmapper not a Mapper");
+  }
   // --- Handles extension lines, HEREDOCs, etc.
   debug(`Apply premapper ${className(premapper)}`);
   coffeeCode = doMap(premapper, source, cieloCode);

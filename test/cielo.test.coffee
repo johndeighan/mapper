@@ -1,6 +1,8 @@
 # cielo.test.coffee
 
+import {assert} from '@jdeighan/unit-tester/utils'
 import {UnitTesterNorm, UnitTester, simple} from '@jdeighan/unit-tester'
+
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {log, LOG} from '@jdeighan/coffee-utils/log'
@@ -18,7 +20,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 #        - REMOVE blank lines
 #        - #include <file>
 #        - handle continuation lines
-#        - replace FILE, LINE and DIR
+#        - replace FILE, LINE, DIR and SRC
 #        - stop on __END__
 #        - handle HEREDOC - various types
 #        - add auto-imports
@@ -365,4 +367,40 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			logger(x);
 			"""
 
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test premapper
+
+(() ->
+	class CieloTester extends UnitTester
+
+		transformValue: (code) ->
+
+			# --- define a custom premapper that retains '# ||||' style comments
+			class MyPreMapper extends TreeWalker
+
+				mapComment: (hNode) ->
+					{str, comment} = hNode
+					if (comment.indexOf('||||') == 0)
+						return str
+					else
+						return undef
+
+			hOptions = {premapper: MyPreMapper}
+			return cieloCodeToCoffee(code, import.meta.url, hOptions)
+
+	tester = new CieloTester(import.meta.url)
+
+	# ------------------------------------------------------------------------
+	# --- test removing comments
+
+	tester.equal 399, """
+			# --- a comment
+			# |||| stuff
+			y = x
+			""", """
+			# |||| stuff
+			y = x
+			"""
 	)()

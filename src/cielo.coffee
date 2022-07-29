@@ -42,8 +42,8 @@ export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
 
 	if hOptions.premapper
 		premapper = hOptions.premapper
-		assert premapper instanceof TreeWalker,
-			"premapper must be a TreeWalker"
+		assert (premapper.prototype instanceof TreeWalker) || (premapper == TreeWalker),
+				"premapper should be a TreeWalker"
 	else
 		premapper = TreeWalker
 	postmapper = hOptions.postmapper   # may be undef
@@ -107,10 +107,11 @@ export cieloCodeToCoffee = (cieloCode, source=undef, hOptions={}) ->
 
 	if hOptions.premapper
 		premapper = hOptions.premapper
-		assert premapper instanceof TreeWalker,
-			"premapper must be a TreeWalker"
+		assert (premapper.prototype instanceof TreeWalker) || (premapper == TreeWalker),
+				"premapper should be a TreeWalker"
 	else
 		premapper = TreeWalker
+
 	postmapper = hOptions.postmapper   # may be undef
 
 	# --- Handles extension lines, HEREDOCs, etc.

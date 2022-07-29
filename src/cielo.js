@@ -80,7 +80,7 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   assert(isHash(hOptions), "hOptions not a hash");
   if (hOptions.premapper) {
     premapper = hOptions.premapper;
-    assert(premapper instanceof TreeWalker, "premapper must be a TreeWalker");
+    assert((premapper.prototype instanceof TreeWalker) || (premapper === TreeWalker), "premapper should be a TreeWalker");
   } else {
     premapper = TreeWalker;
   }
@@ -150,7 +150,7 @@ export var cieloCodeToCoffee = function(cieloCode, source = undef, hOptions = {}
   assert(isHash(hOptions), "hOptions not a hash");
   if (hOptions.premapper) {
     premapper = hOptions.premapper;
-    assert(premapper instanceof TreeWalker, "premapper must be a TreeWalker");
+    assert((premapper.prototype instanceof TreeWalker) || (premapper === TreeWalker), "premapper should be a TreeWalker");
   } else {
     premapper = TreeWalker;
   }

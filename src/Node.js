@@ -17,6 +17,7 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  indented,
   indentLevel,
   splitPrefix
 } from '@jdeighan/coffee-utils/indent';
@@ -47,35 +48,13 @@ export var Node = class Node {
   }
 
   // ..........................................................
-  setUserObj(uobj) {
-    assert(defined(uobj), `uobj is ${OL(uobj)}`);
-    this.uobj = uobj;
-  }
-
-  // ..........................................................
   isMapped() {
     return defined(this.uobj);
   }
 
   // ..........................................................
-  getIndent(oneIndent) {
-    if (defined(oneIndent)) {
-      return oneIndent.repeat(this.level);
-    } else {
-      assert(this.level === 0, `undef oneIndent, level = ${OL(this.level)}`);
-      return '';
-    }
-  }
-
-  // ..........................................................
   getLine(oneIndent) {
-    return this.getIndent(oneIndent) + this.str;
-  }
-
-  // ..........................................................
-  getMappedLine(oneIndent) {
-    assert(isString(this.uobj), `uobj is ${OL(this.uobj)}`);
-    return this.getIndent(oneIndent) + this.uobj;
+    return indented(this.str, this.level, oneIndent);
   }
 
 };

@@ -142,12 +142,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  // --- designed to override
-  map(hNode) {
-    return hNode.str;
-  }
-
-  // ..........................................................
   // --- can override to change how lines are joined
   joinExtensionLines(hNode, lExtLines) {
     var hContLine, j, len, nextStr, str;
@@ -222,7 +216,8 @@ export var TreeWalker = class TreeWalker extends Mapper {
   mapCmd(hNode) {
     var argstr, cmd, isEnv, keep, lSkipLines, name, ok, prefix, srcLevel, uobj, value;
     debug("enter TreeWalker.mapCmd()", hNode);
-    ({cmd, argstr, prefix, srcLevel} = hNode);
+    ({uobj, prefix, srcLevel} = hNode);
+    ({cmd, argstr} = uobj);
     debug(`srcLevel = ${srcLevel}`);
     // --- Handle our commands, returning if found
     switch (cmd) {
@@ -367,13 +362,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visit(hNode, hUser, lStack) {
-    var level, result, uobj;
+    var uobj;
     debug("enter visit()", hNode, hUser, lStack);
-    ({uobj, level} = hNode);
+    uobj = hNode.uobj;
     assert(isString(uobj), "uobj not a string");
-    result = indented(uobj, level);
-    debug("return from visit()", result);
-    return result;
+    debug("return from visit()", uobj);
+    return uobj;
   }
 
   // ..........................................................

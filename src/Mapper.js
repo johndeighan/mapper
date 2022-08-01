@@ -88,13 +88,13 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override
   getItemType(hNode) {
-    var i, len, recognizer, ref, str, type;
+    var j, len, recognizer, ref, str, type;
     debug("enter Mapper.getItemType()", hNode);
     ({str} = hNode);
     assert(isString(str), `str is ${OL(str)}`);
     ref = this.lSpecials;
-    for (i = 0, len = ref.length; i < len; i++) {
-      type = ref[i];
+    for (j = 0, len = ref.length; j < len; j++) {
+      type = ref[j];
       recognizer = this.hSpecials[type].recognizer;
       if (recognizer.bind(this)(hNode)) {
         debug("return from getItemType()", type);
@@ -126,36 +126,6 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  isComment(hNode) {
-    var _, comment, lMatches;
-    if (lMatches = hNode.str.match(/^\#(?:\s+(.*))?$/)) { // a hash character
-      [_, comment] = lMatches;
-      hNode.comment = comment;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // ..........................................................
-  isCmd(hNode) {
-    var _, argstr, cmd, flag, lMatches;
-    debug("enter Mapper.isCmd()");
-    if (lMatches = hNode.str.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
-      // argstr for command
-      [_, cmd, argstr] = lMatches;
-      hNode.cmd = cmd;
-      hNode.argstr = argstr;
-      flag = true;
-    } else {
-      // --- not a command
-      flag = false;
-    }
-    debug("return from Mapper.isCmd()", flag);
-    return flag;
-  }
-
-  // ..........................................................
   mapEmptyLine(hNode) {
     // --- default: remove empty lines
     //     return '' to keep empty lines
@@ -163,10 +133,40 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
+  isComment(hNode) {
+    if (hNode.str.indexOf('# ') === 0) {
+      hNode.uobj = {
+        comment: hNode.str.substring(2).trim()
+      };
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // ..........................................................
   mapComment(hNode) {
     // --- default: remove comments
-    // --- return hNode.str to keep comments
+    // --- To keep comments, simply return hNode.uobj
     return undef;
+  }
+
+  // ..........................................................
+  isCmd(hNode) {
+    var lMatches;
+    debug("enter Mapper.isCmd()");
+    if (lMatches = hNode.str.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
+      // argstr for command
+      hNode.uobj = {
+        cmd: lMatches[1],
+        argstr: lMatches[2]
+      };
+      debug("return true from Mapper.isCmd()");
+      return true;
+    } else {
+      debug("return false from Mapper.isCmd()");
+      return false;
+    }
   }
 
   // ..........................................................
@@ -178,7 +178,7 @@ export var Mapper = class Mapper extends Getter {
     var _, argstr, cmd, isEnv, lMatches, name, tail;
     debug("enter Mapper.mapCmd()", hNode);
     // --- isCmd() put these keys here
-    ({cmd, argstr} = hNode);
+    ({cmd, argstr} = hNode.uobj);
     switch (cmd) {
       case 'define':
         lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/); // name of the variable
@@ -196,18 +196,29 @@ export var Mapper = class Mapper extends Getter {
         }
         debug("return undef from Mapper.mapCmd()");
         return undef;
+      default:
+        return croak(`Unknown cmd: ${OL(cmd)}`);
     }
-    debug("return from Mapper.mapCmd()", undef);
-    return {cmd, argstr};
   }
 
 };
 
 // ===========================================================================
 export var doMap = function(inputClass, source, content = undef, hOptions = {}) {
-  var oInput, result;
+  var cls, i, j, len, oInput, result;
   // --- Valid options:
   //        logLines
+  if (isArray(inputClass)) {
+    for (i = j = 0, len = inputClass.length; j < len; i = ++j) {
+      cls = inputClass[i];
+      if (i === 0) {
+        result = doMap(cls, source, content, hOptions);
+      } else {
+        result = doMap(cls, source, result, hOptions);
+      }
+    }
+    return result;
+  }
   debug("enter doMap()", inputClass, source, content);
   assert(inputClass != null, "Missing input class");
   oInput = new inputClass(source, content);

@@ -1,6 +1,6 @@
 # Getter.test.coffee
 
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, rtrim, replaceVars,
@@ -15,35 +15,33 @@ import {phStr, phReplace} from '@jdeighan/coffee-utils/placeholders'
 import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
 
-simple = new UnitTester()
-
 # ---------------------------------------------------------------------------
 
 (() ->
 
 	getter = new Getter(undef, ['line1', 'line2', 'line3'])
 
-	simple.like 26, getter.peek(), {str: 'line1'}
-	simple.like 27, getter.peek(), {str: 'line1'}
-	simple.falsy 28, getter.eof()
-	simple.like 29, node1 = getter.get(), {str: 'line1'}
-	simple.like 30, node2 = getter.get(), {str: 'line2'}
-	simple.equal 31, getter.lineNum, 2
+	simple.like 24, getter.peek(), {str: 'line1'}
+	simple.like 25, getter.peek(), {str: 'line1'}
+	simple.falsy 26, getter.eof()
+	simple.like 27, node1 = getter.get(), {str: 'line1'}
+	simple.like 28, node2 = getter.get(), {str: 'line2'}
+	simple.equal 29, getter.lineNum, 2
 
-	simple.falsy 33, getter.eof()
-	simple.succeeds 34, () -> getter.unfetch(node2)
-	simple.succeeds 35, () -> getter.unfetch(node1)
-	simple.like 36, getter.get(), {str: 'line1'}
-	simple.like 37, getter.get(), {str: 'line2'}
-	simple.falsy 38, getter.eof()
+	simple.falsy 31, getter.eof()
+	simple.succeeds 32, () -> getter.unfetch(node2)
+	simple.succeeds 33, () -> getter.unfetch(node1)
+	simple.like 34, getter.get(), {str: 'line1'}
+	simple.like 35, getter.get(), {str: 'line2'}
+	simple.falsy 36, getter.eof()
 
-	simple.like 40, node3 = getter.get(), {str: 'line3'}
-	simple.equal 41, getter.lineNum, 3
-	simple.truthy 42, getter.eof()
-	simple.succeeds 43, () -> getter.unfetch(node3)
-	simple.falsy 44, getter.eof()
-	simple.like 45, getter.get(), {str: 'line3'}
-	simple.truthy 46, getter.eof()
+	simple.like 38, node3 = getter.get(), {str: 'line3'}
+	simple.equal 39, getter.lineNum, 3
+	simple.truthy 40, getter.eof()
+	simple.succeeds 41, () -> getter.unfetch(node3)
+	simple.falsy 42, getter.eof()
+	simple.like 43, getter.get(), {str: 'line3'}
+	simple.truthy 44, getter.eof()
 	)()
 
 # ---------------------------------------------------------------------------
@@ -53,13 +51,13 @@ simple = new UnitTester()
 
 	getter = new Getter(undef, ['abc', 'def  ', 'ghi\t\t'])
 
-	simple.like 56, getter.peek(), {str: 'abc'}
-	simple.like 57, getter.peek(), {str: 'abc'}
-	simple.falsy 58, getter.eof()
-	simple.like 59, getter.get(), {str: 'abc'}
-	simple.like 60, getter.get(), {str: 'def'}
-	simple.like 61, getter.get(), {str: 'ghi'}
-	simple.equal 62, getter.lineNum, 3
+	simple.like 54, getter.peek(), {str: 'abc'}
+	simple.like 55, getter.peek(), {str: 'abc'}
+	simple.falsy 56, getter.eof()
+	simple.like 57, getter.get(), {str: 'abc'}
+	simple.like 58, getter.get(), {str: 'def'}
+	simple.like 59, getter.get(), {str: 'ghi'}
+	simple.equal 60, getter.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -75,16 +73,17 @@ simple = new UnitTester()
 			mno
 			""")
 
-	simple.like 78, getter.fetch(), {str: 'abc'}
+	simple.like 76, getter.fetch(), {str: 'abc'}
 
 	# 'jkl' will be discarded
-	simple.like 81, getter.fetchUntil('jkl'), [
+	func = (hNode) -> return (hNode.str == 'jkl')
+	simple.like 80, getter.fetchUntil(func), [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
 
-	simple.like 86, getter.fetch(), {str: 'mno'}
-	simple.equal 87, getter.lineNum, 5
+	simple.like 85, getter.fetch(), {str: 'mno'}
+	simple.equal 86, getter.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
@@ -103,61 +102,27 @@ simple = new UnitTester()
 	# --- You can pass any iterator to the Getter() constructor
 	getter = new Getter(undef, generator())
 
+	simple.like 105, getter.peek(), {str: 'line1'}
 	simple.like 106, getter.peek(), {str: 'line1'}
-	simple.like 107, getter.peek(), {str: 'line1'}
-	simple.falsy 108, getter.eof()
-	simple.like 109, node1 = getter.get(), {str: 'line1'}
-	simple.like 110, node2 = getter.get(), {str: 'line2'}
-	simple.equal 111, getter.lineNum, 2
+	simple.falsy 107, getter.eof()
+	simple.like 108, node1 = getter.get(), {str: 'line1'}
+	simple.like 109, node2 = getter.get(), {str: 'line2'}
+	simple.equal 110, getter.lineNum, 2
 
-	simple.falsy 113, getter.eof()
-	simple.succeeds 114, () -> getter.unfetch(node2)
-	simple.succeeds 115, () -> getter.unfetch(node1)
-	simple.like 116, getter.get(), {str: 'line1'}
-	simple.like 117, getter.get(), {str: 'line2'}
-	simple.falsy 118, getter.eof()
+	simple.falsy 112, getter.eof()
+	simple.succeeds 113, () -> getter.unfetch(node2)
+	simple.succeeds 114, () -> getter.unfetch(node1)
+	simple.like 115, getter.get(), {str: 'line1'}
+	simple.like 116, getter.get(), {str: 'line2'}
+	simple.falsy 117, getter.eof()
 
-	simple.like 120, node3 = getter.get(), {str: 'line3'}
-	simple.truthy 121, getter.eof()
-	simple.succeeds 122, () -> getter.unfetch(node3)
-	simple.falsy 123, getter.eof()
-	simple.like 124, getter.get(), {str: 'line3'}
-	simple.truthy 125, getter.eof()
-	simple.equal 126, getter.lineNum, 3
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test __END__
-
-(() ->
-
-	numLines = undef
-
-	class MyTester extends UnitTester
-
-		transformValue: (block) ->
-
-			getter = new Getter(import.meta.url, block)
-			block = getter.getBlock()
-			numLines = getter.lineNum   # set variable numLines
-			return block
-
-	# ..........................................................
-
-	tester = new MyTester()
-
-	tester.equal 203, """
-			abc
-			def
-			__END__
-			ghi
-			jkl
-			""", """
-			abc
-			def
-			"""
-
-	simple.equal 214, numLines, 2
+	simple.like 119, node3 = getter.get(), {str: 'line3'}
+	simple.truthy 120, getter.eof()
+	simple.succeeds 121, () -> getter.unfetch(node3)
+	simple.falsy 122, getter.eof()
+	simple.like 123, getter.get(), {str: 'line3'}
+	simple.truthy 124, getter.eof()
+	simple.equal 125, getter.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -173,30 +138,80 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.like 230, getter.peek(), {str: 'if (x == 2)', level: 0}
-	simple.like 231, getter.get(),  {str: 'if (x == 2)', level: 0}
+	simple.like 141, getter.peek(), {str: 'if (x == 2)', level: 0}
+	simple.like 142, getter.get(),  {str: 'if (x == 2)', level: 0}
 
-	simple.like 233, getter.peek(), {str: 'doThis', level: 1}
-	simple.like 234, getter.get(),  {str: 'doThis', level: 1}
+	simple.like 144, getter.peek(), {str: 'doThis', level: 1}
+	simple.like 145, getter.get(),  {str: 'doThis', level: 1}
 
-	simple.like 236, getter.peek(), {str: 'doThat', level: 1}
-	simple.like 237, getter.get(),  {str: 'doThat', level: 1}
+	simple.like 147, getter.peek(), {str: 'doThat', level: 1}
+	simple.like 148, getter.get(),  {str: 'doThat', level: 1}
 
-	simple.like 239, getter.peek(), {str: 'then this', level: 2}
-	simple.like 240, getter.get(),  {str: 'then this', level: 2}
+	simple.like 150, getter.peek(), {str: 'then this', level: 2}
+	simple.like 151, getter.get(),  {str: 'then this', level: 2}
 
-	simple.like 242, getter.peek(), {str: 'while (x > 2)', level: 0}
-	simple.like 243, getter.get(),  {str: 'while (x > 2)', level: 0}
+	simple.like 153, getter.peek(), {str: 'while (x > 2)', level: 0}
+	simple.like 154, getter.get(),  {str: 'while (x > 2)', level: 0}
 
-	simple.like 245, getter.peek(), {str: '--x', level: 1}
-	simple.like 246, getter.get(),  {str: '--x', level: 1}
+	simple.like 156, getter.peek(), {str: '--x', level: 1}
+	simple.like 157, getter.get(),  {str: '--x', level: 1}
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test getAll(), getUntil()
+#        they use allMapped() and allMappedUntil()
+
+(() ->
+	# --- There are no special item types in a Getter,
+	#     so comments, blank lines, commands are all treated as plain strings
+
+	block = """
+		#starbucks webpage
+
+		# --- comment
+		h1 title
+			p paragraph
+		"""
+
+	getter = new Getter(import.meta.url, block)
+	simple.like 178, getter.getAll(), [
+		{str: '#starbucks webpage', level: 0, uobj: '#starbucks webpage'}
+		{str: '',                   level: 0, uobj: ''}
+		{str: '# --- comment',      level: 0, uobj: '# --- comment'}
+		{str: 'h1 title',           level: 0, uobj: 'h1 title'}
+		{str: 'p paragraph',        level: 1, uobj: '\tp paragraph'}
+		]
+
+	func = (hNode) -> return (hNode.str.match(/^#\s/))
+
+	getter = new Getter(import.meta.url, block)
+	simple.like 189, getter.getUntil(func), [
+		{str: '#starbucks webpage', level: 0, uobj: '#starbucks webpage'}
+		{str: '',                   level: 0, uobj: ''}
+		]
+	simple.like 193, getter.get(), {
+		str: 'h1 title'
+		level: 0
+		uobj: 'h1 title'
+		}
+
+	getter = new Getter(import.meta.url, block)
+	simple.like 200, getter.getUntil(func, {discardEndLine: false}), [
+		{str: '#starbucks webpage', level: 0, uobj: '#starbucks webpage'}
+		{str: '',                   level: 0, uobj: ''}
+		]
+	simple.like 204, getter.get(), {
+		str: '# --- comment'
+		level: 0
+		uobj: '# --- comment'
+		}
 
 	)()
 
 # ---------------------------------------------------------------------------
 
 (() ->
-
 	# --- Pre-declare all variables that are assigned to
 
 	class VarGetter extends Getter
@@ -235,7 +250,7 @@ simple = new UnitTester()
 			y = 3
 			""")
 	result = getter.getBlock()
-	simple.equal 292, result, """
+	simple.like 253, result, """
 			var x,y
 			x = 2
 			y = 3

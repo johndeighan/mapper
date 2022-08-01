@@ -29,7 +29,8 @@ import {
 
 import {
   indentLevel,
-  isUndented
+  isUndented,
+  indented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -57,12 +58,15 @@ export var brew = function(code, source = 'internal') {
 // ---------------------------------------------------------------------------
 export var getAST = function(code, source = 'internal') {
   var hCoffeeOptions, mapped, result;
+  debug("enter getAST()", code);
   hCoffeeOptions = {
     ast: true
   };
   mapped = doMap(CoffeePreProcessor, source, code);
+  debug('mapped', mapped);
   result = CoffeeScript.compile(mapped, hCoffeeOptions);
   // --- Result is an AST
+  debug("return from getAST()", result);
   return result;
 };
 
@@ -151,10 +155,14 @@ export var coffeeCodeToAST = function(coffeeCode, source = undef) {
   debug("enter coffeeCodeToAST()", coffeeCode);
   try {
     ast = getAST(coffeeCode, source);
-    assert(ast != null, "ast is empty");
+    assert(defined(ast), "ast is empty");
   } catch (error1) {
     err = error1;
-    croak(err, "in coffeeCodeToAST", coffeeCode);
+    LOG(`ERROR in CoffeeScript: ${err.message}`);
+    LOG('-'.repeat(40));
+    LOG(`${OL(coffeeCode)}`);
+    LOG('-'.repeat(40));
+    croak(`ERROR in CoffeeScript: ${err.message}`);
   }
   debug("return from coffeeCodeToAST()", ast);
   return ast;
@@ -188,17 +196,21 @@ expand = function(qstr) {
 // ---------------------------------------------------------------------------
 export var CoffeePreProcessor = class CoffeePreProcessor extends TreeWalker {
   mapComment(hNode) {
+    var level, str;
     // --- Retain comments
-    return hNode.str;
+    ({str, level} = hNode);
+    return indented(str, level, this.oneIndent);
   }
 
   // ..........................................................
   map(hNode) {
-    var result;
+    var level, result, str;
     debug("enter CoffeePreProcessor.map()", hNode);
-    result = hNode.str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
+    ({str, level} = hNode);
+    result = str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
+    result = indented(result, level, this.oneIndent);
     debug("return from CoffeePreProcessor.map()", result);
     return result;
   }

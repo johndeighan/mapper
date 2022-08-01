@@ -4,7 +4,9 @@ import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, defined, notdefined, OL, isString, isInteger,
 	} from '@jdeighan/coffee-utils'
-import {indentLevel, splitPrefix} from '@jdeighan/coffee-utils/indent'
+import {
+	indented, indentLevel, splitPrefix,
+	} from '@jdeighan/coffee-utils/indent'
 
 # ---------------------------------------------------------------------------
 
@@ -30,37 +32,12 @@ export class Node
 
 	# ..........................................................
 
-	setUserObj: (uobj) ->
-
-		assert defined(uobj), "uobj is #{OL(uobj)}"
-		@uobj = uobj
-		return
-
-	# ..........................................................
-
 	isMapped: () ->
 
 		return defined(@uobj)
 
 	# ..........................................................
 
-	getIndent: (oneIndent) ->
-
-		if defined(oneIndent)
-			return oneIndent.repeat(@level)
-		else
-			assert (@level==0), "undef oneIndent, level = #{OL(@level)}"
-			return ''
-
-	# ..........................................................
-
 	getLine: (oneIndent) ->
 
-		return @getIndent(oneIndent) + @str
-
-	# ..........................................................
-
-	getMappedLine: (oneIndent) ->
-
-		assert isString(@uobj), "uobj is #{OL(@uobj)}"
-		return @getIndent(oneIndent) + @uobj
+		return indented(@str, @level, oneIndent)

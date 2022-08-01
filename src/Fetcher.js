@@ -27,7 +27,8 @@ import {
 
 import {
   splitPrefix,
-  indentLevel
+  indentLevel,
+  undented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -231,7 +232,7 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   createAltInput(fname, level) {
     var dir, fullpath;
-    debug("enter createAltInput()", fname);
+    debug("enter createAltInput()", fname, level);
     // --- Make sure we have a simple file name
     assert(isString(fname), `not a string: ${OL(fname)}`);
     assert(isSimpleFileName(fname), `not a simple file name: ${OL(fname)}`);
@@ -286,7 +287,7 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  // --- a generator
+  // --- GENERATOR
   * all() {
     var hNode;
     debug("enter Fetcher.all()");
@@ -294,29 +295,48 @@ export var Fetcher = class Fetcher {
       debug("GOT", hNode);
       yield hNode;
     }
-    debug("GOT", hNode);
     debug("return from Fetcher.all()");
   }
 
   // ..........................................................
-  fetchAll() {
-    var hNode, lNodes, ref;
-    debug("enter Fetcher.fetchAll()");
-    lNodes = [];
-    ref = this.all();
-    for (hNode of ref) {
-      lNodes.push(hNode);
+  * allUntil(func, hOptions = undef) {
+    var discardEndLine, hNode;
+    // --- GENERATOR
+    debug("enter Fetcher.allUntil()");
+    assert(isFunction(func), "Arg 1 not a function");
+    if (defined(hOptions)) {
+      discardEndLine = hOptions.discardEndLine;
+    } else {
+      discardEndLine = true;
     }
+    while (defined(hNode = this.fetch()) && !func(hNode)) {
+      debug("GOT", hNode);
+      yield hNode;
+    }
+    if (defined(hNode) && !discardEndLine) {
+      this.unfetch(hNode);
+    }
+    debug("return from Fetcher.allUntil()");
+  }
+
+  // ..........................................................
+  // --- fetch a list of Nodes
+  fetchAll() {
+    var lNodes;
+    debug("enter Fetcher.fetchAll()");
+    lNodes = Array.from(this.all());
     debug("return from Fetcher.fetchAll()", lNodes);
     return lNodes;
   }
 
   // ..........................................................
-  fetchUntil(end) {
-    var hNode, lNodes;
-    debug("enter Fetcher.fetchUntil()");
+  fetchUntil(func, hOptions = undef) {
+    var hNode, lNodes, ref;
+    debug("enter Fetcher.fetchUntil()", func, hOptions);
+    assert(isFunction(func), `not a function: ${OL(func)}`);
     lNodes = [];
-    while (defined(hNode = this.fetch()) && (hNode.str !== end)) {
+    ref = this.allUntil(func, hOptions);
+    for (hNode of ref) {
       lNodes.push(hNode);
     }
     debug("return from Fetcher.fetchUntil()", lNodes);
@@ -324,20 +344,36 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
+  // --- fetch a block
   fetchBlock() {
-    var block, hNode, lStrings, line, ref;
+    var lNodes, result;
     debug("enter Fetcher.fetchBlock()");
+    lNodes = Array.from(this.all());
+    result = this.toBlock(lNodes);
+    debug("return from Fetcher.fetchBlock()", result);
+    return result;
+  }
+
+  // ..........................................................
+  fetchBlockUntil(func, hOptions = undef) {
+    var lNodes, result;
+    debug("enter Fetcher.fetchBlockUntil()");
+    lNodes = this.fetchUntil(func, hOptions);
+    result = this.toBlock(lNodes);
+    debug("return from Fetcher.fetchBlockUntil()", result);
+    return result;
+  }
+
+  // ..........................................................
+  toBlock(lNodes) {
+    var hNode, i, lStrings, len;
     lStrings = [];
-    ref = this.all();
-    for (hNode of ref) {
-      line = hNode.getLine(this.oneIndent);
-      assert(isString(line), `fetchBlock(): non-string ${OL(line)}`);
-      lStrings.push(line);
+    for (i = 0, len = lNodes.length; i < len; i++) {
+      hNode = lNodes[i];
+      lStrings.push(hNode.getLine(this.oneIndent));
     }
-    debug('lStrings', lStrings);
-    block = arrayToBlock(lStrings);
-    debug("return from Fetcher.fetchBlock()", block);
-    return block;
+    lStrings = undented(lStrings);
+    return arrayToBlock(lStrings);
   }
 
 };

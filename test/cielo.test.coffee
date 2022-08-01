@@ -381,7 +381,8 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			class MyPreMapper extends TreeWalker
 
 				mapComment: (hNode) ->
-					{str, comment} = hNode
+					{str, uobj} = hNode
+					{comment} = uobj
 					if (comment.indexOf('||||') == 0)
 						return str
 					else

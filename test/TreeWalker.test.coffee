@@ -156,6 +156,20 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			abc
 			def
 			"""
+
+	tester.equal 160, """
+		# --- a comment
+		p
+			margin: 0
+			span
+				color: red
+		""", """
+		p
+			margin: 0
+			span
+				color: red
+		"""
+
 	)()
 
 # ---------------------------------------------------------------------------
@@ -188,12 +202,12 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 191, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 205, doMap(MyWalker, import.meta.url, block), """
 			abc
 			def
 			"""
 
-	tester.equal 196, block, """
+	tester.equal 210, block, """
 			abc
 			def
 			"""
@@ -236,13 +250,13 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 239, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 253, doMap(MyWalker, import.meta.url, block), """
 			# not a comment
 			abc
 			def
 			"""
 
-	tester.equal 245, block, """
+	tester.equal 259, block, """
 			# not a comment
 			abc
 			def
@@ -259,9 +273,10 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 		isCmd: (hNode) ->
 			# --- commands consist of '-' + one whitespace char + word
 			if (lMatches = hNode.str.match(///^ - \s (\w+) $///))
-				[_, cmd] = lMatches
-				hNode.cmd = cmd
-				hNode.argstr = ''
+				hNode.uobj = {
+					cmd: lMatches[1]
+					argstr: ''
+					}
 				return true
 			else
 				return false
@@ -273,14 +288,15 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			# --- NOTE: this disables handling all commands,
 			#           i.e. #define, etc.
 			# --- Returning any non-undef value prevents discarding hNode
-			return ''
+			#     and sets key uobj to the returned value
+			return hNode.uobj
 
 		# .......................................................
 
 		visitCmd: (hNode) ->
 
 			debug "enter MyWalker.visitCmd()"
-			result = "COMMAND: #{hNode.cmd}"
+			result = "COMMAND: #{hNode.uobj.cmd}"
 			debug "return from MyWalker.visitCmd()", result
 			return result
 
@@ -303,7 +319,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	tester.equal 306, block, """
+	tester.equal 322, block, """
 			abc
 			COMMAND: command
 			def
@@ -332,7 +348,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				return undef
 			else
 				debug "return 'x' from map()"
-				return 'x'
+				return indented('x', level, @oneIndent)
 
 	# ..........................................................
 
@@ -346,7 +362,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# ..........................................................
 
-	tester.equal 349, """
+	tester.equal 365, """
 			abc
 				def
 
@@ -384,7 +400,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# ..........................................................
 
-	tester.equal 387, """
+	tester.equal 403, """
 			abc
 
 			def
@@ -410,7 +426,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	tester = new MyTester()
 
-	tester.equal 413, """
+	tester.equal 429, """
 			abc
 				#include title.md
 			def
@@ -439,7 +455,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	tester = new MyTester()
 
-	tester.like 442, """
+	tester.like 458, """
 			abc
 				def
 					ghi
@@ -475,23 +491,23 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				--x
 			""")
 
-	simple.like 478, walker.peek(), {level:0, str: 'if (x == 2)'}
-	simple.like 479, walker.get(),  {level:0, str: 'if (x == 2)'}
+	simple.like 494, walker.peek(), {level:0, str: 'if (x == 2)'}
+	simple.like 495, walker.get(),  {level:0, str: 'if (x == 2)'}
 
-	simple.like 481, walker.peek(), {level:1, str: 'doThis'}
-	simple.like 482, walker.get(),  {level:1, str: 'doThis'}
+	simple.like 497, walker.peek(), {level:1, str: 'doThis'}
+	simple.like 498, walker.get(),  {level:1, str: 'doThis'}
 
-	simple.like 484, walker.peek(), {level:1, str: 'doThat'}
-	simple.like 485, walker.get(),  {level:1, str: 'doThat'}
+	simple.like 500, walker.peek(), {level:1, str: 'doThat'}
+	simple.like 501, walker.get(),  {level:1, str: 'doThat'}
 
-	simple.like 487, walker.peek(), {level:2, str: 'then this'}
-	simple.like 488, walker.get(),  {level:2, str: 'then this'}
+	simple.like 503, walker.peek(), {level:2, str: 'then this'}
+	simple.like 504, walker.get(),  {level:2, str: 'then this'}
 
-	simple.like 490, walker.peek(), {level:0, str: 'while (x > 2)'}
-	simple.like 491, walker.get(),  {level:0, str: 'while (x > 2)'}
+	simple.like 506, walker.peek(), {level:0, str: 'while (x > 2)'}
+	simple.like 507, walker.get(),  {level:0, str: 'while (x > 2)'}
 
-	simple.like 493, walker.peek(), {level:1, str: '--x'}
-	simple.like 494, walker.get(),  {level:1, str: '--x'}
+	simple.like 509, walker.peek(), {level:1, str: '--x'}
+	simple.like 510, walker.get(),  {level:1, str: '--x'}
 
 	)()
 
@@ -509,23 +525,23 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				--x
 			""")
 
-	simple.like 512, walker.get(), {
+	simple.like 528, walker.get(), {
 		level: 0
 		str:   'if (x == 2)'
 		}
 
-	simple.equal 517, walker.fetchBlockAtLevel(1), """
+	simple.equal 533, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
 
-	simple.like 523, walker.get(), {
+	simple.like 539, walker.get(), {
 		level: 0
 		str:   'while (x > 2)'
 		}
 
-	simple.equal 528, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 544, walker.fetchBlockAtLevel(1), "--x"
 	)()
 
 # ---------------------------------------------------------------------------
@@ -556,7 +572,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				--x
 			""")
 
-	simple.like 559, walker.get(), {
+	simple.like 575, walker.get(), {
 			level: 0
 			str: 'if (x == 2)'
 			uobj: {
@@ -564,12 +580,12 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				cond: '(x == 2)'
 				}
 			}
-	simple.equal 566, walker.fetchBlockAtLevel(1), """
+	simple.equal 583, walker.fetchBlockAtLevel(1), """
 			doThis
 			doThat
 				then this
 			"""
-	simple.like 571, walker.get(), {
+	simple.like 588, walker.get(), {
 			level: 0
 			str: 'while (x > 2)'
 			uobj: {
@@ -577,8 +593,8 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 				cond: '(x > 2)'
 				}
 			}
-	simple.equal 578, walker.fetchBlockAtLevel(1), "--x"
-	simple.equal 579, walker.get(), undef
+	simple.equal 596, walker.fetchBlockAtLevel(1), "--x"
+	simple.equal 597, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -596,7 +612,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	tester = new MyTester()
 
-	tester.equal 597, """
+	tester.equal 615, """
 			abc
 			if x == <<<
 				abc
@@ -609,7 +625,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	tester.equal 610, """
+	tester.equal 628, """
 			abc
 			if x == <<<
 				===
@@ -623,7 +639,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	tester.equal 624, """
+	tester.equal 642, """
 			abc
 			if x == <<<
 				...
@@ -724,7 +740,7 @@ class HtmlMapper extends TreeWalker
 
 	# ----------------------------------------------------------
 
-	tester.equal 725, """
+	tester.equal 743, """
 			body
 				# a comment
 
@@ -765,7 +781,7 @@ class HtmlMapper extends TreeWalker
 
 	tester = new MyTester()
 
-	tester.equal 766, """
+	tester.equal 784, """
 			abc
 			#ifdef something
 				def

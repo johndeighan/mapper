@@ -8,7 +8,9 @@ import {
 	escapeStr, isString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
-import {splitPrefix, indentLevel} from '@jdeighan/coffee-utils/indent'
+import {
+	splitPrefix, indentLevel, undented,
+	} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -211,7 +213,7 @@ export class Fetcher
 
 	createAltInput: (fname, level) ->
 
-		debug "enter createAltInput()", fname
+		debug "enter createAltInput()", fname, level
 
 		# --- Make sure we have a simple file name
 		assert isString(fname), "not a string: #{OL(fname)}"
@@ -279,7 +281,7 @@ export class Fetcher
 		return
 
 	# ..........................................................
-	# --- a generator
+	# --- GENERATOR
 
 	all: () ->
 
@@ -287,44 +289,84 @@ export class Fetcher
 		while defined(hNode = @fetch())
 			debug "GOT", hNode
 			yield hNode
-		debug "GOT", hNode
 		debug "return from Fetcher.all()"
 		return
 
 	# ..........................................................
 
+	allUntil: (func, hOptions=undef) ->
+	# --- GENERATOR
+
+		debug "enter Fetcher.allUntil()"
+
+		assert isFunction(func), "Arg 1 not a function"
+		if defined(hOptions)
+			discardEndLine = hOptions.discardEndLine
+		else
+			discardEndLine = true
+
+		while defined(hNode = @fetch()) && ! func(hNode)
+			debug "GOT", hNode
+			yield hNode
+
+		if defined(hNode) && ! discardEndLine
+			@unfetch hNode
+
+		debug "return from Fetcher.allUntil()"
+		return
+
+	# ..........................................................
+	# --- fetch a list of Nodes
+
 	fetchAll: () ->
 
 		debug "enter Fetcher.fetchAll()"
-		lNodes = []
-		for hNode from @all()
-			lNodes.push hNode
+		lNodes = Array.from(@all())
 		debug "return from Fetcher.fetchAll()", lNodes
 		return lNodes
 
 	# ..........................................................
 
-	fetchUntil: (end) ->
+	fetchUntil: (func, hOptions=undef) ->
 
-		debug "enter Fetcher.fetchUntil()"
+		debug "enter Fetcher.fetchUntil()", func, hOptions
+		assert isFunction(func), "not a function: #{OL(func)}"
+
 		lNodes = []
-		while defined(hNode = @fetch()) && (hNode.str != end)
+		for hNode from @allUntil(func, hOptions)
 			lNodes.push hNode
+
 		debug "return from Fetcher.fetchUntil()", lNodes
 		return lNodes
 
 	# ..........................................................
+	# --- fetch a block
 
 	fetchBlock: () ->
 
 		debug "enter Fetcher.fetchBlock()"
+		lNodes = Array.from(@all())
+		result = @toBlock(lNodes)
+		debug "return from Fetcher.fetchBlock()", result
+		return result
+
+	# ..........................................................
+
+	fetchBlockUntil: (func, hOptions=undef) ->
+
+		debug "enter Fetcher.fetchBlockUntil()"
+		lNodes = @fetchUntil(func, hOptions)
+		result = @toBlock(lNodes)
+		debug "return from Fetcher.fetchBlockUntil()", result
+		return result
+
+	# ..........................................................
+
+	toBlock: (lNodes) ->
+
 		lStrings = []
-		for hNode from @all()
-			line = hNode.getLine(@oneIndent)
-			assert isString(line),
-					"fetchBlock(): non-string #{OL(line)}"
-			lStrings.push(line)
-		debug 'lStrings', lStrings
-		block = arrayToBlock(lStrings)
-		debug "return from Fetcher.fetchBlock()", block
-		return block
+		for hNode in lNodes
+			lStrings.push hNode.getLine(@oneIndent)
+		lStrings = undented(lStrings)
+		return arrayToBlock(lStrings)
+

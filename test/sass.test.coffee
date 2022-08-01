@@ -22,19 +22,20 @@ tester = new SassTester()
 (() ->
 
 	tester.equal 50, """
-	# --- a comment
-	p
-		margin: 0
-		span
-			color: red
-	""", """
-	p {
-		margin: 0;
-	}
-	p span {
-		color: red;
-	}
-	"""
+		# --- a comment
+		p
+			margin: 0
+			span
+				color: red
+		""", """
+		p {
+			margin: 0;
+		}
+		p span {
+			color: red;
+		}
+		"""
+
 	)()
 
 # ---------------------------------------------------------------------------

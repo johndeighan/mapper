@@ -55,8 +55,8 @@ simple = new UnitTester()
 			""", """
 			BEGIN WALK
 			VISIT     0 'abc'
-			VISIT     1 'def'
-			END VISIT 1 'def'
+			VISIT     1 '→def'
+			END VISIT 1 '→def'
 			END VISIT 0 'abc'
 			END WALK
 			"""
@@ -69,8 +69,8 @@ simple = new UnitTester()
 			""", """
 			BEGIN WALK
 			VISIT     0 'abc'
-			VISIT     1 'def'
-			END VISIT 1 'def'
+			VISIT     1 '→def'
+			END VISIT 1 '→def'
 			END VISIT 0 'abc'
 			END WALK
 			"""

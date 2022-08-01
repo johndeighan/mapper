@@ -28,6 +28,7 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	assert isString(coffeeCode), "code not a string"
 	assert isUndented(coffeeCode), "coffeeCode has indent"
 	ast = coffeeCodeToAST(coffeeCode)
+	debug 'AST', ast
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.getSymbols()

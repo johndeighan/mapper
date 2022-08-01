@@ -4,28 +4,25 @@ import sass from 'sass'
 
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {undef} from '@jdeighan/coffee-utils'
+import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
 import {Mapper, doMap} from '@jdeighan/mapper'
-import {TreeWalker} from '@jdeighan/mapper/tree'
-
-# ---------------------------------------------------------------------------
-
-export class SassPreProcessor extends TreeWalker
-	# --- only removes comments
-
-	mapComment: () ->
-
-		return undef
 
 # ---------------------------------------------------------------------------
 
 export sassify = (block, source) ->
 
-	newblock = doMap(SassPreProcessor, source, block)
+	debug "enter sassify()", block, source
+
+	# --- NOTE: Mapper will remove comments and blank lines
+	newblock = doMap(Mapper, source, block)
+	debug "newblock", newblock
 	result = sass.renderSync({
 		data: newblock,
 		indentedSyntax: true,
 		indentType: "tab",
 		})
-	return result.css.toString()
+	result = result.css.toString()
+	debug "return from sassify()", result
+	return result

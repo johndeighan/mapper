@@ -270,8 +270,9 @@ logger(x);`);
       // --- define a custom premapper that retains '# ||||' style comments
       MyPreMapper = class MyPreMapper extends TreeWalker {
         mapComment(hNode) {
-          var comment, str;
-          ({str, comment} = hNode);
+          var comment, str, uobj;
+          ({str, uobj} = hNode);
+          ({comment} = uobj);
           if (comment.indexOf('||||') === 0) {
             return str;
           } else {

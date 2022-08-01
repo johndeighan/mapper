@@ -8,7 +8,9 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {indentLevel, isUndented} from '@jdeighan/coffee-utils/indent'
+import {
+	indentLevel, isUndented, indented,
+	} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
@@ -31,13 +33,16 @@ export brew = (code, source='internal') ->
 
 export getAST = (code, source='internal') ->
 
+	debug "enter getAST()", code
 	hCoffeeOptions = {
 		ast: true
 		}
 	mapped = doMap(CoffeePreProcessor, source, code)
+	debug 'mapped', mapped
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 
 	# --- Result is an AST
+	debug "return from getAST()", result
 	return result
 
 # ---------------------------------------------------------------------------
@@ -128,9 +133,13 @@ export coffeeCodeToAST = (coffeeCode, source=undef) ->
 
 	try
 		ast = getAST(coffeeCode, source)
-		assert ast?, "ast is empty"
+		assert defined(ast), "ast is empty"
 	catch err
-		croak err, "in coffeeCodeToAST", coffeeCode
+		LOG "ERROR in CoffeeScript: #{err.message}"
+		LOG '-'.repeat(40)
+		LOG "#{OL(coffeeCode)}"
+		LOG '-'.repeat(40)
+		croak "ERROR in CoffeeScript: #{err.message}"
 
 	debug "return from coffeeCodeToAST()", ast
 	return ast
@@ -172,20 +181,23 @@ export class CoffeePreProcessor extends TreeWalker
 	mapComment: (hNode) ->
 
 		# --- Retain comments
-		return hNode.str
+		{str, level} = hNode
+		return indented(str, level, @oneIndent)
 
 	# ..........................................................
 
 	map: (hNode) ->
 
 		debug "enter CoffeePreProcessor.map()", hNode
-		result = hNode.str.replace(///
+		{str, level} = hNode
+		result = str.replace(///
 				\"
 				[^"]*     # sequence of non-quote characters
 				\"
 				///g,
 			(qstr) -> expand(qstr)
 			)
+		result = indented(result, level, @oneIndent)
 		debug "return from CoffeePreProcessor.map()", result
 		return result
 

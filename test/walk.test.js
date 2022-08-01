@@ -62,8 +62,8 @@ END WALK`);
   tester.equal(50, `abc
 	def`, `BEGIN WALK
 VISIT     0 'abc'
-VISIT     1 'def'
-END VISIT 1 'def'
+VISIT     1 '→def'
+END VISIT 1 '→def'
 END VISIT 0 'abc'
 END WALK`);
   tester.equal(62, `# this is a unit test
@@ -71,8 +71,8 @@ abc
 
 	def`, `BEGIN WALK
 VISIT     0 'abc'
-VISIT     1 'def'
-END VISIT 1 'def'
+VISIT     1 '→def'
+END VISIT 1 '→def'
 END VISIT 0 'abc'
 END WALK`);
   tester.equal(78, `# this is a unit test

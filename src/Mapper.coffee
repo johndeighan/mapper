@@ -106,20 +106,31 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
+	mapEmptyLine: (hNode) ->
+
+		# --- default: remove empty lines
+		#     return '' to keep empty lines
+		return undef
+
+	# ..........................................................
+
 	isComment: (hNode) ->
 
-		if lMatches = hNode.str.match(///^
-				\#      # a hash character
-				(?:
-					\s+
-					(.*)
-					)?
-				$///)
-			[_, comment] = lMatches
-			hNode.comment = comment
+		if (hNode.str.indexOf('# ') == 0)
+			hNode.uobj = {
+				comment: hNode.str.substring(2).trim()
+				}
 			return true
 		else
 			return false
+
+	# ..........................................................
+
+	mapComment: (hNode) ->
+
+		# --- default: remove comments
+		# --- To keep comments, simply return hNode.uobj
+		return undef
 
 	# ..........................................................
 
@@ -132,32 +143,15 @@ export class Mapper extends Getter
 				\s*
 				(.*)             # argstr for command
 				$///)
-			[_, cmd, argstr] = lMatches
-			hNode.cmd = cmd
-			hNode.argstr = argstr
-			flag = true
+			hNode.uobj = {
+				cmd: lMatches[1]
+				argstr: lMatches[2]
+				}
+			debug "return true from Mapper.isCmd()"
+			return true
 		else
-			# --- not a command
-			flag = false
-
-		debug "return from Mapper.isCmd()", flag
-		return flag
-
-	# ..........................................................
-
-	mapEmptyLine: (hNode) ->
-
-		# --- default: remove empty lines
-		#     return '' to keep empty lines
-		return undef
-
-	# ..........................................................
-
-	mapComment: (hNode) ->
-
-		# --- default: remove comments
-		# --- return hNode.str to keep comments
-		return undef
+			debug "return false from Mapper.isCmd()"
+			return false
 
 	# ..........................................................
 	# --- mapCmd returns a mapped object, or
@@ -170,7 +164,7 @@ export class Mapper extends Getter
 		debug "enter Mapper.mapCmd()", hNode
 
 		# --- isCmd() put these keys here
-		{cmd, argstr} = hNode
+		{cmd, argstr} = hNode.uobj
 		switch cmd
 			when 'define'
 				lMatches = argstr.match(///^
@@ -191,14 +185,22 @@ export class Mapper extends Getter
 				debug "return undef from Mapper.mapCmd()"
 				return undef
 
-		debug "return from Mapper.mapCmd()", undef
-		return {cmd, argstr}
+			else
+				croak "Unknown cmd: #{OL(cmd)}"
 
 # ===========================================================================
 
 export doMap = (inputClass, source, content=undef, hOptions={}) ->
 	# --- Valid options:
 	#        logLines
+
+	if isArray(inputClass)
+		for cls,i in inputClass
+			if i==0
+				result = doMap cls, source, content, hOptions
+			else
+				result = doMap cls, source, result, hOptions
+		return result
 
 	debug "enter doMap()", inputClass, source, content
 	assert inputClass?, "Missing input class"

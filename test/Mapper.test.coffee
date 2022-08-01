@@ -1,8 +1,9 @@
 # Mapper.test.coffee
 
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {undef, rtrim, replaceVars} from '@jdeighan/coffee-utils'
+import {indented} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
@@ -10,8 +11,6 @@ import {
 	} from '@jdeighan/coffee-utils/block'
 
 import {Mapper, doMap} from '@jdeighan/mapper'
-
-simple = new UnitTester()
 
 # ---------------------------------------------------------------------------
 
@@ -23,27 +22,27 @@ simple = new UnitTester()
 		line3
 		""")
 
+	simple.like 25, mapper.peek(), {str: 'line1', level: 0}
 	simple.like 26, mapper.peek(), {str: 'line1', level: 0}
-	simple.like 27, mapper.peek(), {str: 'line1', level: 0}
-	simple.falsy 28, mapper.eof()
-	simple.like 29, token0 = mapper.get(), {str: 'line1'}
-	simple.like 30, token1 = mapper.get(), {str: 'line2'}
-	simple.equal 31, mapper.lineNum, 2
+	simple.falsy 27, mapper.eof()
+	simple.like 28, token0 = mapper.get(), {str: 'line1'}
+	simple.like 29, token1 = mapper.get(), {str: 'line2'}
+	simple.equal 30, mapper.lineNum, 2
 
-	simple.falsy 33, mapper.eof()
-	simple.succeeds 34, () -> mapper.unfetch(token1)
-	simple.succeeds 35, () -> mapper.unfetch(token0)
-	simple.like 36, mapper.get(), {str: 'line1'}
-	simple.like 37, mapper.get(), {str: 'line2'}
-	simple.falsy 38, mapper.eof()
+	simple.falsy 32, mapper.eof()
+	simple.succeeds 33, () -> mapper.unfetch(token1)
+	simple.succeeds 34, () -> mapper.unfetch(token0)
+	simple.like 35, mapper.get(), {str: 'line1'}
+	simple.like 36, mapper.get(), {str: 'line2'}
+	simple.falsy 37, mapper.eof()
 
-	simple.like 40, token0 = mapper.get(), {str: 'line3'}
-	simple.equal 41, mapper.lineNum, 3
-	simple.truthy 42, mapper.eof()
-	simple.succeeds 43, () -> mapper.unfetch(token0)
-	simple.falsy 44, mapper.eof()
-	simple.equal 45, mapper.get(), token0
-	simple.truthy 46, mapper.eof()
+	simple.like 39, token0 = mapper.get(), {str: 'line3'}
+	simple.equal 40, mapper.lineNum, 3
+	simple.truthy 41, mapper.eof()
+	simple.succeeds 42, () -> mapper.unfetch(token0)
+	simple.falsy 43, mapper.eof()
+	simple.equal 44, mapper.get(), token0
+	simple.truthy 45, mapper.eof()
 	)()
 
 # ---------------------------------------------------------------------------
@@ -53,13 +52,13 @@ simple = new UnitTester()
 
 	mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t'])
 
+	simple.like 55, mapper.peek(), {str: 'abc'}
 	simple.like 56, mapper.peek(), {str: 'abc'}
-	simple.like 57, mapper.peek(), {str: 'abc'}
-	simple.falsy 58, mapper.eof()
-	simple.like 59, mapper.get(), {str: 'abc'}
-	simple.like 60, mapper.get(), {str: 'def'}
-	simple.like 61, mapper.get(), {str: 'ghi'}
-	simple.equal 62, mapper.lineNum, 3
+	simple.falsy 57, mapper.eof()
+	simple.like 58, mapper.get(), {str: 'abc'}
+	simple.like 59, mapper.get(), {str: 'def'}
+	simple.like 60, mapper.get(), {str: 'ghi'}
+	simple.equal 61, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -73,22 +72,22 @@ simple = new UnitTester()
 
 		line3
 		""")
-	simple.like 76, mapper.get(), {
+	simple.like 75, mapper.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	simple.like 81, mapper.get(), {
+	simple.like 80, mapper.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	simple.like 92, mapper.get(), {
+	simple.like 85, mapper.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	simple.equal 97, mapper.get(), undef
+	simple.equal 90, mapper.get(), undef
 
 	)()
 
@@ -105,16 +104,16 @@ simple = new UnitTester()
 			mno
 			""")
 
-	simple.like 114, mapper.fetch(), {str: 'abc'}
+	simple.like 107, mapper.fetch(), {str: 'abc'}
 
 	# 'jkl' will be discarded
-	simple.like 117, mapper.fetchUntil('jkl'), [
+	simple.like 110, mapper.fetchUntil((hNode) -> (hNode.str == 'jkl')), [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
 
-	simple.like 122, mapper.fetch(), {str: 'mno'}
-	simple.equal 123, mapper.lineNum, 5
+	simple.like 115, mapper.fetch(), {str: 'mno'}
+	simple.equal 116, mapper.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
@@ -133,27 +132,27 @@ simple = new UnitTester()
 	# --- You can pass any iterator to the Mapper() constructor
 	mapper = new Mapper(undef, generator())
 
-	simple.like 142, mapper.peek(), {str: 'line1'}
-	simple.like 143, mapper.peek(), {str: 'line1'}
-	simple.falsy 144, mapper.eof()
-	simple.like 145, token0 = mapper.get(), {str: 'line1'}
-	simple.like 146, token1 = mapper.get(), {str: 'line2'}
-	simple.equal 147, mapper.lineNum, 2
+	simple.like 135, mapper.peek(), {str: 'line1'}
+	simple.like 136, mapper.peek(), {str: 'line1'}
+	simple.falsy 137, mapper.eof()
+	simple.like 138, token0 = mapper.get(), {str: 'line1'}
+	simple.like 139, token1 = mapper.get(), {str: 'line2'}
+	simple.equal 140, mapper.lineNum, 2
 
-	simple.falsy 149, mapper.eof()
-	simple.succeeds 150, () -> mapper.unfetch(token1)
-	simple.succeeds 151, () -> mapper.unfetch(token0)
-	simple.like 152, mapper.get(), {str: 'line1'}
-	simple.like 153, mapper.get(), {str: 'line2'}
-	simple.falsy 154, mapper.eof()
+	simple.falsy 142, mapper.eof()
+	simple.succeeds 143, () -> mapper.unfetch(token1)
+	simple.succeeds 144, () -> mapper.unfetch(token0)
+	simple.like 145, mapper.get(), {str: 'line1'}
+	simple.like 146, mapper.get(), {str: 'line2'}
+	simple.falsy 147, mapper.eof()
 
-	simple.like 156, token3 = mapper.get(), {str: 'line3'}
-	simple.truthy 157, mapper.eof()
-	simple.succeeds 158, () -> mapper.unfetch(token3)
-	simple.falsy 159, mapper.eof()
-	simple.equal 160, mapper.get(), token3
-	simple.truthy 161, mapper.eof()
-	simple.equal 162, mapper.lineNum, 3
+	simple.like 149, token3 = mapper.get(), {str: 'line3'}
+	simple.truthy 150, mapper.eof()
+	simple.succeeds 151, () -> mapper.unfetch(token3)
+	simple.falsy 152, mapper.eof()
+	simple.equal 153, mapper.get(), token3
+	simple.truthy 154, mapper.eof()
+	simple.equal 155, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -180,7 +179,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 189, """
+	tester.equal 182, """
 			abc
 				#include title.md
 			def
@@ -191,7 +190,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 200, numLines, 3
+	simple.equal 193, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -204,7 +203,7 @@ simple = new UnitTester()
 			def
 			""")
 
-	simple.equal 213, mapper.getBlock(), """
+	simple.equal 206, mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -232,7 +231,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 241, """
+	tester.equal 234, """
 			abc
 			def
 			__END__
@@ -243,7 +242,7 @@ simple = new UnitTester()
 			def
 			"""
 
-	simple.equal 252, numLines, 2
+	simple.equal 245, numLines, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -263,7 +262,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 272, """
+	tester.equal 265, """
 			abc
 				#include ended.md
 			def
@@ -292,7 +291,7 @@ simple = new UnitTester()
 
 	tester = new MyTester()
 
-	tester.equal 301, """
+	tester.equal 294, """
 			abc
 			#define meaning 42
 			meaning is __meaning__
@@ -321,7 +320,7 @@ simple = new UnitTester()
 			The meaning of life is __meaning__
 			""")
 
-	simple.equal 330, result, """
+	simple.equal 323, result, """
 			abc
 			The meaning of life is 42
 			"""
@@ -331,12 +330,13 @@ simple = new UnitTester()
 	#        2. implements a '#for <args>' cmd that outputs '{#for <args>}'
 
 	class MyMapper extends Mapper
+
 		isComment: (hNode) -> return hNode.str.match(///^ \s* \/ \/ ///)
 
 		mapCmd: (hNode) ->
-			{cmd, argstr} = hNode
+			{cmd, argstr} = hNode.uobj
 			if (cmd == 'for')
-				return "#{hNode.getIndent()}{#for #{argstr}}"
+				return indented("{#for #{argstr}}", hNode.level, @oneIndent)
 			else
 				return super(hNode)
 
@@ -349,7 +349,7 @@ simple = new UnitTester()
 			#for x in lItems
 			""")
 
-	simple.equal 358, result, """
+	simple.equal 352, result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -378,7 +378,7 @@ simple = new UnitTester()
 
 			defghi
 			""")
-	simple.equal 387, result, """
+	simple.equal 381, result, """
 			3
 			6
 			"""
@@ -397,22 +397,22 @@ simple = new UnitTester()
 				--x
 			""")
 
-	simple.like 406, mapper.peek(), {str: 'if (x == 2)', level: 0}
-	simple.like 407, mapper.get(),  {str: 'if (x == 2)', level: 0}
+	simple.like 400, mapper.peek(), {str: 'if (x == 2)', level: 0}
+	simple.like 401, mapper.get(),  {str: 'if (x == 2)', level: 0}
 
-	simple.like 409, mapper.peek(), {str: 'doThis', level: 1}
-	simple.like 410, mapper.get(),  {str: 'doThis', level: 1}
+	simple.like 403, mapper.peek(), {str: 'doThis', level: 1}
+	simple.like 404, mapper.get(),  {str: 'doThis', level: 1}
 
-	simple.like 412, mapper.peek(), {str: 'doThat', level: 1}
-	simple.like 413, mapper.get(),  {str: 'doThat', level: 1}
+	simple.like 406, mapper.peek(), {str: 'doThat', level: 1}
+	simple.like 407, mapper.get(),  {str: 'doThat', level: 1}
 
-	simple.like 415, mapper.peek(), {str: 'then this', level: 2}
-	simple.like 416, mapper.get(),  {str: 'then this', level: 2}
+	simple.like 409, mapper.peek(), {str: 'then this', level: 2}
+	simple.like 410, mapper.get(),  {str: 'then this', level: 2}
 
-	simple.like 418, mapper.peek(), {str: 'while (x > 2)', level: 0}
-	simple.like 419, mapper.get(),  {str: 'while (x > 2)', level: 0}
+	simple.like 412, mapper.peek(), {str: 'while (x > 2)', level: 0}
+	simple.like 413, mapper.get(),  {str: 'while (x > 2)', level: 0}
 
-	simple.like 421, mapper.peek(), {str: '--x', level: 1}
-	simple.like 422, mapper.get(),  {str: '--x', level: 1}
+	simple.like 415, mapper.peek(), {str: '--x', level: 1}
+	simple.like 416, mapper.get(),  {str: '--x', level: 1}
 
 	)()

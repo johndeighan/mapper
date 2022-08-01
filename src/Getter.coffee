@@ -6,6 +6,7 @@ import {
 	escapeStr, isString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
+import {indented} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
@@ -48,6 +49,7 @@ export class Getter extends Fetcher
 		debug "enter Getter.get()"
 
 		while defined(hNode = @fetch())
+			debug "GOT", hNode
 			assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
 			if hNode.isMapped()
 				# --- This can happen when the node was previously unfetched
@@ -55,7 +57,7 @@ export class Getter extends Fetcher
 				return hNode
 			uobj = @mapNode(hNode)
 			if defined(uobj)
-				hNode.setUserObj(uobj)
+				hNode.uobj = uobj
 				debug "return from Getter.get() - newly mapped", hNode
 				return hNode
 
@@ -115,7 +117,7 @@ export class Getter extends Fetcher
 		else
 			debug "no special type"
 			{str, level} = hNode
-			assert nonEmpty(str), "str is empty"
+			assert defined(str), "str is undef"
 			assert (str != '__END__'), "__END__ encountered"
 			newstr = @replaceConsts(str, @hConsts)
 			if (newstr != str)
@@ -123,11 +125,7 @@ export class Getter extends Fetcher
 				hNode.str = newstr
 
 			uobj = @mapNonSpecial(hNode)
-			debug "mapped", uobj
-
-		if (uobj == undef)
-			debug "return from Getter.mapNode()", undef
-			return undef
+			debug "mapped non-special", uobj
 
 		debug "return from Getter.mapNode()", uobj
 		return uobj
@@ -170,7 +168,9 @@ export class Getter extends Fetcher
 
 	mapSpecial: (type, hNode) ->
 
-		return undef    # default - ignore any special item types
+		# --- default - ignore any special item types
+		#     - but by default, there aren't any!
+		return undef
 
 	# ..........................................................
 	# --- designed to override
@@ -184,20 +184,56 @@ export class Getter extends Fetcher
 		debug "enter Getter.mapNonSpecial()", hNode
 		assert defined(hNode), "hNode is undef"
 
-		# --- by default, just returns str key
-		uobj = hNode.str
+		uobj = @map(hNode)
 		debug "return from Getter.mapNonSpecial()", uobj
 		return uobj
 
 	# ..........................................................
-	# --- a generator
+	# --- designed to override
+
+	map: (hNode) ->
+
+		# --- by default, just returns str key indented
+		{str, level} = hNode
+		return indented(str, level, @oneIndent)
+
+	# ..........................................................
+	# --- GENERATOR
 
 	allMapped: () ->
+
+		debug "enter Getter.allMapped()"
 
 		# --- NOTE: @get will skip items that are mapped to undef
 		#           and only returns undef when the input is exhausted
 		while defined(hNode = @get())
+			debug "GOT", hNode
 			yield hNode
+		debug "return from Getter.allMapped()"
+		return
+
+	# ..........................................................
+	# --- GENERATOR
+
+	allMappedUntil: (func, hOptions=undef) ->
+
+		debug "enter Getter.allMappedUntil()"
+
+		assert isFunction(func), "Arg 1 not a function"
+		if defined(hOptions)
+			discardEndLine = hOptions.discardEndLine
+		else
+			discardEndLine = true
+
+		# --- NOTE: @get will skip items that are mapped to undef
+		#           and only returns undef when the input is exhausted
+		while defined(hNode = @get()) && ! func(hNode)
+			debug "GOT", hNode
+			yield hNode
+		if defined(hNode) && ! discardEndLine
+			@unfetch hNode
+
+		debug "return from Getter.allMappedUntil()"
 		return
 
 	# ..........................................................
@@ -211,17 +247,17 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	getUntil: (endLine) ->
+	getUntil: (func, hOptions=undef) ->
 
 		debug "enter Getter.getUntil()"
-		lNodes = []
-		while defined(hNode = @get()) && (hNode.str != endLine)
-			lNodes.push hNode.str
+
+		lNodes = Array.from(@allMappedUntil(func, hOptions))
 		debug "return from Getter.getUntil()", lNodes
 		return lNodes
 
 	# ..........................................................
-	# --- Rarely used - requires that strings are mapped to strings
+	# --- Rarely used - requires that uobj's are strings
+	#     TreeWalker overrides this, and is more commonly used
 
 	getBlock: (hOptions={}) ->
 		# --- Valid options: logNodes
@@ -236,7 +272,7 @@ export class Getter extends Fetcher
 				debug "hNode[#{i}]", hNode
 			i += 1
 
-			lStrings.push hNode.getMappedLine(@oneIndent)
+			lStrings.push hNode.uobj
 
 		debug 'lStrings', lStrings
 		if defined(endStr = @endBlock())

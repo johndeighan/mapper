@@ -24,6 +24,10 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
+  indented
+} from '@jdeighan/coffee-utils/indent';
+
+import {
   arrayToBlock,
   blockToArray
 } from '@jdeighan/coffee-utils/block';
@@ -73,6 +77,7 @@ export var Getter = class Getter extends Fetcher {
     var hNode, uobj;
     debug("enter Getter.get()");
     while (defined(hNode = this.fetch())) {
+      debug("GOT", hNode);
       assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
       if (hNode.isMapped()) {
         // --- This can happen when the node was previously unfetched
@@ -81,7 +86,7 @@ export var Getter = class Getter extends Fetcher {
       }
       uobj = this.mapNode(hNode);
       if (defined(uobj)) {
-        hNode.setUserObj(uobj);
+        hNode.uobj = uobj;
         debug("return from Getter.get() - newly mapped", hNode);
         return hNode;
       }
@@ -139,7 +144,7 @@ export var Getter = class Getter extends Fetcher {
     } else {
       debug("no special type");
       ({str, level} = hNode);
-      assert(nonEmpty(str), "str is empty");
+      assert(defined(str), "str is undef");
       assert(str !== '__END__', "__END__ encountered");
       newstr = this.replaceConsts(str, this.hConsts);
       if (newstr !== str) {
@@ -147,11 +152,7 @@ export var Getter = class Getter extends Fetcher {
         hNode.str = newstr;
       }
       uobj = this.mapNonSpecial(hNode);
-      debug("mapped", uobj);
-    }
-    if (uobj === undef) {
-      debug("return from Getter.mapNode()", undef);
-      return undef;
+      debug("mapped non-special", uobj);
     }
     debug("return from Getter.mapNode()", uobj);
     return uobj;
@@ -191,11 +192,12 @@ export var Getter = class Getter extends Fetcher {
   
     // ..........................................................
   mapSpecial(type, hNode) {
-    return undef; // default - ignore any special item types
+    // --- default - ignore any special item types
+    //     - but by default, there aren't any!
+    return undef;
   }
 
-  
-    // ..........................................................
+  // ..........................................................
   // --- designed to override
   //     override may use fetch(), unfetch(), fetchBlock(), etc.
   //     should return a uobj (undef to ignore line)
@@ -205,21 +207,55 @@ export var Getter = class Getter extends Fetcher {
     //     uobj will be passed to visit() and endVisit() in TreeWalker
     debug("enter Getter.mapNonSpecial()", hNode);
     assert(defined(hNode), "hNode is undef");
-    // --- by default, just returns str key
-    uobj = hNode.str;
+    uobj = this.map(hNode);
     debug("return from Getter.mapNonSpecial()", uobj);
     return uobj;
   }
 
   // ..........................................................
-  // --- a generator
+  // --- designed to override
+  map(hNode) {
+    var level, str;
+    // --- by default, just returns str key indented
+    ({str, level} = hNode);
+    return indented(str, level, this.oneIndent);
+  }
+
+  // ..........................................................
+  // --- GENERATOR
   * allMapped() {
     var hNode;
+    debug("enter Getter.allMapped()");
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get())) {
+      debug("GOT", hNode);
       yield hNode;
     }
+    debug("return from Getter.allMapped()");
+  }
+
+  // ..........................................................
+  // --- GENERATOR
+  * allMappedUntil(func, hOptions = undef) {
+    var discardEndLine, hNode;
+    debug("enter Getter.allMappedUntil()");
+    assert(isFunction(func), "Arg 1 not a function");
+    if (defined(hOptions)) {
+      discardEndLine = hOptions.discardEndLine;
+    } else {
+      discardEndLine = true;
+    }
+    // --- NOTE: @get will skip items that are mapped to undef
+    //           and only returns undef when the input is exhausted
+    while (defined(hNode = this.get()) && !func(hNode)) {
+      debug("GOT", hNode);
+      yield hNode;
+    }
+    if (defined(hNode) && !discardEndLine) {
+      this.unfetch(hNode);
+    }
+    debug("return from Getter.allMappedUntil()");
   }
 
   // ..........................................................
@@ -232,19 +268,17 @@ export var Getter = class Getter extends Fetcher {
   }
 
   // ..........................................................
-  getUntil(endLine) {
-    var hNode, lNodes;
+  getUntil(func, hOptions = undef) {
+    var lNodes;
     debug("enter Getter.getUntil()");
-    lNodes = [];
-    while (defined(hNode = this.get()) && (hNode.str !== endLine)) {
-      lNodes.push(hNode.str);
-    }
+    lNodes = Array.from(this.allMappedUntil(func, hOptions));
     debug("return from Getter.getUntil()", lNodes);
     return lNodes;
   }
 
   // ..........................................................
-  // --- Rarely used - requires that strings are mapped to strings
+  // --- Rarely used - requires that uobj's are strings
+  //     TreeWalker overrides this, and is more commonly used
   getBlock(hOptions = {}) {
     var block, endStr, hNode, i, lStrings, ref;
     // --- Valid options: logNodes
@@ -259,7 +293,7 @@ export var Getter = class Getter extends Fetcher {
         debug(`hNode[${i}]`, hNode);
       }
       i += 1;
-      lStrings.push(hNode.getMappedLine(this.oneIndent));
+      lStrings.push(hNode.uobj);
     }
     debug('lStrings', lStrings);
     if (defined(endStr = this.endBlock())) {

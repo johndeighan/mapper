@@ -293,9 +293,10 @@ export class Fetcher
 		return
 
 	# ..........................................................
+	# --- GENERATOR
 
 	allUntil: (func, hOptions=undef) ->
-	# --- GENERATOR
+		# --- stop when func(hNode) returns true
 
 		debug "enter Fetcher.allUntil()"
 

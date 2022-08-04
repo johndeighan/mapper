@@ -299,9 +299,10 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
+  // --- GENERATOR
   * allUntil(func, hOptions = undef) {
     var discardEndLine, hNode;
-    // --- GENERATOR
+    // --- stop when func(hNode) returns true
     debug("enter Fetcher.allUntil()");
     assert(isFunction(func), "Arg 1 not a function");
     if (defined(hOptions)) {

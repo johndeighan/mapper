@@ -280,7 +280,7 @@ export var Getter = class Getter extends Fetcher {
   // --- Rarely used - requires that uobj's are strings
   //     TreeWalker overrides this, and is more commonly used
   getBlock(hOptions = {}) {
-    var block, endStr, hNode, i, lStrings, ref;
+    var block, endStr, hNode, i, lStrings, ref, result;
     // --- Valid options: logNodes
     debug("enter Getter.getBlock()");
     lStrings = [];
@@ -293,7 +293,16 @@ export var Getter = class Getter extends Fetcher {
         debug(`hNode[${i}]`, hNode);
       }
       i += 1;
-      lStrings.push(hNode.uobj);
+      // --- default visit() & visitSpecial() return uobj
+      if (hNode.type === undef) {
+        result = this.visit(hNode);
+      } else {
+        result = this.visitSpecial(hNode.type, hNode);
+      }
+      if (defined(result)) {
+        assert(isString(result), "not a string");
+        lStrings.push(result);
+      }
     }
     debug('lStrings', lStrings);
     if (defined(endStr = this.endBlock())) {
@@ -306,6 +315,38 @@ export var Getter = class Getter extends Fetcher {
     block = this.finalizeBlock(arrayToBlock(lStrings));
     debug("return from Getter.getBlock()", block);
     return block;
+  }
+
+  // ..........................................................
+  visit(hNode) {
+    var uobj;
+    debug("enter Getter.visit()", hNode);
+    ({uobj} = hNode);
+    if (isString(uobj)) {
+      debug("return from Getter.visit()", uobj);
+      return uobj;
+    } else if (defined(uobj)) {
+      return croak(`uobj ${OL(uobj)} should be a string`);
+    } else {
+      debug("return undef from Getter.visit()");
+      return undef;
+    }
+  }
+
+  // ..........................................................
+  visitSpecial(type, hNode) {
+    var uobj;
+    debug("enter Getter.visitSpecial()", type, hNode);
+    ({uobj} = hNode);
+    if (isString(uobj)) {
+      debug("return from Getter.visitSpecial()", uobj);
+      return uobj;
+    } else if (defined(uobj)) {
+      return croak(`uobj ${OL(uobj)} should be a string`);
+    } else {
+      debug("return undef from Getter.visitSpecial()");
+      return undef;
+    }
   }
 
   // ..........................................................

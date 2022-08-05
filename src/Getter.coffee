@@ -272,7 +272,16 @@ export class Getter extends Fetcher
 				debug "hNode[#{i}]", hNode
 			i += 1
 
-			lStrings.push hNode.uobj
+			# --- default visit() & visitSpecial() return uobj
+
+			if (hNode.type == undef)
+				result = @visit(hNode)
+			else
+				result = @visitSpecial(hNode.type, hNode)
+
+			if defined(result)
+				assert isString(result), "not a string"
+				lStrings.push result
 
 		debug 'lStrings', lStrings
 		if defined(endStr = @endBlock())
@@ -285,6 +294,36 @@ export class Getter extends Fetcher
 		block = @finalizeBlock(arrayToBlock(lStrings))
 		debug "return from Getter.getBlock()", block
 		return block
+
+	# ..........................................................
+
+	visit: (hNode) ->
+
+		debug "enter Getter.visit()", hNode
+		{uobj} = hNode
+		if isString(uobj)
+			debug "return from Getter.visit()", uobj
+			return uobj
+		else if defined(uobj)
+			croak "uobj #{OL(uobj)} should be a string"
+		else
+			debug "return undef from Getter.visit()"
+			return undef
+
+	# ..........................................................
+
+	visitSpecial: (type, hNode) ->
+
+		debug "enter Getter.visitSpecial()", type, hNode
+		{uobj} = hNode
+		if isString(uobj)
+			debug "return from Getter.visitSpecial()", uobj
+			return uobj
+		else if defined(uobj)
+			croak "uobj #{OL(uobj)} should be a string"
+		else
+			debug "return undef from Getter.visitSpecial()"
+			return undef
 
 	# ..........................................................
 

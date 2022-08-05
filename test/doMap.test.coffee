@@ -24,7 +24,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 #    2. removes empty lines
 #    3. appends a semicolon to each non-comment line
 
-export class JSMapper extends Mapper
+class JSMapper extends Mapper
 
 	mapComment: (hNode) ->
 
@@ -46,7 +46,7 @@ export class JSMapper extends Mapper
 
 	tester = new JSTester()
 
-	# --- some simple tests of DebarMapper
+	# --- some simple tests of JSMapper
 
 	tester.equal 51, """
 			# |||| $:

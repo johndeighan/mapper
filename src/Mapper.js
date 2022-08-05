@@ -199,6 +199,7 @@ export var Mapper = class Mapper extends Getter {
       default:
         // --- don't throw exception
         //     check for unknown commands in visitCmd()
+        debug("return from Mapper.mapCmd()", hNode.uobj);
         return hNode.uobj;
     }
   }

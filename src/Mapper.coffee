@@ -188,6 +188,7 @@ export class Mapper extends Getter
 			else
 				# --- don't throw exception
 				#     check for unknown commands in visitCmd()
+				debug "return from Mapper.mapCmd()", hNode.uobj
 				return hNode.uobj
 
 # ===========================================================================

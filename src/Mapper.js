@@ -197,7 +197,9 @@ export var Mapper = class Mapper extends Getter {
         debug("return undef from Mapper.mapCmd()");
         return undef;
       default:
-        return croak(`Unknown cmd: ${OL(cmd)}`);
+        // --- don't throw exception
+        //     check for unknown commands in visitCmd()
+        return hNode.uobj;
     }
   }
 

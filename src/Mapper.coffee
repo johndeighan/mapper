@@ -186,7 +186,9 @@ export class Mapper extends Getter
 				return undef
 
 			else
-				croak "Unknown cmd: #{OL(cmd)}"
+				# --- don't throw exception
+				#     check for unknown commands in visitCmd()
+				return hNode.uobj
 
 # ===========================================================================
 

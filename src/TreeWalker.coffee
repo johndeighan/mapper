@@ -389,8 +389,8 @@ export class TreeWalker extends Mapper
 	visitCmd: (hNode, hUser, lStack) ->
 
 		debug "in TreeWalker.visitCmd()"
-		cmd = hNode.uobj.cmd
-		croak "Unknown command: #{OL(cmd)}"
+		{cmd, argstr, level} = hNode.uobj
+		return indented("##{cmd} #{argstr}", level)
 
 	# ..........................................................
 

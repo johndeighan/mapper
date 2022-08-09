@@ -408,8 +408,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visitCmd(hNode, hUser, lStack) {
+    var cmd;
     debug("in TreeWalker.visitCmd()");
-    return undef;
+    cmd = hNode.uobj.cmd;
+    return croak(`Unknown command: ${OL(cmd)}`);
   }
 
   // ..........................................................

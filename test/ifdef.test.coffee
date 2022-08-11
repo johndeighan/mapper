@@ -17,7 +17,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {taml} from '@jdeighan/coffee-utils/taml'
 
-import {doMap} from '@jdeighan/mapper'
+import {map} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 import {TraceWalker} from '@jdeighan/mapper/trace'
 

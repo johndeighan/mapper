@@ -53,7 +53,7 @@ import {
 } from '@jdeighan/coffee-utils/taml';
 
 import {
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {

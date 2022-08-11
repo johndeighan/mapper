@@ -10,7 +10,7 @@ import {
 	arrayToBlock, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 
-import {Mapper, doMap} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test doMap()
+# --- Test map()
 
 (() ->
 
@@ -312,7 +312,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 	#        2. '#' style comments are recognized and removed
 	#        3. Only the #define command is interpreted
 
-	result = doMap(Mapper, import.meta.url, """
+	result = map(Mapper, import.meta.url, """
 			# - test.txt
 
 			abc
@@ -340,7 +340,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 			else
 				return super(hNode)
 
-	result = doMap(MyMapper, import.meta.url, """
+	result = map(MyMapper, import.meta.url, """
 			// test.txt
 
 			abc
@@ -371,7 +371,7 @@ import {Mapper, doMap} from '@jdeighan/mapper'
 		mapNonSpecial: (hNode) ->
 			return hNode.str.length.toString()
 
-	result = doMap(MyMapper, import.meta.url, """
+	result = map(MyMapper, import.meta.url, """
 			// test.txt
 
 			abc

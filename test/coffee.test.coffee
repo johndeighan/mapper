@@ -6,7 +6,7 @@ import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {doMap} from '@jdeighan/mapper'
+import {map} from '@jdeighan/mapper'
 import {
 	CoffeePreProcessor,
 	coffeeExprToJS, coffeeCodeToJS, cleanJS, minifyJS,
@@ -22,7 +22,7 @@ import {
 	class PreProcessTester extends UnitTester
 
 		transformValue: (code) ->
-			return doMap(CoffeePreProcessor, import.meta.url, code)
+			return map(CoffeePreProcessor, import.meta.url, code)
 
 	tester = new PreProcessTester()
 

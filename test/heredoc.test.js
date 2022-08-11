@@ -138,12 +138,12 @@ line of text`, '"this is a line of text"');
 // ---------------------------------------------------------------------------
 // Test creating new heredoc types
 MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     var i, lArray, len, line, ref, result;
     // --- if block starts with a digit
-    debug("enter MatrixHereDoc.doMap()", block);
+    debug("enter MatrixHereDoc.map()", block);
     if (notdefined(block.match(/^\s*\d/s))) {
-      debug("return undef from MatrixHereDoc.doMap()");
+      debug("return undef from MatrixHereDoc.map()");
       return undef;
     }
     lArray = [];
@@ -153,7 +153,7 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
       lArray.push(extractMatches(line, /\d+/g, parseInt));
     }
     result = JSON.stringify(lArray);
-    debug("return from MatrixHereDoc.doMap()", result);
+    debug("return from MatrixHereDoc.map()", result);
     return result;
   }
 
@@ -167,17 +167,17 @@ tester.equal(199, `1 2 3
 // ------------------------------------------------------------------------
 // Test creating a new heredoc type by overriding mapToString
 UCHereDoc = class UCHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     var result;
-    debug("enter UCHereDoc.doMap()", block);
+    debug("enter UCHereDoc.map()", block);
     if (block.indexOf('^^^') !== 0) {
-      debug("return undef from UCHereDoc.doMap()");
+      debug("return undef from UCHereDoc.map()");
       return undef;
     }
     block = block.substring(4).toUpperCase();
     debug('block', block);
     result = JSON.stringify(block);
-    debug("return from UCHereDoc.doMap()", result);
+    debug("return from UCHereDoc.map()", result);
     return result;
   }
 
@@ -195,17 +195,17 @@ block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
 //     e.g. with header line ***,
 //     we'll create an upper-cased single line string
 UCHereDoc2 = class UCHereDoc2 extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     var result;
-    debug("enter UCHereDoc2.doMap()", block);
+    debug("enter UCHereDoc2.map()", block);
     if (firstLine(block) !== '***') {
-      debug("return undef from UCHereDoc.doMap()");
+      debug("return undef from UCHereDoc.map()");
       return undef;
     }
     block = CWS(remainingLines(block).toUpperCase());
     debug('block', block);
     result = JSON.stringify(block);
-    debug("return from UCHereDoc2.doMap()", result);
+    debug("return from UCHereDoc2.map()", result);
     return result;
   }
 

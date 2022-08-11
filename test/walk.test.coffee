@@ -6,7 +6,7 @@ import {undef, pass} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 
-import {doMap} from '@jdeighan/mapper'
+import {map} from '@jdeighan/mapper'
 import {TraceWalker} from '@jdeighan/mapper/trace'
 
 simple = new UnitTester()
@@ -18,7 +18,7 @@ simple = new UnitTester()
 	class Tester extends UnitTester
 
 		transformValue: (block) ->
-			return doMap(TraceWalker, import.meta.url, block)
+			return map(TraceWalker, import.meta.url, block)
 
 	tester = new Tester()
 
@@ -106,14 +106,14 @@ simple = new UnitTester()
 (() ->
 	class MyTraceWalker extends TraceWalker
 
-		map: (hNode) ->
+		mapNode: (hNode) ->
 
 			return {text: hNode.str}
 
 	class Tester extends UnitTester
 
 		transformValue: (block) ->
-			return doMap(MyTraceWalker, import.meta.url, block)
+			return map(MyTraceWalker, import.meta.url, block)
 
 	tester = new Tester()
 

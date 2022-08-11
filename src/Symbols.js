@@ -175,20 +175,14 @@ SymbolParser = class SymbolParser extends TreeWalker {
   }
 
   // ..........................................................
-  // ignore empty lines and comments
-
-    //	mapEmptyLine: (hLine) -> return undef
-  //	mapComment:   (hLine) -> return undef
-
-    // ..........................................................
-  map(hLine) {
+  mapNode(hLine) {
     var _, alt, hDesc, i, isDefault, j, lMatches, lWords, len, level, numWords, src, str, symbol, word;
-    debug("enter SymbolParser.map()", hLine);
+    debug("enter SymbolParser.mapNode()", hLine);
     ({str, level} = hLine);
     if (level === 0) {
       this.curLib = str;
     } else if (level === 1) {
-      assert(this.curLib != null, "mapString(): curLib not defined");
+      assert(this.curLib != null, "curLib not defined");
       lWords = words(str);
       numWords = lWords.length;
       for (i = j = 0, len = lWords.length; j < len; i = ++j) {
@@ -201,7 +195,7 @@ SymbolParser = class SymbolParser extends TreeWalker {
           symbol = alt;
         }
         assert(nonEmpty(symbol), `Bad word: ${OL(word)}`);
-        assert(this.hSymbols[symbol] == null, `SymbolParser: duplicate symbol ${symbol}`);
+        assert(this.hSymbols[symbol] == null, `duplicate symbol ${symbol}`);
         hDesc = {
           lib: this.curLib
         };
@@ -216,7 +210,7 @@ SymbolParser = class SymbolParser extends TreeWalker {
     } else {
       croak(`Bad .symbols file - level = ${level}`);
     }
-    debug("return from SymbolParser.map()", undef);
+    debug("return from SymbolParser.mapNode()", undef);
     return undef; // doesn't matter what we return
   }
 

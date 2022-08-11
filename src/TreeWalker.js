@@ -58,7 +58,7 @@ import {
 //   class TreeWalker
 //      - mapNonSpecial() returns mapped item (i.e. uobj) or undef
 //   to use, override:
-//      map(hNode) - returns user object, def: returns hNode.str
+//      mapNode(hNode) - returns user object, def: returns hNode.str
 //      mapCmd(hNode)
 //      beginWalk()
 //      visit(hNode, hUser, lStack)
@@ -101,7 +101,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // --- Will only receive non-special lines
   //     1. add extension lines
   //     2. replace HEREDOCs
-  //     3. call map()
+  //     3. call mapNode()
   mapNonSpecial(hNode) {
     var lExtLines, level, newStr, srcLevel, str, uobj;
     debug("enter TreeWalker.mapNonSpecial()", hNode);
@@ -134,9 +134,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
       debug("no HEREDOCs");
     }
     hNode.str = str;
-    // --- NOTE: map() may return undef, meaning to ignore
-    //     We must pass srcLevel since map() may use fetch()
-    uobj = this.map(hNode);
+    // --- NOTE: mapNode() may return undef, meaning to ignore
+    //     We must pass srcLevel since mapNode() may use fetch()
+    uobj = this.mapNode(hNode);
     debug("return from TreeWalker.mapNonSpecial()", uobj);
     return uobj;
   }

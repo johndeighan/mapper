@@ -26,7 +26,7 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {
@@ -41,7 +41,7 @@ simple = new UnitTester();
   var Tester, tester;
   Tester = class Tester extends UnitTester {
     transformValue(block) {
-      return doMap(TraceWalker, import.meta.url, block);
+      return map(TraceWalker, import.meta.url, block);
     }
 
   };
@@ -95,7 +95,7 @@ END WALK`);
 (function() {
   var MyTraceWalker, Tester, tester;
   MyTraceWalker = class MyTraceWalker extends TraceWalker {
-    map(hNode) {
+    mapNode(hNode) {
       return {
         text: hNode.str
       };
@@ -104,7 +104,7 @@ END WALK`);
   };
   Tester = class Tester extends UnitTester {
     transformValue(block) {
-      return doMap(MyTraceWalker, import.meta.url, block);
+      return map(MyTraceWalker, import.meta.url, block);
     }
 
   };

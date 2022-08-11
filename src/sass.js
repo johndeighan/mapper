@@ -22,7 +22,7 @@ import {
 
 import {
   Mapper,
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ export var sassify = function(block, source) {
   var newblock, result;
   debug("enter sassify()", block, source);
   // --- NOTE: Mapper will remove comments and blank lines
-  newblock = doMap(Mapper, source, block);
+  newblock = map(Mapper, source, block);
   debug("newblock", newblock);
   result = sass.renderSync({
     data: newblock,

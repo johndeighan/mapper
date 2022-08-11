@@ -9,7 +9,7 @@ import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
-import {doMap} from '@jdeighan/mapper'
+import {map} from '@jdeighan/mapper'
 import {
 	cieloCodeToJS, cieloCodeToCoffee,
 	} from '@jdeighan/mapper/cielo'
@@ -248,7 +248,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
-			return doMap(TreeWalker, import.meta.url, text)
+			return map(TreeWalker, import.meta.url, text)
 
 	tester = new CieloTester('cielo.test')
 

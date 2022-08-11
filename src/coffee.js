@@ -35,7 +35,7 @@ import {
 
 import {
   Mapper,
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {
@@ -49,7 +49,7 @@ export var brew = function(code, source = 'internal') {
     bare: true,
     header: false
   };
-  mapped = doMap(CoffeePreProcessor, source, code);
+  mapped = map(CoffeePreProcessor, source, code);
   result = CoffeeScript.compile(mapped, hCoffeeOptions);
   // --- Result is JS code
   return result.trim();
@@ -62,7 +62,7 @@ export var getAST = function(code, source = 'internal') {
   hCoffeeOptions = {
     ast: true
   };
-  mapped = doMap(CoffeePreProcessor, source, code);
+  mapped = map(CoffeePreProcessor, source, code);
   debug('mapped', mapped);
   result = CoffeeScript.compile(mapped, hCoffeeOptions);
   // --- Result is an AST
@@ -203,15 +203,16 @@ export var CoffeePreProcessor = class CoffeePreProcessor extends TreeWalker {
   }
 
   // ..........................................................
-  map(hNode) {
+  mapNode(hNode) {
     var level, result, str;
-    debug("enter CoffeePreProcessor.map()", hNode);
+    // --- only non-special nodes
+    debug("enter CoffeePreProcessor.mapNode()", hNode);
     ({str, level} = hNode);
     result = str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
     result = indented(result, level, this.oneIndent);
-    debug("return from CoffeePreProcessor.map()", result);
+    debug("return from CoffeePreProcessor.mapNode()", result);
     return result;
   }
 

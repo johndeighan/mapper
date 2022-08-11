@@ -1,4 +1,4 @@
-# doMap.test.coffee
+# map.test.coffee
 
 import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
@@ -12,7 +12,7 @@ import {
 	arrayToBlock, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 
-import {Mapper, doMap} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 # --- Test complex mapping,
@@ -31,7 +31,7 @@ class JSMapper extends Mapper
 		{str, level} = hNode
 		return indented(str, level, @oneIndent)
 
-	map: (hNode) ->
+	mapNode: (hNode) ->
 
 		{str, level} = hNode
 		return indented("#{str};", level, @oneIndent)
@@ -42,7 +42,7 @@ class JSMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return doMap(JSMapper, import.meta.url, block)
+			return map(JSMapper, import.meta.url, block)
 
 	tester = new JSTester()
 
@@ -101,7 +101,7 @@ export class BarMapper extends Mapper
 				code = @fetchBlockUntil(func, hOptions)
 
 				# --- simulate conversion to JavaScript
-				code = doMap(JSMapper, @source, code)
+				code = map(JSMapper, @source, code)
 
 				block = arrayToBlock([
 					"# |||| $: {"
@@ -110,7 +110,7 @@ export class BarMapper extends Mapper
 					])
 			else
 				# --- simulate conversion to JavaScript
-				code = doMap(JSMapper, @source, argstr)
+				code = map(JSMapper, @source, argstr)
 
 				block = arrayToBlock([
 					"# |||| $:"
@@ -127,7 +127,7 @@ export class BarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return doMap(BarMapper, import.meta.url, block)
+			return map(BarMapper, import.meta.url, block)
 
 	tester = new BarTester()
 
@@ -197,7 +197,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return doMap(DebarMapper, import.meta.url, block)
+			return map(DebarMapper, import.meta.url, block)
 
 	tester = new DebarTester()
 
@@ -246,7 +246,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return doMap([BarMapper, DebarMapper], import.meta.url, block)
+			return map([BarMapper, DebarMapper], import.meta.url, block)
 
 	tester = new MultiTester()
 

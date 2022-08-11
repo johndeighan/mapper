@@ -36,13 +36,13 @@ export lineToParts = (line) ->
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # --- To extend,
-#        define doMap(block) that:
+#        define map(block) that:
 #           returns undef if it's not your HEREDOC type
 #           else returns a CieloScript expression
 
 export class BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 
 		return undef
 
@@ -56,7 +56,7 @@ export mapHereDoc = (block) ->
 	for type in lHereDocs
 		debug "CHECK FOR #{type} HEREDOC"
 		heredoc = hHereDocs[type]
-		if defined(str = heredoc.doMap(block))
+		if defined(str = heredoc.map(block))
 			debug "   - FOUND #{type} HEREDOC"
 			debug "return from mapHereDoc()", str
 			return str
@@ -102,7 +102,7 @@ export addHereDocType = (type, inputClass) ->
 
 export class ExplicitBlockHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 
 		if firstLine(block) != '==='
 			return undef
@@ -112,7 +112,7 @@ export class ExplicitBlockHereDoc extends BaseHereDoc
 
 export class OneLineHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 
 		if (block.indexOf('...') != 0)
 			return undef
@@ -122,7 +122,7 @@ export class OneLineHereDoc extends BaseHereDoc
 
 export class TAMLHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 		if ! isTAML(block)
 			return undef
 		return JSON.stringify(taml(block))
@@ -131,7 +131,7 @@ export class TAMLHereDoc extends BaseHereDoc
 
 export class FuncHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 		if ! @isFunctionDef(block)
 			return undef
 		return block

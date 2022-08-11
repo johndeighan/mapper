@@ -14,7 +14,7 @@ import {slurp, forEachLineInFile} from '@jdeighan/coffee-utils/fs'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {firstLine, blockToArray} from '@jdeighan/coffee-utils/block'
 
-import {Mapper, doMap} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 #   isTAML - is the string valid TAML?
@@ -44,7 +44,7 @@ export taml = (text, hOptions={}) ->
 #				"not a Mapper subclass: #{OL(premapper)}"
 
 		assert hOptions.source, "taml(): premapper without source"
-		text = doMap(premapper, hOptions.source, text)
+		text = map(premapper, hOptions.source, text)
 
 	assert isTAML(text), "taml(): string #{OL(text)} isn't TAML"
 	result = yaml.load(untabify(text), {skipInvalid: true})

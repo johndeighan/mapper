@@ -7,7 +7,7 @@ import {undef} from '@jdeighan/coffee-utils'
 import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
-import {Mapper, doMap} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ export sassify = (block, source) ->
 	debug "enter sassify()", block, source
 
 	# --- NOTE: Mapper will remove comments and blank lines
-	newblock = doMap(Mapper, source, block)
+	newblock = map(Mapper, source, block)
 	debug "newblock", newblock
 	result = sass.renderSync({
 		data: newblock,

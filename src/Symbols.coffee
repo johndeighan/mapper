@@ -130,22 +130,16 @@ class SymbolParser extends TreeWalker
 		@hSymbols = {}
 
 	# ..........................................................
-	# ignore empty lines and comments
 
-#	mapEmptyLine: (hLine) -> return undef
-#	mapComment:   (hLine) -> return undef
+	mapNode: (hLine) ->
 
-	# ..........................................................
-
-	map: (hLine) ->
-
-		debug "enter SymbolParser.map()", hLine
+		debug "enter SymbolParser.mapNode()", hLine
 
 		{str, level} = hLine
 		if level==0
 			@curLib = str
 		else if level==1
-			assert @curLib?, "mapString(): curLib not defined"
+			assert @curLib?, "curLib not defined"
 			lWords = words(str)
 			numWords = lWords.length
 
@@ -165,7 +159,7 @@ class SymbolParser extends TreeWalker
 					symbol = alt
 				assert nonEmpty(symbol), "Bad word: #{OL(word)}"
 				assert ! @hSymbols[symbol]?,
-					"SymbolParser: duplicate symbol #{symbol}"
+					"duplicate symbol #{symbol}"
 				hDesc = {lib: @curLib}
 				if src?
 					hDesc.src = src
@@ -174,7 +168,7 @@ class SymbolParser extends TreeWalker
 				@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
-		debug "return from SymbolParser.map()", undef
+		debug "return from SymbolParser.mapNode()", undef
 		return undef   # doesn't matter what we return
 
 	# ..........................................................

@@ -84,7 +84,7 @@ export var Getter = class Getter extends Fetcher {
         debug("return from Getter.get() - already mapped", hNode);
         return hNode;
       }
-      uobj = this.mapNode(hNode);
+      uobj = this.mapAnyNode(hNode);
       if (defined(uobj)) {
         hNode.uobj = uobj;
         debug("return from Getter.get() - newly mapped", hNode);
@@ -130,9 +130,9 @@ export var Getter = class Getter extends Fetcher {
   // --- return of undef doesn't mean EOF, it means skip this item
   //     sets key 'uobj' to a defined value if not returning undef
   //     sets key 'type' if a special type
-  mapNode(hNode) {
+  mapAnyNode(hNode) {
     var level, newstr, str, type, uobj;
-    debug("enter Getter.mapNode()", hNode);
+    debug("enter Getter.mapAnyNode()", hNode);
     assert(defined(hNode), "hNode is undef");
     type = this.getItemType(hNode);
     if (defined(type)) {
@@ -154,8 +154,31 @@ export var Getter = class Getter extends Fetcher {
       uobj = this.mapNonSpecial(hNode);
       debug("mapped non-special", uobj);
     }
-    debug("return from Getter.mapNode()", uobj);
+    debug("return from Getter.mapAnyNode()", uobj);
     return uobj;
+  }
+
+  // ..........................................................
+  mapSpecial(type, hNode) {
+    // --- default - ignore any special item types
+    //     - but by default, there aren't any!
+    return undef;
+  }
+
+  // ..........................................................
+  mapNonSpecial(hNode) {
+    // --- TreeWalker overrides this
+    return this.mapNode(hNode);
+  }
+
+  // ..........................................................
+  // --- designed to override
+  //     only non-special nodes
+  mapNode(hNode) {
+    var level, str;
+    // --- by default, just returns str key indented
+    ({str, level} = hNode);
+    return indented(str, level, this.oneIndent);
   }
 
   // ..........................................................
@@ -191,37 +214,6 @@ export var Getter = class Getter extends Fetcher {
 
   
     // ..........................................................
-  mapSpecial(type, hNode) {
-    // --- default - ignore any special item types
-    //     - but by default, there aren't any!
-    return undef;
-  }
-
-  // ..........................................................
-  // --- designed to override
-  //     override may use fetch(), unfetch(), fetchBlock(), etc.
-  //     should return a uobj (undef to ignore line)
-  mapNonSpecial(hNode) {
-    var uobj;
-    // --- returns a uobj or undef
-    //     uobj will be passed to visit() and endVisit() in TreeWalker
-    debug("enter Getter.mapNonSpecial()", hNode);
-    assert(defined(hNode), "hNode is undef");
-    uobj = this.map(hNode);
-    debug("return from Getter.mapNonSpecial()", uobj);
-    return uobj;
-  }
-
-  // ..........................................................
-  // --- designed to override
-  map(hNode) {
-    var level, str;
-    // --- by default, just returns str key indented
-    ({str, level} = hNode);
-    return indented(str, level, this.oneIndent);
-  }
-
-  // ..........................................................
   // --- GENERATOR
   * allMapped() {
     var hNode;

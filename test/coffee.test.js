@@ -27,7 +27,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {
@@ -47,7 +47,7 @@ import {
   var PreProcessTester, tester;
   PreProcessTester = class PreProcessTester extends UnitTester {
     transformValue(code) {
-      return doMap(CoffeePreProcessor, import.meta.url, code);
+      return map(CoffeePreProcessor, import.meta.url, code);
     }
 
   };

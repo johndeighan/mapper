@@ -8,7 +8,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 export class StoryMapper extends TreeWalker
 
-	map: (hNode) ->
+	mapNode: (hNode) ->
 
 		if lMatches = hNode.str.match(///
 				([A-Za-z_][A-Za-z0-9_]*)  # identifier

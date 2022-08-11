@@ -17,7 +17,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {taml} from '@jdeighan/coffee-utils/taml'
 
-import {doMap} from '@jdeighan/mapper'
+import {map} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
@@ -25,7 +25,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	class TreeWalker should handle the following:
 		- remove empty lines and comments
 		- extension lines
-		- can override @map() - used in @getAll()
+		- can override @mapNode() - used in @getAll()
 		- call @walk() to walk the tree
 		- can override beginWalk(), visit(), endVisit(), endWalk()
 ###
@@ -116,7 +116,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 # __END__ only works with no identation
 
 (() ->
-	simple.fails 119, () -> doMap(TreeWalker, import.meta.url, """
+	simple.fails 119, () -> map(TreeWalker, import.meta.url, """
 			abc
 					def
 				ghi
@@ -133,7 +133,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(TreeWalker, import.meta.url, block)
+			return map(TreeWalker, import.meta.url, block)
 
 	tester = new Tester()
 
@@ -190,7 +190,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(MyWalker, import.meta.url, block)
+			return map(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -202,7 +202,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 205, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 205, map(MyWalker, import.meta.url, block), """
 			abc
 			def
 			"""
@@ -236,7 +236,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(MyWalker, import.meta.url, block)
+			return map(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -250,7 +250,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 253, doMap(MyWalker, import.meta.url, block), """
+	simple.equal 253, map(MyWalker, import.meta.url, block), """
 			# not a comment
 			abc
 			def
@@ -305,7 +305,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	class MyTester extends UnitTester
 
 		transformValue: (block) ->
-			return doMap(MyWalker, import.meta.url, block)
+			return map(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -332,22 +332,22 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 (()->
 
-	# --- NOTE: map() returns anything,
+	# --- NOTE: mapNode() returns anything,
 	#           or undef to ignore the line
 
 	class MyWalker extends TreeWalker
 
 		# --- This maps all non-empty lines to the string 'x'
 		#     and removes all empty lines
-		map: (hNode) ->
+		mapNode: (hNode) ->
 
-			debug "enter map()", hNode
+			debug "enter mapNode()", hNode
 			{str, level} = hNode
 			if isEmpty(str)
-				debug "return undef from map() - empty line"
+				debug "return undef from mapNode() - empty line"
 				return undef
 			else
-				debug "return 'x' from map()"
+				debug "return 'x' from mapNode()"
 				return indented('x', level, @oneIndent)
 
 	# ..........................................................
@@ -356,7 +356,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(MyWalker, import.meta.url, block)
+			return map(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -394,7 +394,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(MyWalker, import.meta.url, block)
+			return map(MyWalker, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -420,7 +420,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(TreeWalker, import.meta.url, block)
+			return map(TreeWalker, import.meta.url, block)
 
 	# ..........................................................
 
@@ -551,7 +551,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	class MyWalker extends TreeWalker
 
-		map: (hNode) ->
+		mapNode: (hNode) ->
 			{str, level} = hNode
 			if (lMatches = str.match(///^
 					(if | while)
@@ -606,7 +606,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return doMap(TreeWalker, import.meta.url, block)
+			return map(TreeWalker, import.meta.url, block)
 
 	# ..........................................................
 
@@ -660,9 +660,9 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 class HtmlMapper extends TreeWalker
 
-	map: (hNode) ->
+	mapNode: (hNode) ->
 
-		debug "enter MyWalker.map()", hNode
+		debug "enter MyWalker.mapNode()", hNode
 		{str, level} = hNode
 		lMatches = str.match(///^
 				(\S+)     # the tag
@@ -685,13 +685,13 @@ class HtmlMapper extends TreeWalker
 				body = @fetchBlockAtLevel(level+1)
 				debug "body", body
 				if nonEmpty(body)
-					md = doMap(SimpleMarkDownMapper, import.meta.url, body)
+					md = map(SimpleMarkDownMapper, import.meta.url, body)
 					debug "md", md
 					hResult.body = md
 			else
 				croak "Unknown tag: #{OL(tag)}"
 
-		debug "return from MyWalker.map()", hResult
+		debug "return from MyWalker.mapNode()", hResult
 		return hResult
 
 	# .......................................................
@@ -734,7 +734,7 @@ class HtmlMapper extends TreeWalker
 
 		transformValue: (block) ->
 
-			return doMap(HtmlMapper, import.meta.url, block)
+			return map(HtmlMapper, import.meta.url, block)
 
 	tester = new MyTester()
 
@@ -777,7 +777,7 @@ class HtmlMapper extends TreeWalker
 
 		transformValue: (block) ->
 
-			return doMap(TreeWalker, import.meta.url, block)
+			return map(TreeWalker, import.meta.url, block)
 
 	tester = new MyTester()
 

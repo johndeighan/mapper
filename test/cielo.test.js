@@ -36,7 +36,7 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {
@@ -183,7 +183,7 @@ func(x, "abc")`);
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(text) {
-      return doMap(TreeWalker, import.meta.url, text);
+      return map(TreeWalker, import.meta.url, text);
     }
 
   };

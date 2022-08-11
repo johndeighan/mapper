@@ -178,17 +178,17 @@ tester.equal 172, """
 
 class MatrixHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 		# --- if block starts with a digit
-		debug "enter MatrixHereDoc.doMap()", block
+		debug "enter MatrixHereDoc.map()", block
 		if notdefined(block.match(/^\s*\d/s))
-			debug "return undef from MatrixHereDoc.doMap()"
+			debug "return undef from MatrixHereDoc.map()"
 			return undef
 		lArray = []
 		for line in blockToArray(block)
 			lArray.push extractMatches(line, /\d+/g, parseInt)
 		result = JSON.stringify(lArray)
-		debug "return from MatrixHereDoc.doMap()", result
+		debug "return from MatrixHereDoc.map()", result
 		return result
 
 addHereDocType 'matrix', MatrixHereDoc
@@ -204,17 +204,17 @@ tester.equal 199, """
 
 class UCHereDoc extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 
-		debug "enter UCHereDoc.doMap()", block
+		debug "enter UCHereDoc.map()", block
 		if (block.indexOf('^^^') != 0)
-			debug "return undef from UCHereDoc.doMap()"
+			debug "return undef from UCHereDoc.map()"
 			return undef
 
 		block = block.substring(4).toUpperCase()
 		debug 'block', block
 		result = JSON.stringify(block)
-		debug "return from UCHereDoc.doMap()", result
+		debug "return from UCHereDoc.map()", result
 		return result
 
 addHereDocType 'upper case', UCHereDoc
@@ -234,17 +234,17 @@ tester.equal 225, """
 
 class UCHereDoc2 extends BaseHereDoc
 
-	doMap: (block) ->
+	map: (block) ->
 
-		debug "enter UCHereDoc2.doMap()", block
+		debug "enter UCHereDoc2.map()", block
 		if (firstLine(block) != '***')
-			debug "return undef from UCHereDoc.doMap()"
+			debug "return undef from UCHereDoc.map()"
 			return undef
 
 		block = CWS(remainingLines(block).toUpperCase())
 		debug 'block', block
 		result = JSON.stringify(block)
-		debug "return from UCHereDoc2.doMap()", result
+		debug "return from UCHereDoc2.map()", result
 		return result
 
 addHereDocType 'upper case 2', UCHereDoc2

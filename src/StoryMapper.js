@@ -15,7 +15,7 @@ import {
 
 // ---------------------------------------------------------------------------
 export var StoryMapper = class StoryMapper extends TreeWalker {
-  map(hNode) {
+  mapNode(hNode) {
     var _, ident, lMatches, str;
     if (lMatches = hNode.str.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
       // colon

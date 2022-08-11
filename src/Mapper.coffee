@@ -8,6 +8,7 @@ import {
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug} from '@jdeighan/coffee-utils/debug'
+import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
@@ -193,23 +194,30 @@ export class Mapper extends Getter
 
 # ===========================================================================
 
-export doMap = (inputClass, source, content=undef, hOptions={}) ->
+export map = (inputClass, source, content=undef, hOptions={}) ->
 	# --- Valid options:
 	#        logLines
 
 	if isArray(inputClass)
-		for cls,i in inputClass
+		result = content
+		for item,i in inputClass
 			if i==0
-				result = doMap cls, source, content, hOptions
+				result = map item, source, content, hOptions
 			else
-				result = doMap cls, source, result, hOptions
+				result = map item, source, result, hOptions
 		return result
 
-	debug "enter doMap()", inputClass, source, content
+	debug "enter map()", inputClass, source, content
+	if (inputClass == undef)
+		debug "return from map() - undef class", content
+		return undef
+
 	assert inputClass?, "Missing input class"
 	oInput = new inputClass(source, content)
 	assert oInput instanceof Mapper, "Mapper or subclass required"
 	debug "got oInput object"
 	result = oInput.getBlock(hOptions)
-	debug "return from doMap()", result
+	debug "return from map()", result
 	return result
+
+# ---------------------------------------------------------------------------

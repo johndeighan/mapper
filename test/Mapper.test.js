@@ -36,7 +36,7 @@ import {
 
 import {
   Mapper,
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
@@ -333,14 +333,14 @@ meaning is 42`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- Test doMap()
+// --- Test map()
 (function() {
   var MyMapper, result;
   // --- Usually:
   //        1. empty lines are removed
   //        2. '#' style comments are recognized and removed
   //        3. Only the #define command is interpreted
-  result = doMap(Mapper, import.meta.url, `# - test.txt
+  result = map(Mapper, import.meta.url, `# - test.txt
 
 abc
 #define meaning 42
@@ -366,7 +366,7 @@ The meaning of life is 42`);
     }
 
   };
-  result = doMap(MyMapper, import.meta.url, `// test.txt
+  result = map(MyMapper, import.meta.url, `// test.txt
 
 abc
 #define meaning 42
@@ -399,7 +399,7 @@ The meaning of life is 42
     }
 
   };
-  result = doMap(MyMapper, import.meta.url, `// test.txt
+  result = map(MyMapper, import.meta.url, `// test.txt
 
 abc
 

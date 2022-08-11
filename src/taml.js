@@ -44,7 +44,7 @@ import {
 
 import {
   Mapper,
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ export var taml = function(text, hOptions = {}) {
     //		assert (premapper instanceof Mapper),
     //				"not a Mapper subclass: #{OL(premapper)}"
     assert(hOptions.source, "taml(): premapper without source");
-    text = doMap(premapper, hOptions.source, text);
+    text = map(premapper, hOptions.source, text);
   }
   assert(isTAML(text), `taml(): string ${OL(text)} isn't TAML`);
   result = yaml.load(untabify(text), {

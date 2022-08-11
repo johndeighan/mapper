@@ -70,11 +70,11 @@ export var lineToParts = function(line) {
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // --- To extend,
-//        define doMap(block) that:
+//        define map(block) that:
 //           returns undef if it's not your HEREDOC type
 //           else returns a CieloScript expression
 export var BaseHereDoc = class BaseHereDoc {
-  doMap(block) {
+  map(block) {
     return undef;
   }
 
@@ -90,7 +90,7 @@ export var mapHereDoc = function(block) {
     type = lHereDocs[i];
     debug(`CHECK FOR ${type} HEREDOC`);
     heredoc = hHereDocs[type];
-    if (defined(str = heredoc.doMap(block))) {
+    if (defined(str = heredoc.map(block))) {
       debug(`   - FOUND ${type} HEREDOC`);
       debug("return from mapHereDoc()", str);
       return str;
@@ -133,7 +133,7 @@ export var addHereDocType = function(type, inputClass) {
 
 // ---------------------------------------------------------------------------
 export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     if (firstLine(block) !== '===') {
       return undef;
     }
@@ -144,7 +144,7 @@ export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc
 
 // ---------------------------------------------------------------------------
 export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     if (block.indexOf('...') !== 0) {
       return undef;
     }
@@ -155,7 +155,7 @@ export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
 
 // ---------------------------------------------------------------------------
 export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     if (!isTAML(block)) {
       return undef;
     }
@@ -166,7 +166,7 @@ export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
 
 // ---------------------------------------------------------------------------
 export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
-  doMap(block) {
+  map(block) {
     if (!this.isFunctionDef(block)) {
       return undef;
     }

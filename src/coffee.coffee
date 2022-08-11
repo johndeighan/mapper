@@ -12,7 +12,7 @@ import {
 	indentLevel, isUndented, indented,
 	} from '@jdeighan/coffee-utils/indent'
 
-import {Mapper, doMap} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
@@ -23,7 +23,7 @@ export brew = (code, source='internal') ->
 		bare: true
 		header: false
 		}
-	mapped = doMap(CoffeePreProcessor, source, code)
+	mapped = map(CoffeePreProcessor, source, code)
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 
 	# --- Result is JS code
@@ -37,7 +37,7 @@ export getAST = (code, source='internal') ->
 	hCoffeeOptions = {
 		ast: true
 		}
-	mapped = doMap(CoffeePreProcessor, source, code)
+	mapped = map(CoffeePreProcessor, source, code)
 	debug 'mapped', mapped
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 
@@ -186,9 +186,10 @@ export class CoffeePreProcessor extends TreeWalker
 
 	# ..........................................................
 
-	map: (hNode) ->
+	mapNode: (hNode) ->
+		# --- only non-special nodes
 
-		debug "enter CoffeePreProcessor.map()", hNode
+		debug "enter CoffeePreProcessor.mapNode()", hNode
 		{str, level} = hNode
 		result = str.replace(///
 				\"
@@ -198,6 +199,6 @@ export class CoffeePreProcessor extends TreeWalker
 			(qstr) -> expand(qstr)
 			)
 		result = indented(result, level, @oneIndent)
-		debug "return from CoffeePreProcessor.map()", result
+		debug "return from CoffeePreProcessor.mapNode()", result
 		return result
 

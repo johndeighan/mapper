@@ -54,7 +54,7 @@ import {
 } from '@jdeighan/coffee-utils/taml';
 
 import {
-  doMap
+  map
 } from '@jdeighan/mapper';
 
 import {
@@ -69,7 +69,7 @@ import {
 	class TreeWalker should handle the following:
 		- remove empty lines and comments
 		- extension lines
-		- can override @map() - used in @getAll()
+		- can override @mapNode() - used in @getAll()
 		- call @walk() to walk the tree
 		- can override beginWalk(), visit(), endVisit(), endWalk()
 */
@@ -149,7 +149,7 @@ __END__
 // __END__ only works with no identation
 (function() {
   return simple.fails(119, function() {
-    return doMap(TreeWalker, import.meta.url, `abc
+    return map(TreeWalker, import.meta.url, `abc
 		def
 	ghi
 	__END__
@@ -162,7 +162,7 @@ __END__
   var Tester, tester;
   Tester = class Tester extends UnitTester {
     transformValue(block) {
-      return doMap(TreeWalker, import.meta.url, block);
+      return map(TreeWalker, import.meta.url, block);
     }
 
   };
@@ -201,7 +201,7 @@ p
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyWalker, import.meta.url, block);
+      return map(MyWalker, import.meta.url, block);
     }
 
   };
@@ -210,7 +210,7 @@ p
   block = `abc
 
 def`;
-  simple.equal(205, doMap(MyWalker, import.meta.url, block), `abc
+  simple.equal(205, map(MyWalker, import.meta.url, block), `abc
 def`);
   return tester.equal(210, block, `abc
 def`);
@@ -235,7 +235,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyWalker, import.meta.url, block);
+      return map(MyWalker, import.meta.url, block);
     }
 
   };
@@ -246,7 +246,7 @@ def`);
 # not a comment
 abc
 def`;
-  simple.equal(253, doMap(MyWalker, import.meta.url, block), `# not a comment
+  simple.equal(253, map(MyWalker, import.meta.url, block), `# not a comment
 abc
 def`);
   return tester.equal(259, block, `# not a comment
@@ -295,7 +295,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyWalker, import.meta.url, block);
+      return map(MyWalker, import.meta.url, block);
     }
 
   };
@@ -315,20 +315,20 @@ def`);
 // try retaining indentation for mapped lines
 (function() {
   var MyTester, MyWalker, tester;
-  // --- NOTE: map() returns anything,
+  // --- NOTE: mapNode() returns anything,
   //           or undef to ignore the line
   MyWalker = class MyWalker extends TreeWalker {
     // --- This maps all non-empty lines to the string 'x'
     //     and removes all empty lines
-    map(hNode) {
+    mapNode(hNode) {
       var level, str;
-      debug("enter map()", hNode);
+      debug("enter mapNode()", hNode);
       ({str, level} = hNode);
       if (isEmpty(str)) {
-        debug("return undef from map() - empty line");
+        debug("return undef from mapNode() - empty line");
         return undef;
       } else {
-        debug("return 'x' from map()");
+        debug("return 'x' from mapNode()");
         return indented('x', level, this.oneIndent);
       }
     }
@@ -337,7 +337,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyWalker, import.meta.url, block);
+      return map(MyWalker, import.meta.url, block);
     }
 
   };
@@ -369,7 +369,7 @@ x`);
     // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(MyWalker, import.meta.url, block);
+      return map(MyWalker, import.meta.url, block);
     }
 
   };
@@ -388,7 +388,7 @@ ghi`);
   var MyTester, tester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(TreeWalker, import.meta.url, block);
+      return map(TreeWalker, import.meta.url, block);
     }
 
   };
@@ -522,7 +522,7 @@ doThat
 (function() {
   var MyWalker, walker;
   MyWalker = class MyWalker extends TreeWalker {
-    map(hNode) {
+    mapNode(hNode) {
       var _, cmd, cond, lMatches, level, str;
       ({str, level} = hNode);
       if ((lMatches = str.match(/^(if|while)\s*(.*)$/))) {
@@ -569,7 +569,7 @@ doThat
   var MyTester, tester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(TreeWalker, import.meta.url, block);
+      return map(TreeWalker, import.meta.url, block);
     }
 
   };
@@ -606,9 +606,9 @@ def`);
 // ---------------------------------------------------------------------------
 // --- A more complex example
 HtmlMapper = class HtmlMapper extends TreeWalker {
-  map(hNode) {
+  mapNode(hNode) {
     var _, body, hResult, lMatches, level, md, str, tag, text;
-    debug("enter MyWalker.map()", hNode);
+    debug("enter MyWalker.mapNode()", hNode);
     ({str, level} = hNode);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
@@ -632,7 +632,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
         body = this.fetchBlockAtLevel(level + 1);
         debug("body", body);
         if (nonEmpty(body)) {
-          md = doMap(SimpleMarkDownMapper, import.meta.url, body);
+          md = map(SimpleMarkDownMapper, import.meta.url, body);
           debug("md", md);
           hResult.body = md;
         }
@@ -640,7 +640,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
       default:
         croak(`Unknown tag: ${OL(tag)}`);
     }
-    debug("return from MyWalker.map()", hResult);
+    debug("return from MyWalker.mapNode()", hResult);
     return hResult;
   }
 
@@ -683,7 +683,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   var MyTester, tester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(HtmlMapper, import.meta.url, block);
+      return map(HtmlMapper, import.meta.url, block);
     }
 
   };
@@ -718,7 +718,7 @@ HtmlMapper = class HtmlMapper extends TreeWalker {
   var MyTester, tester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return doMap(TreeWalker, import.meta.url, block);
+      return map(TreeWalker, import.meta.url, block);
     }
 
   };

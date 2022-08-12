@@ -312,13 +312,13 @@ import {Mapper, map} from '@jdeighan/mapper'
 	#        2. '#' style comments are recognized and removed
 	#        3. Only the #define command is interpreted
 
-	result = map(Mapper, import.meta.url, """
+	result = map(import.meta.url, """
 			# - test.txt
 
 			abc
 			#define meaning 42
 			The meaning of life is __meaning__
-			""")
+			""", Mapper)
 
 	simple.equal 323, result, """
 			abc
@@ -340,14 +340,14 @@ import {Mapper, map} from '@jdeighan/mapper'
 			else
 				return super(hNode)
 
-	result = map(MyMapper, import.meta.url, """
+	result = map(import.meta.url, """
 			// test.txt
 
 			abc
 			#define meaning 42
 			The meaning of life is __meaning__
 			#for x in lItems
-			""")
+			""", MyMapper)
 
 	simple.equal 352, result, """
 			abc
@@ -371,13 +371,13 @@ import {Mapper, map} from '@jdeighan/mapper'
 		mapNonSpecial: (hNode) ->
 			return hNode.str.length.toString()
 
-	result = map(MyMapper, import.meta.url, """
+	result = map(import.meta.url, """
 			// test.txt
 
 			abc
 
 			defghi
-			""")
+			""", MyMapper)
 	simple.equal 381, result, """
 			3
 			6

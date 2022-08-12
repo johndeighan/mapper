@@ -44,7 +44,7 @@ export taml = (text, hOptions={}) ->
 #				"not a Mapper subclass: #{OL(premapper)}"
 
 		assert hOptions.source, "taml(): premapper without source"
-		text = map(premapper, hOptions.source, text)
+		text = map(hOptions.source, text, premapper)
 
 	assert isTAML(text), "taml(): string #{OL(text)} isn't TAML"
 	result = yaml.load(untabify(text), {skipInvalid: true})

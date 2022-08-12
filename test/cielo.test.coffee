@@ -248,7 +248,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	class CieloTester extends UnitTesterNorm
 
 		transformValue: (text) ->
-			return map(TreeWalker, import.meta.url, text)
+			return map(import.meta.url, text, TreeWalker)
 
 	tester = new CieloTester('cielo.test')
 

@@ -53,10 +53,6 @@ import {
 } from '@jdeighan/coffee-utils/taml';
 
 import {
-  map
-} from '@jdeighan/mapper';
-
-import {
   TreeWalker
 } from '@jdeighan/mapper/tree';
 

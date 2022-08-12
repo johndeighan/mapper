@@ -23,7 +23,7 @@ export brew = (code, source='internal') ->
 		bare: true
 		header: false
 		}
-	mapped = map(CoffeePreProcessor, source, code)
+	mapped = map(source, code, CoffeePreProcessor)
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 
 	# --- Result is JS code
@@ -37,7 +37,7 @@ export getAST = (code, source='internal') ->
 	hCoffeeOptions = {
 		ast: true
 		}
-	mapped = map(CoffeePreProcessor, source, code)
+	mapped = map(source, code, CoffeePreProcessor)
 	debug 'mapped', mapped
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 

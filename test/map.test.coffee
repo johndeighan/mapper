@@ -9,10 +9,10 @@ import {indented} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {
-	arrayToBlock, joinBlocks,
+	arrayToBlock, blockToArray, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 
-import {Mapper, map} from '@jdeighan/mapper'
+import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 # --- Test complex mapping,
@@ -42,7 +42,7 @@ class JSMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(JSMapper, import.meta.url, block)
+			return map(import.meta.url, block, JSMapper)
 
 	tester = new JSTester()
 
@@ -101,7 +101,7 @@ export class BarMapper extends Mapper
 				code = @fetchBlockUntil(func, hOptions)
 
 				# --- simulate conversion to JavaScript
-				code = map(JSMapper, @source, code)
+				code = map(@source, code, JSMapper)
 
 				block = arrayToBlock([
 					"# |||| $: {"
@@ -110,7 +110,7 @@ export class BarMapper extends Mapper
 					])
 			else
 				# --- simulate conversion to JavaScript
-				code = map(JSMapper, @source, argstr)
+				code = map(@source, argstr, JSMapper)
 
 				block = arrayToBlock([
 					"# |||| $:"
@@ -127,7 +127,7 @@ export class BarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(BarMapper, import.meta.url, block)
+			return map(import.meta.url, block, BarMapper)
 
 	tester = new BarTester()
 
@@ -197,7 +197,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(DebarMapper, import.meta.url, block)
+			return map(import.meta.url, block, DebarMapper)
 
 	tester = new DebarTester()
 
@@ -246,7 +246,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map([BarMapper, DebarMapper], import.meta.url, block)
+			return map(import.meta.url, block, [BarMapper, DebarMapper])
 
 	tester = new MultiTester()
 
@@ -286,5 +286,42 @@ export class DebarMapper extends Mapper
 				}
 			</script>
 			"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test FuncMapper
+
+(() ->
+
+	# --- Lines that begin with a letter are converted to upper-case
+	#     Any other lines are removed
+
+	func = (block) ->
+		lResult = []
+		for line in blockToArray(block)
+			if line.match(/^\s*[A-Za-z]/)
+				lResult.push line.toUpperCase()
+		return arrayToBlock(lResult)
+
+	# --- test func directly
+	block = """
+		abc
+		---
+		xyz
+		123
+		"""
+
+	simple.equal 309, func(block), """
+		ABC
+		XYZ
+		"""
+
+	# --- test using map()
+	mapper = new FuncMapper(import.meta.url, block, func)
+	simple.equal 318, map(import.meta.url, block, mapper), """
+		ABC
+		XYZ
+		"""
 
 	)()

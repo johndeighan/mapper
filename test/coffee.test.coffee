@@ -22,7 +22,7 @@ import {
 	class PreProcessTester extends UnitTester
 
 		transformValue: (code) ->
-			return map(CoffeePreProcessor, import.meta.url, code)
+			return map(import.meta.url, code, CoffeePreProcessor)
 
 	tester = new PreProcessTester()
 

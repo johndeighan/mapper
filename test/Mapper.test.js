@@ -340,11 +340,11 @@ meaning is 42`);
   //        1. empty lines are removed
   //        2. '#' style comments are recognized and removed
   //        3. Only the #define command is interpreted
-  result = map(Mapper, import.meta.url, `# - test.txt
+  result = map(import.meta.url, `# - test.txt
 
 abc
 #define meaning 42
-The meaning of life is __meaning__`);
+The meaning of life is __meaning__`, Mapper);
   simple.equal(323, result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
@@ -366,12 +366,12 @@ The meaning of life is 42`);
     }
 
   };
-  result = map(MyMapper, import.meta.url, `// test.txt
+  result = map(import.meta.url, `// test.txt
 
 abc
 #define meaning 42
 The meaning of life is __meaning__
-#for x in lItems`);
+#for x in lItems`, MyMapper);
   return simple.equal(352, result, `abc
 The meaning of life is 42
 {#for x in lItems}`);
@@ -399,11 +399,11 @@ The meaning of life is 42
     }
 
   };
-  result = map(MyMapper, import.meta.url, `// test.txt
+  result = map(import.meta.url, `// test.txt
 
 abc
 
-defghi`);
+defghi`, MyMapper);
   return simple.equal(381, result, `3
 6`);
 })();

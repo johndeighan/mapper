@@ -18,7 +18,7 @@ simple = new UnitTester()
 	class Tester extends UnitTester
 
 		transformValue: (block) ->
-			return map(TraceWalker, import.meta.url, block)
+			return map(import.meta.url, block, TraceWalker)
 
 	tester = new Tester()
 
@@ -113,7 +113,7 @@ simple = new UnitTester()
 	class Tester extends UnitTester
 
 		transformValue: (block) ->
-			return map(MyTraceWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyTraceWalker)
 
 	tester = new Tester()
 

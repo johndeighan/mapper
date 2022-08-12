@@ -20,7 +20,8 @@ import {
   isFunction,
   isIterable,
   isEmpty,
-  nonEmpty
+  nonEmpty,
+  isSubclassOf
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -93,13 +94,13 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override
   getItemType(hNode) {
-    var j, len, recognizer, ref, str, type;
+    var i, len, recognizer, ref, str, type;
     debug("enter Mapper.getItemType()", hNode);
     ({str} = hNode);
     assert(isString(str), `str is ${OL(str)}`);
     ref = this.lSpecials;
-    for (j = 0, len = ref.length; j < len; j++) {
-      type = ref[j];
+    for (i = 0, len = ref.length; i < len; i++) {
+      type = ref[i];
       recognizer = this.hSpecials[type].recognizer;
       if (recognizer.bind(this)(hNode)) {
         debug("return from getItemType()", type);
@@ -212,32 +213,47 @@ export var Mapper = class Mapper extends Getter {
 };
 
 // ===========================================================================
-export var map = function(inputClass, source, content = undef, hOptions = {}) {
-  var i, item, j, len, oInput, result;
+export var FuncMapper = class FuncMapper extends Mapper {
+  constructor(source = undef, collection = undef, func) {
+    super(source, collection);
+    this.func = func;
+    assert(isFunction(this.func), "3rd arg not a function");
+  }
+
+  getBlock(hOptions = {}) {
+    var block;
+    block = super.getBlock(hOptions);
+    return this.func(block);
+  }
+
+};
+
+// ===========================================================================
+export var map = function(source, content = undef, mapper, hOptions = {}) {
+  var i, item, len, result;
   // --- Valid options:
   //        logLines
-  if (isArray(inputClass)) {
+  if (isArray(mapper)) {
     result = content;
-    for (i = j = 0, len = inputClass.length; j < len; i = ++j) {
-      item = inputClass[i];
-      if (i === 0) {
-        result = map(item, source, content, hOptions);
-      } else {
-        result = map(item, source, result, hOptions);
+    for (i = 0, len = mapper.length; i < len; i++) {
+      item = mapper[i];
+      if (defined(item)) {
+        result = map(source, result, item, hOptions);
       }
     }
     return result;
   }
-  debug("enter map()", inputClass, source, content);
-  if (inputClass === undef) {
-    debug("return from map() - undef class", content);
-    return undef;
+  debug("enter map()", source, content, mapper);
+  assert(defined(mapper), "Missing input class");
+  if (mapper instanceof Mapper) {
+    result = mapper.getBlock(hOptions);
+  } else if (isSubclassOf(mapper, Mapper)) {
+    mapper = new mapper(source, content);
+    assert(mapper instanceof Mapper, "Mapper or subclass required");
+    result = mapper.getBlock(hOptions);
+  } else {
+    croak("Bad mapper");
   }
-  assert(inputClass != null, "Missing input class");
-  oInput = new inputClass(source, content);
-  assert(oInput instanceof Mapper, "Mapper or subclass required");
-  debug("got oInput object");
-  result = oInput.getBlock(hOptions);
   debug("return from map()", result);
   return result;
 };

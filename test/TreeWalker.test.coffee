@@ -116,13 +116,13 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 # __END__ only works with no identation
 
 (() ->
-	simple.fails 119, () -> map(TreeWalker, import.meta.url, """
+	simple.fails 119, () -> map(import.meta.url, """
 			abc
 					def
 				ghi
 				__END__
 					ghi
-			""")
+			""", TreeWalker)
 	)()
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(TreeWalker, import.meta.url, block)
+			return map(import.meta.url, block, TreeWalker)
 
 	tester = new Tester()
 
@@ -190,7 +190,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(MyWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyWalker)
 
 	tester = new MyTester()
 
@@ -202,7 +202,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 205, map(MyWalker, import.meta.url, block), """
+	simple.equal 205, map(import.meta.url, block, MyWalker), """
 			abc
 			def
 			"""
@@ -236,7 +236,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(MyWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyWalker)
 
 	tester = new MyTester()
 
@@ -250,7 +250,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			def
 			"""
 
-	simple.equal 253, map(MyWalker, import.meta.url, block), """
+	simple.equal 253, map(import.meta.url, block, MyWalker), """
 			# not a comment
 			abc
 			def
@@ -305,7 +305,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	class MyTester extends UnitTester
 
 		transformValue: (block) ->
-			return map(MyWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyWalker)
 
 	tester = new MyTester()
 
@@ -356,7 +356,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(MyWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyWalker)
 
 	tester = new MyTester()
 
@@ -394,7 +394,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(MyWalker, import.meta.url, block)
+			return map(import.meta.url, block, MyWalker)
 
 	tester = new MyTester()
 
@@ -420,7 +420,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(TreeWalker, import.meta.url, block)
+			return map(import.meta.url, block, TreeWalker)
 
 	# ..........................................................
 
@@ -606,7 +606,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return map(TreeWalker, import.meta.url, block)
+			return map(import.meta.url, block, TreeWalker)
 
 	# ..........................................................
 
@@ -685,7 +685,7 @@ class HtmlMapper extends TreeWalker
 				body = @fetchBlockAtLevel(level+1)
 				debug "body", body
 				if nonEmpty(body)
-					md = map(SimpleMarkDownMapper, import.meta.url, body)
+					md = map(import.meta.url, body, SimpleMarkDownMapper)
 					debug "md", md
 					hResult.body = md
 			else
@@ -734,7 +734,7 @@ class HtmlMapper extends TreeWalker
 
 		transformValue: (block) ->
 
-			return map(HtmlMapper, import.meta.url, block)
+			return map(import.meta.url, block, HtmlMapper)
 
 	tester = new MyTester()
 
@@ -777,7 +777,7 @@ class HtmlMapper extends TreeWalker
 
 		transformValue: (block) ->
 
-			return map(TreeWalker, import.meta.url, block)
+			return map(import.meta.url, block, TreeWalker)
 
 	tester = new MyTester()
 

@@ -3,7 +3,8 @@
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
-	isString, isHash, isArray, isFunction, isIterable, isEmpty, nonEmpty,
+	isString, isHash, isArray, isFunction, isIterable,
+	isEmpty, nonEmpty, isSubclassOf,
 	} from '@jdeighan/coffee-utils'
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
 import {LOG} from '@jdeighan/coffee-utils/log'
@@ -194,29 +195,41 @@ export class Mapper extends Getter
 
 # ===========================================================================
 
-export map = (inputClass, source, content=undef, hOptions={}) ->
+export class FuncMapper extends Mapper
+
+	constructor: (source=undef, collection=undef, @func) ->
+
+		super(source, collection)
+		assert isFunction(@func), "3rd arg not a function"
+
+	getBlock: (hOptions={}) ->
+
+		block = super(hOptions)
+		return @func(block)
+
+# ===========================================================================
+
+export map = (source, content=undef, mapper, hOptions={}) ->
 	# --- Valid options:
 	#        logLines
 
-	if isArray(inputClass)
+	if isArray(mapper)
 		result = content
-		for item,i in inputClass
-			if i==0
-				result = map item, source, content, hOptions
-			else
-				result = map item, source, result, hOptions
+		for item in mapper
+			if defined(item)
+				result = map(source, result, item, hOptions)
 		return result
 
-	debug "enter map()", inputClass, source, content
-	if (inputClass == undef)
-		debug "return from map() - undef class", content
-		return undef
-
-	assert inputClass?, "Missing input class"
-	oInput = new inputClass(source, content)
-	assert oInput instanceof Mapper, "Mapper or subclass required"
-	debug "got oInput object"
-	result = oInput.getBlock(hOptions)
+	debug "enter map()", source, content, mapper
+	assert defined(mapper), "Missing input class"
+	if (mapper instanceof Mapper)
+		result = mapper.getBlock(hOptions)
+	else if isSubclassOf(mapper, Mapper)
+		mapper = new mapper(source, content)
+		assert (mapper instanceof Mapper), "Mapper or subclass required"
+		result = mapper.getBlock(hOptions)
+	else
+		croak "Bad mapper"
 	debug "return from map()", result
 	return result
 

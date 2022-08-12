@@ -16,7 +16,7 @@ export sassify = (block, source) ->
 	debug "enter sassify()", block, source
 
 	# --- NOTE: Mapper will remove comments and blank lines
-	newblock = map(Mapper, source, block)
+	newblock = map(source, block, Mapper)
 	debug "newblock", newblock
 	result = sass.renderSync({
 		data: newblock,

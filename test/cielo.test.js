@@ -183,7 +183,7 @@ func(x, "abc")`);
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTesterNorm {
     transformValue(text) {
-      return map(TreeWalker, import.meta.url, text);
+      return map(import.meta.url, text, TreeWalker);
     }
 
   };

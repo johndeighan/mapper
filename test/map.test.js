@@ -36,11 +36,13 @@ import {
 
 import {
   arrayToBlock,
+  blockToArray,
   joinBlocks
 } from '@jdeighan/coffee-utils/block';
 
 import {
   Mapper,
+  FuncMapper,
   map
 } from '@jdeighan/mapper';
 
@@ -72,7 +74,7 @@ JSMapper = class JSMapper extends Mapper {
   var JSTester, tester;
   JSTester = class JSTester extends UnitTester {
     transformValue(block) {
-      return map(JSMapper, import.meta.url, block);
+      return map(import.meta.url, block, JSMapper);
     }
 
   };
@@ -121,11 +123,11 @@ export var BarMapper = class BarMapper extends Mapper {
         };
         code = this.fetchBlockUntil(func, hOptions);
         // --- simulate conversion to JavaScript
-        code = map(JSMapper, this.source, code);
+        code = map(this.source, code, JSMapper);
         block = arrayToBlock(["# |||| $: {", code, "# |||| }"]);
       } else {
         // --- simulate conversion to JavaScript
-        code = map(JSMapper, this.source, argstr);
+        code = map(this.source, argstr, JSMapper);
         block = arrayToBlock(["# |||| $:", code]);
       }
       result = indented(block, level, this.oneIndent);
@@ -141,7 +143,7 @@ export var BarMapper = class BarMapper extends Mapper {
   var BarTester, tester;
   BarTester = class BarTester extends UnitTester {
     transformValue(block) {
-      return map(BarMapper, import.meta.url, block);
+      return map(import.meta.url, block, BarMapper);
     }
 
   };
@@ -198,7 +200,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
   var DebarTester, tester;
   DebarTester = class DebarTester extends UnitTester {
     transformValue(block) {
-      return map(DebarMapper, import.meta.url, block);
+      return map(import.meta.url, block, DebarMapper);
     }
 
   };
@@ -234,7 +236,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
   var MultiTester, tester;
   MultiTester = class MultiTester extends UnitTester {
     transformValue(block) {
-      return map([BarMapper, DebarMapper], import.meta.url, block);
+      return map(import.meta.url, block, [BarMapper, DebarMapper]);
     }
 
   };
@@ -265,4 +267,35 @@ export var DebarMapper = class DebarMapper extends Mapper {
 	console.log "OK";
 	}
 </script>`);
+})();
+
+// ---------------------------------------------------------------------------
+// --- test FuncMapper
+(function() {
+  var block, func, mapper;
+  // --- Lines that begin with a letter are converted to upper-case
+  //     Any other lines are removed
+  func = function(block) {
+    var i, lResult, len, line, ref;
+    lResult = [];
+    ref = blockToArray(block);
+    for (i = 0, len = ref.length; i < len; i++) {
+      line = ref[i];
+      if (line.match(/^\s*[A-Za-z]/)) {
+        lResult.push(line.toUpperCase());
+      }
+    }
+    return arrayToBlock(lResult);
+  };
+  // --- test func directly
+  block = `abc
+---
+xyz
+123`;
+  simple.equal(309, func(block), `ABC
+XYZ`);
+  // --- test using map()
+  mapper = new FuncMapper(import.meta.url, block, func);
+  return simple.equal(318, map(import.meta.url, block, mapper), `ABC
+XYZ`);
 })();

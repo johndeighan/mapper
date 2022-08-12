@@ -91,7 +91,7 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
   }
   // --- Handles extension lines, HEREDOCs, etc.
   debug(`Apply premapper ${className(premapper)}`);
-  coffeeCode = map(premapper, source, cieloCode);
+  coffeeCode = map(source, cieloCode, premapper);
   if (coffeeCode !== cieloCode) {
     assert(isUndented(coffeeCode), "coffeeCode has indent");
     debug("coffeeCode", coffeeCode);
@@ -105,7 +105,7 @@ export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
     jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions);
     debug("jsPreCode", jsPreCode);
     if (postmapper) {
-      jsCode = map(postmapper, source, jsPreCode);
+      jsCode = map(source, jsPreCode, postmapper);
       if (jsCode !== jsPreCode) {
         debug("post mapped", jsCode);
       }
@@ -163,7 +163,7 @@ export var cieloCodeToCoffee = function(cieloCode, source = undef, hOptions = {}
   }
   // --- Handles extension lines, HEREDOCs, etc.
   debug(`Apply premapper ${className(premapper)}`);
-  coffeeCode = map(premapper, source, cieloCode);
+  coffeeCode = map(source, cieloCode, premapper);
   if (coffeeCode !== cieloCode) {
     assert(isUndented(coffeeCode), "coffeeCode has indent");
     debug("coffeeCode", coffeeCode);
@@ -173,7 +173,7 @@ export var cieloCodeToCoffee = function(cieloCode, source = undef, hOptions = {}
   lNeededSymbols = getNeededSymbols(coffeeCode);
   debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
   if (postmapper) {
-    newCoffeeCode = map(postmapper, source, coffeeCode);
+    newCoffeeCode = map(source, coffeeCode, postmapper);
     if (newCoffeeCode !== coffeeCode) {
       coffeeCode = newCoffeeCode;
       debug("post mapped", coffeeCode);

@@ -40,8 +40,7 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  cieloCodeToJS,
-  cieloCodeToCoffee
+  CieloToJSMapper
 } from '@jdeighan/mapper/cielo';
 
 import {
@@ -60,9 +59,9 @@ import {
 // ---------------------------------------------------------------------------
 (function() {
   var CieloTester, tester;
-  CieloTester = class CieloTester extends UnitTesterNorm {
+  CieloTester = class CieloTester extends UnitTester {
     transformValue(code) {
-      return cieloCodeToCoffee(code, import.meta.url);
+      return map(import.meta.url, code, TreeWalker);
     }
 
   };
@@ -169,25 +168,13 @@ func(x, "abc")`);
 	long string
 	"""`);
   // --- Make sure triple quoted strings are passed through as is
-  return tester.equal(232, `str = '''
+  tester.equal(232, `str = '''
 	this is a
 	long string
 	'''`, `str = '''
 	this is a
 	long string
 	'''`);
-})();
-
-// ---------------------------------------------------------------------------
-(function() {
-  var CieloTester, tester;
-  CieloTester = class CieloTester extends UnitTesterNorm {
-    transformValue(text) {
-      return map(import.meta.url, text, TreeWalker);
-    }
-
-  };
-  tester = new CieloTester('cielo.test');
   // ------------------------------------------------------------------------
   // Test function HEREDOC types
   tester.equal(260, `handler = <<<
@@ -206,7 +193,7 @@ func(x, "abc")`);
   cieloCode = `# --- temp.cielo
 if fs.existsSync('file.txt')
 	logger "file exists"`;
-  jsCode = cieloCodeToJS(cieloCode, import.meta.url);
+  jsCode = map(import.meta.url, cieloCode, CieloToJSMapper);
   return simple.equal(291, jsCode, `import fs from 'fs';
 import {log as logger} from '@jdeighan/coffee-utils/log';
 if (fs.existsSync('file.txt')) {
@@ -218,8 +205,8 @@ if (fs.existsSync('file.txt')) {
 (function() {
   var CieloTester, tester;
   CieloTester = class CieloTester extends UnitTesterNorm {
-    transformValue(text) {
-      return cieloCodeToJS(text, import.meta.url);
+    transformValue(code) {
+      return map(import.meta.url, code, CieloToJSMapper);
     }
 
   };
@@ -261,38 +248,66 @@ logger(x);`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- test premapper
+// --- test subclassing TreeWalker
+//     retain '# ||||' style comments
 (function() {
-  var CieloTester, tester;
+  var CieloTester, MyMapper, tester;
+  MyMapper = class MyMapper extends TreeWalker {
+    mapComment(hNode) {
+      var comment, str, uobj;
+      ({str, uobj} = hNode);
+      ({comment} = uobj);
+      if (comment.indexOf('||||') === 0) {
+        return str;
+      } else {
+        return undef;
+      }
+    }
+
+  };
   CieloTester = class CieloTester extends UnitTester {
     transformValue(code) {
-      var MyPreMapper, hOptions;
-      // --- define a custom premapper that retains '# ||||' style comments
-      MyPreMapper = class MyPreMapper extends TreeWalker {
-        mapComment(hNode) {
-          var comment, str, uobj;
-          ({str, uobj} = hNode);
-          ({comment} = uobj);
-          if (comment.indexOf('||||') === 0) {
-            return str;
-          } else {
-            return undef;
-          }
-        }
-
-      };
-      hOptions = {
-        premapper: MyPreMapper
-      };
-      return cieloCodeToCoffee(code, import.meta.url, hOptions);
+      return map(import.meta.url, code, MyMapper);
     }
 
   };
   tester = new CieloTester(import.meta.url);
   // ------------------------------------------------------------------------
-  // --- test removing comments
   return tester.equal(399, `# --- a comment
 # |||| stuff
 y = x`, `# |||| stuff
 y = x`);
+})();
+
+// ---------------------------------------------------------------------------
+// --- test subclassing CieloToJSMapper
+//     retain '# ||||' style comments
+(function() {
+  var CieloTester, MyMapper, tester;
+  MyMapper = class MyMapper extends CieloToJSMapper {
+    mapComment(hNode) {
+      var comment, str, uobj;
+      ({str, uobj} = hNode);
+      ({comment} = uobj);
+      if (comment.indexOf('||||') === 0) {
+        return str;
+      } else {
+        return undef;
+      }
+    }
+
+  };
+  CieloTester = class CieloTester extends UnitTester {
+    transformValue(code) {
+      return map(import.meta.url, code, MyMapper);
+    }
+
+  };
+  tester = new CieloTester(import.meta.url);
+  // ------------------------------------------------------------------------
+  return tester.equal(424, `# --- a comment
+# |||| stuff
+y = x`, `// |||| stuff
+var y;
+y = x;`);
 })();

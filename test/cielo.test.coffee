@@ -10,9 +10,7 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'
-import {
-	cieloCodeToJS, cieloCodeToCoffee,
-	} from '@jdeighan/mapper/cielo'
+import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
@@ -27,10 +25,11 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 # ---------------------------------------------------------------------------
 
 (() ->
-	class CieloTester extends UnitTesterNorm
+	class CieloTester extends UnitTester
 
 		transformValue: (code) ->
-			return cieloCodeToCoffee(code, import.meta.url)
+
+			return map(import.meta.url, code, TreeWalker)
 
 	tester = new CieloTester(import.meta.url)
 
@@ -239,19 +238,6 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 				'''
 			"""
 
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-
-	class CieloTester extends UnitTesterNorm
-
-		transformValue: (text) ->
-			return map(import.meta.url, text, TreeWalker)
-
-	tester = new CieloTester('cielo.test')
-
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
@@ -284,7 +270,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 				logger "file exists"
 			"""
 
-	jsCode = cieloCodeToJS(cieloCode, import.meta.url)
+	jsCode = map(import.meta.url, cieloCode, CieloToJSMapper)
 
 	simple.equal 291, jsCode, """
 			import fs from 'fs';
@@ -301,8 +287,9 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	class CieloTester extends UnitTesterNorm
 
-		transformValue: (text) ->
-			return cieloCodeToJS(text, import.meta.url)
+		transformValue: (code) ->
+
+			return map(import.meta.url, code, CieloToJSMapper)
 
 	tester = new CieloTester('cielo.test')
 
@@ -370,31 +357,30 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	)()
 
 # ---------------------------------------------------------------------------
-# --- test premapper
+# --- test subclassing TreeWalker
+#     retain '# ||||' style comments
 
 (() ->
+	class MyMapper extends TreeWalker
+
+		mapComment: (hNode) ->
+
+			{str, uobj} = hNode
+			{comment} = uobj
+			if (comment.indexOf('||||') == 0)
+				return str
+			else
+				return undef
+
 	class CieloTester extends UnitTester
 
 		transformValue: (code) ->
 
-			# --- define a custom premapper that retains '# ||||' style comments
-			class MyPreMapper extends TreeWalker
-
-				mapComment: (hNode) ->
-					{str, uobj} = hNode
-					{comment} = uobj
-					if (comment.indexOf('||||') == 0)
-						return str
-					else
-						return undef
-
-			hOptions = {premapper: MyPreMapper}
-			return cieloCodeToCoffee(code, import.meta.url, hOptions)
+			return map(import.meta.url, code, MyMapper)
 
 	tester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
-	# --- test removing comments
 
 	tester.equal 399, """
 			# --- a comment
@@ -403,5 +389,42 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			""", """
 			# |||| stuff
 			y = x
+			"""
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test subclassing CieloToJSMapper
+#     retain '# ||||' style comments
+
+(() ->
+	class MyMapper extends CieloToJSMapper
+
+		mapComment: (hNode) ->
+
+			{str, uobj} = hNode
+			{comment} = uobj
+			if (comment.indexOf('||||') == 0)
+				return str
+			else
+				return undef
+
+	class CieloTester extends UnitTester
+
+		transformValue: (code) ->
+
+			return map(import.meta.url, code, MyMapper)
+
+	tester = new CieloTester(import.meta.url)
+
+	# ------------------------------------------------------------------------
+
+	tester.equal 424, """
+			# --- a comment
+			# |||| stuff
+			y = x
+			""", """
+			// |||| stuff
+			var y;
+			y = x;
 			"""
 	)()

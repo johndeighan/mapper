@@ -24,129 +24,36 @@ import {map, Mapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
-export cieloCodeToJS = (cieloCode, source=undef, hOptions={}) ->
-	# --- cielo => js
-	#     Valid Options:
-	#        premapper:  Mapper or subclass
-	#        postmapper: Mapper or subclass - optional
-	#        hCoffeeOptions  - passed to CoffeeScript.parse()
-	#           default:
-	#              bare: true
-	#              header: false
-	#     If hOptions is a string, it's assumed to be the source
+export class CieloToJSMapper extends TreeWalker
 
-	debug "enter cieloCodeToJS()", cieloCode, source, hOptions
+	finalizeBlock: (coffeeCode) ->
 
-	assert isUndented(cieloCode), "cieloCode has indent"
-	assert isHash(hOptions), "hOptions not a hash"
+		debug "enter CieloToJSMapper.finalizeBlock()", coffeeCode
+		lNeededSymbols = getNeededSymbols(coffeeCode)
+		debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
+		try
+			jsCode = coffeeCodeToJS(coffeeCode, @source, {
+				bare: true
+				header: false
+				})
+			debug "jsCode", jsCode
+		catch err
+			croak err, "Original Code", coffeeCode
 
-	if hOptions.premapper
-		premapper = hOptions.premapper
-		assert (premapper.prototype instanceof Mapper) || (premapper == Mapper),
-				"premapper not a Mapper"
-	else
-		premapper = TreeWalker
-	postmapper = hOptions.postmapper   # may be undef
-	if defined(postmapper)
-		assert (postmapper.prototype instanceof Mapper) || (postmapper == Mapper),
-				"postmapper not a Mapper"
+		if nonEmpty(lNeededSymbols)
+			# --- Prepend needed imports
+			lImports = buildImportList(lNeededSymbols, @source)
+			debug "lImports", lImports
 
-	# --- Handles extension lines, HEREDOCs, etc.
-	debug "Apply premapper #{className(premapper)}"
-	coffeeCode = map(source, cieloCode, premapper)
-	if coffeeCode != cieloCode
-		assert isUndented(coffeeCode), "coffeeCode has indent"
-		debug "coffeeCode", coffeeCode
+			# --- append ';' to import statements
+			lImports = for stmt in lImports
+				stmt + ';'
 
-	# --- symbols will always be unique
-	#     We can only get needed symbols from coffee code, not JS code
-	lNeededSymbols = getNeededSymbols(coffeeCode)
-	debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
+			# --- joinBlocks() flattens all its arguments to array of strings
+			jsCode = joinBlocks(lImports, jsCode)
 
-	try
-		hCoffeeOptions = hOptions.hCoffeeOptions
-		jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions)
-		debug "jsPreCode", jsPreCode
-		if postmapper
-			jsCode = map(source, jsPreCode, postmapper)
-			if jsCode != jsPreCode
-				debug "post mapped", jsCode
-		else
-			jsCode = jsPreCode
-	catch err
-		croak err, "Original Code", cieloCode
-
-	# --- Prepend needed imports
-	lImports = buildImportList(lNeededSymbols, source)
-	debug "lImports", lImports
-	assert isArray(lImports), "cieloCodeToJS(): lImports is not an array"
-
-	# --- append ';' to import statements
-	lImports = for stmt in lImports
-		stmt + ';'
-
-	# --- joinBlocks() flattens all its arguments to array of strings
-	jsCode = joinBlocks(lImports, jsCode)
-	debug "return from cieloCodeToJS()", jsCode
-	return jsCode
-
-# ---------------------------------------------------------------------------
-
-export cieloCodeToCoffee = (cieloCode, source=undef, hOptions={}) ->
-	# --- cielo => coffee
-	#     Valid Options:
-	#        premapper:  Mapper or subclass
-	#        postmapper: Mapper or subclass - optional
-	#        hCoffeeOptions  - passed to CoffeeScript.parse()
-	#           default:
-	#              bare: true
-	#              header: false
-	#     If hOptions is a string, it's assumed to be the source
-
-	debug "enter cieloCodeToCoffee()", cieloCode, source, hOptions
-
-	assert isUndented(cieloCode), "cieloCode has indent"
-	assert isHash(hOptions), "hOptions not a hash"
-
-	if hOptions.premapper
-		premapper = hOptions.premapper
-		assert (premapper.prototype instanceof Mapper) || (premapper == Mapper),
-				"premapper not a Mapper"
-	else
-		premapper = TreeWalker
-
-	postmapper = hOptions.postmapper   # may be undef
-	if defined(postmapper)
-		assert (postmapper.prototype instanceof Mapper) || (postmapper == Mapper),
-				"postmapper not a Mapper"
-
-	# --- Handles extension lines, HEREDOCs, etc.
-	debug "Apply premapper #{className(premapper)}"
-	coffeeCode = map(source, cieloCode, premapper)
-	if coffeeCode != cieloCode
-		assert isUndented(coffeeCode), "coffeeCode has indent"
-		debug "coffeeCode", coffeeCode
-
-	# --- symbols will always be unique
-	#     We can only get needed symbols from coffee code, not JS code
-	lNeededSymbols = getNeededSymbols(coffeeCode)
-	debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
-
-	if postmapper
-		newCoffeeCode = map(source, coffeeCode, postmapper)
-		if (newCoffeeCode != coffeeCode)
-			coffeeCode = newCoffeeCode
-			debug "post mapped", coffeeCode
-
-	# --- Prepend needed imports
-	lImports = buildImportList(lNeededSymbols, source)
-	debug "lImports", lImports
-	assert isArray(lImports), "cieloCodeToCoffee(): lImports is not an array"
-
-	# --- joinBlocks() flattens all its arguments to array of strings
-	coffeeCode = joinBlocks(lImports, coffeeCode)
-	debug "return from cieloCodeToCoffee()", coffeeCode
-	return coffeeCode
+		debug "return from CieloToJSMapper.finalizeBlock()", jsCode
+		return jsCode
 
 # ---------------------------------------------------------------------------
 
@@ -173,6 +80,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					debug "   - #{sym}"
-		jsCode = cieloCodeToJS(cieloCode, srcPath, hOptions)
+		jsCode = map(srcPath, cieloCode, CieloToJSMapper)
 		barf destPath, jsCode
 	return

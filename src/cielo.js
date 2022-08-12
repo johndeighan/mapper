@@ -65,128 +65,43 @@ import {
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
-export var cieloCodeToJS = function(cieloCode, source = undef, hOptions = {}) {
-  var coffeeCode, err, hCoffeeOptions, jsCode, jsPreCode, lImports, lNeededSymbols, postmapper, premapper, stmt;
-  // --- cielo => js
-  //     Valid Options:
-  //        premapper:  Mapper or subclass
-  //        postmapper: Mapper or subclass - optional
-  //        hCoffeeOptions  - passed to CoffeeScript.parse()
-  //           default:
-  //              bare: true
-  //              header: false
-  //     If hOptions is a string, it's assumed to be the source
-  debug("enter cieloCodeToJS()", cieloCode, source, hOptions);
-  assert(isUndented(cieloCode), "cieloCode has indent");
-  assert(isHash(hOptions), "hOptions not a hash");
-  if (hOptions.premapper) {
-    premapper = hOptions.premapper;
-    assert((premapper.prototype instanceof Mapper) || (premapper === Mapper), "premapper not a Mapper");
-  } else {
-    premapper = TreeWalker;
-  }
-  postmapper = hOptions.postmapper; // may be undef
-  if (defined(postmapper)) {
-    assert((postmapper.prototype instanceof Mapper) || (postmapper === Mapper), "postmapper not a Mapper");
-  }
-  // --- Handles extension lines, HEREDOCs, etc.
-  debug(`Apply premapper ${className(premapper)}`);
-  coffeeCode = map(source, cieloCode, premapper);
-  if (coffeeCode !== cieloCode) {
-    assert(isUndented(coffeeCode), "coffeeCode has indent");
-    debug("coffeeCode", coffeeCode);
-  }
-  // --- symbols will always be unique
-  //     We can only get needed symbols from coffee code, not JS code
-  lNeededSymbols = getNeededSymbols(coffeeCode);
-  debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
-  try {
-    hCoffeeOptions = hOptions.hCoffeeOptions;
-    jsPreCode = coffeeCodeToJS(coffeeCode, source, hCoffeeOptions);
-    debug("jsPreCode", jsPreCode);
-    if (postmapper) {
-      jsCode = map(source, jsPreCode, postmapper);
-      if (jsCode !== jsPreCode) {
-        debug("post mapped", jsCode);
-      }
-    } else {
-      jsCode = jsPreCode;
+export var CieloToJSMapper = class CieloToJSMapper extends TreeWalker {
+  finalizeBlock(coffeeCode) {
+    var err, jsCode, lImports, lNeededSymbols, stmt;
+    debug("enter CieloToJSMapper.finalizeBlock()", coffeeCode);
+    lNeededSymbols = getNeededSymbols(coffeeCode);
+    debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
+    try {
+      jsCode = coffeeCodeToJS(coffeeCode, this.source, {
+        bare: true,
+        header: false
+      });
+      debug("jsCode", jsCode);
+    } catch (error1) {
+      err = error1;
+      croak(err, "Original Code", coffeeCode);
     }
-  } catch (error1) {
-    err = error1;
-    croak(err, "Original Code", cieloCode);
-  }
-  // --- Prepend needed imports
-  lImports = buildImportList(lNeededSymbols, source);
-  debug("lImports", lImports);
-  assert(isArray(lImports), "cieloCodeToJS(): lImports is not an array");
-  // --- append ';' to import statements
-  lImports = (function() {
-    var i, len, results;
-    results = [];
-    for (i = 0, len = lImports.length; i < len; i++) {
-      stmt = lImports[i];
-      results.push(stmt + ';');
+    if (nonEmpty(lNeededSymbols)) {
+      // --- Prepend needed imports
+      lImports = buildImportList(lNeededSymbols, this.source);
+      debug("lImports", lImports);
+      // --- append ';' to import statements
+      lImports = (function() {
+        var i, len, results;
+        results = [];
+        for (i = 0, len = lImports.length; i < len; i++) {
+          stmt = lImports[i];
+          results.push(stmt + ';');
+        }
+        return results;
+      })();
+      // --- joinBlocks() flattens all its arguments to array of strings
+      jsCode = joinBlocks(lImports, jsCode);
     }
-    return results;
-  })();
-  // --- joinBlocks() flattens all its arguments to array of strings
-  jsCode = joinBlocks(lImports, jsCode);
-  debug("return from cieloCodeToJS()", jsCode);
-  return jsCode;
-};
+    debug("return from CieloToJSMapper.finalizeBlock()", jsCode);
+    return jsCode;
+  }
 
-// ---------------------------------------------------------------------------
-export var cieloCodeToCoffee = function(cieloCode, source = undef, hOptions = {}) {
-  var coffeeCode, lImports, lNeededSymbols, newCoffeeCode, postmapper, premapper;
-  // --- cielo => coffee
-  //     Valid Options:
-  //        premapper:  Mapper or subclass
-  //        postmapper: Mapper or subclass - optional
-  //        hCoffeeOptions  - passed to CoffeeScript.parse()
-  //           default:
-  //              bare: true
-  //              header: false
-  //     If hOptions is a string, it's assumed to be the source
-  debug("enter cieloCodeToCoffee()", cieloCode, source, hOptions);
-  assert(isUndented(cieloCode), "cieloCode has indent");
-  assert(isHash(hOptions), "hOptions not a hash");
-  if (hOptions.premapper) {
-    premapper = hOptions.premapper;
-    assert((premapper.prototype instanceof Mapper) || (premapper === Mapper), "premapper not a Mapper");
-  } else {
-    premapper = TreeWalker;
-  }
-  postmapper = hOptions.postmapper; // may be undef
-  if (defined(postmapper)) {
-    assert((postmapper.prototype instanceof Mapper) || (postmapper === Mapper), "postmapper not a Mapper");
-  }
-  // --- Handles extension lines, HEREDOCs, etc.
-  debug(`Apply premapper ${className(premapper)}`);
-  coffeeCode = map(source, cieloCode, premapper);
-  if (coffeeCode !== cieloCode) {
-    assert(isUndented(coffeeCode), "coffeeCode has indent");
-    debug("coffeeCode", coffeeCode);
-  }
-  // --- symbols will always be unique
-  //     We can only get needed symbols from coffee code, not JS code
-  lNeededSymbols = getNeededSymbols(coffeeCode);
-  debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
-  if (postmapper) {
-    newCoffeeCode = map(source, coffeeCode, postmapper);
-    if (newCoffeeCode !== coffeeCode) {
-      coffeeCode = newCoffeeCode;
-      debug("post mapped", coffeeCode);
-    }
-  }
-  // --- Prepend needed imports
-  lImports = buildImportList(lNeededSymbols, source);
-  debug("lImports", lImports);
-  assert(isArray(lImports), "cieloCodeToCoffee(): lImports is not an array");
-  // --- joinBlocks() flattens all its arguments to array of strings
-  coffeeCode = joinBlocks(lImports, coffeeCode);
-  debug("return from cieloCodeToCoffee()", coffeeCode);
-  return coffeeCode;
 };
 
 // ---------------------------------------------------------------------------
@@ -214,7 +129,7 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
         }
       }
     }
-    jsCode = cieloCodeToJS(cieloCode, srcPath, hOptions);
+    jsCode = map(srcPath, cieloCode, CieloToJSMapper);
     barf(destPath, jsCode);
   }
 };

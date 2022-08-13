@@ -7,7 +7,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
-	indentLevel, isUndented, splitLine,
+	indentLevel, indented, isUndented, splitLine,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
@@ -24,7 +24,17 @@ import {map, Mapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
-export class CieloToJSMapper extends TreeWalker
+export class CieloToCoffeeMapper extends TreeWalker
+
+	mapComment: (hNode) ->
+
+		# --- Retain comments
+		{str, level} = hNode
+		return indented(str, level, @oneIndent)
+
+# ---------------------------------------------------------------------------
+
+export class CieloToJSMapper extends CieloToCoffeeMapper
 
 	finalizeBlock: (coffeeCode) ->
 

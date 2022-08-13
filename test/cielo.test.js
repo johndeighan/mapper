@@ -196,6 +196,7 @@ if fs.existsSync('file.txt')
   jsCode = map(import.meta.url, cieloCode, CieloToJSMapper);
   return simple.equal(291, jsCode, `import fs from 'fs';
 import {log as logger} from '@jdeighan/coffee-utils/log';
+// --- temp.cielo
 if (fs.existsSync('file.txt')) {
   logger("file exists");
 }`);

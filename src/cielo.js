@@ -26,6 +26,7 @@ import {
 
 import {
   indentLevel,
+  indented,
   isUndented,
   splitLine
 } from '@jdeighan/coffee-utils/indent';
@@ -65,7 +66,18 @@ import {
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
-export var CieloToJSMapper = class CieloToJSMapper extends TreeWalker {
+export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
+  mapComment(hNode) {
+    var level, str;
+    // --- Retain comments
+    ({str, level} = hNode);
+    return indented(str, level, this.oneIndent);
+  }
+
+};
+
+// ---------------------------------------------------------------------------
+export var CieloToJSMapper = class CieloToJSMapper extends CieloToCoffeeMapper {
   finalizeBlock(coffeeCode) {
     var err, jsCode, lImports, lNeededSymbols, stmt;
     debug("enter CieloToJSMapper.finalizeBlock()", coffeeCode);

@@ -36,7 +36,9 @@ import {
 } from '@jdeighan/coffee-utils/debug';
 
 import {
-  joinBlocks
+  joinBlocks,
+  arrayToBlock,
+  blockToArray
 } from '@jdeighan/coffee-utils/block';
 
 import {

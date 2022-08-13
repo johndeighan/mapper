@@ -10,7 +10,9 @@ import {
 	indentLevel, indented, isUndented, splitLine,
 	} from '@jdeighan/coffee-utils/indent'
 import {debug} from '@jdeighan/coffee-utils/debug'
-import {joinBlocks} from '@jdeighan/coffee-utils/block'
+import {
+	joinBlocks, arrayToBlock, blockToArray,
+	} from '@jdeighan/coffee-utils/block'
 import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'

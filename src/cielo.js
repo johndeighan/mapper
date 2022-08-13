@@ -74,6 +74,27 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
     return indented(str, level, this.oneIndent);
   }
 
+  // ..........................................................
+  visitCmd(hNode) {
+    var argstr, cmd, level, lineNum, srcLevel, uobj;
+    debug("enter CieloToCoffeeMapper.visitCmd()", hNode);
+    ({uobj, srcLevel, level, lineNum} = hNode);
+    ({cmd, argstr} = uobj);
+    switch (cmd) {
+      case 'reactive':
+        if (isEmpty(argstr)) {
+          pass;
+        } else {
+          return arrayToBlock([indented('$:', level), indented(argstr, level)]);
+        }
+        break;
+      default:
+        super.visitCmd(hNode);
+    }
+    debug("return undef from CieloToCoffeeMapper.visitCmd()");
+    return undef;
+  }
+
 };
 
 // ---------------------------------------------------------------------------

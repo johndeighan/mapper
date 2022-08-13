@@ -334,7 +334,6 @@ export var Fetcher = class Fetcher {
   fetchUntil(func, hOptions = undef) {
     var hNode, lNodes, ref;
     debug("enter Fetcher.fetchUntil()", func, hOptions);
-    assert(isFunction(func), `not a function: ${OL(func)}`);
     lNodes = [];
     ref = this.allUntil(func, hOptions);
     for (hNode of ref) {

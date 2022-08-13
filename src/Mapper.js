@@ -92,7 +92,6 @@ export var Mapper = class Mapper extends Getter {
   }
 
   // ..........................................................
-  // --- override
   getItemType(hNode) {
     var i, len, recognizer, ref, str, type;
     debug("enter Mapper.getItemType()", hNode);
@@ -185,6 +184,7 @@ export var Mapper = class Mapper extends Getter {
     debug("enter Mapper.mapCmd()", hNode);
     // --- isCmd() put these keys here
     ({cmd, argstr} = hNode.uobj);
+    assert(nonEmpty(cmd), "mapCmd() with empty cmd");
     switch (cmd) {
       case 'define':
         lMatches = argstr.match(/^(env\.)?([A-Za-z_][\w\.]*)(.*)$/); // name of the variable
@@ -210,13 +210,33 @@ export var Mapper = class Mapper extends Getter {
     }
   }
 
+  // ..........................................................
+  getCmdText(hNode) {
+    var argstr, cmd, func, indentedText, srcLevel, type, uobj;
+    ({type, uobj, srcLevel} = hNode);
+    assert(type === 'cmd', 'not a command');
+    ({cmd, argstr} = uobj);
+    func = function(hNode) {
+      return (hNode.str === '') || (hNode.srcLevel <= srcLevel);
+    };
+    indentedText = this.fetchBlockUntil(func, {
+      discardEndLine: false
+    });
+    if (nonEmpty(argstr)) {
+      assert(isEmpty(indentedText), `cmd ${cmd} has both inline text and an indented block`);
+      return ['argstr', argstr];
+    } else {
+      return ['indented', indentedText];
+    }
+  }
+
 };
 
 // ===========================================================================
 export var FuncMapper = class FuncMapper extends Mapper {
-  constructor(source = undef, collection = undef, func) {
+  constructor(source = undef, collection = undef, func1) {
     super(source, collection);
-    this.func = func;
+    this.func = func1;
     assert(isFunction(this.func), "3rd arg not a function");
   }
 

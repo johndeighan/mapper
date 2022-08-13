@@ -331,12 +331,9 @@ export class Fetcher
 	fetchUntil: (func, hOptions=undef) ->
 
 		debug "enter Fetcher.fetchUntil()", func, hOptions
-		assert isFunction(func), "not a function: #{OL(func)}"
-
 		lNodes = []
 		for hNode from @allUntil(func, hOptions)
 			lNodes.push hNode
-
 		debug "return from Fetcher.fetchUntil()", lNodes
 		return lNodes
 

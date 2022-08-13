@@ -32,6 +32,30 @@ export class CieloToCoffeeMapper extends TreeWalker
 		{str, level} = hNode
 		return indented(str, level, @oneIndent)
 
+	# ..........................................................
+
+	visitCmd: (hNode) ->
+
+		debug "enter CieloToCoffeeMapper.visitCmd()", hNode
+		{uobj, srcLevel, level, lineNum} = hNode
+		{cmd, argstr} = uobj
+
+		switch cmd
+			when 'reactive'
+				if isEmpty(argstr)
+					pass
+				else
+					return arrayToBlock([
+						indented('$:', level)
+						indented(argstr, level)
+						])
+
+			else
+				super(hNode)
+
+		debug "return undef from CieloToCoffeeMapper.visitCmd()"
+		return undef
+
 # ---------------------------------------------------------------------------
 
 export class CieloToJSMapper extends CieloToCoffeeMapper

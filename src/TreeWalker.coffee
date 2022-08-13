@@ -279,7 +279,7 @@ export class TreeWalker extends Mapper
 		debug "enter TreeWalker.fetchLinesAtLevel()", atLevel, hOptions
 		assert (atLevel > 0), "atLevel is #{OL(atLevel)}"
 
-		discardStopLine = hOptions.discard || false
+		discardEndLine = hOptions.discard || false
 		stopOn = hOptions.stopOn
 		if defined(stopOn)
 			assert isString(stopOn), "stopOn is #{OL(stopOn)}"
@@ -300,7 +300,7 @@ export class TreeWalker extends Mapper
 		#        4. line nonEmpty and undented    YES
 
 		if defined(hNode)
-			if discardStopLine && (hNode.str == stopOn)
+			if discardEndLine && (hNode.str == stopOn)
 				debug "discard stop line #{OL(stopOn)}"
 			else
 				debug "unfetch last line", hNode

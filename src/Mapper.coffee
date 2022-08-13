@@ -68,7 +68,6 @@ export class Mapper extends Getter
 		return
 
 	# ..........................................................
-	# --- override
 
 	getItemType: (hNode) ->
 
@@ -167,6 +166,7 @@ export class Mapper extends Getter
 
 		# --- isCmd() put these keys here
 		{cmd, argstr} = hNode.uobj
+		assert nonEmpty(cmd), "mapCmd() with empty cmd"
 		switch cmd
 			when 'define'
 				lMatches = argstr.match(///^
@@ -192,6 +192,25 @@ export class Mapper extends Getter
 				#     check for unknown commands in visitCmd()
 				debug "return from Mapper.mapCmd()", hNode.uobj
 				return hNode.uobj
+
+	# ..........................................................
+
+	getCmdText: (hNode) ->
+
+		{type, uobj, srcLevel} = hNode
+		assert (type == 'cmd'), 'not a command'
+		{cmd, argstr} = uobj
+
+		func = (hNode) ->
+			return (hNode.str == '') || (hNode.srcLevel <= srcLevel)
+		indentedText = @fetchBlockUntil(func, {discardEndLine: false})
+
+		if nonEmpty(argstr)
+			assert isEmpty(indentedText),
+				"cmd #{cmd} has both inline text and an indented block"
+			return ['argstr', argstr]
+		else
+			return ['indented', indentedText]
 
 # ===========================================================================
 

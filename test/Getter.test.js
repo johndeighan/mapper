@@ -130,7 +130,7 @@ mno`);
   func = function(hNode) {
     return hNode.str === 'jkl';
   };
-  simple.like(80, getter.fetchUntil(func), [
+  simple.like(80, getter.fetchUntil(func, 'discardEndLine'), [
     {
       str: 'def'
     },
@@ -302,7 +302,7 @@ h1 title
     return hNode.str.match(/^#\s/);
   };
   getter = new Getter(import.meta.url, block);
-  simple.like(189, getter.getUntil(func), [
+  simple.like(189, getter.getUntil(func, 'discardEndLine'), [
     {
       str: '#starbucks webpage',
       level: 0,
@@ -320,9 +320,7 @@ h1 title
     uobj: 'h1 title'
   });
   getter = new Getter(import.meta.url, block);
-  simple.like(200, getter.getUntil(func, {
-    discardEndLine: false
-  }), [
+  simple.like(200, getter.getUntil(func, 'keepEndLine'), [
     {
       str: '#starbucks webpage',
       level: 0,

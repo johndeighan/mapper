@@ -178,14 +178,14 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	simple.like 181, Array.from(fetcher.allUntil(func)), [
+	simple.like 181, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
 	simple.like 185, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	simple.like 188, Array.from(fetcher.allUntil(func, {discardEndLine: false})), [
+	simple.like 188, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
@@ -201,14 +201,14 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			"""
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	simple.like 204, fetcher.fetchBlockUntil(func), """
+	simple.like 204, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
 		abc
 		"""
 
 	simple.like 208, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	simple.like 211, fetcher.fetchBlockUntil(func, {discardEndLine: false}), """
+	simple.like 211, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
 		abc
 		"""
 
@@ -241,14 +241,14 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, block)
-	simple.like 244, Array.from(fetcher.allUntil(func)), [
+	simple.like 244, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
 	simple.like 248, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, block)
-	simple.like 251, Array.from(fetcher.allUntil(func, {discardEndLine: false})), [
+	simple.like 251, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
@@ -264,14 +264,14 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			"""
 
 	fetcher = new Fetcher(import.meta.url, block)
-	simple.like 267, fetcher.fetchBlockUntil(func), """
+	simple.like 267, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
 		abc
 		"""
 
 	simple.like 271, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, block)
-	simple.like 274, fetcher.fetchBlockUntil(func, {discardEndLine: false}), """
+	simple.like 274, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
 		abc
 		"""
 

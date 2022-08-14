@@ -142,7 +142,7 @@ line3`);
 // ---------------------------------------------------------------------------
 // --- Test fetch(), fetchUntil()
 (function() {
-  var mapper;
+  var func, mapper;
   mapper = new Mapper(undef, `abc
 def
 ghi
@@ -152,9 +152,10 @@ mno`);
     str: 'abc'
   });
   // 'jkl' will be discarded
-  simple.like(110, mapper.fetchUntil(function(hNode) {
+  func = function(hNode) {
     return hNode.str === 'jkl';
-  }), [
+  };
+  simple.like(110, mapper.fetchUntil(func, 'discardEndLine'), [
     {
       str: 'def'
     },

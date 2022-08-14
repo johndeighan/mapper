@@ -300,21 +300,17 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   // --- GENERATOR
-  * allUntil(func, hOptions = undef) {
-    var discardEndLine, hNode;
+  * allUntil(func, endLineOption) {
+    var hNode;
     // --- stop when func(hNode) returns true
     debug("enter Fetcher.allUntil()");
+    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     assert(isFunction(func), "Arg 1 not a function");
-    if (defined(hOptions)) {
-      discardEndLine = hOptions.discardEndLine;
-    } else {
-      discardEndLine = true;
-    }
     while (defined(hNode = this.fetch()) && !func(hNode)) {
       debug("GOT", hNode);
       yield hNode;
     }
-    if (defined(hNode) && !discardEndLine) {
+    if (defined(hNode) && (endLineOption === 'keepEndLine')) {
       this.unfetch(hNode);
     }
     debug("return from Fetcher.allUntil()");
@@ -331,11 +327,12 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  fetchUntil(func, hOptions = undef) {
+  fetchUntil(func, endLineOption) {
     var hNode, lNodes, ref;
-    debug("enter Fetcher.fetchUntil()", func, hOptions);
+    debug("enter Fetcher.fetchUntil()", func, endLineOption);
+    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     lNodes = [];
-    ref = this.allUntil(func, hOptions);
+    ref = this.allUntil(func, endLineOption);
     for (hNode of ref) {
       lNodes.push(hNode);
     }
@@ -355,10 +352,11 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  fetchBlockUntil(func, hOptions = undef) {
+  fetchBlockUntil(func, endLineOption) {
     var lNodes, result;
     debug("enter Fetcher.fetchBlockUntil()");
-    lNodes = this.fetchUntil(func, hOptions);
+    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
+    lNodes = this.fetchUntil(func, endLineOption);
     result = this.toBlock(lNodes);
     debug("return from Fetcher.fetchBlockUntil()", result);
     return result;

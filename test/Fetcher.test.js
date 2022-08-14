@@ -219,7 +219,7 @@ import {
   simple.like(176, fetcher.fetch(), undef);
   // ..........................................................
   fetcher = new Fetcher(import.meta.url, lItems);
-  simple.like(181, Array.from(fetcher.allUntil(func)), [
+  simple.like(181, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
     {
       str: 'abc',
       lineNum: 1
@@ -229,9 +229,7 @@ import {
     str: 'ghi'
   });
   fetcher = new Fetcher(import.meta.url, lItems);
-  simple.like(188, Array.from(fetcher.allUntil(func, {
-    discardEndLine: false
-  })), [
+  simple.like(188, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
     {
       str: 'abc',
       lineNum: 1
@@ -246,14 +244,12 @@ import {
 def
 ghi`);
   fetcher = new Fetcher(import.meta.url, lItems);
-  simple.like(204, fetcher.fetchBlockUntil(func), `abc`);
+  simple.like(204, fetcher.fetchBlockUntil(func, 'discardEndLine'), `abc`);
   simple.like(208, fetcher.fetch(), {
     str: 'ghi'
   });
   fetcher = new Fetcher(import.meta.url, lItems);
-  simple.like(211, fetcher.fetchBlockUntil(func, {
-    discardEndLine: false
-  }), `abc`);
+  simple.like(211, fetcher.fetchBlockUntil(func, 'keepEndLine'), `abc`);
   return simple.like(215, fetcher.fetch(), {
     str: 'def'
   });
@@ -288,7 +284,7 @@ ghi`;
   simple.like(239, fetcher.fetch(), undef);
   // ..........................................................
   fetcher = new Fetcher(import.meta.url, block);
-  simple.like(244, Array.from(fetcher.allUntil(func)), [
+  simple.like(244, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
     {
       str: 'abc',
       lineNum: 1
@@ -298,9 +294,7 @@ ghi`;
     str: 'ghi'
   });
   fetcher = new Fetcher(import.meta.url, block);
-  simple.like(251, Array.from(fetcher.allUntil(func, {
-    discardEndLine: false
-  })), [
+  simple.like(251, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
     {
       str: 'abc',
       lineNum: 1
@@ -315,14 +309,12 @@ ghi`;
 def
 ghi`);
   fetcher = new Fetcher(import.meta.url, block);
-  simple.like(267, fetcher.fetchBlockUntil(func), `abc`);
+  simple.like(267, fetcher.fetchBlockUntil(func, 'discardEndLine'), `abc`);
   simple.like(271, fetcher.fetch(), {
     str: 'ghi'
   });
   fetcher = new Fetcher(import.meta.url, block);
-  simple.like(274, fetcher.fetchBlockUntil(func, {
-    discardEndLine: false
-  }), `abc`);
+  simple.like(274, fetcher.fetchBlockUntil(func, 'keepEndLine'), `abc`);
   return simple.like(278, fetcher.fetch(), {
     str: 'def'
   });

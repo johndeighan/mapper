@@ -203,7 +203,7 @@ export class Mapper extends Getter
 
 		func = (hNode) ->
 			return (hNode.str == '') || (hNode.srcLevel <= srcLevel)
-		indentedText = @fetchBlockUntil(func, {discardEndLine: false})
+		indentedText = @fetchBlockUntil(func, 'keepEndLine')
 
 		if nonEmpty(argstr)
 			assert isEmpty(indentedText),

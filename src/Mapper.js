@@ -219,9 +219,7 @@ export var Mapper = class Mapper extends Getter {
     func = function(hNode) {
       return (hNode.str === '') || (hNode.srcLevel <= srcLevel);
     };
-    indentedText = this.fetchBlockUntil(func, {
-      discardEndLine: false
-    });
+    indentedText = this.fetchBlockUntil(func, 'keepEndLine');
     if (nonEmpty(argstr)) {
       assert(isEmpty(indentedText), `cmd ${cmd} has both inline text and an indented block`);
       return ['argstr', argstr];

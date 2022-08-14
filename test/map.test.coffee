@@ -97,8 +97,7 @@ export class BarMapper extends Mapper
 		if (cmd == 'reactive')
 			if (argstr == '')
 				func = (hBlock) -> return (hBlock.level <= level)
-				hOptions = {discardEndLine: false}
-				code = @fetchBlockUntil(func, hOptions)
+				code = @fetchBlockUntil(func, 'keepEndLine')
 
 				# --- simulate conversion to JavaScript
 				code = map(@source, code, JSMapper)

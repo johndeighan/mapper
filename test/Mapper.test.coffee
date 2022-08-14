@@ -107,7 +107,8 @@ import {Mapper, map} from '@jdeighan/mapper'
 	simple.like 107, mapper.fetch(), {str: 'abc'}
 
 	# 'jkl' will be discarded
-	simple.like 110, mapper.fetchUntil((hNode) -> (hNode.str == 'jkl')), [
+	func = (hNode) -> (hNode.str == 'jkl')
+	simple.like 110, mapper.fetchUntil(func, 'discardEndLine'), [
 		{str: 'def'}
 		{str: 'ghi'}
 		]

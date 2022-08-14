@@ -512,92 +512,6 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test fetchBlockAtLevel()
-
-(() ->
-
-	walker = new TreeWalker(import.meta.url, """
-			if (x == 2)
-				doThis
-				doThat
-					then this
-			while (x > 2)
-				--x
-			""")
-
-	simple.like 528, walker.get(), {
-		level: 0
-		str:   'if (x == 2)'
-		}
-
-	simple.equal 533, walker.fetchBlockAtLevel(1), """
-			doThis
-			doThat
-				then this
-			"""
-
-	simple.like 539, walker.get(), {
-		level: 0
-		str:   'while (x > 2)'
-		}
-
-	simple.equal 544, walker.fetchBlockAtLevel(1), "--x"
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Test fetchBlockAtLevel() with mapping
-
-(() ->
-
-	class MyWalker extends TreeWalker
-
-		mapNode: (hNode) ->
-			{str, level} = hNode
-			if (lMatches = str.match(///^
-					(if | while)
-					\s*
-					(.*)
-					$///))
-				[_, cmd, cond] = lMatches
-				return {cmd, cond}
-			else
-				return str
-
-	walker = new MyWalker(import.meta.url, """
-			if (x == 2)
-				doThis
-				doThat
-					then this
-			while (x > 2)
-				--x
-			""")
-
-	simple.like 575, walker.get(), {
-			level: 0
-			str: 'if (x == 2)'
-			uobj: {
-				cmd: 'if'
-				cond: '(x == 2)'
-				}
-			}
-	simple.equal 583, walker.fetchBlockAtLevel(1), """
-			doThis
-			doThat
-				then this
-			"""
-	simple.like 588, walker.get(), {
-			level: 0
-			str: 'while (x > 2)'
-			uobj: {
-				cmd: 'while',
-				cond: '(x > 2)'
-				}
-			}
-	simple.equal 596, walker.fetchBlockAtLevel(1), "--x"
-	simple.equal 597, walker.get(), undef
-	)()
-
-# ---------------------------------------------------------------------------
 # --- Test HEREDOC
 
 (() ->
@@ -682,7 +596,7 @@ class HtmlMapper extends TreeWalker
 					hResult.body = text
 			when 'div:markdown'
 				hResult.tag = 'div'
-				body = @fetchBlockAtLevel(level+1)
+				body = @fetchBlockAtLevel(level)
 				debug "body", body
 				if nonEmpty(body)
 					md = map(import.meta.url, body, SimpleMarkDownMapper)

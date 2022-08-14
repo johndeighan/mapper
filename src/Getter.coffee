@@ -207,22 +207,21 @@ export class Getter extends Fetcher
 	# ..........................................................
 	# --- GENERATOR
 
-	allMappedUntil: (func, hOptions=undef) ->
+	allMappedUntil: (func, endLineOption) ->
 
 		debug "enter Getter.allMappedUntil()"
 
 		assert isFunction(func), "Arg 1 not a function"
-		if defined(hOptions)
-			discardEndLine = hOptions.discardEndLine
-		else
-			discardEndLine = true
+		assert (endLineOption=='keepEndLine') \
+			|| (endLineOption=='discardEndLine'),
+			"bad end line option: #{OL(endLineOption)}"
 
 		# --- NOTE: @get will skip items that are mapped to undef
 		#           and only returns undef when the input is exhausted
 		while defined(hNode = @get()) && ! func(hNode)
 			debug "GOT", hNode
 			yield hNode
-		if defined(hNode) && ! discardEndLine
+		if defined(hNode) && (endLineOption=='keepEndLine')
 			@unfetch hNode
 
 		debug "return from Getter.allMappedUntil()"
@@ -239,11 +238,14 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	getUntil: (func, hOptions=undef) ->
+	getUntil: (func, endLineOption) ->
 
 		debug "enter Getter.getUntil()"
-
-		lNodes = Array.from(@allMappedUntil(func, hOptions))
+		assert isFunction(func), "not a function"
+		assert (endLineOption=='keepEndLine') \
+			|| (endLineOption=='discardEndLine'),
+			"bad end line option: #{OL(endLineOption)}"
+		lNodes = Array.from(@allMappedUntil(func, endLineOption))
 		debug "return from Getter.getUntil()", lNodes
 		return lNodes
 

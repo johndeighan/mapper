@@ -44,13 +44,14 @@ export class CieloToCoffeeMapper extends TreeWalker
 
 		switch cmd
 			when 'reactive'
-				if isEmpty(argstr)
-					pass
-				else
-					return arrayToBlock([
-						indented('$:', level)
-						indented(argstr, level)
-						])
+				# --- This allows either a statement on the same line
+				#     OR following indented text
+				#     but not both
+				code = @getCmdText()
+				return arrayToBlock([
+					indented('$:', level)
+					indented(code, level)
+					])
 
 			else
 				super(hNode)

@@ -78,18 +78,17 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
 
   // ..........................................................
   visitCmd(hNode) {
-    var argstr, cmd, level, lineNum, srcLevel, uobj;
+    var argstr, cmd, code, level, lineNum, srcLevel, uobj;
     debug("enter CieloToCoffeeMapper.visitCmd()", hNode);
     ({uobj, srcLevel, level, lineNum} = hNode);
     ({cmd, argstr} = uobj);
     switch (cmd) {
       case 'reactive':
-        if (isEmpty(argstr)) {
-          pass;
-        } else {
-          return arrayToBlock([indented('$:', level), indented(argstr, level)]);
-        }
-        break;
+        // --- This allows either a statement on the same line
+        //     OR following indented text
+        //     but not both
+        code = this.getCmdText();
+        return arrayToBlock([indented('$:', level), indented(code, level)]);
       default:
         super.visitCmd(hNode);
     }

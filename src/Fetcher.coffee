@@ -295,22 +295,21 @@ export class Fetcher
 	# ..........................................................
 	# --- GENERATOR
 
-	allUntil: (func, hOptions=undef) ->
+	allUntil: (func, endLineOption) ->
 		# --- stop when func(hNode) returns true
 
 		debug "enter Fetcher.allUntil()"
+		assert (endLineOption=='keepEndLine') \
+			|| (endLineOption=='discardEndLine'),
+			"bad end line option: #{OL(endLineOption)}"
 
 		assert isFunction(func), "Arg 1 not a function"
-		if defined(hOptions)
-			discardEndLine = hOptions.discardEndLine
-		else
-			discardEndLine = true
 
 		while defined(hNode = @fetch()) && ! func(hNode)
 			debug "GOT", hNode
 			yield hNode
 
-		if defined(hNode) && ! discardEndLine
+		if defined(hNode) && (endLineOption == 'keepEndLine')
 			@unfetch hNode
 
 		debug "return from Fetcher.allUntil()"
@@ -328,11 +327,14 @@ export class Fetcher
 
 	# ..........................................................
 
-	fetchUntil: (func, hOptions=undef) ->
+	fetchUntil: (func, endLineOption) ->
 
-		debug "enter Fetcher.fetchUntil()", func, hOptions
+		debug "enter Fetcher.fetchUntil()", func, endLineOption
+		assert (endLineOption=='keepEndLine') \
+			|| (endLineOption=='discardEndLine'),
+			"bad end line option: #{OL(endLineOption)}"
 		lNodes = []
-		for hNode from @allUntil(func, hOptions)
+		for hNode from @allUntil(func, endLineOption)
 			lNodes.push hNode
 		debug "return from Fetcher.fetchUntil()", lNodes
 		return lNodes
@@ -350,10 +352,13 @@ export class Fetcher
 
 	# ..........................................................
 
-	fetchBlockUntil: (func, hOptions=undef) ->
+	fetchBlockUntil: (func, endLineOption) ->
 
 		debug "enter Fetcher.fetchBlockUntil()"
-		lNodes = @fetchUntil(func, hOptions)
+		assert (endLineOption=='keepEndLine') \
+			|| (endLineOption=='discardEndLine'),
+			"bad end line option: #{OL(endLineOption)}"
+		lNodes = @fetchUntil(func, endLineOption)
 		result = @toBlock(lNodes)
 		debug "return from Fetcher.fetchBlockUntil()", result
 		return result

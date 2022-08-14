@@ -114,10 +114,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     }), `hNode is ${OL(hNode)}`);
     // --- check for extension lines, stop on blank line if found
     debug("check for extension lines");
-    lExtLines = this.fetchLinesAtLevel(srcLevel + 2, {
-      stopOn: ''
-    });
-    assert(isArray(lExtLines), "lExtLines not an array");
+    lExtLines = this.fetchExtLines(srcLevel);
     debug(`${lExtLines.length} extension lines`);
     if (!isEmpty(lExtLines)) {
       this.joinExtensionLines(hNode, lExtLines);
@@ -139,6 +136,18 @@ export var TreeWalker = class TreeWalker extends Mapper {
     uobj = this.mapNode(hNode);
     debug("return from TreeWalker.mapNonSpecial()", uobj);
     return uobj;
+  }
+
+  // ..........................................................
+  fetchExtLines(srcLevel) {
+    var func, lExtLines;
+    // --- srcLevel is the level of the line being extended
+    //     don't discard the end line
+    func = (hNode) => {
+      return hNode.srcLevel < srcLevel + 2;
+    };
+    lExtLines = this.fetchUntil(func, 'keepEndLine');
+    return lExtLines;
   }
 
   // ..........................................................
@@ -179,7 +188,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
           discard: true // discard the terminating empty line
         };
         // --- block will be undented
-        block = this.fetchBlockAtLevel(srcLevel + 1, hOptions);
+        block = this.fetchHereDocBlock(srcLevel);
         debug('block', block);
         uobj = mapHereDoc(block);
         assert(defined(uobj), "mapHereDoc returned undef");
@@ -194,6 +203,24 @@ export var TreeWalker = class TreeWalker extends Mapper {
     result = lNewParts.join('');
     debug("return from handleHereDocsInLine", result);
     return result;
+  }
+
+  // ..........................................................
+  fetchHereDocBlock(srcLevel) {
+    var block, func;
+    // --- srcLevel is the level of the line with <<<
+    debug(`enter TreeWalker.fetchHereDocBlock(${OL(srcLevel)})`);
+    func = (hNode) => {
+      if (isEmpty(hNode.str)) {
+        return true;
+      } else {
+        assert(hNode.srcLevel > srcLevel, `insufficient indentation: srcLevel=${srcLevel}, node at ${hNode.srcLevel}`);
+        return false;
+      }
+    };
+    block = this.fetchBlockUntil(func, 'discardEndLine');
+    debug("return from TreeWalker.fetchHereDocBlock()", block);
+    return block;
   }
 
   // ..........................................................
@@ -233,7 +260,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
           debug(`add ${srcLevel} to lMinuses`);
           this.lMinuses.push(srcLevel);
         } else {
-          lSkipLines = this.fetchLinesAtLevel(srcLevel + 1);
+          lSkipLines = this.skipLinesAtLevel(srcLevel);
           debug(`Skip ${lSkipLines.length} lines`);
         }
         debug("return undef from TreeWalker.mapCmd()");
@@ -243,6 +270,34 @@ export var TreeWalker = class TreeWalker extends Mapper {
     uobj = super.mapCmd(hNode);
     debug("return from TreeWalker.mapCmd()", uobj);
     return uobj;
+  }
+
+  // ..........................................................
+  skipLinesAtLevel(srcLevel) {
+    var block, func;
+    // --- srcLevel is the level of #ifdef or #ifndef
+    //     don't discard the end line
+    debug(`enter TreeWalker.skipLinesAtLevel(${OL(srcLevel)})`);
+    func = (hNode) => {
+      return hNode.srcLevel <= srcLevel;
+    };
+    block = this.fetchBlockUntil(func, 'keepEndLine');
+    debug("return from TreeWalker.skipLinesAtLevel()", block);
+    return block;
+  }
+
+  // ..........................................................
+  fetchBlockAtLevel(srcLevel) {
+    var block, func;
+    // --- srcLevel is the level of enclosing cmd/tag
+    //     don't discard the end line
+    debug(`enter TreeWalker.fetchBlockAtLevel(${OL(srcLevel)})`);
+    func = (hNode) => {
+      return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str);
+    };
+    block = this.fetchBlockUntil(func, 'keepEndLine');
+    debug("return from TreeWalker.fetchBlockAtLevel()", block);
+    return block;
   }
 
   // ..........................................................
@@ -295,63 +350,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
     } else {
       return [undef, undef, undef];
     }
-  }
-
-  // ..........................................................
-  fetchLinesAtLevel(atLevel, hOptions = {}) {
-    var discardEndLine, hNode, lLines, stopOn;
-    //     Valid options:
-    //        discard - discard ending line
-    debug("enter TreeWalker.fetchLinesAtLevel()", atLevel, hOptions);
-    assert(atLevel > 0, `atLevel is ${OL(atLevel)}`);
-    discardEndLine = hOptions.discard || false;
-    stopOn = hOptions.stopOn;
-    if (defined(stopOn)) {
-      assert(isString(stopOn), `stopOn is ${OL(stopOn)}`);
-    }
-    lLines = [];
-    while (defined(hNode = this.fetch()) && debug('hNode from fetch()', hNode) && ((stopOn === undef) || (hNode.str !== stopOn)) && (isEmpty(hNode.str) || (hNode.level >= atLevel))) {
-      debug("add to lLines", hNode);
-      lLines.push(hNode);
-    }
-    // --- Cases:                            unfetch?
-    //        1. line is undef                 NO
-    //        2. line not a string             YES
-    //        3. line == stopOn (& defined)    NO
-    //        4. line nonEmpty and undented    YES
-    if (defined(hNode)) {
-      if (discardEndLine && (hNode.str === stopOn)) {
-        debug(`discard stop line ${OL(stopOn)}`);
-      } else {
-        debug("unfetch last line", hNode);
-        this.unfetch(hNode);
-      }
-    }
-    debug("return from TreeWalker.fetchLinesAtLevel()", lLines);
-    return lLines;
-  }
-
-  // ..........................................................
-  fetchBlockAtLevel(atLevel, hOptions = {}) {
-    var hNode, lLines, lRawLines, lUndentedLines, result;
-    debug("enter TreeWalker.fetchBlockAtLevel()", atLevel, hOptions);
-    lLines = this.fetchLinesAtLevel(atLevel, hOptions);
-    debug('lLines', lLines);
-    lRawLines = (function() {
-      var j, len, results;
-      results = [];
-      for (j = 0, len = lLines.length; j < len; j++) {
-        hNode = lLines[j];
-        results.push(hNode.getLine(this.oneIndent));
-      }
-      return results;
-    }).call(this);
-    debug('lRawLines', lRawLines);
-    lUndentedLines = undented(lRawLines, atLevel);
-    debug("undented lLines", lUndentedLines);
-    result = arrayToBlock(lUndentedLines);
-    debug("return from TreeWalker.fetchBlockAtLevel()", result);
-    return result;
   }
 
   // ========================================================================

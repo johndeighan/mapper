@@ -109,7 +109,7 @@ console.log "OK";
 //          # |||| }
 export var BarMapper = class BarMapper extends Mapper {
   mapCmd(hNode) {
-    var argstr, block, cmd, code, func, hOptions, level, result, str, uobj;
+    var argstr, block, cmd, code, func, level, result, str, uobj;
     debug("enter mapCmd()", hNode);
     ({str, uobj, level} = hNode);
     ({cmd, argstr} = uobj); // isCmd() put this here
@@ -118,10 +118,7 @@ export var BarMapper = class BarMapper extends Mapper {
         func = function(hBlock) {
           return hBlock.level <= level;
         };
-        hOptions = {
-          discardEndLine: false
-        };
-        code = this.fetchBlockUntil(func, hOptions);
+        code = this.fetchBlockUntil(func, 'keepEndLine');
         // --- simulate conversion to JavaScript
         code = map(this.source, code, JSMapper);
         block = arrayToBlock(["# |||| $: {", code, "# |||| }"]);

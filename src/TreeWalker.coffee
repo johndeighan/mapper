@@ -86,8 +86,7 @@ export class TreeWalker extends Mapper
 
 		# --- check for extension lines, stop on blank line if found
 		debug "check for extension lines"
-		lExtLines = @fetchLinesAtLevel(srcLevel+2, {stopOn: ''})
-		assert isArray(lExtLines), "lExtLines not an array"
+		lExtLines = @fetchExtLines(srcLevel)
 		debug "#{lExtLines.length} extension lines"
 		if ! isEmpty(lExtLines)
 			@joinExtensionLines(hNode, lExtLines)
@@ -110,6 +109,17 @@ export class TreeWalker extends Mapper
 		uobj = @mapNode(hNode)
 		debug "return from TreeWalker.mapNonSpecial()", uobj
 		return uobj
+
+	# ..........................................................
+
+	fetchExtLines: (srcLevel) ->
+		# --- srcLevel is the level of the line being extended
+		#     don't discard the end line
+
+		func = (hNode) =>
+			return (hNode.srcLevel < srcLevel+2)
+		lExtLines = @fetchUntil(func, 'keepEndLine')
+		return lExtLines
 
 	# ..........................................................
 	# --- can override to change how lines are joined
@@ -147,7 +157,7 @@ export class TreeWalker extends Mapper
 					}
 
 				# --- block will be undented
-				block = @fetchBlockAtLevel(srcLevel+1, hOptions)
+				block = @fetchHereDocBlock(srcLevel)
 				debug 'block', block
 
 				uobj = mapHereDoc(block)
@@ -163,6 +173,23 @@ export class TreeWalker extends Mapper
 		result = lNewParts.join('')
 		debug "return from handleHereDocsInLine", result
 		return result
+
+	# ..........................................................
+
+	fetchHereDocBlock: (srcLevel) ->
+		# --- srcLevel is the level of the line with <<<
+
+		debug "enter TreeWalker.fetchHereDocBlock(#{OL(srcLevel)})"
+		func = (hNode) =>
+			if isEmpty(hNode.str)
+				return true
+			else
+				assert (hNode.srcLevel > srcLevel),
+					"insufficient indentation: srcLevel=#{srcLevel}, node at #{hNode.srcLevel}"
+				return false
+		block = @fetchBlockUntil(func, 'discardEndLine')
+		debug "return from TreeWalker.fetchHereDocBlock()", block
+		return block
 
 	# ..........................................................
 
@@ -206,7 +233,7 @@ export class TreeWalker extends Mapper
 					debug "add #{srcLevel} to lMinuses"
 					@lMinuses.push srcLevel
 				else
-					lSkipLines = @fetchLinesAtLevel(srcLevel+1)
+					lSkipLines = @skipLinesAtLevel(srcLevel)
 					debug "Skip #{lSkipLines.length} lines"
 				debug "return undef from TreeWalker.mapCmd()"
 				return undef
@@ -215,6 +242,32 @@ export class TreeWalker extends Mapper
 		uobj = super(hNode)
 		debug "return from TreeWalker.mapCmd()", uobj
 		return uobj
+
+	# ..........................................................
+
+	skipLinesAtLevel: (srcLevel) ->
+		# --- srcLevel is the level of #ifdef or #ifndef
+		#     don't discard the end line
+
+		debug "enter TreeWalker.skipLinesAtLevel(#{OL(srcLevel)})"
+		func = (hNode) =>
+			return (hNode.srcLevel <= srcLevel)
+		block = @fetchBlockUntil(func, 'keepEndLine')
+		debug "return from TreeWalker.skipLinesAtLevel()", block
+		return block
+
+	# ..........................................................
+
+	fetchBlockAtLevel: (srcLevel) ->
+		# --- srcLevel is the level of enclosing cmd/tag
+		#     don't discard the end line
+
+		debug "enter TreeWalker.fetchBlockAtLevel(#{OL(srcLevel)})"
+		func = (hNode) =>
+			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
+		block = @fetchBlockUntil(func, 'keepEndLine')
+		debug "return from TreeWalker.fetchBlockAtLevel()", block
+		return block
 
 	# ..........................................................
 
@@ -269,63 +322,6 @@ export class TreeWalker extends Mapper
 			return [name, value, isEnv]
 		else
 			return [undef, undef, undef]
-
-	# ..........................................................
-
-	fetchLinesAtLevel: (atLevel, hOptions={}) ->
-		#     Valid options:
-		#        discard - discard ending line
-
-		debug "enter TreeWalker.fetchLinesAtLevel()", atLevel, hOptions
-		assert (atLevel > 0), "atLevel is #{OL(atLevel)}"
-
-		discardEndLine = hOptions.discard || false
-		stopOn = hOptions.stopOn
-		if defined(stopOn)
-			assert isString(stopOn), "stopOn is #{OL(stopOn)}"
-
-		lLines = []
-		while defined(hNode = @fetch()) \
-				&& debug('hNode from fetch()', hNode) \
-				&& ((stopOn == undef) || (hNode.str != stopOn)) \
-				&& (isEmpty(hNode.str) || (hNode.level >= atLevel))
-
-			debug "add to lLines", hNode
-			lLines.push hNode
-
-		# --- Cases:                            unfetch?
-		#        1. line is undef                 NO
-		#        2. line not a string             YES
-		#        3. line == stopOn (& defined)    NO
-		#        4. line nonEmpty and undented    YES
-
-		if defined(hNode)
-			if discardEndLine && (hNode.str == stopOn)
-				debug "discard stop line #{OL(stopOn)}"
-			else
-				debug "unfetch last line", hNode
-				@unfetch hNode
-
-		debug "return from TreeWalker.fetchLinesAtLevel()", lLines
-		return lLines
-
-	# ..........................................................
-
-	fetchBlockAtLevel: (atLevel, hOptions={}) ->
-
-		debug "enter TreeWalker.fetchBlockAtLevel()", atLevel, hOptions
-		lLines = @fetchLinesAtLevel(atLevel, hOptions)
-		debug 'lLines', lLines
-
-		lRawLines = for hNode in lLines
-			hNode.getLine(@oneIndent)
-		debug 'lRawLines', lRawLines
-
-		lUndentedLines = undented(lRawLines, atLevel)
-		debug "undented lLines", lUndentedLines
-		result = arrayToBlock(lUndentedLines)
-		debug "return from TreeWalker.fetchBlockAtLevel()", result
-		return result
 
 	# ========================================================================
 	# --- override these for tree walking

@@ -77,7 +77,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 	# 'jkl' will be discarded
 	func = (hNode) -> return (hNode.str == 'jkl')
-	simple.like 80, getter.fetchUntil(func), [
+	simple.like 80, getter.fetchUntil(func, 'discardEndLine'), [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
@@ -186,7 +186,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 	func = (hNode) -> return (hNode.str.match(/^#\s/))
 
 	getter = new Getter(import.meta.url, block)
-	simple.like 189, getter.getUntil(func), [
+	simple.like 189, getter.getUntil(func, 'discardEndLine'), [
 		{str: '#starbucks webpage', level: 0, uobj: '#starbucks webpage'}
 		{str: '',                   level: 0, uobj: ''}
 		]
@@ -197,7 +197,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 		}
 
 	getter = new Getter(import.meta.url, block)
-	simple.like 200, getter.getUntil(func, {discardEndLine: false}), [
+	simple.like 200, getter.getUntil(func, 'keepEndLine'), [
 		{str: '#starbucks webpage', level: 0, uobj: '#starbucks webpage'}
 		{str: '',                   level: 0, uobj: ''}
 		]

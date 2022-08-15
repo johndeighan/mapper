@@ -372,7 +372,8 @@ export class Fetcher
 			line = hNode.getLine(@oneIndent)
 			assert isString(line), "getLine() returned #{OL(line)}"
 			lStrings.push line
-		lStrings = undented(lStrings)
-		assert isArray(lStrings), "undented returned #{OL(lStrings)}"
-		return arrayToBlock(lStrings)
+		lNewStrings = undented(lStrings)
+		assert isArray(lNewStrings),
+			"undented returned #{OL(lNewStrings)} when given #{OL(lStrings)}"
+		return arrayToBlock(lNewStrings)
 

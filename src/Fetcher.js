@@ -364,7 +364,7 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   nodesToBlock(lNodes) {
-    var hNode, i, lStrings, len, line;
+    var hNode, i, lNewStrings, lStrings, len, line;
     lStrings = [];
     for (i = 0, len = lNodes.length; i < len; i++) {
       hNode = lNodes[i];
@@ -372,9 +372,9 @@ export var Fetcher = class Fetcher {
       assert(isString(line), `getLine() returned ${OL(line)}`);
       lStrings.push(line);
     }
-    lStrings = undented(lStrings);
-    assert(isArray(lStrings), `undented returned ${OL(lStrings)}`);
-    return arrayToBlock(lStrings);
+    lNewStrings = undented(lStrings);
+    assert(isArray(lNewStrings), `undented returned ${OL(lNewStrings)} when given ${OL(lStrings)}`);
+    return arrayToBlock(lNewStrings);
   }
 
 };

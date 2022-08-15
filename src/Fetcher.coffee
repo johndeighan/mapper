@@ -346,7 +346,7 @@ export class Fetcher
 
 		debug "enter Fetcher.fetchBlock()"
 		lNodes = Array.from(@all())
-		result = @toBlock(lNodes)
+		result = @nodesToBlock(lNodes)
 		debug "return from Fetcher.fetchBlock()", result
 		return result
 
@@ -359,13 +359,13 @@ export class Fetcher
 			|| (endLineOption=='discardEndLine'),
 			"bad end line option: #{OL(endLineOption)}"
 		lNodes = @fetchUntil(func, endLineOption)
-		result = @toBlock(lNodes)
+		result = @nodesToBlock(lNodes)
 		debug "return from Fetcher.fetchBlockUntil()", result
 		return result
 
 	# ..........................................................
 
-	toBlock: (lNodes) ->
+	nodesToBlock: (lNodes) ->
 
 		lStrings = []
 		for hNode in lNodes

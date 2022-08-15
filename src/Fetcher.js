@@ -346,7 +346,7 @@ export var Fetcher = class Fetcher {
     var lNodes, result;
     debug("enter Fetcher.fetchBlock()");
     lNodes = Array.from(this.all());
-    result = this.toBlock(lNodes);
+    result = this.nodesToBlock(lNodes);
     debug("return from Fetcher.fetchBlock()", result);
     return result;
   }
@@ -357,13 +357,13 @@ export var Fetcher = class Fetcher {
     debug("enter Fetcher.fetchBlockUntil()");
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     lNodes = this.fetchUntil(func, endLineOption);
-    result = this.toBlock(lNodes);
+    result = this.nodesToBlock(lNodes);
     debug("return from Fetcher.fetchBlockUntil()", result);
     return result;
   }
 
   // ..........................................................
-  toBlock(lNodes) {
+  nodesToBlock(lNodes) {
     var hNode, i, lStrings, len;
     lStrings = [];
     for (i = 0, len = lNodes.length; i < len; i++) {

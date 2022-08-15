@@ -241,9 +241,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   // --- We define commands 'ifdef' and 'ifndef'
   mapCmd(hNode) {
-    var argstr, cmd, isEnv, keep, lSkipLines, name, ok, prefix, srcLevel, uobj, value;
+    var argstr, cmd, isEnv, keep, lSkipLines, name, ok, prefix, srcLevel, type, uobj, value;
     debug("enter TreeWalker.mapCmd()", hNode);
-    ({uobj, prefix, srcLevel} = hNode);
+    ({type, uobj, prefix, srcLevel} = hNode);
+    assert(type === 'cmd', 'not a command');
     ({cmd, argstr} = uobj);
     debug(`srcLevel = ${srcLevel}`);
     // --- Handle our commands, returning if found

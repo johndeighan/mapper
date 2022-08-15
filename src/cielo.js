@@ -87,7 +87,7 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
         // --- This allows either a statement on the same line
         //     OR following indented text
         //     but not both
-        code = this.getCmdText();
+        code = this.getCmdText(hNode);
         return arrayToBlock([indented('$:', level), indented(code, level)]);
       default:
         super.visitCmd(hNode);

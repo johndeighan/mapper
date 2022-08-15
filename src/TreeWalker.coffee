@@ -216,7 +216,8 @@ export class TreeWalker extends Mapper
 
 		debug "enter TreeWalker.mapCmd()", hNode
 
-		{uobj, prefix, srcLevel} = hNode
+		{type, uobj, prefix, srcLevel} = hNode
+		assert (type == 'cmd'), 'not a command'
 		{cmd, argstr} = uobj
 		debug "srcLevel = #{srcLevel}"
 

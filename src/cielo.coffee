@@ -47,11 +47,19 @@ export class CieloToCoffeeMapper extends TreeWalker
 				# --- This allows either a statement on the same line
 				#     OR following indented text
 				#     but not both
-				code = @getCmdText(hNode)
-				result = arrayToBlock([
-					indented('# |||| $:', level)
-					indented(code, level)
-					])
+				code = @containedText(hNode, argstr)
+				debug 'code', code
+				if (code == argstr)
+					result = arrayToBlock([
+						indented('# |||| $:', level)
+						indented(code, level)
+						])
+				else
+					result = arrayToBlock([
+						indented('# |||| $: {', level)
+						indented(code, level)
+						indented('# |||| }', level)
+						])
 				debug "return from CieloToCoffeeMapper.visitCmd()", result
 				return result
 

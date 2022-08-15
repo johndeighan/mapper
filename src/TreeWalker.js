@@ -408,7 +408,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   visitCmd(hNode, hUser, lStack) {
     var argstr, cmd, level;
-    debug("in TreeWalker.visitCmd()");
+    debug("in TreeWalker.visitCmd() - ERROR");
     ({cmd, argstr, level} = hNode.uobj);
     // --- NOTE: built in commands, e.g. #ifdef
     //           are handled during the mapping phase

@@ -78,7 +78,7 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
 
   // ..........................................................
   visitCmd(hNode) {
-    var argstr, cmd, code, level, lineNum, srcLevel, uobj;
+    var argstr, cmd, code, level, lineNum, result, srcLevel, uobj;
     debug("enter CieloToCoffeeMapper.visitCmd()", hNode);
     ({uobj, srcLevel, level, lineNum} = hNode);
     ({cmd, argstr} = uobj);
@@ -88,7 +88,9 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeWalker {
         //     OR following indented text
         //     but not both
         code = this.getCmdText(hNode);
-        return arrayToBlock([indented('$:', level), indented(code, level)]);
+        result = arrayToBlock([indented('$:', level), indented(code, level)]);
+        debug("return from CieloToCoffeeMapper.visitCmd()", result);
+        return result;
       default:
         super.visitCmd(hNode);
     }

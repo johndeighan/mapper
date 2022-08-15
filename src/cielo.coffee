@@ -48,10 +48,12 @@ export class CieloToCoffeeMapper extends TreeWalker
 				#     OR following indented text
 				#     but not both
 				code = @getCmdText(hNode)
-				return arrayToBlock([
+				result = arrayToBlock([
 					indented('$:', level)
 					indented(code, level)
 					])
+				debug "return from CieloToCoffeeMapper.visitCmd()", result
+				return result
 
 			else
 				super(hNode)

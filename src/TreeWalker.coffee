@@ -385,7 +385,7 @@ export class TreeWalker extends Mapper
 
 	visitCmd: (hNode, hUser, lStack) ->
 
-		debug "in TreeWalker.visitCmd()"
+		debug "in TreeWalker.visitCmd() - ERROR"
 		{cmd, argstr, level} = hNode.uobj
 
 		# --- NOTE: built in commands, e.g. #ifdef

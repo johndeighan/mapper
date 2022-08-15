@@ -386,7 +386,10 @@ export class TreeWalker extends Mapper
 
 		debug "in TreeWalker.visitCmd()"
 		{cmd, argstr, level} = hNode.uobj
-		return indented("##{cmd} #{argstr}", level)
+
+		# --- NOTE: built in commands, e.g. #ifdef
+		#           are handled during the mapping phase
+		croak "Unknown cmd: '#{cmd} #{argstr}'"
 
 	# ..........................................................
 

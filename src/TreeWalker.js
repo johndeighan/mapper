@@ -409,7 +409,9 @@ export var TreeWalker = class TreeWalker extends Mapper {
     var argstr, cmd, level;
     debug("in TreeWalker.visitCmd()");
     ({cmd, argstr, level} = hNode.uobj);
-    return indented(`#${cmd} ${argstr}`, level);
+    // --- NOTE: built in commands, e.g. #ifdef
+    //           are handled during the mapping phase
+    return croak(`Unknown cmd: '${cmd} ${argstr}'`);
   }
 
   // ..........................................................

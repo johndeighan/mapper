@@ -369,7 +369,10 @@ export class Fetcher
 
 		lStrings = []
 		for hNode in lNodes
-			lStrings.push hNode.getLine(@oneIndent)
+			line = hNode.getLine(@oneIndent)
+			assert isString(line), "getLine() returned #{OL(line)}"
+			lStrings.push line
 		lStrings = undented(lStrings)
+		assert isArray(lStrings), "undented returned #{OL(lStrings)}"
 		return arrayToBlock(lStrings)
 

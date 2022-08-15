@@ -195,22 +195,29 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	getCmdText: (hNode) ->
+	containedText: (hNode, inlineText) ->
+		# --- has side effect of fetching all indented text
 
-		{type, uobj, srcLevel} = hNode
-		assert (type == 'cmd'), 'not a command'
-		{cmd, argstr} = uobj
+		debug "enter Mapper.containedText()", hNode, inlineText
+		{srcLevel} = hNode
 
-		stopFunc = (hNode) ->
-			return (hNode.str == '') || (hNode.srcLevel <= srcLevel)
+		stopFunc = (h) ->
+			return nonEmpty(h.str) && (h.srcLevel <= srcLevel)
 		indentedText = @fetchBlockUntil(stopFunc, 'keepEndLine')
 
-		if nonEmpty(argstr)
-			assert isEmpty(indentedText),
-				"cmd #{cmd} has both inline text and an indented block"
-			return ['argstr', argstr]
+		debug "inline text", inlineText
+		debug "indentedText", indentedText
+		assert isEmpty(inlineText) || isEmpty(indentedText),
+			"node #{OL(hNode)} has both inline text and indented text"
+
+		if nonEmpty(indentedText)
+			result = indentedText
+		else if isEmpty(inlineText)
+			result = ''
 		else
-			return ['indented', indentedText]
+			result = inlineText
+		debug "return from containedText()", result
+		return result
 
 # ===========================================================================
 

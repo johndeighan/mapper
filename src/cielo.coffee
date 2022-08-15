@@ -49,7 +49,7 @@ export class CieloToCoffeeMapper extends TreeWalker
 				#     but not both
 				code = @getCmdText(hNode)
 				result = arrayToBlock([
-					indented('$:', level)
+					indented('# |||| $:', level)
 					indented(code, level)
 					])
 				debug "return from CieloToCoffeeMapper.visitCmd()", result

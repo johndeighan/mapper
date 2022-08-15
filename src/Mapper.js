@@ -212,14 +212,14 @@ export var Mapper = class Mapper extends Getter {
 
   // ..........................................................
   getCmdText(hNode) {
-    var argstr, cmd, func, indentedText, srcLevel, type, uobj;
+    var argstr, cmd, indentedText, srcLevel, stopFunc, type, uobj;
     ({type, uobj, srcLevel} = hNode);
     assert(type === 'cmd', 'not a command');
     ({cmd, argstr} = uobj);
-    func = function(hNode) {
+    stopFunc = function(hNode) {
       return (hNode.str === '') || (hNode.srcLevel <= srcLevel);
     };
-    indentedText = this.fetchBlockUntil(func, 'keepEndLine');
+    indentedText = this.fetchBlockUntil(stopFunc, 'keepEndLine');
     if (nonEmpty(argstr)) {
       assert(isEmpty(indentedText), `cmd ${cmd} has both inline text and an indented block`);
       return ['argstr', argstr];
@@ -232,9 +232,9 @@ export var Mapper = class Mapper extends Getter {
 
 // ===========================================================================
 export var FuncMapper = class FuncMapper extends Mapper {
-  constructor(source = undef, collection = undef, func1) {
+  constructor(source = undef, collection = undef, func) {
     super(source, collection);
-    this.func = func1;
+    this.func = func;
     assert(isFunction(this.func), "3rd arg not a function");
   }
 

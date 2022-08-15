@@ -201,9 +201,9 @@ export class Mapper extends Getter
 		assert (type == 'cmd'), 'not a command'
 		{cmd, argstr} = uobj
 
-		func = (hNode) ->
+		stopFunc = (hNode) ->
 			return (hNode.str == '') || (hNode.srcLevel <= srcLevel)
-		indentedText = @fetchBlockUntil(func, 'keepEndLine')
+		indentedText = @fetchBlockUntil(stopFunc, 'keepEndLine')
 
 		if nonEmpty(argstr)
 			assert isEmpty(indentedText),

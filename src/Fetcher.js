@@ -249,7 +249,6 @@ export var Fetcher = class Fetcher {
     if (defined(this.altInput)) {
       debug("has alt input");
       this.altInput.unfetch(hNode);
-      //			@incLineNum -1
       debug("return from Fetcher.unfetch() - alt");
       return;
     }

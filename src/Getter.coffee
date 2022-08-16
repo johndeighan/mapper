@@ -51,18 +51,33 @@ export class Getter extends Fetcher
 		while defined(hNode = @fetch())
 			debug "GOT", hNode
 			assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
-			if hNode.isMapped()
-				# --- This can happen when the node was previously unfetched
-				debug "return from Getter.get() - already mapped", hNode
-				return hNode
-			uobj = @mapAnyNode(hNode)
-			if defined(uobj)
-				hNode.uobj = uobj
+			level = hNode.level
+
+			# --- check for extension lines
+			str = hNode.str
+			while defined(hExt = @fetch()) \
+					&& assert(hExt instanceof Node, "hExt = #{OL(hExt)}") \
+					&& (hExt.level >= level + 2)
+				extStr = hExt.str
+				str += @extSep(str, extStr) + extStr
+			if defined(hExt)
+				@unfetch hExt
+			hNode.str = str
+
+			if hNode.notMapped()
+				hNode.uobj = @mapAnyNode(hNode)
+			if defined(hNode.uobj)
 				debug "return from Getter.get() - newly mapped", hNode
 				return hNode
 
 		debug "return from Getter.get() - EOF", undef
 		return undef
+
+	# ..........................................................
+
+	extSep: (str, nextStr) ->
+
+		return ' '
 
 	# ..........................................................
 

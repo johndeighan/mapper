@@ -53,6 +53,11 @@ export var Node = class Node {
   }
 
   // ..........................................................
+  notMapped() {
+    return notdefined(this.uobj);
+  }
+
+  // ..........................................................
   getLine(oneIndent) {
     return indented(this.str, this.level, oneIndent);
   }

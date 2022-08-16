@@ -105,18 +105,6 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  pathTo(fname) {
-    // --- fname must be a simple file name
-    // --- returns a relative path
-    //     searches from @hSourceInfo.dir || process.cwd()
-    //     searches downward
-    assert(isSimpleFileName(fname), "fname must not be a path");
-    return pathTo(fname, this.hSourceInfo.dir, {
-      relative: true
-    });
-  }
-
-  // ..........................................................
   init() {}
 
   // ..........................................................
@@ -261,7 +249,7 @@ export var Fetcher = class Fetcher {
     if (defined(this.altInput)) {
       debug("has alt input");
       this.altInput.unfetch(hNode);
-      this.incLineNum(-1);
+      //			@incLineNum -1
       debug("return from Fetcher.unfetch() - alt");
       return;
     }

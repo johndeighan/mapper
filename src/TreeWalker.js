@@ -99,11 +99,10 @@ export var TreeWalker = class TreeWalker extends Mapper {
   //        undef
   //        uobj - mapped object
   // --- Will only receive non-special lines
-  //     1. add extension lines
-  //     2. replace HEREDOCs
-  //     3. call mapNode()
+  //     1. replace HEREDOCs
+  //     2. call mapNode()
   mapNonSpecial(hNode) {
-    var lExtLines, level, newStr, srcLevel, str, uobj;
+    var level, newStr, srcLevel, str, uobj;
     debug("enter TreeWalker.mapNonSpecial()", hNode);
     assert(notdefined(hNode.type), `hNode is ${OL(hNode)}`);
     ({str, level, srcLevel} = hNode);
@@ -112,15 +111,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
     assert(isInteger(srcLevel, {
       min: 0
     }), `hNode is ${OL(hNode)}`);
-    // --- check for extension lines, stop on blank line if found
-    debug("check for extension lines");
-    lExtLines = this.fetchExtLines(srcLevel);
-    debug(`${lExtLines.length} extension lines`);
-    if (!isEmpty(lExtLines)) {
-      this.joinExtensionLines(hNode, lExtLines);
-      debug("with ext lines", hNode);
-      ({str} = hNode);
-    }
     // --- handle HEREDOCs
     debug("check for HEREDOC");
     if (str.indexOf('<<<') >= 0) {
@@ -136,37 +126,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
     uobj = this.mapNode(hNode);
     debug("return from TreeWalker.mapNonSpecial()", uobj);
     return uobj;
-  }
-
-  // ..........................................................
-  fetchExtLines(srcLevel) {
-    var func, lExtLines;
-    // --- srcLevel is the level of the line being extended
-    //     don't discard the end line
-    func = (hNode) => {
-      return hNode.srcLevel < srcLevel + 2;
-    };
-    lExtLines = this.fetchUntil(func, 'keepEndLine');
-    return lExtLines;
-  }
-
-  // ..........................................................
-  // --- can override to change how lines are joined
-  joinExtensionLines(hNode, lExtLines) {
-    var hContLine, j, len, nextStr, str;
-    // --- modifies key str
-
-    // --- There might be empty lines in lExtLines
-    //     but we'll skip them here
-    str = hNode.str;
-    for (j = 0, len = lExtLines.length; j < len; j++) {
-      hContLine = lExtLines[j];
-      nextStr = hContLine.str;
-      if (nonEmpty(nextStr)) {
-        str += this.extSep(str, nextStr) + nextStr;
-      }
-    }
-    hNode.str = str;
   }
 
   // ..........................................................
@@ -226,11 +185,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   handleHereDoc(uobj, block) {
     return uobj;
-  }
-
-  // ..........................................................
-  extSep(str, nextStr) {
-    return ' ';
   }
 
   // ..........................................................

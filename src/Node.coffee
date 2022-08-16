@@ -38,6 +38,12 @@ export class Node
 
 	# ..........................................................
 
+	notMapped: () ->
+
+		return notdefined(@uobj)
+
+	# ..........................................................
+
 	getLine: (oneIndent) ->
 
 		return indented(@str, @level, oneIndent)

@@ -69,9 +69,8 @@ export class TreeWalker extends Mapper
 	#        undef
 	#        uobj - mapped object
 	# --- Will only receive non-special lines
-	#     1. add extension lines
-	#     2. replace HEREDOCs
-	#     3. call mapNode()
+	#     1. replace HEREDOCs
+	#     2. call mapNode()
 
 	mapNonSpecial: (hNode) ->
 
@@ -83,15 +82,6 @@ export class TreeWalker extends Mapper
 		# --- from here on, str is a non-empty string
 		assert nonEmpty(str), "hNode is #{OL(hNode)}"
 		assert isInteger(srcLevel, {min: 0}), "hNode is #{OL(hNode)}"
-
-		# --- check for extension lines, stop on blank line if found
-		debug "check for extension lines"
-		lExtLines = @fetchExtLines(srcLevel)
-		debug "#{lExtLines.length} extension lines"
-		if ! isEmpty(lExtLines)
-			@joinExtensionLines(hNode, lExtLines)
-			debug "with ext lines", hNode
-			{str} = hNode
 
 		# --- handle HEREDOCs
 		debug "check for HEREDOC"
@@ -109,33 +99,6 @@ export class TreeWalker extends Mapper
 		uobj = @mapNode(hNode)
 		debug "return from TreeWalker.mapNonSpecial()", uobj
 		return uobj
-
-	# ..........................................................
-
-	fetchExtLines: (srcLevel) ->
-		# --- srcLevel is the level of the line being extended
-		#     don't discard the end line
-
-		func = (hNode) =>
-			return (hNode.srcLevel < srcLevel+2)
-		lExtLines = @fetchUntil(func, 'keepEndLine')
-		return lExtLines
-
-	# ..........................................................
-	# --- can override to change how lines are joined
-
-	joinExtensionLines: (hNode, lExtLines) ->
-		# --- modifies key str
-
-		# --- There might be empty lines in lExtLines
-		#     but we'll skip them here
-		str = hNode.str
-		for hContLine in lExtLines
-			nextStr = hContLine.str
-			if nonEmpty(nextStr)
-				str += @extSep(str, nextStr) + nextStr
-		hNode.str = str
-		return
 
 	# ..........................................................
 
@@ -196,12 +159,6 @@ export class TreeWalker extends Mapper
 	handleHereDoc: (uobj, block) ->
 
 		return uobj
-
-	# ..........................................................
-
-	extSep: (str, nextStr) ->
-
-		return ' '
 
 	# ..........................................................
 

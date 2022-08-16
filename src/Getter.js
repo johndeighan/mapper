@@ -74,25 +74,37 @@ export var Getter = class Getter extends Fetcher {
   //        Mapped Data
   // ..........................................................
   get() {
-    var hNode, uobj;
+    var extStr, hExt, hNode, level, str;
     debug("enter Getter.get()");
     while (defined(hNode = this.fetch())) {
       debug("GOT", hNode);
       assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
-      if (hNode.isMapped()) {
-        // --- This can happen when the node was previously unfetched
-        debug("return from Getter.get() - already mapped", hNode);
-        return hNode;
+      level = hNode.level;
+      // --- check for extension lines
+      str = hNode.str;
+      while (defined(hExt = this.fetch()) && assert(hExt instanceof Node, `hExt = ${OL(hExt)}`) && (hExt.level >= level + 2)) {
+        extStr = hExt.str;
+        str += this.extSep(str, extStr) + extStr;
       }
-      uobj = this.mapAnyNode(hNode);
-      if (defined(uobj)) {
-        hNode.uobj = uobj;
+      if (defined(hExt)) {
+        this.unfetch(hExt);
+      }
+      hNode.str = str;
+      if (hNode.notMapped()) {
+        hNode.uobj = this.mapAnyNode(hNode);
+      }
+      if (defined(hNode.uobj)) {
         debug("return from Getter.get() - newly mapped", hNode);
         return hNode;
       }
     }
     debug("return from Getter.get() - EOF", undef);
     return undef;
+  }
+
+  // ..........................................................
+  extSep(str, nextStr) {
+    return ' ';
   }
 
   // ..........................................................

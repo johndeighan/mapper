@@ -482,9 +482,12 @@ export var TreeWalker = class TreeWalker extends Mapper {
     debug("enter visitNode()", hNode, lStack);
     // --- Create a user hash that the user can add to/modify
     //     and will see again at endVisit
+    // --- Every hUser must have a _parent
     len = lStack.length;
     if (len === 0) {
-      hUser = {};
+      hUser = {
+        _parent: {}
+      };
     } else {
       hUser = {
         _parent: lStack[len - 1].hUser

@@ -473,9 +473,10 @@ export class TreeWalker extends Mapper
 
 		# --- Create a user hash that the user can add to/modify
 		#     and will see again at endVisit
+		# --- Every hUser must have a _parent
 		len = lStack.length
 		if (len == 0)
-			hUser = {}
+			hUser = {_parent: {}}
 		else
 			hUser = {_parent: lStack[len-1].hUser}
 		@startLevel hNode, hUser, len

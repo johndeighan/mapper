@@ -458,7 +458,11 @@ export class TreeWalker extends Mapper
 
 		# --- Create a user hash that the user can add to/modify
 		#     and will see again at endVisit
-		hUser = {}
+		len = lStack.length
+		if (len == 0)
+			hUser = {}
+		else
+			hUser = {_parent: lStack[len-1].hUser}
 
 		if (type = hNode.type)
 			debug "type = #{type}"

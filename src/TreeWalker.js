@@ -130,7 +130,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   handleHereDocsInLine(line, srcLevel) {
-    var block, hOptions, j, lNewParts, lParts, len, part, result, str, uobj;
+    var block, hOptions, j, lNewParts, lParts, len1, part, result, str, uobj;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
     debug("enter handleHereDocsInLine()", line);
@@ -138,7 +138,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     lParts = lineToParts(line);
     debug('lParts', lParts);
     lNewParts = []; // to be joined to form new line
-    for (j = 0, len = lParts.length; j < len; j++) {
+    for (j = 0, len1 = lParts.length; j < len1; j++) {
       part = lParts[j];
       if (part === '<<<') {
         debug(`get HEREDOC lines at level ${srcLevel + 1}`);
@@ -257,7 +257,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   adjustLevel(hNode) {
-    var adjust, i, j, lNewMinuses, len, newLevel, ref, srcLevel;
+    var adjust, i, j, lNewMinuses, len1, newLevel, ref, srcLevel;
     debug("enter adjustLevel()", hNode);
     srcLevel = hNode.srcLevel;
     debug("srcLevel", srcLevel);
@@ -269,7 +269,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     lNewMinuses = [];
     adjust = 0;
     ref = this.lMinuses;
-    for (j = 0, len = ref.length; j < len; j++) {
+    for (j = 0, len1 = ref.length; j < len1; j++) {
       i = ref[j];
       if (srcLevel > i) {
         adjust += 1;
@@ -470,11 +470,18 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   visitNode(hNode, lStack) {
-    var hUser, text, type;
+    var hUser, len, text, type;
     debug("enter visitNode()", hNode, lStack);
     // --- Create a user hash that the user can add to/modify
     //     and will see again at endVisit
-    hUser = {};
+    len = lStack.length;
+    if (len === 0) {
+      hUser = {};
+    } else {
+      hUser = {
+        _parent: lStack[len - 1].hUser
+      };
+    }
     if ((type = hNode.type)) {
       debug(`type = ${type}`);
       text = this.visitSpecial(type, hNode, hUser, lStack);

@@ -173,7 +173,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
       if (isEmpty(hNode.str)) {
         return true;
       } else {
-        assert(hNode.srcLevel > srcLevel, `insufficient indentation: srcLevel=${srcLevel}, node at ${hNode.srcLevel}`);
+        assert(hNode.srcLevel > srcLevel, `insufficient indentation: srcLevel=${srcLevel},` + ` node at ${hNode.srcLevel}`);
         return false;
       }
     };
@@ -423,6 +423,14 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
+  startLevel(hNode, hUser, level) {}
+
+  // ..........................................................
+  // --- designed to override
+  endLevel(hNode, hUser, level) {}
+
+  // ..........................................................
+  // --- designed to override
   walk(hOptions = {}) {
     var hNode, i, lStack, level, ref, result, text;
     // --- Valid options: logNodes
@@ -482,6 +490,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
         _parent: lStack[len - 1].hUser
       };
     }
+    this.startLevel(hNode, hUser, len);
     if ((type = hNode.type)) {
       debug(`type = ${type}`);
       text = this.visitSpecial(type, hNode, hUser, lStack);
@@ -510,6 +519,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     if (defined(text)) {
       this.addText(text);
     }
+    this.endLevel(hNode, hUser, lStack.length);
     debug("return from endVisitNode()");
   }
 

@@ -1,6 +1,6 @@
 # TreeWalker.test.coffee
 
-import {UnitTester, UnitTesterNorm, simple} from '@jdeighan/unit-tester'
+import {UnitTester, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, OL, defined,
@@ -706,5 +706,47 @@ class HtmlMapper extends TreeWalker
 			abc
 			xyz
 			"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test startLevel() and endLevel()
+
+(() ->
+
+	lTrace = []
+
+	class MyWalker extends TreeWalker
+
+		startLevel: (hNode, hUser, level) ->
+			lTrace.push "S #{level} #{hNode.str}"
+			return
+
+		endLevel: (hNode, hUser, level) ->
+			lTrace.push "E #{level} #{hNode.str}"
+			return
+
+	class MyTester extends UnitTester
+
+		transformValue: (block) ->
+
+			return map(import.meta.url, block, MyWalker)
+
+	tester = new MyTester()
+
+	tester.equal 733, """
+			abc
+				def
+			""", """
+			abc
+				def
+			"""
+
+	simple.equal 745, lTrace, [
+		"S 0 abc"
+		"S 1 def"
+		"E 1 def"
+		"E 0 abc"
+		]
 
 	)()

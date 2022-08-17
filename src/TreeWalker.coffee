@@ -148,7 +148,8 @@ export class TreeWalker extends Mapper
 				return true
 			else
 				assert (hNode.srcLevel > srcLevel),
-					"insufficient indentation: srcLevel=#{srcLevel}, node at #{hNode.srcLevel}"
+					"insufficient indentation: srcLevel=#{srcLevel}," \
+					+ " node at #{hNode.srcLevel}"
 				return false
 		block = @fetchBlockUntil(func, 'discardEndLine')
 		debug "return from TreeWalker.fetchHereDocBlock()", block
@@ -405,6 +406,20 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
+	startLevel: (hNode, hUser, level) ->
+		# --- designed to override
+
+		return
+
+	# ..........................................................
+
+	endLevel: (hNode, hUser, level) ->
+		# --- designed to override
+
+		return
+
+	# ..........................................................
+
 	walk: (hOptions={}) ->
 		# --- Valid options: logNodes
 
@@ -463,6 +478,7 @@ export class TreeWalker extends Mapper
 			hUser = {}
 		else
 			hUser = {_parent: lStack[len-1].hUser}
+		@startLevel hNode, hUser, len
 
 		if (type = hNode.type)
 			debug "type = #{type}"
@@ -494,6 +510,7 @@ export class TreeWalker extends Mapper
 		if defined(text)
 			@addText text
 
+		@endLevel hNode, hUser, lStack.length
 		debug "return from endVisitNode()"
 		return
 

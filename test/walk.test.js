@@ -65,8 +65,8 @@ END WALK`);
 BEGIN LEVEL 0
 VISIT     0 'abc'
 BEGIN LEVEL 1
-VISIT     1 'def'
-END VISIT 1 'def'
+VISIT     1 '→def'
+END VISIT 1 '→def'
 END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0
@@ -78,8 +78,8 @@ abc
 BEGIN LEVEL 0
 VISIT     0 'abc'
 BEGIN LEVEL 1
-VISIT     1 'def'
-END VISIT 1 'def'
+VISIT     1 '→def'
+END VISIT 1 '→def'
 END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0

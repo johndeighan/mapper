@@ -24,7 +24,8 @@ import {
   isHash,
   isInteger,
   isEmpty,
-  nonEmpty
+  nonEmpty,
+  isArrayOfStrings
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -343,21 +344,23 @@ export var TreeWalker = class TreeWalker extends Mapper {
 
   // ..........................................................
   walk(hOptions = {}) {
-    var addText, diff, doBeginLevel, doBeginWalk, doEndLevel, doEndVisit, doEndWalk, doVisit, hGlobalUser, hNode, hPrevNode, hUser, i, j, lLines, lTrace, len, level, logNodes, ref, result, stack, str, trace, traceNodes;
+    var add, diff, doBeginLevel, doBeginWalk, doEndLevel, doEndVisit, doEndWalk, doVisit, hGlobalUser, hNode, hPrevNode, hUser, i, j, lLines, lTrace, len, level, logNodes, ref, stack, str, trace, traceNodes;
     // --- Valid options: logNodes, traceNodes
+    //     returns an array, normally strings
     debug("enter TreeWalker.walk()", hOptions);
     ({logNodes, traceNodes} = hOptions); // unpack options
     
     // --- Initialize local state
-    lLines = []; // --- resulting output lines
+    lLines = []; // --- resulting output lines (but may be objects)
     lTrace = []; // --- trace of nodes visited
     stack = new RunTimeStack(); // --- a stack of Node objects
     hGlobalUser = {};
     // .......................................................
     //     Local Functions
     // .......................................................
-    addText = (text) => {
-      debug("enter addText()", text);
+    add = (text) => {
+      // --- in fact, text can be any type of object
+      debug("enter add()", text);
       assert(defined(text), "text is undef");
       if (isArray(text)) {
         debug("text is an array");
@@ -366,7 +369,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
         debug(`add text ${OL(text)}`);
         lLines.push(text);
       }
-      debug("return from addText()");
+      debug("return from add()");
     };
     // .......................................................
     trace = (text, level = 0) => {
@@ -375,56 +378,62 @@ export var TreeWalker = class TreeWalker extends Mapper {
     // .......................................................
     doBeginWalk = (hUser) => {
       var text;
-      debug("begin walk");
+      debug("enter doBeginWalk()");
       if (traceNodes) {
         trace(`BEGIN WALK ${hstr(hGlobalUser)}`);
       }
       text = this.beginWalk(hUser);
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
+      debug("return from doBeginWalk()");
     };
     // .......................................................
     doEndWalk = (hUser) => {
       var text;
-      debug("end walk");
+      debug("enter doEndWalk()");
       if (traceNodes) {
         trace(`END WALK ${hstr(hGlobalUser)}`);
       }
       text = this.endWalk(hUser);
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
+      debug("return from doEndWalk()");
     };
     // .......................................................
     doBeginLevel = (hUser, level) => {
       var text;
+      debug("enter doBeginLevel()");
       if (traceNodes) {
         trace(`BEGIN LEVEL ${level} ${hstr(hUser)}`, level);
       }
       text = this.beginLevel(hUser, level);
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
+      debug("return from doBeginLevel()");
     };
     // .......................................................
     doEndLevel = (hUser, level) => {
       var text;
+      debug("enter doEndLevel()");
       if (traceNodes) {
         trace(`END LEVEL ${level} ${hstr(hUser)}`, level);
       }
       text = this.endLevel(hUser, level);
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
+      debug("return from doEndLevel()");
     };
     // .......................................................
     doVisit = (hNode) => {
-      var hUser, level, str, text, type;
+      var hUser, level, str, text, type, uobj;
       // --- visit the node
-      ({type, hUser, level, str} = hNode);
+      ({type, hUser, level, str, uobj} = hNode);
       if (traceNodes) {
-        trace(`VISIT ${level} ${OL(str)} ${hstr(hUser)}`, level);
+        trace(`VISIT ${level} ${OL(uobj)} ${hstr(hUser)}`, level);
       }
       if (defined(type)) {
         debug(`type = ${type}`);
@@ -434,16 +443,16 @@ export var TreeWalker = class TreeWalker extends Mapper {
         text = this.visit(hNode, hUser, stack);
       }
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
     };
     // .......................................................
     doEndVisit = (hNode) => {
-      var hUser, level, str, text, type;
+      var hUser, level, str, text, type, uobj;
       // --- end visit the node
-      ({type, hUser, level, str} = hNode);
+      ({type, hUser, level, str, uobj} = hNode);
       if (traceNodes) {
-        trace(`END VISIT ${level} ${OL(str)} ${hstr(hUser)}`, level);
+        trace(`END VISIT ${level} ${OL(uobj)} ${hstr(hUser)}`, level);
       }
       if (defined(type)) {
         debug(`type = ${type}`);
@@ -453,7 +462,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
         text = this.endVisit(hNode, hUser, stack);
       }
       if (defined(text)) {
-        addText(text);
+        add(text);
       }
     };
     // .......................................................
@@ -523,18 +532,17 @@ export var TreeWalker = class TreeWalker extends Mapper {
       doEndLevel(hUser, hPrevNode.level);
     }
     doEndWalk(hGlobalUser);
-    if (nonEmpty(lLines)) {
-      result = toBlock(lLines);
-    } else {
-      result = '';
-    }
+    //		if nonEmpty(lLines)
+    //			result = toBlock(lLines)
+    //		else
+    //			result = ''
     if (traceNodes) {
       trace = toBlock(lTrace);
-      debug("return from TreeWalker.walk()", result, trace);
-      return [result, trace];
+      debug("return from TreeWalker.walk()", lLines, trace);
+      return [lLines, trace];
     } else {
-      debug("return from TreeWalker.walk()", result);
-      return result;
+      debug("return from TreeWalker.walk()", lLines);
+      return lLines;
     }
   }
 
@@ -645,10 +653,15 @@ export var TreeWalker = class TreeWalker extends Mapper {
   // ..........................................................
   // ..........................................................
   getBlock(hOptions = {}) {
-    var block, result;
-    // --- Valid options: logNodes
+    var block, lLines, result;
+    // --- Valid options: logNodes, traceNodes
     debug("enter getBlock()");
-    block = this.walk(hOptions);
+    lLines = this.walk(hOptions);
+    if (isArrayOfStrings(lLines)) {
+      block = toBlock(lLines);
+    } else {
+      block = lLines;
+    }
     debug('block', block);
     result = this.finalizeBlock(block);
     debug("return from getBlock()", result);

@@ -16,6 +16,7 @@ import {TraceWalker} from '@jdeighan/mapper/tree'
 	class Tester extends UnitTesterNorm
 
 		transformValue: (block) ->
+
 			return map(import.meta.url, block, TraceWalker)
 
 	tester = new Tester()
@@ -59,8 +60,8 @@ import {TraceWalker} from '@jdeighan/mapper/tree'
 			BEGIN LEVEL 0
 			VISIT     0 'abc'
 			BEGIN LEVEL 1
-			VISIT     1 'def'
-			END VISIT 1 'def'
+			VISIT     1 '→def'
+			END VISIT 1 '→def'
 			END LEVEL 1
 			END VISIT 0 'abc'
 			END LEVEL 0
@@ -77,8 +78,8 @@ import {TraceWalker} from '@jdeighan/mapper/tree'
 			BEGIN LEVEL 0
 			VISIT     0 'abc'
 			BEGIN LEVEL 1
-			VISIT     1 'def'
-			END VISIT 1 'def'
+			VISIT     1 '→def'
+			END VISIT 1 '→def'
 			END LEVEL 1
 			END VISIT 0 'abc'
 			END LEVEL 0
@@ -127,6 +128,7 @@ import {TraceWalker} from '@jdeighan/mapper/tree'
 	class Tester extends UnitTesterNorm
 
 		transformValue: (block) ->
+
 			return map(import.meta.url, block, MyTraceWalker)
 
 	tester = new Tester()

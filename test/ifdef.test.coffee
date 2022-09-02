@@ -27,7 +27,7 @@ class WalkTester extends UnitTesterNorm
 		hOptions = {
 			traceNodes: true
 			}
-		[result, trace] = walker.walk(hOptions)
+		[_, trace] = walker.walk(hOptions)
 		return trace
 
 tester = new WalkTester()
@@ -67,8 +67,8 @@ tester.equal 55, """
 		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		BEGIN LEVEL 1
-		VISIT     1 'def'
-		END VISIT 1 'def'
+		VISIT     1 '→def'
+		END VISIT 1 '→def'
 		END LEVEL 1
 		END VISIT 0 'abc'
 		END LEVEL 0

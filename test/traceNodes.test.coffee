@@ -15,7 +15,7 @@ class TraceTester extends UnitTester
 		hOptions = {
 			traceNodes: true
 			}
-		[result, trace] = walker.walk(hOptions)
+		[_, trace] = walker.walk(hOptions)
 		return trace
 
 	transformExpected: (block) ->
@@ -64,8 +64,8 @@ tester.equal 54, """
 		BEGIN LEVEL 0
 		VISIT 0 'abc'
 			BEGIN LEVEL 1
-			VISIT 1 'def'
-			END VISIT 1 'def'
+			VISIT 1 '→def'
+			END VISIT 1 '→def'
 			END LEVEL 1
 		END VISIT 0 'abc'
 		END LEVEL 0
@@ -81,10 +81,10 @@ tester.equal 70, """
 		BEGIN LEVEL 0
 		VISIT 0 'abc'
 			BEGIN LEVEL 1
-			VISIT 1 'def'
-			END VISIT 1 'def'
-			VISIT 1 'ghi'
-			END VISIT 1 'ghi'
+			VISIT 1 '→def'
+			END VISIT 1 '→def'
+			VISIT 1 '→ghi'
+			END VISIT 1 '→ghi'
 			END LEVEL 1
 		END VISIT 0 'abc'
 		END LEVEL 0
@@ -104,22 +104,22 @@ tester.equal 89, """
 		BEGIN LEVEL 0
 		VISIT 0 'abc'
 			BEGIN LEVEL 1
-			VISIT 1 'def'
-			END VISIT 1 'def'
-			VISIT 1 'ghi'
+			VISIT 1 '→def'
+			END VISIT 1 '→def'
+			VISIT 1 '→ghi'
 				BEGIN LEVEL 2
-				VISIT 2 'jkl'
-				END VISIT 2 'jkl'
+				VISIT 2 '→→jkl'
+				END VISIT 2 '→→jkl'
 				END LEVEL 2
-			END VISIT 1 'ghi'
-			VISIT 1 'mno'
-			END VISIT 1 'mno'
+			END VISIT 1 '→ghi'
+			VISIT 1 '→mno'
+			END VISIT 1 '→mno'
 			END LEVEL 1
 		END VISIT 0 'abc'
 		VISIT 0 'pqr'
 			BEGIN LEVEL 1
-			VISIT 1 'stu'
-			END VISIT 1 'stu'
+			VISIT 1 '→stu'
+			END VISIT 1 '→stu'
 			END LEVEL 1
 		END VISIT 0 'pqr'
 		END LEVEL 0

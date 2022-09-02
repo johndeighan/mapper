@@ -4,7 +4,7 @@ import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,
-	isEmpty, nonEmpty,
+	isEmpty, nonEmpty, isArrayOfStrings,
 	} from '@jdeighan/coffee-utils'
 import {toBlock} from '@jdeighan/coffee-utils/block'
 import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
@@ -312,13 +312,14 @@ export class TreeWalker extends Mapper
 
 	walk: (hOptions={}) ->
 		# --- Valid options: logNodes, traceNodes
+		#     returns an array, normally strings
 
 		debug "enter TreeWalker.walk()", hOptions
 		{logNodes, traceNodes} = hOptions   # unpack options
 
 		# --- Initialize local state
 
-		lLines = []   # --- resulting output lines
+		lLines = []   # --- resulting output lines (but may be objects)
 		lTrace = []   # --- trace of nodes visited
 		stack = new RunTimeStack()   # --- a stack of Node objects
 		hGlobalUser = {}
@@ -327,9 +328,10 @@ export class TreeWalker extends Mapper
 		#     Local Functions
 		# .......................................................
 
-		addText = (text) =>
+		add = (text) =>
+			# --- in fact, text can be any type of object
 
-			debug "enter addText()", text
+			debug "enter add()", text
 			assert defined(text), "text is undef"
 			if isArray(text)
 				debug "text is an array"
@@ -337,7 +339,7 @@ export class TreeWalker extends Mapper
 			else
 				debug "add text #{OL(text)}"
 				lLines.push text
-			debug "return from addText()"
+			debug "return from add()"
 			return
 
 		# .......................................................
@@ -351,46 +353,52 @@ export class TreeWalker extends Mapper
 
 		doBeginWalk = (hUser) =>
 
-			debug "begin walk"
+			debug "enter doBeginWalk()"
 			if traceNodes
 				trace "BEGIN WALK #{hstr(hGlobalUser)}"
 			text = @beginWalk hUser
 			if defined(text)
-				addText text
+				add text
+			debug "return from doBeginWalk()"
 			return
 
 		# .......................................................
 
 		doEndWalk = (hUser) =>
 
-			debug "end walk"
+			debug "enter doEndWalk()"
 			if traceNodes
 				trace "END WALK #{hstr(hGlobalUser)}"
 			text = @endWalk hUser
 			if defined(text)
-				addText text
+				add text
+			debug "return from doEndWalk()"
 			return
 
 		# .......................................................
 
 		doBeginLevel = (hUser, level) =>
 
+			debug "enter doBeginLevel()"
 			if traceNodes
 				trace "BEGIN LEVEL #{level} #{hstr(hUser)}", level
 			text = @beginLevel hUser, level
 			if defined(text)
-				addText text
+				add text
+			debug "return from doBeginLevel()"
 			return
 
 		# .......................................................
 
 		doEndLevel = (hUser, level) =>
 
+			debug "enter doEndLevel()"
 			if traceNodes
 				trace "END LEVEL #{level} #{hstr(hUser)}", level
 			text = @endLevel hUser, level
 			if defined(text)
-				addText text
+				add text
+			debug "return from doEndLevel()"
 			return
 
 		# .......................................................
@@ -398,9 +406,9 @@ export class TreeWalker extends Mapper
 		doVisit = (hNode) =>
 
 			# --- visit the node
-			{type, hUser, level, str} = hNode
+			{type, hUser, level, str, uobj} = hNode
 			if traceNodes
-				trace "VISIT #{level} #{OL(str)} #{hstr(hUser)}", level
+				trace "VISIT #{level} #{OL(uobj)} #{hstr(hUser)}", level
 
 			if defined(type)
 				debug "type = #{type}"
@@ -409,7 +417,7 @@ export class TreeWalker extends Mapper
 				debug "no type"
 				text = @visit(hNode, hUser, stack)
 			if defined(text)
-				addText text
+				add text
 			return
 
 		# .......................................................
@@ -417,9 +425,9 @@ export class TreeWalker extends Mapper
 		doEndVisit = (hNode) =>
 
 			# --- end visit the node
-			{type, hUser, level, str} = hNode
+			{type, hUser, level, str, uobj} = hNode
 			if traceNodes
-				trace "END VISIT #{level} #{OL(str)} #{hstr(hUser)}", level
+				trace "END VISIT #{level} #{OL(uobj)} #{hstr(hUser)}", level
 
 			if defined(type)
 				debug "type = #{type}"
@@ -428,7 +436,7 @@ export class TreeWalker extends Mapper
 				debug "no type"
 				text = @endVisit hNode, hUser, stack
 			if defined(text)
-				addText text
+				add text
 			return
 
 		# .......................................................
@@ -506,18 +514,18 @@ export class TreeWalker extends Mapper
 
 		doEndWalk hGlobalUser
 
-		if nonEmpty(lLines)
-			result = toBlock(lLines)
-		else
-			result = ''
+#		if nonEmpty(lLines)
+#			result = toBlock(lLines)
+#		else
+#			result = ''
 
 		if traceNodes
 			trace = toBlock(lTrace)
-			debug "return from TreeWalker.walk()", result, trace
-			return [result, trace]
+			debug "return from TreeWalker.walk()", lLines, trace
+			return [lLines, trace]
 		else
-			debug "return from TreeWalker.walk()", result
-			return result
+			debug "return from TreeWalker.walk()", lLines
+			return lLines
 
 	# ..........................................................
 	# These are designed to override
@@ -638,10 +646,14 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	getBlock: (hOptions={}) ->
-		# --- Valid options: logNodes
+		# --- Valid options: logNodes, traceNodes
 
 		debug "enter getBlock()"
-		block = @walk(hOptions)
+		lLines = @walk(hOptions)
+		if isArrayOfStrings(lLines)
+			block = toBlock(lLines)
+		else
+			block = lLines
 		debug 'block', block
 		result = @finalizeBlock(block)
 		debug "return from getBlock()", result

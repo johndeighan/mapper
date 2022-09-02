@@ -254,8 +254,10 @@ export map = (source, content=undef, mapper, hOptions={}) ->
 	#     has a getBlock() method
 
 	if (typeof mapper.getBlock == 'function')
+		debug "using mapper directly"
 		result = mapper.getBlock(hOptions)
 	else
+		debug "creating mapper instance"
 		obj = new mapper(source, content)
 		assert (typeof obj.getBlock == 'function'), "missing getBlock() method"
 		result = obj.getBlock(hOptions)

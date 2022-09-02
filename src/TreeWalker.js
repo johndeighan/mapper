@@ -559,6 +559,11 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
+  startLevel(hUser, level) {
+    return croak("There is no startLevel() method - use beginLevel()");
+  }
+
+  // ..........................................................
   endLevel(hUser, level) {
     return undef;
   }

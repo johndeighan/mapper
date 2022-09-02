@@ -543,6 +543,12 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
+	startLevel: (hUser, level) ->
+
+		croak "There is no startLevel() method - use beginLevel()"
+
+	# ..........................................................
+
 	endLevel: (hUser, level) ->
 
 		return undef

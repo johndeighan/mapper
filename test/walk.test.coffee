@@ -1,21 +1,19 @@
 # walk.test.coffee
 
-import {UnitTester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {undef, pass} from '@jdeighan/coffee-utils'
 import {LOG} from '@jdeighan/coffee-utils/log'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 
 import {map} from '@jdeighan/mapper'
-import {TraceWalker} from '@jdeighan/mapper/trace'
-
-simple = new UnitTester()
+import {TraceWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 # Test TreeWalker.walk()
 
 (() ->
-	class Tester extends UnitTester
+	class Tester extends UnitTesterNorm
 
 		transformValue: (block) ->
 			return map(import.meta.url, block, TraceWalker)
@@ -32,8 +30,10 @@ simple = new UnitTester()
 			abc
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc'
 			END VISIT 0 'abc'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -42,10 +42,12 @@ simple = new UnitTester()
 			def
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc'
 			END VISIT 0 'abc'
 			VISIT     0 'def'
 			END VISIT 0 'def'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -54,10 +56,14 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc'
-			VISIT     1 '→def'
-			END VISIT 1 '→def'
+			BEGIN LEVEL 1
+			VISIT     1 'def'
+			END VISIT 1 'def'
+			END LEVEL 1
 			END VISIT 0 'abc'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -68,10 +74,14 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc'
-			VISIT     1 '→def'
-			END VISIT 1 '→def'
+			BEGIN LEVEL 1
+			VISIT     1 'def'
+			END VISIT 1 'def'
+			END LEVEL 1
 			END VISIT 0 'abc'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -82,8 +92,10 @@ simple = new UnitTester()
 				def
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc'
 			END VISIT 0 'abc'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -93,8 +105,10 @@ simple = new UnitTester()
 					def
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 'abc˳def'
 			END VISIT 0 'abc˳def'
+			END LEVEL 0
 			END WALK
 			"""
 
@@ -110,7 +124,7 @@ simple = new UnitTester()
 
 			return {text: hNode.str}
 
-	class Tester extends UnitTester
+	class Tester extends UnitTesterNorm
 
 		transformValue: (block) ->
 			return map(import.meta.url, block, MyTraceWalker)
@@ -121,8 +135,10 @@ simple = new UnitTester()
 			abc
 			""", """
 			BEGIN WALK
+			BEGIN LEVEL 0
 			VISIT     0 {"text":"abc"}
 			END VISIT 0 {"text":"abc"}
+			END LEVEL 0
 			END WALK
 			"""
 

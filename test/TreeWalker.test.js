@@ -70,7 +70,7 @@ import {
 		- extension lines
 		- can override @mapNode() - used in @getAll()
 		- call @walk() to walk the tree
-		- can override beginWalk(), visit(), endVisit(), endWalk()
+		- can override beginLevel(), visit(), endVisit(), endLevel()
 */
 // ---------------------------------------------------------------------------
 // --- Test TreeWalker.get() with special lines
@@ -662,17 +662,17 @@ xyz`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- test startLevel() and endLevel()
+// --- test beginLevel() and endLevel()
 (function() {
   var MyTester, MyWalker, lTrace, tester;
   lTrace = [];
   MyWalker = class MyWalker extends TreeWalker {
-    startLevel(hNode, hUser, level) {
-      lTrace.push(`S ${level} ${hNode.str}`);
+    beginLevel(hUser, level) {
+      lTrace.push(`S ${level}`);
     }
 
-    endLevel(hNode, hUser, level) {
-      lTrace.push(`E ${level} ${hNode.str}`);
+    endLevel(hUser, level) {
+      lTrace.push(`E ${level}`);
     }
 
   };
@@ -686,5 +686,5 @@ xyz`);
   tester.equal(733, `abc
 	def`, `abc
 	def`);
-  return simple.equal(745, lTrace, ["S 0 abc", "S 1 def", "E 1 def", "E 0 abc"]);
+  return simple.equal(745, lTrace, ["S 0", "S 1", "E 1", "E 0"]);
 })();

@@ -40,10 +40,6 @@ import {
   TreeWalker
 } from '@jdeighan/mapper/tree';
 
-import {
-  TraceWalker
-} from '@jdeighan/mapper/trace';
-
 // ---------------------------------------------------------------------------
 // Test TreeWalker.allMapped()
 (function() {

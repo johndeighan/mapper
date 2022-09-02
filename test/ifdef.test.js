@@ -4,6 +4,7 @@ var WalkTester, tester;
 
 import {
   UnitTester,
+  UnitTesterNorm,
   simple
 } from '@jdeighan/unit-tester';
 
@@ -56,15 +57,15 @@ import {
   TreeWalker
 } from '@jdeighan/mapper/tree';
 
-import {
-  TraceWalker
-} from '@jdeighan/mapper/trace';
-
-WalkTester = class WalkTester extends UnitTester {
+WalkTester = class WalkTester extends UnitTesterNorm {
   transformValue(block) {
-    var walker;
-    walker = new TraceWalker(import.meta.url, block);
-    return walker.walk();
+    var hOptions, result, trace, walker;
+    walker = new TreeWalker(import.meta.url, block);
+    hOptions = {
+      traceNodes: true
+    };
+    [result, trace] = walker.walk(hOptions);
+    return trace;
   }
 
 };
@@ -73,58 +74,74 @@ tester = new WalkTester();
 
 // ..........................................................
 tester.equal(34, `abc`, `BEGIN WALK
-VISIT     0 'abc'
-END VISIT 0 'abc'
+BEGIN LEVEL 0
+VISIT       0 'abc'
+END VISIT   0 'abc'
+END LEVEL   0
 END WALK`);
 
 tester.equal(43, `abc
 def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
 VISIT     0 'def'
 END VISIT 0 'def'
+END LEVEL 0
 END WALK`);
 
 tester.equal(55, `abc
 	def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
-VISIT     1 '→def'
-END VISIT 1 '→def'
+BEGIN LEVEL 1
+VISIT     1 'def'
+END VISIT 1 'def'
+END LEVEL 1
 END VISIT 0 'abc'
+END LEVEL 0
 END WALK`);
 
 tester.equal(67, `abc
 #ifdef NOPE
 	def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
+END LEVEL   0
 END WALK`);
 
 tester.equal(78, `abc
 #ifndef NOPE
 	def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
 VISIT     0 'def'
 END VISIT 0 'def'
+END LEVEL   0
 END WALK`);
 
 tester.equal(91, `#define NOPE 42
 abc
 #ifndef NOPE
 	def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
+END LEVEL   0
 END WALK`);
 
 tester.equal(103, `#define NOPE 42
 abc
 #ifdef NOPE
 	def`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
 VISIT     0 'def'
 END VISIT 0 'def'
+END LEVEL   0
 END WALK`);
 
 tester.equal(117, `#define NOPE 42
@@ -134,10 +151,12 @@ abc
 	def
 	#ifdef name
 		ghi`, `BEGIN WALK
+BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
 VISIT     0 'def'
 END VISIT 0 'def'
 VISIT     0 'ghi'
 END VISIT 0 'ghi'
+END LEVEL   0
 END WALK`);

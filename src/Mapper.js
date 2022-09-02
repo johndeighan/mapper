@@ -254,7 +254,7 @@ export var FuncMapper = class FuncMapper extends Mapper {
 
 // ===========================================================================
 export var map = function(source, content = undef, mapper, hOptions = {}) {
-  var i, item, len, result;
+  var i, item, len, obj, result;
   // --- Valid options:
   //        logLines
   if (isArray(mapper)) {
@@ -269,14 +269,15 @@ export var map = function(source, content = undef, mapper, hOptions = {}) {
   }
   debug("enter map()", source, content, mapper);
   assert(defined(mapper), "Missing input class");
-  if (mapper instanceof Mapper) {
-    result = mapper.getBlock(hOptions);
-  } else if (isSubclassOf(mapper, Mapper)) {
-    mapper = new mapper(source, content);
-    assert(mapper instanceof Mapper, "Mapper or subclass required");
+  // --- mapper can be an object, which is an instance of Mapper
+  //     or it can just be a class which, when instantiated
+  //     has a getBlock() method
+  if (typeof mapper.getBlock === 'function') {
     result = mapper.getBlock(hOptions);
   } else {
-    croak("Bad mapper");
+    obj = new mapper(source, content);
+    assert(typeof obj.getBlock === 'function', "missing getBlock() method");
+    result = obj.getBlock(hOptions);
   }
   debug("return from map()", result);
   return result;

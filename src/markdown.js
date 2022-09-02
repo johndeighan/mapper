@@ -78,8 +78,10 @@ export var markdownify = function(block) {
 // --- Does not use marked!!!
 //     just simulates markdown processing
 export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeWalker {
-  beginWalk() {
-    this.prevStr = undef;
+  beginLevel(level) {
+    if (level === 0) {
+      this.prevStr = undef;
+    }
   }
 
   // ..........................................................
@@ -115,8 +117,8 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeWalker 
   }
 
   // ..........................................................
-  endWalk() {
-    if (defined(this.prevStr)) {
+  endLevel(hUser, level) {
+    if ((level === 0) && defined(this.prevStr)) {
       return `<p>${this.prevStr}</p>`;
     } else {
       return undef;

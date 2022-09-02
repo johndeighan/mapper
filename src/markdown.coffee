@@ -45,9 +45,10 @@ export markdownify = (block) ->
 
 export class SimpleMarkDownMapper extends TreeWalker
 
-	beginWalk: () ->
+	beginLevel: (level) ->
 
-		@prevStr = undef
+		if (level == 0)
+			@prevStr = undef
 		return
 
 	# ..........................................................
@@ -82,9 +83,9 @@ export class SimpleMarkDownMapper extends TreeWalker
 
 	# ..........................................................
 
-	endWalk: () ->
+	endLevel: (hUser, level) ->
 
-		if defined(@prevStr)
+		if (level == 0) && defined(@prevStr)
 			return "<p>#{@prevStr}</p>"
 		else
 			return undef

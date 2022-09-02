@@ -27,7 +27,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 		- extension lines
 		- can override @mapNode() - used in @getAll()
 		- call @walk() to walk the tree
-		- can override beginWalk(), visit(), endVisit(), endWalk()
+		- can override beginLevel(), visit(), endVisit(), endLevel()
 ###
 
 # ---------------------------------------------------------------------------
@@ -710,7 +710,7 @@ class HtmlMapper extends TreeWalker
 	)()
 
 # ---------------------------------------------------------------------------
-# --- test startLevel() and endLevel()
+# --- test beginLevel() and endLevel()
 
 (() ->
 
@@ -718,12 +718,12 @@ class HtmlMapper extends TreeWalker
 
 	class MyWalker extends TreeWalker
 
-		startLevel: (hNode, hUser, level) ->
-			lTrace.push "S #{level} #{hNode.str}"
+		beginLevel: (hUser, level) ->
+			lTrace.push "S #{level}"
 			return
 
-		endLevel: (hNode, hUser, level) ->
-			lTrace.push "E #{level} #{hNode.str}"
+		endLevel: (hUser, level) ->
+			lTrace.push "E #{level}"
 			return
 
 	class MyTester extends UnitTester
@@ -743,10 +743,10 @@ class HtmlMapper extends TreeWalker
 			"""
 
 	simple.equal 745, lTrace, [
-		"S 0 abc"
-		"S 1 def"
-		"E 1 def"
-		"E 0 abc"
+		"S 0"
+		"S 1"
+		"E 1"
+		"E 0"
 		]
 
 	)()

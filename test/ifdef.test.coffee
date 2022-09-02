@@ -1,6 +1,6 @@
 # ifdef.test.coffee
 
-import {UnitTester, simple} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNorm, simple} from '@jdeighan/unit-tester'
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, OL, defined,
@@ -18,14 +18,17 @@ import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 import {taml} from '@jdeighan/coffee-utils/taml'
 
 import {TreeWalker} from '@jdeighan/mapper/tree'
-import {TraceWalker} from '@jdeighan/mapper/trace'
 
-class WalkTester extends UnitTester
+class WalkTester extends UnitTesterNorm
 
 	transformValue: (block) ->
 
-		walker = new TraceWalker(import.meta.url, block)
-		return walker.walk()
+		walker = new TreeWalker(import.meta.url, block)
+		hOptions = {
+			traceNodes: true
+			}
+		[result, trace] = walker.walk(hOptions)
+		return trace
 
 tester = new WalkTester()
 
@@ -35,8 +38,10 @@ tester.equal 34, """
 		abc
 		""", """
 		BEGIN WALK
-		VISIT     0 'abc'
-		END VISIT 0 'abc'
+		BEGIN LEVEL 0
+		VISIT       0 'abc'
+		END VISIT   0 'abc'
+		END LEVEL   0
 		END WALK
 		"""
 
@@ -45,10 +50,12 @@ tester.equal 43, """
 		def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		VISIT     0 'def'
 		END VISIT 0 'def'
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -57,10 +64,14 @@ tester.equal 55, """
 			def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
-		VISIT     1 '→def'
-		END VISIT 1 '→def'
+		BEGIN LEVEL 1
+		VISIT     1 'def'
+		END VISIT 1 'def'
+		END LEVEL 1
 		END VISIT 0 'abc'
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -70,8 +81,10 @@ tester.equal 67, """
 			def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
+		END LEVEL   0
 		END WALK
 		"""
 
@@ -81,10 +94,12 @@ tester.equal 78, """
 			def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		VISIT     0 'def'
 		END VISIT 0 'def'
+		END LEVEL   0
 		END WALK
 		"""
 
@@ -95,8 +110,10 @@ tester.equal 91, """
 			def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
+		END LEVEL   0
 		END WALK
 		"""
 
@@ -107,10 +124,12 @@ tester.equal 103, """
 			def
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		VISIT     0 'def'
 		END VISIT 0 'def'
+		END LEVEL   0
 		END WALK
 		"""
 
@@ -124,11 +143,13 @@ tester.equal 117, """
 				ghi
 		""", """
 		BEGIN WALK
+		BEGIN LEVEL 0
 		VISIT     0 'abc'
 		END VISIT 0 'abc'
 		VISIT     0 'def'
 		END VISIT 0 'def'
 		VISIT     0 'ghi'
 		END VISIT 0 'ghi'
+		END LEVEL   0
 		END WALK
 		"""

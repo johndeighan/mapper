@@ -11,7 +11,6 @@ import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 
 import {TreeWalker} from '@jdeighan/mapper/tree'
-import {TraceWalker} from '@jdeighan/mapper/trace'
 
 # ---------------------------------------------------------------------------
 # Test TreeWalker.allMapped()

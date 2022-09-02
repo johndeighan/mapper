@@ -532,10 +532,6 @@ export var TreeWalker = class TreeWalker extends Mapper {
       doEndLevel(hUser, hPrevNode.level);
     }
     doEndWalk(hGlobalUser);
-    //		if nonEmpty(lLines)
-    //			result = toBlock(lLines)
-    //		else
-    //			result = ''
     if (traceNodes) {
       trace = toBlock(lTrace);
       debug("return from TreeWalker.walk()", lLines, trace);

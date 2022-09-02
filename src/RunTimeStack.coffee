@@ -2,7 +2,7 @@
 
 import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
-	undef, pass, defined, notdefined, OL, isString, isInteger,
+	undef, pass, defined, notdefined, OL, isString, isInteger, isHash,
 	} from '@jdeighan/coffee-utils'
 import {Node} from '@jdeighan/mapper/node'
 
@@ -17,18 +17,18 @@ export class RunTimeStack
 
 	# ..........................................................
 
-	replaceTOS: (node) ->
+	replaceTOS: (hNode) ->
 
-		assert (node instanceof Node), "not a Node"
-		@lStack[@len-1] = node
+		@checkNode hNode
+		@lStack[@len-1] = hNode
 		return
 
 	# ..........................................................
 
-	push: (node) ->
+	push: (hNode) ->
 
-		assert (node instanceof Node), "not a Node"
-		@lStack.push node
+		@checkNode hNode
+		@lStack.push hNode
 		@len += 1
 		return
 
@@ -37,9 +37,10 @@ export class RunTimeStack
 	pop: () ->
 
 		assert (@len > 0), "pop() on empty stack"
-		item = @lStack.pop()
+		hNode = @lStack.pop()
+		@checkNode hNode
 		@len -= 1
-		return item
+		return hNode
 
 	# ..........................................................
 
@@ -58,6 +59,19 @@ export class RunTimeStack
 	TOS: () ->
 
 		if (@len > 0)
-			return @lStack[@len-1]
+			hNode = @lStack[@len-1]
+			@checkNode hNode
+			return hNode
 		else
 			return undef
+
+	# ..........................................................
+
+	checkNode: (hNode) ->
+		# --- Each node should have a key named hUser - a hash
+		#     hUser should have a key named _parent - a hash
+
+		assert (hNode instanceof Node), "not a Node"
+		assert isHash(hNode.hUser), "missing hUser key"
+		assert isHash(hNode.hUser._parent), "missing _parent key"
+		return

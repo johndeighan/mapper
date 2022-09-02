@@ -13,7 +13,8 @@ import {
   notdefined,
   OL,
   isString,
-  isInteger
+  isInteger,
+  isHash
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -28,25 +29,26 @@ export var RunTimeStack = class RunTimeStack {
   }
 
   // ..........................................................
-  replaceTOS(node) {
-    assert(node instanceof Node, "not a Node");
-    this.lStack[this.len - 1] = node;
+  replaceTOS(hNode) {
+    this.checkNode(hNode);
+    this.lStack[this.len - 1] = hNode;
   }
 
   // ..........................................................
-  push(node) {
-    assert(node instanceof Node, "not a Node");
-    this.lStack.push(node);
+  push(hNode) {
+    this.checkNode(hNode);
+    this.lStack.push(hNode);
     this.len += 1;
   }
 
   // ..........................................................
   pop() {
-    var item;
+    var hNode;
     assert(this.len > 0, "pop() on empty stack");
-    item = this.lStack.pop();
+    hNode = this.lStack.pop();
+    this.checkNode(hNode);
     this.len -= 1;
-    return item;
+    return hNode;
   }
 
   // ..........................................................
@@ -61,11 +63,23 @@ export var RunTimeStack = class RunTimeStack {
 
   // ..........................................................
   TOS() {
+    var hNode;
     if (this.len > 0) {
-      return this.lStack[this.len - 1];
+      hNode = this.lStack[this.len - 1];
+      this.checkNode(hNode);
+      return hNode;
     } else {
       return undef;
     }
+  }
+
+  // ..........................................................
+  checkNode(hNode) {
+    // --- Each node should have a key named hUser - a hash
+    //     hUser should have a key named _parent - a hash
+    assert(hNode instanceof Node, "not a Node");
+    assert(isHash(hNode.hUser), "missing hUser key");
+    assert(isHash(hNode.hUser._parent), "missing _parent key");
   }
 
 };

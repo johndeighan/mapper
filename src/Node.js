@@ -24,7 +24,7 @@ import {
 
 // ---------------------------------------------------------------------------
 export var Node = class Node {
-  constructor(str, level, source, lineNum) {
+  constructor(str, level, source, lineNum, hData) {
     this.str = str;
     this.level = level;
     this.source = source;
@@ -39,6 +39,7 @@ export var Node = class Node {
     }), `lineNum is ${OL(this.lineNum)}`);
     // --- level may later be adjusted, but srcLevel should be const
     this.srcLevel = this.level;
+    Object.assign(this, hData);
   }
 
   // ..........................................................

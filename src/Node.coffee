@@ -12,7 +12,7 @@ import {
 
 export class Node
 
-	constructor: (@str, @level, @source, @lineNum) ->
+	constructor: (@str, @level, @source, @lineNum, hData) ->
 
 		assert isString(@str), "str is #{OL(@str)}"
 		assert isInteger(@level, {min: 0}), "level is #{OL(@level)}"
@@ -21,6 +21,7 @@ export class Node
 
 		# --- level may later be adjusted, but srcLevel should be const
 		@srcLevel = @level
+		Object.assign(this, hData)
 
 	# ..........................................................
 	# --- used when '#include <file>' has indentation

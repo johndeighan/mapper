@@ -514,11 +514,6 @@ export class TreeWalker extends Mapper
 
 		doEndWalk hGlobalUser
 
-#		if nonEmpty(lLines)
-#			result = toBlock(lLines)
-#		else
-#			result = ''
-
 		if traceNodes
 			trace = toBlock(lTrace)
 			debug "return from TreeWalker.walk()", lLines, trace

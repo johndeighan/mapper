@@ -666,6 +666,7 @@ export class TreeWalker extends Mapper
 
 hstr = (h) ->
 	# --- Don't include the _parent pointer
+	#     if an object has a toDebugStr() method, use that
 
 	nNew = {}
 	for own key,value of h

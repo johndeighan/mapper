@@ -69,8 +69,8 @@ import {
 //      mapNode(hNode) - returns user object, def: returns hNode.str
 //      mapCmd(hNode)
 //      beginLevel(hUser, level)
-//      visit(hNode, hUser)
-//      endVisit(hNode, hUser)
+//      visit(hNode, hUser, hParent, stack)
+//      endVisit(hNode, hUser, hParent, stack)
 //      endLevel(hUser, level) -
 export var TreeWalker = class TreeWalker extends Mapper {
   constructor(source = undef, collection = undef, hOptions = {}) {
@@ -440,7 +440,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
         text = this.visitSpecial(type, hNode, hUser, stack);
       } else {
         debug("no type");
-        text = this.visit(hNode, hUser, stack);
+        text = this.visit(hNode, hUser, hUser._parent, stack);
       }
       if (defined(text)) {
         add(text);
@@ -459,7 +459,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
         text = this.endVisitSpecial(type, hNode, hUser, stack);
       } else {
         debug("no type");
-        text = this.endVisit(hNode, hUser, stack);
+        text = this.endVisit(hNode, hUser, hUser._parent, stack);
       }
       if (defined(text)) {
         add(text);
@@ -570,36 +570,35 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  visit(hNode, hUser) {
+  visit(hNode, hUser, hParent, stack) {
     var uobj;
     debug("enter visit()", hNode, hUser);
     uobj = hNode.uobj;
-    //		assert isString(uobj), "uobj not a string"
     debug("return from visit()", uobj);
     return uobj;
   }
 
   // ..........................................................
-  endVisit(hNode, hUser) {
+  endVisit(hNode, hUser, hParent, stack) {
     debug("enter endVisit()", hNode, hUser);
     debug("return undef from endVisit()");
     return undef;
   }
 
   // ..........................................................
-  visitEmptyLine(hNode, hUser) {
+  visitEmptyLine(hNode, hUser, hParent, stack) {
     debug("in TreeWalker.visitEmptyLine()");
     return '';
   }
 
   // ..........................................................
-  endVisitEmptyLine(hNode, hUser) {
+  endVisitEmptyLine(hNode, hUser, hParent) {
     debug("in TreeWalker.endVisitEmptyLine()");
     return undef;
   }
 
   // ..........................................................
-  visitComment(hNode, hUser) {
+  visitComment(hNode, hUser, hParent) {
     var level, result, uobj;
     debug("enter visitComment()", hNode, hUser);
     ({uobj, level} = hNode);
@@ -610,13 +609,13 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  endVisitComment(hNode, hUser) {
+  endVisitComment(hNode, hUser, hParent) {
     debug("in TreeWalker.endVisitComment()");
     return undef;
   }
 
   // ..........................................................
-  visitCmd(hNode, hUser) {
+  visitCmd(hNode, hUser, hParent) {
     var argstr, cmd, level;
     debug("in TreeWalker.visitCmd() - ERROR");
     ({cmd, argstr, level} = hNode.uobj);
@@ -626,7 +625,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   }
 
   // ..........................................................
-  endVisitCmd(hNode, hUser) {
+  endVisitCmd(hNode, hUser, hParent) {
     debug("in TreeWalker.endVisitCmd()");
     return undef;
   }
@@ -639,7 +638,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
     assert(defined(visiter), `No such type: ${OL(type)}`);
     func = visiter.bind(this);
     assert(isFunction(func), "not a function");
-    result = func(hNode, hUser, stack);
+    result = func(hNode, hUser, hUser._parent, stack);
     debug("return from TreeWalker.visitSpecial()", result);
     return result;
   }
@@ -648,7 +647,7 @@ export var TreeWalker = class TreeWalker extends Mapper {
   endVisitSpecial(type, hNode, hUser, stack) {
     var func;
     func = this.hSpecialVisitTypes[type].endVisiter.bind(this);
-    return func(hNode, hUser, stack);
+    return func(hNode, hUser, hUser._parent, stack);
   }
 
   // ..........................................................

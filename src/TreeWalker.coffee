@@ -24,8 +24,8 @@ import {RunTimeStack} from '@jdeighan/mapper/stack'
 #      mapNode(hNode) - returns user object, def: returns hNode.str
 #      mapCmd(hNode)
 #      beginLevel(hUser, level)
-#      visit(hNode, hUser)
-#      endVisit(hNode, hUser)
+#      visit(hNode, hUser, hParent, stack)
+#      endVisit(hNode, hUser, hParent, stack)
 #      endLevel(hUser, level) -
 
 export class TreeWalker extends Mapper
@@ -415,7 +415,7 @@ export class TreeWalker extends Mapper
 				text = @visitSpecial(type, hNode, hUser, stack)
 			else
 				debug "no type"
-				text = @visit(hNode, hUser, stack)
+				text = @visit(hNode, hUser, hUser._parent, stack)
 			if defined(text)
 				add text
 			return
@@ -434,7 +434,7 @@ export class TreeWalker extends Mapper
 				text = @endVisitSpecial type, hNode, hUser, stack
 			else
 				debug "no type"
-				text = @endVisit hNode, hUser, stack
+				text = @endVisit hNode, hUser, hUser._parent, stack
 			if defined(text)
 				add text
 			return
@@ -556,17 +556,16 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visit: (hNode, hUser) ->
+	visit: (hNode, hUser, hParent, stack) ->
 
 		debug "enter visit()", hNode, hUser
 		uobj = hNode.uobj
-#		assert isString(uobj), "uobj not a string"
 		debug "return from visit()", uobj
 		return uobj
 
 	# ..........................................................
 
-	endVisit:  (hNode, hUser) ->
+	endVisit:  (hNode, hUser, hParent, stack) ->
 
 		debug "enter endVisit()", hNode, hUser
 		debug "return undef from endVisit()"
@@ -574,21 +573,21 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	visitEmptyLine: (hNode, hUser) ->
+	visitEmptyLine: (hNode, hUser, hParent, stack) ->
 
 		debug "in TreeWalker.visitEmptyLine()"
 		return ''
 
 	# ..........................................................
 
-	endVisitEmptyLine: (hNode, hUser) ->
+	endVisitEmptyLine: (hNode, hUser, hParent) ->
 
 		debug "in TreeWalker.endVisitEmptyLine()"
 		return undef
 
 	# ..........................................................
 
-	visitComment: (hNode, hUser) ->
+	visitComment: (hNode, hUser, hParent) ->
 
 		debug "enter visitComment()", hNode, hUser
 		{uobj, level} = hNode
@@ -599,14 +598,14 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	endVisitComment: (hNode, hUser) ->
+	endVisitComment: (hNode, hUser, hParent) ->
 
 		debug "in TreeWalker.endVisitComment()"
 		return undef
 
 	# ..........................................................
 
-	visitCmd: (hNode, hUser) ->
+	visitCmd: (hNode, hUser, hParent) ->
 
 		debug "in TreeWalker.visitCmd() - ERROR"
 		{cmd, argstr, level} = hNode.uobj
@@ -617,7 +616,7 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
-	endVisitCmd: (hNode, hUser) ->
+	endVisitCmd: (hNode, hUser, hParent) ->
 
 		debug "in TreeWalker.endVisitCmd()"
 		return undef
@@ -632,7 +631,7 @@ export class TreeWalker extends Mapper
 		assert defined(visiter), "No such type: #{OL(type)}"
 		func = visiter.bind(this)
 		assert isFunction(func), "not a function"
-		result = func(hNode, hUser, stack)
+		result = func(hNode, hUser, hUser._parent, stack)
 		debug "return from TreeWalker.visitSpecial()", result
 		return result
 
@@ -641,7 +640,7 @@ export class TreeWalker extends Mapper
 	endVisitSpecial: (type, hNode, hUser, stack) ->
 
 		func = @hSpecialVisitTypes[type].endVisiter.bind(this)
-		return func(hNode, hUser, stack)
+		return func(hNode, hUser, hUser._parent, stack)
 
 	# ..........................................................
 	# ..........................................................

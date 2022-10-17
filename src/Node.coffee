@@ -1,6 +1,6 @@
 # Node.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, LOGVALUE, debug, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, pass, defined, notdefined, OL, isString, isInteger,
 	} from '@jdeighan/coffee-utils'
@@ -14,10 +14,12 @@ export class Node
 
 	constructor: (@str, @level, @source, @lineNum, hData) ->
 
-		assert isString(@str), "str is #{OL(@str)}"
-		assert isInteger(@level, {min: 0}), "level is #{OL(@level)}"
-		assert isString(@source), "source is #{OL(@source)}"
-		assert isInteger(@lineNum, {min: 0}), "lineNum is #{OL(@lineNum)}"
+		assert isString(@str), "str #{OL(@str)} not a string"
+		assert isInteger(@level, {min: 0}),
+			"level #{OL(@level)} not an integer"
+		assert isString(@source), "source #{OL(@source)} not a string"
+		assert isInteger(@lineNum, {min: 1}),
+			"lineNum #{OL(@lineNum)} not an integer"
 
 		# --- level may later be adjusted, but srcLevel should be const
 		@srcLevel = @level
@@ -26,7 +28,7 @@ export class Node
 	# ..........................................................
 	# --- used when '#include <file>' has indentation
 
-	incLevel: (n) ->
+	incLevel: (n=1) ->
 
 		@level += n
 		return

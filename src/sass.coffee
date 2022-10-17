@@ -2,9 +2,8 @@
 
 import sass from 'sass'
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, assert, croak, debug} from '@jdeighan/exceptions'
 import {undef} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
 import {Mapper, map} from '@jdeighan/mapper'

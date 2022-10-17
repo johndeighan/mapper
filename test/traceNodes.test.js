@@ -3,8 +3,14 @@
 var TraceTester, tester;
 
 import {
-  UnitTester,
-  simple
+  assert,
+  croak,
+  setDebugging,
+  setLogger
+} from '@jdeighan/exceptions';
+
+import {
+  UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -12,23 +18,22 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  setDebugging
-} from '@jdeighan/coffee-utils/debug';
+  toBlock
+} from '@jdeighan/coffee-utils/block';
 
 import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
 TraceTester = class TraceTester extends UnitTester {
   transformValue(block) {
-    var _, hOptions, trace, walker;
-    walker = new TreeWalker(import.meta.url, block);
-    hOptions = {
-      traceNodes: true
-    };
-    [_, trace] = walker.walk(hOptions);
-    return trace;
+    var walker;
+    walker = new TreeMapper(import.meta.url, block);
+    walker.walk({
+      logNodes: true
+    });
+    return walker.getLog();
   }
 
   transformExpected(block) {
@@ -65,8 +70,8 @@ tester.equal(54, `abc
 BEGIN LEVEL 0
 VISIT 0 'abc'
 	BEGIN LEVEL 1
-	VISIT 1 '→def'
-	END VISIT 1 '→def'
+	VISIT 1 'def'
+	END VISIT 1 'def'
 	END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0
@@ -78,10 +83,10 @@ tester.equal(70, `abc
 BEGIN LEVEL 0
 VISIT 0 'abc'
 	BEGIN LEVEL 1
-	VISIT 1 '→def'
-	END VISIT 1 '→def'
-	VISIT 1 '→ghi'
-	END VISIT 1 '→ghi'
+	VISIT 1 'def'
+	END VISIT 1 'def'
+	VISIT 1 'ghi'
+	END VISIT 1 'ghi'
 	END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0
@@ -97,22 +102,22 @@ pqr
 BEGIN LEVEL 0
 VISIT 0 'abc'
 	BEGIN LEVEL 1
-	VISIT 1 '→def'
-	END VISIT 1 '→def'
-	VISIT 1 '→ghi'
+	VISIT 1 'def'
+	END VISIT 1 'def'
+	VISIT 1 'ghi'
 		BEGIN LEVEL 2
-		VISIT 2 '→→jkl'
-		END VISIT 2 '→→jkl'
+		VISIT 2 'jkl'
+		END VISIT 2 'jkl'
 		END LEVEL 2
-	END VISIT 1 '→ghi'
-	VISIT 1 '→mno'
-	END VISIT 1 '→mno'
+	END VISIT 1 'ghi'
+	VISIT 1 'mno'
+	END VISIT 1 'mno'
 	END LEVEL 1
 END VISIT 0 'abc'
 VISIT 0 'pqr'
 	BEGIN LEVEL 1
-	VISIT 1 '→stu'
-	END VISIT 1 '→stu'
+	VISIT 1 'stu'
+	END VISIT 1 'stu'
 	END LEVEL 1
 END VISIT 0 'pqr'
 END LEVEL 0

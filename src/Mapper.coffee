@@ -1,14 +1,12 @@
 # Mapper.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable,
 	isEmpty, nonEmpty, isSubclassOf,
 	} from '@jdeighan/coffee-utils'
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
-import {LOG} from '@jdeighan/coffee-utils/log'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
 
 import {Node} from '@jdeighan/mapper/node'
@@ -237,7 +235,7 @@ export class FuncMapper extends Mapper
 
 export map = (source, content=undef, mapper, hOptions={}) ->
 	# --- Valid options:
-	#        logLines
+	#        logNodes
 
 	if isArray(mapper)
 		result = content
@@ -263,5 +261,3 @@ export map = (source, content=undef, mapper, hOptions={}) ->
 		result = obj.getBlock(hOptions)
 	debug "return from map()", result
 	return result
-
-# ---------------------------------------------------------------------------

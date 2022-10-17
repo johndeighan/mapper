@@ -3,18 +3,15 @@
 import sass from 'sass';
 
 import {
+  LOG,
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  debug
+} from '@jdeighan/exceptions';
 
 import {
   undef
 } from '@jdeighan/coffee-utils';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   isHashComment

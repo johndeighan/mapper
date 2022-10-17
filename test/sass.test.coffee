@@ -1,12 +1,10 @@
 # sass.test.coffee
 
+import {assert, croak, debug, setDebugging} from '@jdeighan/exceptions'
 import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {sassify} from '@jdeighan/mapper/sass'
-
-simple = new UnitTesterNorm()
 
 # ---------------------------------------------------------------------------
 
@@ -15,13 +13,13 @@ class SassTester extends UnitTesterNorm
 	transformValue: (text) ->
 		return sassify(text, import.meta.url)
 
-tester = new SassTester()
+sassTester = new SassTester()
 
 # ---------------------------------------------------------------------------
 
 (() ->
 
-	tester.equal 50, """
+	sassTester.equal 50, """
 		# --- a comment
 		p
 			margin: 0

@@ -1,12 +1,20 @@
 # StoryMapper.coffee
 
 import {undef, defined} from '@jdeighan/coffee-utils'
+
 import {Mapper} from '@jdeighan/mapper'
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
+#    Convert lines like:
+#       key: <string>
+#    to
+#       key: '<string>'
+#    while doubling internal single-quote characters
+#    unless <string> is a number
+# ---------------------------------------------------------------------------
 
-export class StoryMapper extends TreeWalker
+export class StoryMapper extends TreeMapper
 
 	mapNode: (hNode) ->
 
@@ -16,19 +24,21 @@ export class StoryMapper extends TreeWalker
 				\s*                       # optional whitespace
 				(.+)                      # a non-empty string
 				$///)
-			[_, ident, str] = lMatches
+			[_, key, value] = lMatches
 
-			if str.match(///
+			if value.match(///
 					\d+
 					(?:
 						\.
 						\d*
 						)?
 					$///)
-				return str
+				# --- don't mess with numbers
+				return "#{key}: #{value}"
 			else
-				# --- surround with single quotes, double internal single quotes
-				str = "'" + str.replace(/\'/g, "''") + "'"
-				return "#{ident}: #{str}"
+				# --- surround with single quotes,
+				#     double internal single quotes
+				value = "'" + value.replace(/\'/g, "''") + "'"
+				return "#{key}: #{value}"
 		else
 			return hNode.str

@@ -3,10 +3,13 @@
 var hHereDocs, lHereDocs;
 
 import {
+  LOG,
+  debug,
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  isTAML,
+  fromTAML
+} from '@jdeighan/exceptions';
 
 import {
   undef,
@@ -32,19 +35,6 @@ import {
 import {
   indented
 } from '@jdeighan/coffee-utils/indent';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
-
-import {
-  LOG
-} from '@jdeighan/coffee-utils/log';
-
-import {
-  isTAML,
-  taml
-} from '@jdeighan/mapper/taml';
 
 lHereDocs = []; // checked in this order - list of type names
 
@@ -156,10 +146,12 @@ export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
 // ---------------------------------------------------------------------------
 export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
   map(block) {
+    var result;
     if (!isTAML(block)) {
       return undef;
     }
-    return JSON.stringify(taml(block));
+    result = fromTAML(block);
+    return JSON.stringify(result);
   }
 
 };

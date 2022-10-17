@@ -1,14 +1,13 @@
 # heredoc.test.coffee
 
-import {UnitTester, simple} from '@jdeighan/unit-tester'
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {setDebugging} from '@jdeighan/exceptions/debug'
+import {UnitTester, tester} from '@jdeighan/unit-tester'
 import {
 	undef, isString, extractMatches, CWS, OL,
 	defined, notdefined,
 	} from '@jdeighan/coffee-utils'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
-import {log, LOG} from '@jdeighan/coffee-utils/log'
-import {setDebugging, debug} from '@jdeighan/coffee-utils/debug'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {firstLine, remainingLines} from '@jdeighan/coffee-utils/block'
 
@@ -18,17 +17,17 @@ import {
 
 # ---------------------------------------------------------------------------
 
-simple.truthy 24, isHereDocType('one line')
-simple.truthy 25, isHereDocType('taml')
-simple.falsy 26, isHereDocType('two line')
+tester.truthy 20, isHereDocType('one line')
+tester.truthy 21, isHereDocType('taml')
+tester.falsy 22, isHereDocType('two line')
 
 # ---------------------------------------------------------------------------
 
-simple.equal 30, lineToParts('this is not a heredoc'), [
+tester.equal 26, lineToParts('this is not a heredoc'), [
 	'this is not a heredoc'
 	]
 
-simple.equal 34, lineToParts('this <<< is <<< heredoc'), [
+tester.equal 30, lineToParts('this <<< is <<< heredoc'), [
 	'this '
 	'<<<'
 	' is '
@@ -36,7 +35,7 @@ simple.equal 34, lineToParts('this <<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-simple.equal 42, lineToParts('<<< is <<< heredoc'), [
+tester.equal 38, lineToParts('<<< is <<< heredoc'), [
 	''
 	'<<<'
 	' is '
@@ -44,7 +43,7 @@ simple.equal 42, lineToParts('<<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-simple.equal 50, lineToParts('this <<< is <<<'), [
+tester.equal 46, lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
@@ -52,7 +51,7 @@ simple.equal 50, lineToParts('this <<< is <<<'), [
 	''
 	]
 
-simple.equal 58, lineToParts('<<< is <<<'), [
+tester.equal 54, lineToParts('<<< is <<<'), [
 	''
 	'<<<'
 	' is '
@@ -60,13 +59,13 @@ simple.equal 58, lineToParts('<<< is <<<'), [
 	''
 	]
 
-simple.equal 66, lineToParts('<<<'), [
+tester.equal 62, lineToParts('<<<'), [
 	''
 	'<<<'
 	''
 	]
 
-simple.equal 72, lineToParts('<<<<<<'), [
+tester.equal 68, lineToParts('<<<<<<'), [
 	''
 	'<<<'
 	''
@@ -76,7 +75,7 @@ simple.equal 72, lineToParts('<<<<<<'), [
 
 # ---------------------------------------------------------------------------
 
-simple.equal 82, mapHereDoc("""
+tester.equal 78, mapHereDoc("""
 		abc
 		def
 		"""),
@@ -84,7 +83,7 @@ simple.equal 82, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-simple.equal 90, mapHereDoc("""
+tester.equal 86, mapHereDoc("""
 		===
 		abc
 		def
@@ -93,7 +92,7 @@ simple.equal 90, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-simple.equal 99, mapHereDoc("""
+tester.equal 95, mapHereDoc("""
 		...
 		abc
 		def
@@ -102,14 +101,14 @@ simple.equal 99, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-simple.equal 108, mapHereDoc("""
+tester.equal 104, mapHereDoc("""
 		() -> count += 1
 		"""),
 		'() -> count += 1'
 
 # ---------------------------------------------------------------------------
 
-simple.equal 115, mapHereDoc("""
+tester.equal 111, mapHereDoc("""
 		---
 		a: 1
 		b: 2
@@ -118,7 +117,7 @@ simple.equal 115, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-simple.equal 124, mapHereDoc("""
+tester.equal 120, mapHereDoc("""
 		---
 		- a
 		- b
@@ -133,12 +132,12 @@ class HereDocTester extends UnitTester
 
 		return mapHereDoc(block)
 
-tester = new HereDocTester()
+docTester = new HereDocTester()
 
 # ------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal 144, """
+docTester.equal 140, """
 		this is a
 		block of text
 		""",
@@ -147,7 +146,7 @@ tester.equal 144, """
 # ------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal 153, """
+docTester.equal 149, """
 		===
 		this is a
 		block of text
@@ -157,7 +156,7 @@ tester.equal 153, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 163, """
+docTester.equal 159, """
 		...this is a
 		line of text
 		""",
@@ -166,7 +165,7 @@ tester.equal 163, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 172, """
+docTester.equal 168, """
 		...
 		this is a
 		line of text
@@ -193,7 +192,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType 'matrix', MatrixHereDoc
 
-tester.equal 199, """
+docTester.equal 195, """
 		1 2 3
 		2 4 6
 		""",
@@ -219,7 +218,7 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType 'upper case', UCHereDoc
 
-tester.equal 225, """
+docTester.equal 221, """
 		^^^
 		This is a
 		block of text
@@ -251,7 +250,7 @@ addHereDocType 'upper case 2', UCHereDoc2
 
 # ---------------------------------------------------------------------------
 
-tester.equal 257, """
+docTester.equal 253, """
 		***
 		select ID,Name
 		from Users
@@ -265,12 +264,12 @@ class HereDocTester extends UnitTester
 	transformValue: (block) ->
 		return mapHereDoc(block)
 
-tester = new HereDocTester()
+docTester = new HereDocTester()
 
 # ---------------------------------------------------------------------------
 # TAML block
 
-tester.equal 276, """
+docTester.equal 272, """
 		---
 		- abc
 		- def
@@ -280,7 +279,7 @@ tester.equal 276, """
 # ---------------------------------------------------------------------------
 # TAML-like block, but actually a block
 
-tester.equal 286, """
+docTester.equal 282, """
 		===
 		---
 		- abc
@@ -291,7 +290,7 @@ tester.equal 286, """
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-tester.equal 297, """
+docTester.equal 293, """
 		---
 		-
 			label: Help
@@ -320,7 +319,7 @@ replacer = new HereDocReplacer()
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 326, """
+replacer.equal 322, """
 		TopMenu lItems={<<<}
 			---
 			-
@@ -335,7 +334,7 @@ replacer.equal 326, """
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 341, """
+replacer.equal 337, """
 		<TopMenu lItems={<<<}>
 			---
 			-
@@ -357,23 +356,23 @@ replacer.equal 341, """
 		transformValue: (block) ->
 			return mapHereDoc(block)
 
-	tester = new HereDocMapper()
+	docTester = new HereDocMapper()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 367, """
+	docTester.equal 363, """
 			(evt) ->
-				log 'click'
+				LOG 'click'
 			""",
 			"""
 			(evt) ->
-				log 'click'
+				LOG 'click'
 			"""
 
 	# ------------------------------------------------------------------------
 	# Function block, with no name or parameters
 
-	tester.equal 379, """
+	docTester.equal 375, """
 			() ->
 				return true
 			""", """
@@ -384,7 +383,7 @@ replacer.equal 341, """
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 390, """
+	docTester.equal 386, """
 			(evt) ->
 				console.log 'click'
 			""", """
@@ -395,11 +394,11 @@ replacer.equal 341, """
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 401, """
+	docTester.equal 397, """
 			(  evt  )     ->
-				log 'click'
+				LOG 'click'
 			""", """
 			(  evt  )     ->
-				log 'click'
+				LOG 'click'
 			"""
 	)()

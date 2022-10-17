@@ -4,21 +4,20 @@ var ASTBase;
 
 import {
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  LOG,
+  LOGVALUE,
+  debug
+} from '@jdeighan/exceptions';
 
 import {
   undef,
   pass,
+  nonEmpty,
   isArray,
   isHash,
   isArrayOfHashes
 } from '@jdeighan/coffee-utils';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   indented
@@ -27,6 +26,10 @@ import {
 import {
   isBuiltin
 } from '@jdeighan/mapper/builtins';
+
+import {
+  coffeeCodeToAST
+} from '@jdeighan/mapper/coffee';
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -155,6 +158,8 @@ export var ASTWalker = class ASTWalker extends ASTBase {
     });
     this.ast = ast.program;
     this.lImportedSymbols = [];
+    this.lExportedSymbols = [];
+    this.lDefinedSymbols = [];
     this.lUsedSymbols = [];
     // --- subarrays start out as list of formal parameters
     //     to which are added locally assigned variables
@@ -176,7 +181,7 @@ export var ASTWalker = class ASTWalker extends ASTBase {
 
   // ..........................................................
   addImport(name, lib) {
-    assert(name, "addImport: empty name");
+    assert(nonEmpty(name), "addImport: empty name");
     if (this.lImportedSymbols.includes(name)) {
       croak(`Duplicate import: ${name}`);
     } else {
@@ -185,10 +190,28 @@ export var ASTWalker = class ASTWalker extends ASTBase {
   }
 
   // ..........................................................
+  addExport(name, lib) {
+    assert(nonEmpty(name), "addExport: empty name");
+    if (this.lExportedSymbols.includes(name)) {
+      croak(`Duplicate export: ${name}`);
+    } else {
+      this.lExportedSymbols.push(name);
+    }
+  }
+
+  // ..........................................................
   addUsedSymbol(name, value = {}) {
-    assert(name, "addUsedSymbol(): empty name");
+    assert(nonEmpty(name), "addUsedSymbol(): empty name");
     if (!this.isLocalSymbol(name) && !this.lUsedSymbols.includes(name)) {
       this.lUsedSymbols.push(name);
+    }
+  }
+
+  // ..........................................................
+  addDefinedSymbol(name, value = {}) {
+    assert(nonEmpty(name), "addDefinedSymbol(): empty name");
+    if (!this.lDefinedSymbols.includes(name)) {
+      this.lDefinedSymbols.push(name);
     }
   }
 
@@ -226,6 +249,10 @@ export var ASTWalker = class ASTWalker extends ASTBase {
           }
         }
         return;
+      case 'ExportNamedDeclaration':
+        name = node.declaration.left.name;
+        this.addExport(name);
+        break;
       case 'CatchClause':
         param = node.param;
         if ((param != null) && param.type === 'Identifier') {
@@ -343,9 +370,12 @@ export var ASTWalker = class ASTWalker extends ASTBase {
   // ..........................................................
   getSymbols() {
     var hResult, i, lNeededSymbols, len, name, ref;
-    debug("enter CodeWalker.getSymbols()");
-    this.lImportedSymbols = []; // filled in during walking
-    this.lUsedSymbols = []; // filled in during walking
+    debug("enter ASTWalker.getSymbols()");
+    // --- filled in during walking
+    this.lImportedSymbols = [];
+    this.lExportedSymbols = [];
+    this.lDefinedSymbols = [];
+    this.lUsedSymbols = [];
     debug("walking");
     this.walk();
     debug("done walking");
@@ -353,19 +383,30 @@ export var ASTWalker = class ASTWalker extends ASTBase {
     ref = this.lUsedSymbols;
     for (i = 0, len = ref.length; i < len; i++) {
       name = ref[i];
-      if (!this.lImportedSymbols.includes(name) && !isBuiltin(name)) {
+      if (!this.lImportedSymbols.includes(name) && !this.lDefinedSymbols.includes(name) && !isBuiltin(name)) {
         lNeededSymbols.push(name);
       }
     }
     hResult = {
       lImported: this.lImportedSymbols,
+      lExported: this.lExportedSymbols,
+      lDefined: this.lDefinedSymbols,
       lUsed: this.lUsedSymbols,
       lNeeded: lNeededSymbols
     };
-    debug("return from CodeWalker.getSymbols()", hResult);
+    debug("return from ASTWalker.getSymbols()", hResult);
     return hResult;
   }
 
+};
+
+// ---------------------------------------------------------------------------
+export var getSymbols = (coffeeCode) => {
+  var ast, hInfo, walker;
+  ast = coffeeCodeToAST(coffeeCode);
+  walker = new ASTWalker(ast);
+  hInfo = walker.getSymbols();
+  return hInfo;
 };
 
 // ---------------------------------------------------------------------------

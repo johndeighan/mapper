@@ -2,17 +2,16 @@
 
 import {marked} from 'marked'
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, LOGVALUE, assert, croak, debug} from '@jdeighan/exceptions'
 import {
 	undef, defined, OL, isEmpty, nonEmpty, isString,
 	} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 
 import {isHashComment} from '@jdeighan/mapper/utils'
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
@@ -43,7 +42,7 @@ export markdownify = (block) ->
 # --- Does not use marked!!!
 #     just simulates markdown processing
 
-export class SimpleMarkDownMapper extends TreeWalker
+export class SimpleMarkDownMapper extends TreeMapper
 
 	beginLevel: (level) ->
 

@@ -3,10 +3,11 @@
 var atom, atomList, checkArgs, getNode, getSVG, hCommands, isIdentifier, isIntegerStr, matching;
 
 import {
+  LOG,
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  debug
+} from '@jdeighan/exceptions';
 
 import {
   undef,
@@ -29,15 +30,7 @@ import {
 } from '@jdeighan/coffee-utils/fs';
 
 import {
-  LOG
-} from '@jdeighan/coffee-utils/log';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
-
-import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 // --- commands, with allowed # of args, allowed # of children
@@ -203,7 +196,7 @@ matching = function(bracket) {
 };
 
 // ===========================================================================
-export var MathTreeWalker = class MathTreeWalker extends TreeWalker {
+export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
   // --- The @dir parameter is required if you use svg
   constructor(tree, dir1 = undef) {
     super(tree);

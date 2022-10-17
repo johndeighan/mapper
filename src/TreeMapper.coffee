@@ -1,24 +1,27 @@
-# TreeWalker.coffee
+# TreeMapper.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {
+	LOG, LOGVALUE, setLogger, debug, assert, croak, toTAML,
+	} from '@jdeighan/exceptions'
+import {unescapeStr} from '@jdeighan/exceptions/utils'
 import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,
 	isEmpty, nonEmpty, isArrayOfStrings,
 	} from '@jdeighan/coffee-utils'
 import {toBlock} from '@jdeighan/coffee-utils/block'
-import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
 	splitLine, indentLevel, indented, undented,
 	} from '@jdeighan/coffee-utils/indent'
-import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {Mapper} from '@jdeighan/mapper'
 import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
 import {RunTimeStack} from '@jdeighan/mapper/stack'
 
+threeSpaces = "   "
+
 # ===========================================================================
-#   class TreeWalker
+#   class TreeMapper
 #      - mapNonSpecial() returns mapped item (i.e. uobj) or undef
 #   to use, override:
 #      mapNode(hNode) - returns user object, def: returns hNode.str
@@ -28,11 +31,11 @@ import {RunTimeStack} from '@jdeighan/mapper/stack'
 #      endVisit(hNode, hUser, hParent, stack)
 #      endLevel(hUser, level) -
 
-export class TreeWalker extends Mapper
+export class TreeMapper extends Mapper
 
-	constructor: (source=undef, collection=undef, hOptions={}) ->
+	constructor: (source=undef, content=undef, hOptions={}) ->
 
-		super source, collection, hOptions
+		super source, content, hOptions
 
 		@hSpecialVisitTypes = {}
 
@@ -56,13 +59,13 @@ export class TreeWalker extends Mapper
 
 	mapNode: (hNode) ->
 
-		debug "enter TreeWalker.mapNode()", hNode
+		debug "enter TreeMapper.mapNode()", hNode
 		if @adjustLevel(hNode)
 			debug "hNode.level adjusted", hNode
 		else
 			debug "no adjustment"
 		uobj = super(hNode)
-		debug "return from TreeWalker.mapNode()", uobj
+		debug "return from TreeMapper.mapNode()", uobj
 		return uobj
 
 	# ..........................................................
@@ -75,7 +78,7 @@ export class TreeWalker extends Mapper
 
 	mapNonSpecial: (hNode) ->
 
-		debug "enter TreeWalker.mapNonSpecial()", hNode
+		debug "enter TreeMapper.mapNonSpecial()", hNode
 		assert notdefined(hNode.type), "hNode is #{OL(hNode)}"
 
 		{str, level, srcLevel} = hNode
@@ -98,7 +101,7 @@ export class TreeWalker extends Mapper
 		# --- NOTE: mapNode() may return undef, meaning to ignore
 		#     We must pass srcLevel since mapNode() may use fetch()
 		uobj = @mapNode(hNode)
-		debug "return from TreeWalker.mapNonSpecial()", uobj
+		debug "return from TreeMapper.mapNonSpecial()", uobj
 		return uobj
 
 	# ..........................................................
@@ -143,7 +146,7 @@ export class TreeWalker extends Mapper
 	fetchHereDocBlock: (srcLevel) ->
 		# --- srcLevel is the level of the line with <<<
 
-		debug "enter TreeWalker.fetchHereDocBlock(#{OL(srcLevel)})"
+		debug "enter TreeMapper.fetchHereDocBlock(#{OL(srcLevel)})"
 		func = (hNode) =>
 			if isEmpty(hNode.str)
 				return true
@@ -153,7 +156,7 @@ export class TreeWalker extends Mapper
 					+ " node at #{hNode.srcLevel}"
 				return false
 		block = @fetchBlockUntil(func, 'discardEndLine')
-		debug "return from TreeWalker.fetchHereDocBlock()", block
+		debug "return from TreeMapper.fetchHereDocBlock()", block
 		return block
 
 	# ..........................................................
@@ -173,7 +176,7 @@ export class TreeWalker extends Mapper
 
 	mapCmd: (hNode) ->
 
-		debug "enter TreeWalker.mapCmd()", hNode
+		debug "enter TreeMapper.mapCmd()", hNode
 
 		{type, uobj, prefix, srcLevel} = hNode
 		assert (type == 'cmd'), 'not a command'
@@ -195,12 +198,12 @@ export class TreeWalker extends Mapper
 				else
 					lSkipLines = @skipLinesAtLevel(srcLevel)
 					debug "Skip #{lSkipLines.length} lines"
-				debug "return undef from TreeWalker.mapCmd()"
+				debug "return undef from TreeMapper.mapCmd()"
 				return undef
 
 		debug "call super"
 		uobj = super(hNode)
-		debug "return from TreeWalker.mapCmd()", uobj
+		debug "return from TreeMapper.mapCmd()", uobj
 		return uobj
 
 	# ..........................................................
@@ -209,11 +212,11 @@ export class TreeWalker extends Mapper
 		# --- srcLevel is the level of #ifdef or #ifndef
 		#     don't discard the end line
 
-		debug "enter TreeWalker.skipLinesAtLevel(#{OL(srcLevel)})"
+		debug "enter TreeMapper.skipLinesAtLevel(#{OL(srcLevel)})"
 		func = (hNode) =>
 			return (hNode.srcLevel <= srcLevel)
 		block = @fetchBlockUntil(func, 'keepEndLine')
-		debug "return from TreeWalker.skipLinesAtLevel()", block
+		debug "return from TreeMapper.skipLinesAtLevel()", block
 		return block
 
 	# ..........................................................
@@ -222,11 +225,11 @@ export class TreeWalker extends Mapper
 		# --- srcLevel is the level of enclosing cmd/tag
 		#     don't discard the end line
 
-		debug "enter TreeWalker.fetchBlockAtLevel(#{OL(srcLevel)})"
+		debug "enter TreeMapper.fetchBlockAtLevel(#{OL(srcLevel)})"
 		func = (hNode) =>
 			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
 		block = @fetchBlockUntil(func, 'keepEndLine')
-		debug "return from TreeWalker.fetchBlockAtLevel()", block
+		debug "return from TreeMapper.fetchBlockAtLevel()", block
 		return block
 
 	# ..........................................................
@@ -310,22 +313,51 @@ export class TreeWalker extends Mapper
 
 	# ..........................................................
 
+	getLog: () ->
+
+		return toBlock(@lLog)
+
+	# ..........................................................
+
 	walk: (hOptions={}) ->
-		# --- Valid options: logNodes, traceNodes
+		# --- Valid options: logNodes, includeUserHash
 		#     returns an array, normally strings
 
-		debug "enter TreeWalker.walk()", hOptions
-		{logNodes, traceNodes} = hOptions   # unpack options
+		debug "enter TreeMapper.walk()", hOptions
+
+		@logNodes = !! hOptions.logNodes
+		if @logNodes
+			@lLog = []
+			@includeUserHash = !! hOptions.includeUserHash
 
 		# --- Initialize local state
 
 		lLines = []   # --- resulting output lines (but may be objects)
-		lTrace = []   # --- trace of nodes visited
 		stack = new RunTimeStack()   # --- a stack of Node objects
-		hGlobalUser = {}
+		hGlobalUser = {}  # --- hParent for level 0 nodes
 
 		# .......................................................
 		#     Local Functions
+		# .......................................................
+
+		log = (level, text, hUser) =>
+
+			if ! @logNodes
+				return
+
+			debug "enter log(#{level}, #{OL(text)}, hUser)"
+			oldLogger = setLogger (str) => @lLog.push(str)
+			LOG toBlock(indented([text], level, threeSpaces))
+			if @includeUserHash && defined(hUser)
+				if isEmpty(hUser)
+					LOG "hUser = {}"
+				else
+					LOGVALUE 'hUser', hUser
+					LOG ""
+			setLogger oldLogger
+			debug "return from log()"
+			return
+
 		# .......................................................
 
 		add = (text) =>
@@ -335,7 +367,9 @@ export class TreeWalker extends Mapper
 			assert defined(text), "text is undef"
 			if isArray(text)
 				debug "text is an array"
-				lLines.push text...
+				for item in text
+					if defined(item)
+						lLines.push item
 			else
 				debug "add text #{OL(text)}"
 				lLines.push text
@@ -344,18 +378,10 @@ export class TreeWalker extends Mapper
 
 		# .......................................................
 
-		trace = (text, level=0) =>
-
-			lTrace.push "#{'   '.repeat(level)}#{text}"
-			return
-
-		# .......................................................
-
 		doBeginWalk = (hUser) =>
 
 			debug "enter doBeginWalk()"
-			if traceNodes
-				trace "BEGIN WALK #{hstr(hGlobalUser)}"
+			log 0, "BEGIN WALK", hGlobalUser
 			text = @beginWalk hUser
 			if defined(text)
 				add text
@@ -367,8 +393,7 @@ export class TreeWalker extends Mapper
 		doEndWalk = (hUser) =>
 
 			debug "enter doEndWalk()"
-			if traceNodes
-				trace "END WALK #{hstr(hGlobalUser)}"
+			log 0, "END WALK", hGlobalUser
 			text = @endWalk hUser
 			if defined(text)
 				add text
@@ -380,8 +405,7 @@ export class TreeWalker extends Mapper
 		doBeginLevel = (hUser, level) =>
 
 			debug "enter doBeginLevel()"
-			if traceNodes
-				trace "BEGIN LEVEL #{level} #{hstr(hUser)}", level
+			log level, "BEGIN LEVEL #{level}", hUser
 			text = @beginLevel hUser, level
 			if defined(text)
 				add text
@@ -393,8 +417,7 @@ export class TreeWalker extends Mapper
 		doEndLevel = (hUser, level) =>
 
 			debug "enter doEndLevel()"
-			if traceNodes
-				trace "END LEVEL #{level} #{hstr(hUser)}", level
+			log level, "END LEVEL #{level}", hUser
 			text = @endLevel hUser, level
 			if defined(text)
 				add text
@@ -407,8 +430,7 @@ export class TreeWalker extends Mapper
 
 			# --- visit the node
 			{type, hUser, level, str, uobj} = hNode
-			if traceNodes
-				trace "VISIT #{level} #{OL(uobj)} #{hstr(hUser)}", level
+			log level, "VISIT #{level} #{OL(str)}", hUser
 
 			if defined(type)
 				debug "type = #{type}"
@@ -426,8 +448,7 @@ export class TreeWalker extends Mapper
 
 			# --- end visit the node
 			{type, hUser, level, str, uobj} = hNode
-			if traceNodes
-				trace "END VISIT #{level} #{OL(uobj)} #{hstr(hUser)}", level
+			log level, "END VISIT #{level} #{OL(str)}", hUser
 
 			if defined(type)
 				debug "type = #{type}"
@@ -451,10 +472,7 @@ export class TreeWalker extends Mapper
 
 			# --- Log input lines for debugging
 
-			if logNodes
-				LOG "hNode[#{i}]", hNode
-			else
-				debug "hNode[#{i}]", hNode
+			debug "hNode[#{i}]", hNode
 
 			{level, str} = hNode     # unpack node
 
@@ -514,13 +532,8 @@ export class TreeWalker extends Mapper
 
 		doEndWalk hGlobalUser
 
-		if traceNodes
-			trace = toBlock(lTrace)
-			debug "return from TreeWalker.walk()", lLines, trace
-			return [lLines, trace]
-		else
-			debug "return from TreeWalker.walk()", lLines
-			return lLines
+		debug "return from TreeMapper.walk()", lLines
+		return lLines
 
 	# ..........................................................
 	# These are designed to override
@@ -575,14 +588,14 @@ export class TreeWalker extends Mapper
 
 	visitEmptyLine: (hNode, hUser, hParent, stack) ->
 
-		debug "in TreeWalker.visitEmptyLine()"
+		debug "in TreeMapper.visitEmptyLine()"
 		return ''
 
 	# ..........................................................
 
 	endVisitEmptyLine: (hNode, hUser, hParent) ->
 
-		debug "in TreeWalker.endVisitEmptyLine()"
+		debug "in TreeMapper.endVisitEmptyLine()"
 		return undef
 
 	# ..........................................................
@@ -600,14 +613,14 @@ export class TreeWalker extends Mapper
 
 	endVisitComment: (hNode, hUser, hParent) ->
 
-		debug "in TreeWalker.endVisitComment()"
+		debug "in TreeMapper.endVisitComment()"
 		return undef
 
 	# ..........................................................
 
 	visitCmd: (hNode, hUser, hParent) ->
 
-		debug "in TreeWalker.visitCmd() - ERROR"
+		debug "in TreeMapper.visitCmd() - ERROR"
 		{cmd, argstr, level} = hNode.uobj
 
 		# --- NOTE: built in commands, e.g. #ifdef
@@ -618,21 +631,21 @@ export class TreeWalker extends Mapper
 
 	endVisitCmd: (hNode, hUser, hParent) ->
 
-		debug "in TreeWalker.endVisitCmd()"
+		debug "in TreeMapper.endVisitCmd()"
 		return undef
 
 	# ..........................................................
 
 	visitSpecial: (type, hNode, hUser, stack) ->
 
-		debug "enter TreeWalker.visitSpecial()",
+		debug "enter TreeMapper.visitSpecial()",
 				type, hNode, hUser
 		visiter = @hSpecialVisitTypes[type].visiter
 		assert defined(visiter), "No such type: #{OL(type)}"
 		func = visiter.bind(this)
 		assert isFunction(func), "not a function"
 		result = func(hNode, hUser, hUser._parent, stack)
-		debug "return from TreeWalker.visitSpecial()", result
+		debug "return from TreeMapper.visitSpecial()", result
 		return result
 
 	# ..........................................................
@@ -646,7 +659,7 @@ export class TreeWalker extends Mapper
 	# ..........................................................
 
 	getBlock: (hOptions={}) ->
-		# --- Valid options: logNodes, traceNodes
+		# --- Valid options: logNodes
 
 		debug "enter getBlock()"
 		lLines = @walk(hOptions)
@@ -663,24 +676,26 @@ export class TreeWalker extends Mapper
 # UTILITIES
 # ---------------------------------------------------------------------------
 
+export trace = (source, content=undef) ->
+
+	debug "enter trace()", source, content
+	mapper = new TreeMapper(source, content)
+	mapper.walk({logNodes: true})
+	result = mapper.getLog()
+	debug "return from trace()", result
+	return result
+
+# ---------------------------------------------------------------------------
+
 hstr = (h) ->
 	# --- Don't include the _parent pointer
 	#     if an object has a toDebugStr() method, use that
 
-	nNew = {}
+	hNew = {}
 	for own key,value of h
 		if (key != '_parent')
 			hNew[key] = value
-	if isEmpty(nNew)
+	if isEmpty(hNew)
 		return ''
 	else
-		return OL(nNew)
-
-# ---------------------------------------------------------------------------
-
-export class TraceWalker extends TreeWalker
-
-	getBlock: (hOptions={}) ->
-
-		[result, trace] = super {traceNodes: true}
-		return trace
+		return OL(hNew)

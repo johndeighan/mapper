@@ -1,6 +1,6 @@
 # Getter.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
 	escapeStr, isString, isHash, isArray,
@@ -8,8 +8,6 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
-import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {debug} from '@jdeighan/coffee-utils/debug'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Fetcher} from '@jdeighan/mapper/fetcher'
@@ -156,7 +154,7 @@ export class Getter extends Fetcher
 	# ..........................................................
 
 	mapNonSpecial: (hNode) ->
-		# --- TreeWalker overrides this
+		# --- TreeMapper overrides this
 
 		return @mapNode(hNode)
 
@@ -266,7 +264,7 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 	# --- Rarely used - requires that uobj's are strings
-	#     TreeWalker overrides this, and is more commonly used
+	#     TreeMapper overrides this, and is more commonly used
 
 	getBlock: (hOptions={}) ->
 		# --- Valid options: logNodes

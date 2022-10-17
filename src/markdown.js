@@ -7,10 +7,12 @@ import {
 } from 'marked';
 
 import {
+  LOG,
+  LOGVALUE,
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  debug
+} from '@jdeighan/exceptions';
 
 import {
   undef,
@@ -20,10 +22,6 @@ import {
   nonEmpty,
   isString
 } from '@jdeighan/coffee-utils';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   blockToArray
@@ -42,7 +40,7 @@ import {
 } from '@jdeighan/mapper/utils';
 
 import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
@@ -77,7 +75,7 @@ export var markdownify = function(block) {
 // ---------------------------------------------------------------------------
 // --- Does not use marked!!!
 //     just simulates markdown processing
-export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeWalker {
+export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeMapper {
   beginLevel(level) {
     if (level === 0) {
       this.prevStr = undef;

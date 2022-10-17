@@ -1,9 +1,10 @@
 # coffee.test.coffee
 
-import {UnitTester, simple} from '@jdeighan/unit-tester'
+import {
+	LOG, LOGVALUE, debug, assert, croak, setDebugging,
+	} from '@jdeighan/exceptions'
+import {UnitTester, tester} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
-import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'
@@ -24,11 +25,11 @@ import {
 		transformValue: (code) ->
 			return map(import.meta.url, code, CoffeePreProcessor)
 
-	tester = new PreProcessTester()
+	preprocTester = new PreProcessTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 31, """
+	preprocTester.equal 31, """
 			# --- a comment
 
 			y = x
@@ -37,13 +38,13 @@ import {
 			y = x
 			"""
 
-	tester.equal 40, """
+	preprocTester.equal 40, """
 			LOG "x is $x"
 			""", """
 			LOG "x is \#{OL(x)}"
 			"""
 
-	tester.equal 46, """
+	preprocTester.equal 46, """
 			x = 3
 			debug "word is $word, not $this"
 			""", """
@@ -61,11 +62,11 @@ import {
 		transformValue: (code) ->
 			return coffeeCodeToJS(code)
 
-	tester = new CoffeeTester()
+	preprocTester = new CoffeeTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 68, """
+	preprocTester.equal 68, """
 			# --- a comment
 
 			y = x
@@ -75,7 +76,7 @@ import {
 			y = x;
 			"""
 
-	tester.equal 78, """
+	preprocTester.equal 78, """
 			# --- a comment
 
 			x = 3

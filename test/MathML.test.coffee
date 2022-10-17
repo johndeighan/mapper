@@ -1,14 +1,12 @@
 # MathML.test.coffee
 
+import {LOG, assert, croak, setDebugging} from '@jdeighan/exceptions'
 import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
 import {
 	undef, pass, isEmpty, isArray, isString,
 	} from '@jdeighan/coffee-utils'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
-import {mapMath} from '@jdeighan/mapper/math'
 
-simple = new UnitTesterNorm()
+import {mapMath} from '@jdeighan/mapper/math'
 
 # ---------------------------------------------------------------------------
 
@@ -18,11 +16,11 @@ class MathTester extends UnitTester
 		assert isString(str), "MathTester: not a string"
 		return mapMath(str)
 
-tester = new MathTester()
+mathTester = new MathTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 25, 'expr X + 2', {
+mathTester.equal 25, 'expr X + 2', {
 	cmd: 'expr'
 	lAtoms: [
 		{
@@ -40,19 +38,19 @@ tester.equal 25, 'expr X + 2', {
 		]
 	}
 
-tester.equal 43, 'sub', {
+mathTester.equal 43, 'sub', {
 		cmd: 'sub'
 		}
 
-tester.equal 47, 'sup', {
+mathTester.equal 47, 'sup', {
 		cmd: 'sup'
 		}
 
-tester.equal 51, 'frac', {
+mathTester.equal 51, 'frac', {
 		cmd: 'frac'
 		}
 
-tester.equal 55, 'SIGMA', {
+mathTester.equal 55, 'SIGMA', {
 		cmd: 'SIGMA'
 		lAtoms: [
 			{
@@ -62,7 +60,7 @@ tester.equal 55, 'SIGMA', {
 			]
 		}
 
-tester.equal 59, 'group', {
+mathTester.equal 59, 'group', {
 		cmd: 'group'
 		lAtoms: [
 			{type: 'op', value: '('}
@@ -70,7 +68,7 @@ tester.equal 59, 'group', {
 			]
 		}
 
-tester.equal 67, 'group {', {
+mathTester.equal 67, 'group {', {
 		cmd: 'group'
 		lAtoms: [
 			{type: 'op', value: '{'}
@@ -78,7 +76,7 @@ tester.equal 67, 'group {', {
 			]
 		}
 
-tester.equal 75, 'group { ]', {
+mathTester.equal 75, 'group { ]', {
 		cmd: 'group'
 		lAtoms: [
 			{type: 'op', value: '{'}

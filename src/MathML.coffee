@@ -1,16 +1,14 @@
 # MathML.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, assert, croak, debug} from '@jdeighan/exceptions'
 import {
 	undef, pass, isEmpty, isArray, isNumber, isString, escapeStr, OL,
 	} from '@jdeighan/coffee-utils'
 import {
 	isSimpleFileName, fileExt, isFile, isDir, slurp, pathTo,
 	} from '@jdeighan/coffee-utils/fs'
-import {LOG} from '@jdeighan/coffee-utils/log'
-import {debug} from '@jdeighan/coffee-utils/debug'
 
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # --- commands, with allowed # of args, allowed # of children
 hCommands = {
@@ -162,7 +160,7 @@ matching = (bracket) ->
 
 # ===========================================================================
 
-export class MathTreeWalker extends TreeWalker
+export class MathTreeWalker extends TreeMapper
 	# --- The @dir parameter is required if you use svg
 
 	constructor: (tree, @dir=undef) ->

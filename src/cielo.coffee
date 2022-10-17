@@ -1,15 +1,13 @@
 # cielo.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, defined, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,
 	} from '@jdeighan/coffee-utils'
-import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
 import {
 	indentLevel, indented, isUndented, splitLine,
 	} from '@jdeighan/coffee-utils/indent'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {
 	joinBlocks, arrayToBlock, blockToArray,
 	} from '@jdeighan/coffee-utils/block'
@@ -17,7 +15,7 @@ import {
 	withExt, slurp, barf, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 import {coffeeCodeToJS} from '@jdeighan/mapper/coffee'
 import {
 	getNeededSymbols, buildImportList,
@@ -26,7 +24,7 @@ import {map, Mapper} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
-export class CieloToCoffeeMapper extends TreeWalker
+export class CieloToCoffeeMapper extends TreeMapper
 
 	mapComment: (hNode) ->
 

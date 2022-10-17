@@ -4,7 +4,7 @@ var node, stack;
 
 import {
   UnitTester,
-  simple
+  tester
 } from '@jdeighan/unit-tester';
 
 import {
@@ -18,7 +18,7 @@ import {
 // ---------------------------------------------------------------------------
 stack = new RunTimeStack();
 
-simple.equal(9, stack.len, 0);
+tester.equal(9, stack.len, 0);
 
 stack.push(new Node('abc', 0, 'file', 1, {
   hUser: {
@@ -26,9 +26,9 @@ stack.push(new Node('abc', 0, 'file', 1, {
   }
 }));
 
-simple.equal(13, stack.len, 1);
+tester.equal(13, stack.len, 1);
 
-simple.like(14, stack.TOS(), {
+tester.like(14, stack.TOS(), {
   str: 'abc'
 });
 
@@ -38,16 +38,16 @@ stack.push(new Node('def', 0, 'file', 2, {
   }
 }));
 
-simple.equal(17, stack.len, 2);
+tester.equal(17, stack.len, 2);
 
-simple.like(18, stack.TOS(), {
+tester.like(18, stack.TOS(), {
   str: 'def'
 });
 
 node = stack.pop();
 
-simple.equal(21, stack.len, 1);
+tester.equal(21, stack.len, 1);
 
-simple.like(22, stack.TOS(), {
+tester.like(22, stack.TOS(), {
   str: 'abc'
 });

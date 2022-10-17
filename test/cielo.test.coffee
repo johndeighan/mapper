@@ -1,17 +1,15 @@
 # cielo.test.coffee
 
-import {assert} from '@jdeighan/unit-tester/utils'
-import {UnitTesterNorm, UnitTester, simple} from '@jdeighan/unit-tester'
+import {assert, LOG, debug, setDebugging} from '@jdeighan/exceptions'
+import {UnitTesterNorm, UnitTester, tester} from '@jdeighan/unit-tester'
 
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {log, LOG} from '@jdeighan/coffee-utils/log'
-import {debug, setDebugging} from '@jdeighan/coffee-utils/debug'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
-import {TreeWalker} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 # --- Features:
@@ -29,14 +27,14 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 		transformValue: (code) ->
 
-			return map(import.meta.url, code, TreeWalker)
+			return map(import.meta.url, code, TreeMapper)
 
-	tester = new CieloTester(import.meta.url)
+	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 	# --- test removing comments
 
-	tester.equal 41, """
+	cieloTester.equal 41, """
 			# --- a comment
 			y = x
 			""", """
@@ -46,7 +44,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	tester.equal 52, """
+	cieloTester.equal 52, """
 			y = x
 
 			""", """
@@ -59,7 +57,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# for i in range(5)
 	#    y *= i
 
-	tester.equal 65, """
+	cieloTester.equal 65, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -72,7 +70,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	tester.equal 78, """
+	cieloTester.equal 78, """
 			x = 23
 			y = x
 					+ 5
@@ -84,7 +82,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	tester.equal 90, """
+	cieloTester.equal 90, """
 			x = 23
 			y = x \
 			+ 5
@@ -97,7 +95,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	tester.equal 103, """
+	cieloTester.equal 103, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -107,7 +105,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			+ 5
 			"""
 
-	tester.equal 113, """
+	cieloTester.equal 113, """
 			str = <<<
 				abc
 				def
@@ -118,7 +116,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			x = 42
 			"""
 
-	tester.equal 124, """
+	cieloTester.equal 124, """
 			str = <<<
 				===
 				abc
@@ -130,7 +128,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			x = 42
 			"""
 
-	tester.equal 136, """
+	cieloTester.equal 136, """
 			str = <<<
 				...this is a
 					long line
@@ -138,7 +136,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			str = "this is a long line"
 			"""
 
-	tester.equal 144, """
+	cieloTester.equal 144, """
 			lItems = <<<
 				---
 				- a
@@ -147,7 +145,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			lItems = ["a","b"]
 			"""
 
-	tester.equal 153, """
+	cieloTester.equal 153, """
 			hItems = <<<
 				---
 				a: 13
@@ -156,7 +154,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			hItems = {"a":13,"b":42}
 			"""
 
-	tester.equal 162, """
+	cieloTester.equal 162, """
 			lItems = <<<
 				---
 				-
@@ -169,7 +167,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	tester.equal 175, """
+	cieloTester.equal 175, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -185,7 +183,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	tester.equal 191, """
+	cieloTester.equal 191, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -198,7 +196,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 204, """
+	cieloTester.equal 204, """
 			str = \"\"\"
 				this is a
 				long string
@@ -212,7 +210,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 218, '''
+	cieloTester.equal 218, '''
 			str = """
 				this is a
 				long string
@@ -226,7 +224,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	tester.equal 232, """
+	cieloTester.equal 232, """
 			str = '''
 				this is a
 				long string
@@ -241,7 +239,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	tester.equal 260, """
+	cieloTester.equal 260, """
 			handler = <<<
 				() ->
 					return 42
@@ -250,7 +248,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 				return 42
 			"""
 
-	tester.equal 269, """
+	cieloTester.equal 269, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -272,7 +270,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	jsCode = map(import.meta.url, cieloCode, CieloToJSMapper)
 
-	simple.equal 291, jsCode, """
+	tester.equal 291, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
@@ -292,11 +290,11 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 			return map(import.meta.url, code, CieloToJSMapper)
 
-	tester = new CieloTester('cielo.test')
+	cieloTester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	tester.equal 314, """
+	cieloTester.equal 314, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -308,7 +306,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 	# --- But not if we're already importing them
 
-	tester.equal 326, """
+	cieloTester.equal 326, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -322,7 +320,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	tester.equal 340, """
+	cieloTester.equal 340, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -330,7 +328,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 			x = undef;
 			"""
 
-	tester.equal 348, """
+	cieloTester.equal 348, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -345,7 +343,7 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 				});
 			"""
 
-	tester.equal 363, """
+	cieloTester.equal 363, """
 			x = 23
 			logger x
 			""", """
@@ -358,11 +356,11 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 	)()
 
 # ---------------------------------------------------------------------------
-# --- test subclassing TreeWalker
+# --- test subclassing TreeMapper
 #     retain '# ||||' style comments
 
 (() ->
-	class MyMapper extends TreeWalker
+	class MyMapper extends TreeMapper
 
 		mapComment: (hNode) ->
 
@@ -379,11 +377,11 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 			return map(import.meta.url, code, MyMapper)
 
-	tester = new CieloTester(import.meta.url)
+	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 399, """
+	cieloTester.equal 399, """
 			# --- a comment
 			# |||| stuff
 			y = x
@@ -415,11 +413,11 @@ import {TreeWalker} from '@jdeighan/mapper/tree'
 
 			return map(import.meta.url, code, MyMapper)
 
-	tester = new CieloTester(import.meta.url)
+	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 424, """
+	cieloTester.equal 424, """
 			# --- a comment
 			# |||| stuff
 			y = x

@@ -3,10 +3,12 @@
 var SymbolParser, getAvailSymbolsFrom;
 
 import {
+  LOG,
+  LOGVALUE,
   assert,
-  error,
-  croak
-} from '@jdeighan/unit-tester/utils';
+  croak,
+  debug
+} from '@jdeighan/exceptions';
 
 import {
   undef,
@@ -22,21 +24,12 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  log,
-  LOG
-} from '@jdeighan/coffee-utils/log';
-
-import {
   barf,
   slurp,
   pathTo,
   mkpath,
   parseSource
 } from '@jdeighan/coffee-utils/fs';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   splitLine,
@@ -48,7 +41,7 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 import {
@@ -167,7 +160,7 @@ getAvailSymbolsFrom = function(filepath) {
 };
 
 // ---------------------------------------------------------------------------
-SymbolParser = class SymbolParser extends TreeWalker {
+SymbolParser = class SymbolParser extends TreeMapper {
   // --- Parse a .symbols file
   init() {
     this.curLib = undef;

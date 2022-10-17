@@ -2,7 +2,7 @@
 
 import fs from 'fs'
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
 	escapeStr, isString, isHash, isArray,
@@ -12,8 +12,6 @@ import {
 	splitPrefix, indentLevel, undented,
 	} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
-import {LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {
 	parseSource, slurp, isSimpleFileName, isDir, pathTo,
 	} from '@jdeighan/coffee-utils/fs'

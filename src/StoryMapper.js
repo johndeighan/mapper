@@ -10,24 +10,33 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
-export var StoryMapper = class StoryMapper extends TreeWalker {
+//    Convert lines like:
+//       key: <string>
+//    to
+//       key: '<string>'
+//    while doubling internal single-quote characters
+//    unless <string> is a number
+// ---------------------------------------------------------------------------
+export var StoryMapper = class StoryMapper extends TreeMapper {
   mapNode(hNode) {
-    var _, ident, lMatches, str;
+    var _, key, lMatches, value;
     if (lMatches = hNode.str.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
       // colon
       // optional whitespace
       // a non-empty string
-      [_, ident, str] = lMatches;
-      if (str.match(/\d+(?:\.\d*)?$/)) {
-        return str;
+      [_, key, value] = lMatches;
+      if (value.match(/\d+(?:\.\d*)?$/)) {
+        // --- don't mess with numbers
+        return `${key}: ${value}`;
       } else {
-        // --- surround with single quotes, double internal single quotes
-        str = "'" + str.replace(/\'/g, "''") + "'";
-        return `${ident}: ${str}`;
+        // --- surround with single quotes,
+        //     double internal single quotes
+        value = "'" + value.replace(/\'/g, "''") + "'";
+        return `${key}: ${value}`;
       }
     } else {
       return hNode.str;

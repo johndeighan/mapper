@@ -2,18 +2,16 @@
 
 import CoffeeScript from 'coffeescript'
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {LOG, LOGVALUE, debug, assert, croak} from '@jdeighan/exceptions'
 import {
-	CWS, undef, defined, OL,
+	CWS, undef, defined, OL, sep_dash,
 	} from '@jdeighan/coffee-utils'
-import {log, LOG, DEBUG} from '@jdeighan/coffee-utils/log'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {
 	indentLevel, isUndented, indented,
 	} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper, map} from '@jdeighan/mapper'
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
@@ -136,9 +134,9 @@ export coffeeCodeToAST = (coffeeCode, source=undef) ->
 		assert defined(ast), "ast is empty"
 	catch err
 		LOG "ERROR in CoffeeScript: #{err.message}"
-		LOG '-'.repeat(40)
+		LOG sep_dash
 		LOG "#{OL(coffeeCode)}"
-		LOG '-'.repeat(40)
+		LOG sep_dash
 		croak "ERROR in CoffeeScript: #{err.message}"
 
 	debug "return from coffeeCodeToAST()", ast
@@ -176,7 +174,7 @@ expand = (qstr) ->
 
 # ---------------------------------------------------------------------------
 
-export class CoffeePreProcessor extends TreeWalker
+export class CoffeePreProcessor extends TreeMapper
 
 	mapComment: (hNode) ->
 

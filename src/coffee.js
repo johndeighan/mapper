@@ -5,27 +5,20 @@ var expand;
 import CoffeeScript from 'coffeescript';
 
 import {
+  LOG,
+  LOGVALUE,
+  debug,
   assert,
-  error,
   croak
-} from '@jdeighan/unit-tester/utils';
+} from '@jdeighan/exceptions';
 
 import {
   CWS,
   undef,
   defined,
-  OL
+  OL,
+  sep_dash
 } from '@jdeighan/coffee-utils';
-
-import {
-  log,
-  LOG,
-  DEBUG
-} from '@jdeighan/coffee-utils/log';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   indentLevel,
@@ -39,7 +32,7 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TreeWalker
+  TreeMapper
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
@@ -82,8 +75,8 @@ export var coffeeExprToJS = function(coffeeExpr) {
     if (jsExpr.substr(pos, 1) === ';') {
       jsExpr = jsExpr.substr(0, pos);
     }
-  } catch (error1) {
-    err = error1;
+  } catch (error) {
+    err = error;
     croak(err, "coffeeExprToJS", coffeeExpr);
   }
   debug("return from coffeeExprToJS()", jsExpr);
@@ -110,8 +103,8 @@ export var coffeeCodeToJS = function(coffeeCode, source = undef, hOptions = {}) 
     //        1. remove blank lines
     //        2. remove trailing newline
     jsCode = cleanJS(jsCode);
-  } catch (error1) {
-    err = error1;
+  } catch (error) {
+    err = error;
     croak(err, "Original Code", coffeeCode);
   }
   debug("return from coffeeCodeToJS()", jsCode);
@@ -156,12 +149,12 @@ export var coffeeCodeToAST = function(coffeeCode, source = undef) {
   try {
     ast = getAST(coffeeCode, source);
     assert(defined(ast), "ast is empty");
-  } catch (error1) {
-    err = error1;
+  } catch (error) {
+    err = error;
     LOG(`ERROR in CoffeeScript: ${err.message}`);
-    LOG('-'.repeat(40));
+    LOG(sep_dash);
     LOG(`${OL(coffeeCode)}`);
-    LOG('-'.repeat(40));
+    LOG(sep_dash);
     croak(`ERROR in CoffeeScript: ${err.message}`);
   }
   debug("return from coffeeCodeToAST()", ast);
@@ -194,7 +187,7 @@ expand = function(qstr) {
 };
 
 // ---------------------------------------------------------------------------
-export var CoffeePreProcessor = class CoffeePreProcessor extends TreeWalker {
+export var CoffeePreProcessor = class CoffeePreProcessor extends TreeMapper {
   mapComment(hNode) {
     var level, str;
     // --- Retain comments

@@ -1,6 +1,8 @@
 # heredoc.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {
+	LOG, debug, assert, croak, isTAML, fromTAML,
+	} from '@jdeighan/exceptions'
 import {
 	undef, defined, notdefined, pass,
 	isString, isHash, isEmpty, nonEmpty,
@@ -10,10 +12,6 @@ import {
 	firstLine, remainingLines, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 import {indented} from '@jdeighan/coffee-utils/indent'
-import {debug} from '@jdeighan/coffee-utils/debug'
-import {LOG} from '@jdeighan/coffee-utils/log'
-
-import {isTAML, taml} from '@jdeighan/mapper/taml'
 
 lHereDocs = []   # checked in this order - list of type names
 hHereDocs = {}   # {type: obj}
@@ -123,9 +121,11 @@ export class OneLineHereDoc extends BaseHereDoc
 export class TAMLHereDoc extends BaseHereDoc
 
 	map: (block) ->
+
 		if ! isTAML(block)
 			return undef
-		return JSON.stringify(taml(block))
+		result = fromTAML(block)
+		return JSON.stringify(result)
 
 # ---------------------------------------------------------------------------
 

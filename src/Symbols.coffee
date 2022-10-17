@@ -1,19 +1,19 @@
 # Symbols.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {
+	LOG, LOGVALUE, assert, croak, debug,
+	} from '@jdeighan/exceptions'
 import {
 	undef, defined, isString, isArray, isEmpty, nonEmpty,
 	uniq, words, escapeStr, OL,
 	} from '@jdeighan/coffee-utils'
-import {log, LOG} from '@jdeighan/coffee-utils/log'
 import {
 	barf, slurp, pathTo, mkpath, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {splitLine, isUndented} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
-import {TreeWalker} from '@jdeighan/mapper/tree'
+import {TreeMapper} from '@jdeighan/mapper/tree'
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
@@ -121,7 +121,7 @@ getAvailSymbolsFrom = (filepath) ->
 
 # ---------------------------------------------------------------------------
 
-class SymbolParser extends TreeWalker
+class SymbolParser extends TreeMapper
 	# --- Parse a .symbols file
 
 	init: () ->

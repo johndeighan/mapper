@@ -3,10 +3,11 @@
 import fs from 'fs';
 
 import {
+  LOG,
+  debug,
   assert,
-  error,
   croak
-} from '@jdeighan/unit-tester/utils';
+} from '@jdeighan/exceptions';
 
 import {
   undef,
@@ -35,15 +36,6 @@ import {
   arrayToBlock,
   blockToArray
 } from '@jdeighan/coffee-utils/block';
-
-import {
-  LOG,
-  DEBUG
-} from '@jdeighan/coffee-utils/log';
-
-import {
-  debug
-} from '@jdeighan/coffee-utils/debug';
 
 import {
   parseSource,

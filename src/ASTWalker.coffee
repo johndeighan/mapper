@@ -1,13 +1,13 @@
 # ASTWalker.coffee
 
-import {assert, error, croak} from '@jdeighan/unit-tester/utils'
+import {assert, croak, LOG, LOGVALUE, debug} from '@jdeighan/exceptions'
 import {
-	undef, pass, isArray, isHash, isArrayOfHashes,
+	undef, pass, nonEmpty, isArray, isHash, isArrayOfHashes,
 	} from '@jdeighan/coffee-utils'
-import {debug} from '@jdeighan/coffee-utils/debug'
 import {indented} from '@jdeighan/coffee-utils/indent'
 
 import {isBuiltin} from '@jdeighan/mapper/builtins'
+import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -139,17 +139,20 @@ export class ASTWalker extends ASTBase
 		super ast.program, {subtree: 'body', node: undef}
 		@ast = ast.program
 		@lImportedSymbols = []
+		@lExportedSymbols = []
+		@lDefinedSymbols = []
 		@lUsedSymbols = []
 
 		# --- subarrays start out as list of formal parameters
 		#     to which are added locally assigned variables
-		@lLocalSymbols = [[]]
+		# --- Initialize with an empty global scope
+		@lScopes = [[]]
 
 	# ..........................................................
 
 	isLocalSymbol: (name) ->
 
-		for subarray in @lLocalSymbols
+		for subarray in @lScopes
 			if subarray.includes(name)
 				return true
 		return false
@@ -158,7 +161,7 @@ export class ASTWalker extends ASTBase
 
 	addImport: (name, lib) ->
 
-		assert name, "addImport: empty name"
+		assert nonEmpty(name), "addImport: empty name"
 		if @lImportedSymbols.includes(name)
 			croak "Duplicate import: #{name}"
 		else
@@ -167,19 +170,39 @@ export class ASTWalker extends ASTBase
 
 	# ..........................................................
 
+	addExport: (name, lib) ->
+
+		assert nonEmpty(name), "addExport: empty name"
+		if @lExportedSymbols.includes(name)
+			croak "Duplicate export: #{name}"
+		else
+			@lExportedSymbols.push(name)
+		return
+
+	# ..........................................................
+
 	addUsedSymbol: (name, value={}) ->
 
-		assert name, "addUsedSymbol(): empty name"
+		assert nonEmpty(name), "addUsedSymbol(): empty name"
 		if ! @isLocalSymbol(name) && ! @lUsedSymbols.includes(name)
 			@lUsedSymbols.push(name)
 		return
 
 	# ..........................................................
 
+	addDefinedSymbol: (name, value={}) ->
+
+		assert nonEmpty(name), "addDefinedSymbol(): empty name"
+		if ! @lDefinedSymbols.includes(name)
+			@lDefinedSymbols.push(name)
+		return
+
+	# ..........................................................
+
 	addLocalSymbol: (name) ->
 
-		assert @lLocalSymbols.length > 0, "no lLocalSymbols"
-		lSymbols = @lLocalSymbols[@lLocalSymbols.length - 1]
+		assert @lScopes.length > 0, "no lScopes"
+		lSymbols = @lScopes[@lScopes.length - 1]
 		lSymbols.push name
 		return
 
@@ -213,17 +236,21 @@ export class ASTWalker extends ASTBase
 							@addImport imported.name, lib
 				return
 
+			when 'ExportNamedDeclaration'
+				name = node.declaration.left.name
+				@addExport name
+
 			when 'CatchClause'
 				param = node.param
 				if param? && param.type=='Identifier'
-					@lLocalSymbols.push param.name
+					@lScopes.push param.name
 
 			when 'FunctionExpression'
 				lNames = []
 				for parm in node.params
 					if parm.type == 'Identifier'
 						lNames.push parm.name
-				@lLocalSymbols.push lNames
+				@lScopes.push lNames
 
 			when 'For'
 				lNames = []
@@ -233,7 +260,7 @@ export class ASTWalker extends ASTBase
 				if node.index? && (node.name.type=='Identifier')
 					lNames.push node.index.name
 
-				@lLocalSymbols.push lNames
+				@lScopes.push lNames
 
 			when 'AssignmentExpression'
 				if node.left.type == 'Identifier'
@@ -296,7 +323,7 @@ export class ASTWalker extends ASTBase
 
 		switch node.type
 			when 'FunctionExpression','For', 'CatchClause'
-				@lLocalSymbols.pop()
+				@lScopes.pop()
 
 		return
 
@@ -304,10 +331,13 @@ export class ASTWalker extends ASTBase
 
 	getSymbols: () ->
 
-		debug "enter CodeWalker.getSymbols()"
+		debug "enter ASTWalker.getSymbols()"
 
-		@lImportedSymbols = []  # filled in during walking
-		@lUsedSymbols = []      # filled in during walking
+		# --- filled in during walking
+		@lImportedSymbols = []
+		@lExportedSymbols = []
+		@lDefinedSymbols = []
+		@lUsedSymbols = []
 
 		debug "walking"
 		@walk()
@@ -315,16 +345,29 @@ export class ASTWalker extends ASTBase
 
 		lNeededSymbols = []
 		for name in @lUsedSymbols
-			if ! @lImportedSymbols.includes(name) && ! isBuiltin(name)
+			if ! @lImportedSymbols.includes(name) \
+					&& ! @lDefinedSymbols.includes(name) \
+					&& ! isBuiltin(name)
 				lNeededSymbols.push(name)
 
 		hResult = {
 			lImported: @lImportedSymbols,
+			lExported: @lExportedSymbols,
+			lDefined:  @lDefinedSymbols,
 			lUsed:     @lUsedSymbols,
 			lNeeded:   lNeededSymbols,
 			}
-		debug "return from CodeWalker.getSymbols()", hResult
+		debug "return from ASTWalker.getSymbols()", hResult
 		return hResult
+
+# ---------------------------------------------------------------------------
+
+export getSymbols = (coffeeCode) =>
+
+	ast = coffeeCodeToAST(coffeeCode)
+	walker = new ASTWalker(ast)
+	hInfo = walker.getSymbols()
+	return hInfo
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -378,4 +421,3 @@ export class TreeStringifier extends ASTBase
 			if (! @excludeKey(key))
 				newnode[key] = node[key]
 		return JSON.stringify(newnode)
-

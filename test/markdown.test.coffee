@@ -1,10 +1,12 @@
 # markdown.test.coffee
 
-import {UnitTester, UnitTesterNorm, simple} from '@jdeighan/unit-tester'
+import {
+	LOG, LOGVALUE, debug, setDebugging, assert, croak,
+	} from '@jdeighan/exceptions'
+import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
-import {LOG} from '@jdeighan/coffee-utils/log'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {mydir} from '@jdeighan/coffee-utils/fs'
+
 import {
 	markdownify, SimpleMarkDownMapper,
 	} from '@jdeighan/mapper/markdown'
@@ -19,11 +21,11 @@ import {
 
 			return markdownify(text)
 
-	tester = new MarkdownTester()
+	mdTester = new MarkdownTester()
 
 	# ..........................................................
 
-	tester.equal 26, """
+	mdTester.equal 26, """
 			title
 			=====
 			text
@@ -32,7 +34,7 @@ import {
 			<p>text</p>
 			"""
 
-	tester.equal 35, """
+	mdTester.equal 35, """
 			title
 			-----
 			text
@@ -43,27 +45,27 @@ import {
 
 	# --- Comments and blank lines are stripped
 
-	tester.equal 46, """
+	mdTester.equal 46, """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	tester.equal 53, """
+	mdTester.equal 53, """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	tester.equal 60, """
+	mdTester.equal 60, """
 		this is **bold** text
 		""", """
 		<p>this is <strong>bold</strong> text</p>
 		"""
 
-	tester.equal 66, """
+	mdTester.equal 66, """
 		```javascript
 				adapter: adapter({
 					pages: 'build',
@@ -94,11 +96,11 @@ import {
 			getter = new SimpleMarkDownMapper(import.meta.url, block)
 			return getter.getBlock()
 
-	tester = new MarkdownTester()
+	mdTester = new MarkdownTester()
 
 	# ..........................................................
 
-	tester.equal 101, """
+	mdTester.equal 101, """
 		A title
 		=======
 
@@ -109,7 +111,7 @@ import {
 		<p>some text</p>
 		"""
 
-	tester.equal 112, """
+	mdTester.equal 112, """
 		A title
 		=======
 
@@ -124,7 +126,7 @@ import {
 		<p>some text</p>
 		"""
 
-	tester.equal 127, """
+	mdTester.equal 127, """
 		=======
 
 		some text
@@ -134,7 +136,7 @@ import {
 		<p>some text</p>
 		"""
 
-	tester.equal 137, """
+	mdTester.equal 137, """
 		A title
 		=======
 		# this is a comment

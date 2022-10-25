@@ -155,8 +155,8 @@ tester.equal 121, hSymbols, {
 (() ->
 	tester.equal 158, buildImportList([]), []
 
-	lNeeded = words('say undef logger slurp barf fs')
-	tester.equal 161, buildImportList(lNeeded, import.meta.url), [
+	lMissing = words('say undef logger slurp barf fs')
+	tester.equal 161, buildImportList(lMissing, import.meta.url), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"

@@ -31,10 +31,10 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	debug 'AST', ast
 
 	walker = new ASTWalker(ast)
-	hSymbolInfo = walker.getSymbols()
+	hSymbolInfo = walker.walk()
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(ast)
-	result = uniq(hSymbolInfo.lNeeded)
+	result = uniq(hSymbolInfo.lMissing)
 	debug "return from getNeededSymbols()", result
 	return result
 

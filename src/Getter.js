@@ -72,16 +72,18 @@ export var Getter = class Getter extends Fetcher {
       debug("GOT", hNode);
       assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
       level = hNode.level;
-      // --- check for extension lines
+      // --- check for extension lines (only if str non-empty)
       str = hNode.str;
-      while (defined(hExt = this.fetch()) && assert(hExt instanceof Node, `hExt = ${OL(hExt)}`) && (hExt.level >= level + 2)) {
-        extStr = hExt.str;
-        str += this.extSep(str, extStr) + extStr;
+      if (nonEmpty(str)) {
+        while (defined(hExt = this.fetch()) && assert(hExt instanceof Node, `hExt = ${OL(hExt)}`) && (hExt.level >= level + 2)) {
+          extStr = hExt.str;
+          str += this.extSep(str, extStr) + extStr;
+        }
+        if (defined(hExt)) {
+          this.unfetch(hExt);
+        }
+        hNode.str = str;
       }
-      if (defined(hExt)) {
-        this.unfetch(hExt);
-      }
-      hNode.str = str;
       if (hNode.notMapped()) {
         hNode.uobj = this.mapAnyNode(hNode);
       }

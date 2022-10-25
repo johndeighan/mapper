@@ -51,16 +51,17 @@ export class Getter extends Fetcher
 			assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
 			level = hNode.level
 
-			# --- check for extension lines
+			# --- check for extension lines (only if str non-empty)
 			str = hNode.str
-			while defined(hExt = @fetch()) \
-					&& assert(hExt instanceof Node, "hExt = #{OL(hExt)}") \
-					&& (hExt.level >= level + 2)
-				extStr = hExt.str
-				str += @extSep(str, extStr) + extStr
-			if defined(hExt)
-				@unfetch hExt
-			hNode.str = str
+			if nonEmpty(str)
+				while defined(hExt = @fetch()) \
+						&& assert(hExt instanceof Node, "hExt = #{OL(hExt)}") \
+						&& (hExt.level >= level + 2)
+					extStr = hExt.str
+					str += @extSep(str, extStr) + extStr
+				if defined(hExt)
+					@unfetch hExt
+				hNode.str = str
 
 			if hNode.notMapped()
 				hNode.uobj = @mapAnyNode(hNode)

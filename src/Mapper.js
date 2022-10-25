@@ -95,11 +95,11 @@ export var Mapper = class Mapper extends Getter {
       type = ref[i];
       recognizer = this.hSpecials[type].recognizer;
       if (recognizer.bind(this)(hNode)) {
-        debug("return from getItemType()", type);
+        debug("return from Mapper.getItemType()", type);
         return type;
       }
     }
-    debug("return from getItemType()", undef);
+    debug("return from Mapper.getItemType()", undef);
     return undef;
   }
 

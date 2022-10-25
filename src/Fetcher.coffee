@@ -91,10 +91,11 @@ export class Fetcher
 
 	# ..........................................................
 	# --- returns hNode with keys:
-	#        str
-	#        level
 	#        source
 	#        lineNum
+	#        str
+	#        srcLevel - level in source code
+	#        level    - includes added levels when #include'ing
 
 	fetch: () ->
 
@@ -108,7 +109,9 @@ export class Fetcher
 			#           because altInput's fetch would handle it
 
 			if defined(hNode)
-				debug "return from Fetcher.fetch() - alt", hNode
+				# --- NOTE: altInput was created knowing how many levels
+				#           to add due to indentation in #include statement
+				debug "return from Fetcher.fetch() - from alt", hNode
 				return hNode
 
 			# --- alternate input is exhausted
@@ -191,6 +194,7 @@ export class Fetcher
 			debug "return from Fetcher.fetch()", hNode
 			return hNode
 
+		debug "oneIndent", @oneIndent
 		hNode = new Node(str, level + @addLevel, @sourceInfoStr(), @lineNum)
 
 		debug "return from Fetcher.fetch()", hNode

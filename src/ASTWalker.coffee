@@ -1,227 +1,348 @@
 # ASTWalker.coffee
 
-import {assert, croak, LOG, LOGVALUE, debug} from '@jdeighan/exceptions'
+import {assert, croak, debug, LOG, LOGVALUE} from '@jdeighan/exceptions'
+import {fromTAML, toTAML} from '@jdeighan/exceptions/taml'
 import {
-	undef, pass, nonEmpty, isArray, isHash, isArrayOfHashes,
+	undef, pass, defined, notdefined, OL, words, deepCopy, getOptions,
+	isString, nonEmpty, isArray, isHash, isArrayOfHashes, removeKeys,
 	} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
+import {toBlock} from '@jdeighan/coffee-utils/block'
 
-import {isBuiltin} from '@jdeighan/mapper/builtins'
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
+import {Context} from '@jdeighan/mapper/context'
+
+hAllHandlers = fromTAML('''
+	---
+	File:
+		lWalkTrees:
+			- program
+	Program:
+		lWalkTrees:
+			- body
+	ArrayExpression:
+		lWalkTrees:
+			- elements
+	AssignmentExpression:
+		lDefined:
+			- left
+		lUsed:
+			- right
+	AssignmentPattern:
+		lDefined:
+			- left
+		lWalkTrees:
+			- right
+	BinaryExpression:
+		lUsed:
+			- left
+			- right
+	BlockStatement:
+		lWalkTrees:
+			- body
+	ClassBody:
+		lWalkTrees:
+			- body
+	ClassDeclaration:
+		lWalkTrees:
+			- body
+	ClassMethod:
+		lWalkTrees:
+			- body
+	ExpressionStatement:
+		lWalkTrees:
+			- expression
+	IfStatement:
+		lWalkTrees:
+			- test
+			- consequent
+			- alternate
+	LogicalExpression:
+		lWalkTrees:
+			- left
+			- right
+	SpreadElement:
+		lWalkTrees:
+			- argument
+	SwitchStatement:
+		lWalkTrees:
+			- cases
+	SwitchCase:
+		lWalkTrees:
+			- test
+			- consequent
+	TemplateLiteral:
+		lWalkTrees:
+			- expressions
+	TryStatement:
+		lWalkTrees:
+			- block
+			- handler
+			- finalizer
+	WhileStatement:
+		lWalkTrees:
+			- test
+			- body
+	''')
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
-class ASTBase
+export class ASTWalker
 
-	constructor: (@tree, hStdKeys={}) ->
-		debug "enter ASTBase()", hStdKeys
+	constructor: (from) ->
 
-		# --- tree can be a hash or array of hashes
-		if isHash(@tree)
+		debug "enter ASTWalker()"
+
+		if isString(from)
+			@ast = coffeeCodeToAST(from)
+		else
+			@ast = from
+
+		# --- @ast can be a hash or array of hashes
+		if isHash(@ast)
 			debug "tree was hash - constructing list from it"
-			@tree = [@tree]
-		assert isArrayOfHashes(@tree), "new ASTBase: Bad tree"
+			@ast = [@ast]
+		assert isArrayOfHashes(@ast), "not array of hashes: #{OL(@ast)}"
 
-		# --- @hStdKeys allows you to provide an alternate name for 'subtree'
-		#     Ditto for 'node', but if the 'node' key exists, but is
-		#        set to undef, the tree is assumed to NOT use user nodes
-		@hStdKeys = {}
-
-		if hStdKeys.subtree?
-			assert hStdKeys.subtree, "empty subtree key"
-			@hStdKeys.subtree = hStdKeys.subtree
-		else
-			@hStdKeys.subtree = 'subtree'
-
-		if hStdKeys.node?            # --- if set to undef, leave it alone
-			@hStdKeys.node = hStdKeys.node
-		else
-			@hStdKeys.node = 'node'
-
-		debug "return from ASTBase()", @hStdKeys
-
-	# ..........................................................
-	# --- Called after walk() completes
-	#     Override to have walk() return some result
-
-	getResult: () ->
-
-		return undef
-
-	# ..........................................................
-
-	walk: () ->
-
-		debug "enter ASTBase.walk()"
-		@walkNodes @tree, 0
-		result = @getResult()
-		debug "return from ASTBase.walk()", result
-		return result
-
-	# ..........................................................
-
-	walkNodes: (lNodes, level) ->
-
-		debug "enter walkNodes()", lNodes
-		for node in lNodes
-			@walkNode node, level
-		debug "return from walkNodes()"
-		return
-
-	# ..........................................................
-
-	walkSubTrees: (lSubTrees, level) ->
-
-		if !lSubTrees? || (lSubTrees.length==0)
-			return
-		for subtree in lSubTrees
-			if subtree?
-				if isArray(subtree)
-					@walkNodes subtree, level
-				else if isHash(subtree)
-					@walkNode subtree, level
-				else
-					croak "Invalid subtree", 'SUBTREE', subtree
-		return
-
-	# ..........................................................
-
-	walkNode: (superNode, level) ->
-
-		debug "enter walkNode()"
-
-		key = @hStdKeys.node
-		subkey = @hStdKeys.subtree
-		debug "KEYS: '#{key}', '#{subkey}'"
-
-		node = superNode
-		if key && superNode[key]?
-			debug "found node under key '#{key}'"
-			node = superNode[key]
-
-		# --- give visit() method chance to provide list of subtrees
-		lSubTrees = @visit node, superNode, level
-
-		if lSubTrees?
-			debug "visit() returned subtrees", lSubTrees
-			@walkSubTrees lSubTrees, level+1
-		else
-			@walkSubTrees superNode[subkey], level+1
-		@endVisit node, superNode, level
-		debug "return from walkNode()"
-		return
-
-	# ..........................................................
-	# --- return lSubTrees, if any
-
-	visit: (node, hInfo, level) ->
-
-		debug "enter visit() - std"
-		# --- automatically visit subtree if it exists
-		debug "return from visit() - std"
-		return undef
-
-	# ..........................................................
-	# --- called after all subtrees have been visited
-
-	endVisit: (node, hInfo, level) ->
-
-		return
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-export class ASTWalker extends ASTBase
-
-	constructor: (ast) ->
-
-		super ast.program, {subtree: 'body', node: undef}
-		@ast = ast.program
+		# --- Info to accumulate
 		@lImportedSymbols = []
 		@lExportedSymbols = []
-		@lDefinedSymbols = []
-		@lUsedSymbols = []
+		@lUsedSymbols     = []
+		@lMissingSymbols  = []
 
-		# --- subarrays start out as list of formal parameters
-		#     to which are added locally assigned variables
-		# --- Initialize with an empty global scope
-		@lScopes = [[]]
-
-	# ..........................................................
-
-	isLocalSymbol: (name) ->
-
-		for subarray in @lScopes
-			if subarray.includes(name)
-				return true
-		return false
+		@context = new Context()
+		debug "return from ASTWalker()"
 
 	# ..........................................................
 
 	addImport: (name, lib) ->
 
-		assert nonEmpty(name), "addImport: empty name"
+		debug "enter addImport('#{name}')"
+		@check name
 		if @lImportedSymbols.includes(name)
-			croak "Duplicate import: #{name}"
+			LOG "Duplicate import: #{name}"
 		else
 			@lImportedSymbols.push(name)
+		@context.addGlobal(name)
+		debug "return from addImport()"
 		return
 
 	# ..........................................................
 
 	addExport: (name, lib) ->
 
-		assert nonEmpty(name), "addExport: empty name"
+		debug "enter addExport('#{name}')"
+		@check name
 		if @lExportedSymbols.includes(name)
-			croak "Duplicate export: #{name}"
+			LOG "Duplicate export: #{name}"
 		else
 			@lExportedSymbols.push(name)
+		debug "return from addExport()"
 		return
 
 	# ..........................................................
 
-	addUsedSymbol: (name, value={}) ->
+	addDefined: (name, value={}) ->
 
-		assert nonEmpty(name), "addUsedSymbol(): empty name"
-		if ! @isLocalSymbol(name) && ! @lUsedSymbols.includes(name)
+		debug "enter addDefined('#{name}')"
+		@check name
+		if @context.atGlobalLevel()
+			@context.addGlobal name
+		else
+			@context.add name
+		debug "return from addDefined()"
+		return
+
+	# ..........................................................
+
+	addUsed: (name, value={}) ->
+
+		debug "enter addUsed('#{name}')"
+		@check name
+		if ! @lUsedSymbols.includes(name)
 			@lUsedSymbols.push(name)
+		if ! @context.has(name) \
+				&& ! @lMissingSymbols.includes(name)
+			@lMissingSymbols.push name
+		debug "return from addUsed()"
 		return
 
 	# ..........................................................
 
-	addDefinedSymbol: (name, value={}) ->
+	walk: (options=undef) ->
+		# --- Valid options:
+		#        asText
 
-		assert nonEmpty(name), "addDefinedSymbol(): empty name"
-		if ! @lDefinedSymbols.includes(name)
-			@lDefinedSymbols.push(name)
-		return
+		debug "enter walk()"
+		for node in @ast
+			@visit node, 0
+
+		# --- get symbols to return
+
+		# --- not needed if:
+		#        1. in lImported
+		#        2. not in lUsedSymbols
+		#        3. not in lExportedSymbols
+		lNotNeeded = []
+		for name in @lImportedSymbols
+			if ! @lUsedSymbols.includes(name) && ! @lExportedSymbols.includes(name)
+				lNotNeeded.push name
+
+		hInfo = {
+			lImported: @lImportedSymbols,
+			lExported: @lExportedSymbols,
+			lUsed:     @lUsedSymbols,
+			lMissing:  @lMissingSymbols,
+			lNotNeeded
+			}
+		{asText} = getOptions(options)
+		if asText
+			lLines = []
+			for label in words('lImported lExported lMissing')
+				if nonEmpty(hInfo[label])
+					lLines.push "#{label}: #{hInfo[label].join(' ')}"
+			result = toBlock(lLines)
+		else
+			result = hInfo
+
+		debug "return from walk()", result
+		return result
 
 	# ..........................................................
 
-	addLocalSymbol: (name) ->
+	walkTree: (tree, level=0) ->
 
-		assert @lScopes.length > 0, "no lScopes"
-		lSymbols = @lScopes[@lScopes.length - 1]
-		lSymbols.push name
+		debug "enter walkTree()"
+		if isArray(tree)
+			for node in tree
+				@walkTree node, level
+		else
+			assert isHash(tree, ['type']), "bad tree: #{OL(tree)}"
+			@visit tree, level
+		debug "return from walkTree()"
 		return
 
 	# ..........................................................
+	# --- return true if handled, false if not
 
-	visit: (node, hInfo, level) ->
+	handle: (node, level) ->
 
+		debug "enter handle()"
+		{type} = node
+		debug "type is #{OL(type)}"
+		hHandlers = hAllHandlers[type]
+		if notdefined(hHandlers)
+			debug "return false from handle()"
+			return false
 
-		# --- add to local vars & formal params, where appropriate
+		{lWalkTrees, lDefined, lUsed} = hHandlers
+		if defined(lDefined)
+			debug "has lDefined"
+			for key in lDefined
+				subnode = node[key]
+				if subnode.type == 'Identifier'
+					@addDefined subnode.name
+				else
+					@walkTree subnode, level+1
+
+		if defined(lUsed)
+			debug "has lUsed"
+			for key in lUsed
+				subnode = node[key]
+				if subnode.type == 'Identifier'
+					@addUsed subnode.name
+				else
+					@walkTree subnode, level+1
+
+		if defined(lWalkTrees)
+			debug "has lWalkTrees"
+			for key in lWalkTrees
+				subnode = node[key]
+				if isArray(subnode)
+					for tree in subnode
+						@walkTree tree, level+1
+				else if defined(subnode)
+					@walkTree subnode, level+1
+
+		debug "return true from handle()"
+		return true
+
+	# ..........................................................
+
+	visit: (node, level) ->
+
+		debug "enter ASTWalker.visit(type=#{node.type})"
+		assert defined(node), "node is undef"
+
+		if @handle(node, level)
+			debug "return from ASTWalker.visit()"
+			return
+
 		switch node.type
 
-			when 'Identifier'
-				# --- Identifiers that are not local vars or formal params
-				#     are symbols that should be imported
+			when 'CallExpression'
+				{callee} = node
+				if (callee.type == 'Identifier')
+					@addUsed callee.name
+				else
+					@walkTree callee, level+1
+				for arg in node.arguments
+					if (arg.type == 'Identifier')
+						@addUsed arg.name
+					else
+						@walkTree arg, level+1
 
-				name = node.name
-				if ! @isLocalSymbol(name)
-					@addUsedSymbol name
-				return
+			when 'CatchClause'
+				param = node.param
+				if defined(param) && (param.type=='Identifier')
+					@addDefined param.name
+				@walkTree node.body, level+1
+
+			when 'ExportNamedDeclaration'
+				{specifiers, declaration} = node
+				if defined(declaration)
+					{type, id, left} = declaration
+					if (type == 'ClassDeclaration')
+						@addExport id.name
+					else if (type == 'AssignmentExpression')
+						if (left.type == 'Identifier')
+							@addExport left.name
+					@walkTree declaration, level+1
+
+				if defined(specifiers)
+					for spec in specifiers
+						name = spec.exported.name
+						@addExport name
+
+			when 'For'
+				if defined(node.name) && (node.name.type=='Identifier')
+					@addDefined node.name.name
+
+				if defined(node.index) && (node.name.type=='Identifier')
+					@addDefined node.index.name
+				@walkTree node.source, level+1
+				@walkTree node.body, level+1
+
+			when 'FunctionExpression','ArrowFunctionExpression'
+				lParmNames = []
+				if defined(node.params)
+					for parm in node.params
+						switch parm.type
+							when 'Identifier'
+								lParmNames.push parm.name
+							when 'AssignmentPattern'
+								{left, right} = parm
+								if left.type == 'Identifier'
+									lParmNames.push left.name
+								if right.type == 'Identifier'
+									@addUsed right.name
+								else
+									@walkTree right, level+1
+				@context.beginScope '<unknown>', lParmNames
+				@walkTree node.params, level+1
+				@walkTree node.body, level+1
+				@context.endScope()
 
 			when 'ImportDeclaration'
 				{specifiers, source, importKind} = node
@@ -231,193 +352,58 @@ export class ASTWalker extends ASTBase
 					for hSpec in specifiers
 						{type, imported, local, importKind} = hSpec
 						if (type == 'ImportSpecifier') \
-								&& imported? \
+								&& defined(imported) \
 								&& (imported.type == 'Identifier')
 							@addImport imported.name, lib
-				return
 
-			when 'ExportNamedDeclaration'
-				name = node.declaration.left.name
-				@addExport name
+			when 'NewExpression'
+				if node.callee.type == 'Identifier'
+					@addUsed node.callee.name
+				for arg in node.arguments
+					if arg.type == 'Identifier'
+						@addUsed arg.name
+					else
+						@walkSubtree arg
 
-			when 'CatchClause'
-				param = node.param
-				if param? && param.type=='Identifier'
-					@lScopes.push param.name
-
-			when 'FunctionExpression'
-				lNames = []
-				for parm in node.params
-					if parm.type == 'Identifier'
-						lNames.push parm.name
-				@lScopes.push lNames
-
-			when 'For'
-				lNames = []
-				if node.name? && (node.name.type=='Identifier')
-					lNames.push node.name.name
-
-				if node.index? && (node.name.type=='Identifier')
-					lNames.push node.index.name
-
-				@lScopes.push lNames
-
-			when 'AssignmentExpression'
-				if node.left.type == 'Identifier'
-					@addLocalSymbol node.left.name
-
-			when 'AssignmentPattern'
-				if node.left.type == 'Identifier'
-					@addLocalSymbol node.left.name
-
-		# --- Build and return array of subtrees
-
-		lSubTrees = []
-		add = (subtrees...) -> lSubTrees.push subtrees...
-
-		switch node.type
-			when 'AssignmentExpression'
-				add node.left, node.right
-			when 'AssignmentPattern'
-				add node.left, node.right
-			when 'BinaryExpression'
-				add node.left, node.right
-			when 'BlockStatement'
-				add node.body
-			when 'CallExpression'
-				add node.callee, node.arguments
-			when 'CatchClause'
-				add node.body
-			when 'ClassDeclaration'
-				add node.body
-			when 'ClassBody'
-				add node.body
-			when 'ClassMethod'
-				add node.body
-			when 'ExpressionStatement'
-				add node.expression
-			when 'For'
-				add node.body, node.source
-			when 'FunctionExpression'
-				add node.params, node.body
-			when 'IfStatement'
-				add node.test, node.consequent
 			when 'MemberExpression'
-				add node.object
-			when 'Program'
-				add node.body
-			when 'SwitchCase'
-				add node.test, node.consequent
-			when 'SwitchStatement'
-				add node.cases
-			when 'TryStatement'
-				add node.block, node.handler, node.finalizer
-			when 'WhileStatement'
-				add node.test, node.body
-		return lSubTrees
+				{object} = node
+				if object.type == 'Identifier'
+					@addUsed object.name
+				@walkTree object
 
-	# ..........................................................
+			when 'ReturnStatement'
+				{argument} = node
+				if defined(argument)
+					if (argument.type == 'Identifier')
+						@addUsed argument.name
+					else
+						@walkTree argument
 
-	endVisit: (node, level) ->
-		# --- Called after the node's entire subtree has been walked
-
-		switch node.type
-			when 'FunctionExpression','For', 'CatchClause'
-				@lScopes.pop()
-
+		debug "return from ASTWalker.visit()"
 		return
 
 	# ..........................................................
 
-	getSymbols: () ->
+	check: (name) ->
 
-		debug "enter ASTWalker.getSymbols()"
-
-		# --- filled in during walking
-		@lImportedSymbols = []
-		@lExportedSymbols = []
-		@lDefinedSymbols = []
-		@lUsedSymbols = []
-
-		debug "walking"
-		@walk()
-		debug "done walking"
-
-		lNeededSymbols = []
-		for name in @lUsedSymbols
-			if ! @lImportedSymbols.includes(name) \
-					&& ! @lDefinedSymbols.includes(name) \
-					&& ! isBuiltin(name)
-				lNeededSymbols.push(name)
-
-		hResult = {
-			lImported: @lImportedSymbols,
-			lExported: @lExportedSymbols,
-			lDefined:  @lDefinedSymbols,
-			lUsed:     @lUsedSymbols,
-			lNeeded:   lNeededSymbols,
-			}
-		debug "return from ASTWalker.getSymbols()", hResult
-		return hResult
-
-# ---------------------------------------------------------------------------
-
-export getSymbols = (coffeeCode) =>
-
-	ast = coffeeCodeToAST(coffeeCode)
-	walker = new ASTWalker(ast)
-	hInfo = walker.getSymbols()
-	return hInfo
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-export class TreeStringifier extends ASTBase
-
-	constructor: (tree, hStdKeys={}) ->
-
-		debug "enter TreeStringifier()", tree
-		super(tree, hStdKeys)      # sets @tree
-		@lLines = []
-		debug "return from TreeStringifier()"
+		assert nonEmpty(name), "empty name"
+		return
 
 	# ..........................................................
 
-	visit: (node, hInfo, level) ->
+	getBasicAST: (asTAML=true) ->
 
-		assert node?, "TreeStringifier.visit(): empty node"
-		debug "enter TreeStringifier.visit()"
-		str = indented(@stringify(node), level)
-		debug "stringified: '#{str}'"
-		@lLines.push str
-		debug "return from TreeStringifier.visit()"
-		return undef
+		ast = deepCopy @ast
+		lToRemove = words(
+			'start end extra declarations loc range tokens comments',
+			'assertions implicit optional async generator id hasIndentedBody'
+			)
+		lSortBy = words(
+			"type params body left right"
+			)
+		removeKeys(ast, lToRemove)
 
-	# ..........................................................
-
-	get: () ->
-
-		debug "enter TreeStringifier.get()"
-		@walk()
-		result = @lLines.join('\n')
-		debug "return from TreeStringifier.get()"
-		return result
-
-	# ..........................................................
-
-	excludeKey: (key) ->
-
-		return (key == @hStdKeys.subtree)
-
-	# ..........................................................
-	# --- override this
-
-	stringify: (node) ->
-
-		assert isHash(node),
-				"TreeStringifier.stringify(): node '#{node}' is not a hash"
-		newnode = {}
-		for key,value of node
-			if (! @excludeKey(key))
-				newnode[key] = node[key]
-		return JSON.stringify(newnode)
+		if asTAML
+			return toTAML(ast, {sortKeys: lSortBy})
+		else
+			return ast

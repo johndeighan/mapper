@@ -117,10 +117,11 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   // --- returns hNode with keys:
-  //        str
-  //        level
   //        source
   //        lineNum
+  //        str
+  //        srcLevel - level in source code
+  //        level    - includes added levels when #include'ing
   fetch() {
     var _, done, fname, hNode, lMatches, level, line, prefix, str;
     debug(`enter Fetcher.fetch() from ${this.hSourceInfo.filename}`);
@@ -130,7 +131,9 @@ export var Fetcher = class Fetcher {
       // --- NOTE: hNode.str will never be #include
       //           because altInput's fetch would handle it
       if (defined(hNode)) {
-        debug("return from Fetcher.fetch() - alt", hNode);
+        // --- NOTE: altInput was created knowing how many levels
+        //           to add due to indentation in #include statement
+        debug("return from Fetcher.fetch() - from alt", hNode);
         return hNode;
       }
       // --- alternate input is exhausted
@@ -204,6 +207,7 @@ export var Fetcher = class Fetcher {
       debug("return from Fetcher.fetch()", hNode);
       return hNode;
     }
+    debug("oneIndent", this.oneIndent);
     hNode = new Node(str, level + this.addLevel, this.sourceInfoStr(), this.lineNum);
     debug("return from Fetcher.fetch()", hNode);
     return hNode;

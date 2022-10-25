@@ -11,13 +11,14 @@ import {
 
 import {
   undef,
+  defined,
   pass,
+  escapeStr,
+  OL,
   isEmpty,
   isArray,
   isNumber,
-  isString,
-  escapeStr,
-  OL
+  isString
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -60,7 +61,7 @@ export var mapMath = function(line) {
   assert(line.indexOf("\n") === -1, "mapper(): line contains newline char");
   assert(line.indexOf("\r") === -1, "mapper(): line contains return char");
   lWords = line.split(/\s+/); // split on whitespace
-  assert(lWords != null, "lWords is not defined!");
+  assert(defined(lWords), "lWords is not defined!");
   assert(lWords.length > 0, "lWords is empty!");
   if (isCommand(lWords[0])) {
     cmd = lWords[0];

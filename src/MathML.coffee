@@ -2,7 +2,8 @@
 
 import {LOG, assert, croak, debug} from '@jdeighan/exceptions'
 import {
-	undef, pass, isEmpty, isArray, isNumber, isString, escapeStr, OL,
+	undef, defined, pass, escapeStr, OL,
+	isEmpty, isArray, isNumber, isString,
 	} from '@jdeighan/coffee-utils'
 import {
 	isSimpleFileName, fileExt, isFile, isDir, slurp, pathTo,
@@ -36,7 +37,7 @@ export mapMath = (line) ->
 	assert line.indexOf("\r")==-1, "mapper(): line contains return char"
 
 	lWords = line.split(/\s+/)    # split on whitespace
-	assert lWords?, "lWords is not defined!"
+	assert defined(lWords), "lWords is not defined!"
 	assert lWords.length > 0, "lWords is empty!"
 
 	if isCommand(lWords[0])

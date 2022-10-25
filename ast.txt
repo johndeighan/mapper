@@ -1,0 +1,22 @@
+---
+-
+   type: File
+   program:
+      type: Program
+      body:
+         -
+            type: ExpressionStatement
+            expression:
+               type: CallExpression
+               arguments:
+                  -
+                     type: Identifier
+                     declaration: false
+                     name: someSymbol
+               callee:
+                  type: Identifier
+                  declaration: false
+                  name: LOG
+               implicit: true
+               optional: false
+      directives: []

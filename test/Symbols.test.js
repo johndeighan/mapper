@@ -177,8 +177,8 @@ say "Answer is 42"`);
 
 // ----------------------------------------------------------------------------
 (function() {
-  var lNeeded;
+  var lMissing;
   tester.equal(158, buildImportList([]), []);
-  lNeeded = words('say undef logger slurp barf fs');
-  return tester.equal(161, buildImportList(lNeeded, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+  lMissing = words('say undef logger slurp barf fs');
+  return tester.equal(161, buildImportList(lMissing, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
 })();

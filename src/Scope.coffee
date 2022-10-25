@@ -1,16 +1,22 @@
 # Scope.coffee
 
+import {LOG} from '@jdeighan/exceptions'
+import {undef, deepCopy} from '@jdeighan/coffee-utils'
+
 # ---------------------------------------------------------------------------
 
 export class Scope
 
-	constructor: () ->
+	constructor: (@name=undef, lSymbols=undef) ->
 
-		@lSymbols = []
+		if (lSymbols == undef)
+			@lSymbols = []
+		else
+			@lSymbols = deepCopy lSymbols
 
 	# ..........................................................
 
-	addSymbol: (symbol) ->
+	add: (symbol) ->
 
 		if ! @lSymbols.includes(symbol)
 			@lSymbols.push symbol
@@ -18,6 +24,14 @@ export class Scope
 
 	# ..........................................................
 
-	includes: (symbol) ->
+	has: (symbol) ->
 
 		return @lSymbols.includes(symbol)
+
+	# ..........................................................
+
+	dump: () ->
+
+		for symbol in @lSymbols
+			LOG "      #{symbol}"
+		return

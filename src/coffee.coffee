@@ -9,9 +9,12 @@ import {
 import {
 	indentLevel, isUndented, indented,
 	} from '@jdeighan/coffee-utils/indent'
+import {mkpath, barf} from '@jdeighan/coffee-utils/fs'
 
 import {Mapper, map} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
+
+projRoot = mkpath('c:', 'Users', 'johnd', 'mapper')
 
 # ---------------------------------------------------------------------------
 
@@ -26,22 +29,6 @@ export brew = (code, source='internal') ->
 
 	# --- Result is JS code
 	return result.trim()
-
-# ---------------------------------------------------------------------------
-
-export getAST = (code, source='internal') ->
-
-	debug "enter getAST()", code
-	hCoffeeOptions = {
-		ast: true
-		}
-	mapped = map(source, code, CoffeePreProcessor)
-	debug 'mapped', mapped
-	result = CoffeeScript.compile(mapped, hCoffeeOptions)
-
-	# --- Result is an AST
-	debug "return from getAST()", result
-	return result
 
 # ---------------------------------------------------------------------------
 
@@ -128,9 +115,18 @@ export coffeeCodeToAST = (coffeeCode, source=undef) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	debug "enter coffeeCodeToAST()", coffeeCode
+	barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
 
 	try
-		ast = getAST(coffeeCode, source)
+		mapped = map(source, coffeeCode, CoffeePreProcessor)
+		assert defined(mapped), "mapped is undef"
+		barf mkpath(projRoot, 'test', 'ast.cielo'), mapped
+	catch err
+		barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
+		croak "ERROR in CoffeePreProcessor: #{err.message}"
+
+	try
+		ast = CoffeeScript.compile(mapped, {ast: true})
 		assert defined(ast), "ast is empty"
 	catch err
 		LOG "ERROR in CoffeeScript: #{err.message}"
@@ -146,8 +142,8 @@ export coffeeCodeToAST = (coffeeCode, source=undef) ->
 
 export cleanJS = (jsCode) ->
 
-	jsCode = jsCode.replace(/\n\n+/gs, "\n")
-	jsCode = jsCode.replace(/\n$/s, '')
+	jsCode = jsCode.replace(/\n\n+/gs, "\n") # multiple NL to single NL
+	jsCode = jsCode.replace(/\n$/s, '')      # strip trailing whitespace
 	return jsCode
 
 # ---------------------------------------------------------------------------
@@ -179,15 +175,18 @@ export class CoffeePreProcessor extends TreeMapper
 	mapComment: (hNode) ->
 
 		# --- Retain comments
+		debug "enter mapComment()"
 		{str, level} = hNode
-		return indented(str, level, @oneIndent)
+		result = indented(str, level, @oneIndent)
+		debug "return from mapComment()", result
+		return result
 
 	# ..........................................................
 
 	mapNode: (hNode) ->
 		# --- only non-special nodes
 
-		debug "enter CoffeePreProcessor.mapNode()", hNode
+		debug "enter mapNode()", hNode
 		{str, level} = hNode
 		result = str.replace(///
 				\"
@@ -197,6 +196,5 @@ export class CoffeePreProcessor extends TreeMapper
 			(qstr) -> expand(qstr)
 			)
 		result = indented(result, level, @oneIndent)
-		debug "return from CoffeePreProcessor.mapNode()", result
+		debug "return from mapNode()", result
 		return result
-

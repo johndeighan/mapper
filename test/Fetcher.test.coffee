@@ -1,7 +1,7 @@
 # Fetcher.test.coffee
 
 import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
-import {UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {
 	undef, pass, defined, rtrim, replaceVars,
 	} from '@jdeighan/coffee-utils'
@@ -16,7 +16,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 (() ->
 
 	fetcher = new Fetcher("c:/Users/johnd/mapper/package.json")
-	tester.like 21, fetcher.hSourceInfo, {
+	utest.like 21, fetcher.hSourceInfo, {
 		filename: 'package.json'
 		dir: 'c:/Users/johnd/mapper'
 		ext: '.json'
@@ -29,19 +29,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	fetcher = new Fetcher(undef, ['line1', 'line2', 'line3'])
 
-	tester.like 34, node1 = fetcher.fetch(), {str: 'line1', level: 0, lineNum: 1}
-	tester.equal 35, fetcher.lineNum, 1
-	tester.succeeds 36, () -> fetcher.unfetch(node1)
-	tester.equal 37, fetcher.lineNum, 0
-	tester.like 38, fetcher.fetch(), {str: 'line1', lineNum: 1}
-	tester.like 39, fetcher.fetch(), {str: 'line2', level: 0, lineNum: 2}
-	tester.equal 40, fetcher.lineNum, 2
-	tester.like 41, fetcher.fetch(), {str: 'line3', level: 0, lineNum: 3}
-	tester.equal 42, fetcher.lineNum, 3
-	tester.equal 43, fetcher.fetch(), undef
-	tester.equal 44, fetcher.lineNum, 3
-	tester.equal 45, fetcher.fetch(), undef
-	tester.equal 46, fetcher.lineNum, 3
+	utest.like 34, node1 = fetcher.fetch(), {str: 'line1', level: 0, lineNum: 1}
+	utest.equal 35, fetcher.lineNum, 1
+	utest.succeeds 36, () -> fetcher.unfetch(node1)
+	utest.equal 37, fetcher.lineNum, 0
+	utest.like 38, fetcher.fetch(), {str: 'line1', lineNum: 1}
+	utest.like 39, fetcher.fetch(), {str: 'line2', level: 0, lineNum: 2}
+	utest.equal 40, fetcher.lineNum, 2
+	utest.like 41, fetcher.fetch(), {str: 'line3', level: 0, lineNum: 3}
+	utest.equal 42, fetcher.lineNum, 3
+	utest.equal 43, fetcher.fetch(), undef
+	utest.equal 44, fetcher.lineNum, 3
+	utest.equal 45, fetcher.fetch(), undef
+	utest.equal 46, fetcher.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -55,35 +55,35 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		'\t\tline3'
 		])
 
-	tester.like 60, node1 = fetcher.fetch(), {
+	utest.like 60, node1 = fetcher.fetch(), {
 		lineNum: 1
 		str: 'line1'
 		level: 0
 		}
-	tester.equal 65, fetcher.lineNum, 1
-	tester.succeeds 66, () -> fetcher.unfetch(node1)
-	tester.equal 67, fetcher.lineNum, 0
-	tester.like 68, fetcher.fetch(), {
+	utest.equal 65, fetcher.lineNum, 1
+	utest.succeeds 66, () -> fetcher.unfetch(node1)
+	utest.equal 67, fetcher.lineNum, 0
+	utest.like 68, fetcher.fetch(), {
 		lineNum: 1
 		str: 'line1'
 		level: 0
 		}
-	tester.like 73, fetcher.fetch(), {
+	utest.like 73, fetcher.fetch(), {
 		lineNum: 2
 		str: 'line2'
 		level: 1
 		}
-	tester.equal 78, fetcher.lineNum, 2
-	tester.like 79, fetcher.fetch(), {
+	utest.equal 78, fetcher.lineNum, 2
+	utest.like 79, fetcher.fetch(), {
 		lineNum: 3
 		str: 'line3'
 		level: 2
 		}
-	tester.equal 84, fetcher.lineNum, 3
-	tester.equal 85, fetcher.fetch(), undef
-	tester.equal 86, fetcher.lineNum, 3
-	tester.equal 87, fetcher.fetch(), undef
-	tester.equal 88, fetcher.lineNum, 3
+	utest.equal 84, fetcher.lineNum, 3
+	utest.equal 85, fetcher.fetch(), undef
+	utest.equal 86, fetcher.lineNum, 3
+	utest.equal 87, fetcher.fetch(), undef
+	utest.equal 88, fetcher.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -97,35 +97,35 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		'      line3'
 		])
 
-	tester.like 102, node1 = fetcher.fetch(), {
+	utest.like 102, node1 = fetcher.fetch(), {
 		lineNum: 1
 		str: 'line1'
 		level: 0
 		}
-	tester.equal 107, fetcher.lineNum, 1
-	tester.succeeds 108, () -> fetcher.unfetch(node1)
-	tester.equal 109, fetcher.lineNum, 0
-	tester.like 110, fetcher.fetch(), {
+	utest.equal 107, fetcher.lineNum, 1
+	utest.succeeds 108, () -> fetcher.unfetch(node1)
+	utest.equal 109, fetcher.lineNum, 0
+	utest.like 110, fetcher.fetch(), {
 		lineNum: 1
 		str: 'line1'
 		level: 0
 		}
-	tester.like 115, fetcher.fetch(), {
+	utest.like 115, fetcher.fetch(), {
 		lineNum: 2
 		str: 'line2'
 		level: 1
 		}
-	tester.equal 120, fetcher.lineNum, 2
-	tester.like 121, fetcher.fetch(), {
+	utest.equal 120, fetcher.lineNum, 2
+	utest.like 121, fetcher.fetch(), {
 		lineNum: 3
 		str: 'line3'
 		level: 2
 		}
-	tester.equal 126, fetcher.lineNum, 3
-	tester.equal 127, fetcher.fetch(), undef
-	tester.equal 128, fetcher.lineNum, 3
-	tester.equal 129, fetcher.fetch(), undef
-	tester.equal 130, fetcher.lineNum, 3
+	utest.equal 126, fetcher.lineNum, 3
+	utest.equal 127, fetcher.fetch(), undef
+	utest.equal 128, fetcher.lineNum, 3
+	utest.equal 129, fetcher.fetch(), undef
+	utest.equal 130, fetcher.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -134,10 +134,10 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 (() ->
 
 	fetcher = new Fetcher(undef, ['abc','def','__END__','ghi'])
-	tester.like 139, fetcher.fetch(), {str: 'abc', lineNum: 1}
-	tester.like 140, fetcher.fetch(), {str: 'def', lineNum: 2}
-	tester.equal 141, fetcher.fetch(), undef
-	tester.equal 142, fetcher.lineNum, 2
+	utest.like 139, fetcher.fetch(), {str: 'abc', lineNum: 1}
+	utest.like 140, fetcher.fetch(), {str: 'def', lineNum: 2}
+	utest.equal 141, fetcher.fetch(), undef
+	utest.equal 142, fetcher.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -146,8 +146,8 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 (() ->
 
 	fetcher = new Fetcher(undef, ['abc  ','def  '])
-	tester.like 151, fetcher.fetch(), {str: 'abc', lineNum: 1}
-	tester.like 152, fetcher.fetch(), {str: 'def', lineNum: 2}
+	utest.like 151, fetcher.fetch(), {str: 'abc', lineNum: 1}
+	utest.like 152, fetcher.fetch(), {str: 'def', lineNum: 2}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -165,52 +165,52 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	func = (hNode) -> return (hNode.str == 'def')
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 170, Array.from(fetcher.all()), [
+	utest.like 170, Array.from(fetcher.all()), [
 		{str: 'abc', lineNum: 1}
 		{str: 'def', lineNum: 2}
 		{str: 'ghi', lineNum: 3}
 		]
 
-	tester.like 176, fetcher.fetch(), undef
+	utest.like 176, fetcher.fetch(), undef
 
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 181, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
+	utest.like 181, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
-	tester.like 185, fetcher.fetch(), {str: 'ghi'}
+	utest.like 185, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 188, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
+	utest.like 188, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
-	tester.like 192, fetcher.fetch(), {str: 'def'}
+	utest.like 192, fetcher.fetch(), {str: 'def'}
 
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 197, fetcher.fetchBlock(), """
+	utest.like 197, fetcher.fetchBlock(), """
 			abc
 			def
 			ghi
 			"""
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 204, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
+	utest.like 204, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
 		abc
 		"""
 
-	tester.like 208, fetcher.fetch(), {str: 'ghi'}
+	utest.like 208, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, lItems)
-	tester.like 211, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
+	utest.like 211, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
 		abc
 		"""
 
-	tester.like 215, fetcher.fetch(), {str: 'def'}
+	utest.like 215, fetcher.fetch(), {str: 'def'}
 
 	)()
 
@@ -228,52 +228,52 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	func = (hNode) -> return (hNode.str == 'def')
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 233, Array.from(fetcher.all()), [
+	utest.like 233, Array.from(fetcher.all()), [
 		{str: 'abc', lineNum: 1}
 		{str: 'def', lineNum: 2}
 		{str: 'ghi', lineNum: 3}
 		]
 
-	tester.like 239, fetcher.fetch(), undef
+	utest.like 239, fetcher.fetch(), undef
 
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 244, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
+	utest.like 244, Array.from(fetcher.allUntil(func, 'discardEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
-	tester.like 248, fetcher.fetch(), {str: 'ghi'}
+	utest.like 248, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 251, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
+	utest.like 251, Array.from(fetcher.allUntil(func, 'keepEndLine')), [
 		{str: 'abc', lineNum: 1}
 		]
 
-	tester.like 255, fetcher.fetch(), {str: 'def'}
+	utest.like 255, fetcher.fetch(), {str: 'def'}
 
 	# ..........................................................
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 260, fetcher.fetchBlock(), """
+	utest.like 260, fetcher.fetchBlock(), """
 			abc
 			def
 			ghi
 			"""
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 267, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
+	utest.like 267, fetcher.fetchBlockUntil(func, 'discardEndLine'), """
 		abc
 		"""
 
-	tester.like 271, fetcher.fetch(), {str: 'ghi'}
+	utest.like 271, fetcher.fetch(), {str: 'ghi'}
 
 	fetcher = new Fetcher(import.meta.url, block)
-	tester.like 274, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
+	utest.like 274, fetcher.fetchBlockUntil(func, 'keepEndLine'), """
 		abc
 		"""
 
-	tester.like 278, fetcher.fetch(), {str: 'def'}
+	utest.like 278, fetcher.fetch(), {str: 'def'}
 
 	)()
 
@@ -314,7 +314,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			def
 			"""
 
-	tester.equal 319, numLines, 3
+	utest.equal 319, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -327,7 +327,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			def
 			""")
 
-	tester.equal 332, fetcher.fetchBlock(), """
+	utest.equal 332, fetcher.fetchBlock(), """
 			abc
 				title
 				=====
@@ -349,9 +349,9 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	while defined(hLine = fetcher.fetch()) && (hLine.str != '=====')
 		pass
 
-	tester.like 354, hLine, {str: '=====', lineNum: 2}
-	tester.equal 355, fetcher.altInput.hSourceInfo.filename, 'title.md'
-	tester.equal 356, fetcher.altInput.lineNum, 2
+	utest.like 354, hLine, {str: '=====', lineNum: 2}
+	utest.equal 355, fetcher.altInput.hSourceInfo.filename, 'title.md'
+	utest.equal 356, fetcher.altInput.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -368,13 +368,13 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	while defined(hLine = fetcher.fetch()) && (hLine.str != '=====')
 		pass
 
-	tester.like 373, hLine, {
+	utest.like 373, hLine, {
 		str: '====='
 		level: 1
 		lineNum: 2
 		}
-	tester.equal 378, fetcher.altInput.hSourceInfo.filename, 'title.md'
-	tester.equal 379, fetcher.altInput.lineNum, 2
+	utest.equal 378, fetcher.altInput.hSourceInfo.filename, 'title.md'
+	utest.equal 379, fetcher.altInput.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -387,21 +387,21 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			#include title.md
 			def
 			""")
-	tester.equal 392, fetcher.sourceInfoStr(), "test.txt/0"
+	utest.equal 392, fetcher.sourceInfoStr(), "test.txt/0"
 
 	hLine = fetcher.fetch()
-	tester.equal 395, hLine.str, 'abc'
-	tester.equal 396, fetcher.sourceInfoStr(), "test.txt/1"
+	utest.equal 395, hLine.str, 'abc'
+	utest.equal 396, fetcher.sourceInfoStr(), "test.txt/1"
 
 	hLine = fetcher.fetch()
-	tester.equal 399, hLine.str, 'title'
-	tester.equal 400, fetcher.sourceInfoStr(), "test.txt/2 title.md/1"
+	utest.equal 399, hLine.str, 'title'
+	utest.equal 400, fetcher.sourceInfoStr(), "test.txt/2 title.md/1"
 
 	hLine = fetcher.fetch()
-	tester.equal 403, hLine.str, '====='
-	tester.equal 404, fetcher.sourceInfoStr(), "test.txt/2 title.md/2"
+	utest.equal 403, hLine.str, '====='
+	utest.equal 404, fetcher.sourceInfoStr(), "test.txt/2 title.md/2"
 
 	hLine = fetcher.fetch()
-	tester.equal 407, hLine.str, 'def'
-	tester.equal 408, fetcher.sourceInfoStr(), "test.txt/3"
+	utest.equal 407, hLine.str, 'def'
+	utest.equal 408, fetcher.sourceInfoStr(), "test.txt/3"
 	)()

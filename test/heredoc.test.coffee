@@ -2,7 +2,7 @@
 
 import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {setDebugging} from '@jdeighan/exceptions/debug'
-import {UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {
 	undef, isString, extractMatches, CWS, OL,
 	defined, notdefined,
@@ -17,17 +17,17 @@ import {
 
 # ---------------------------------------------------------------------------
 
-tester.truthy 20, isHereDocType('one line')
-tester.truthy 21, isHereDocType('taml')
-tester.falsy 22, isHereDocType('two line')
+utest.truthy 20, isHereDocType('one line')
+utest.truthy 21, isHereDocType('taml')
+utest.falsy 22, isHereDocType('two line')
 
 # ---------------------------------------------------------------------------
 
-tester.equal 26, lineToParts('this is not a heredoc'), [
+utest.equal 26, lineToParts('this is not a heredoc'), [
 	'this is not a heredoc'
 	]
 
-tester.equal 30, lineToParts('this <<< is <<< heredoc'), [
+utest.equal 30, lineToParts('this <<< is <<< heredoc'), [
 	'this '
 	'<<<'
 	' is '
@@ -35,7 +35,7 @@ tester.equal 30, lineToParts('this <<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-tester.equal 38, lineToParts('<<< is <<< heredoc'), [
+utest.equal 38, lineToParts('<<< is <<< heredoc'), [
 	''
 	'<<<'
 	' is '
@@ -43,7 +43,7 @@ tester.equal 38, lineToParts('<<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-tester.equal 46, lineToParts('this <<< is <<<'), [
+utest.equal 46, lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
@@ -51,7 +51,7 @@ tester.equal 46, lineToParts('this <<< is <<<'), [
 	''
 	]
 
-tester.equal 54, lineToParts('<<< is <<<'), [
+utest.equal 54, lineToParts('<<< is <<<'), [
 	''
 	'<<<'
 	' is '
@@ -59,13 +59,13 @@ tester.equal 54, lineToParts('<<< is <<<'), [
 	''
 	]
 
-tester.equal 62, lineToParts('<<<'), [
+utest.equal 62, lineToParts('<<<'), [
 	''
 	'<<<'
 	''
 	]
 
-tester.equal 68, lineToParts('<<<<<<'), [
+utest.equal 68, lineToParts('<<<<<<'), [
 	''
 	'<<<'
 	''
@@ -75,7 +75,7 @@ tester.equal 68, lineToParts('<<<<<<'), [
 
 # ---------------------------------------------------------------------------
 
-tester.equal 78, mapHereDoc("""
+utest.equal 78, mapHereDoc("""
 		abc
 		def
 		"""),
@@ -83,7 +83,7 @@ tester.equal 78, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 86, mapHereDoc("""
+utest.equal 86, mapHereDoc("""
 		===
 		abc
 		def
@@ -92,7 +92,7 @@ tester.equal 86, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 95, mapHereDoc("""
+utest.equal 95, mapHereDoc("""
 		...
 		abc
 		def
@@ -101,14 +101,14 @@ tester.equal 95, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 104, mapHereDoc("""
+utest.equal 104, mapHereDoc("""
 		() -> count += 1
 		"""),
 		'() -> count += 1'
 
 # ---------------------------------------------------------------------------
 
-tester.equal 111, mapHereDoc("""
+utest.equal 111, mapHereDoc("""
 		---
 		a: 1
 		b: 2
@@ -117,7 +117,7 @@ tester.equal 111, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-tester.equal 120, mapHereDoc("""
+utest.equal 120, mapHereDoc("""
 		---
 		- a
 		- b

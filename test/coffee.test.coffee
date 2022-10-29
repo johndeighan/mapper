@@ -3,7 +3,7 @@
 import {
 	LOG, LOGVALUE, debug, assert, croak, setDebugging,
 	} from '@jdeighan/exceptions'
-import {UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 

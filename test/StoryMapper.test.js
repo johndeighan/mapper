@@ -4,7 +4,7 @@ var StoryTester, storyTester;
 
 import {
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {

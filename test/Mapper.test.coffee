@@ -2,7 +2,7 @@
 
 import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
 import {setDebugging} from '@jdeighan/exceptions/debug'
-import {UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, rtrim, replaceVars} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {
@@ -20,27 +20,27 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 		line3
 		""")
 
-	tester.like 23, mapper.peek(), {str: 'line1', level: 0}
-	tester.like 24, mapper.peek(), {str: 'line1', level: 0}
-	tester.falsy 25, mapper.eof()
-	tester.like 26, token0 = mapper.get(), {str: 'line1'}
-	tester.like 27, token1 = mapper.get(), {str: 'line2'}
-	tester.equal 28, mapper.lineNum, 2
+	utest.like 23, mapper.peek(), {str: 'line1', level: 0}
+	utest.like 24, mapper.peek(), {str: 'line1', level: 0}
+	utest.falsy 25, mapper.eof()
+	utest.like 26, token0 = mapper.get(), {str: 'line1'}
+	utest.like 27, token1 = mapper.get(), {str: 'line2'}
+	utest.equal 28, mapper.lineNum, 2
 
-	tester.falsy 30, mapper.eof()
-	tester.succeeds 31, () -> mapper.unfetch(token1)
-	tester.succeeds 32, () -> mapper.unfetch(token0)
-	tester.like 33, mapper.get(), {str: 'line1'}
-	tester.like 34, mapper.get(), {str: 'line2'}
-	tester.falsy 35, mapper.eof()
+	utest.falsy 30, mapper.eof()
+	utest.succeeds 31, () -> mapper.unfetch(token1)
+	utest.succeeds 32, () -> mapper.unfetch(token0)
+	utest.like 33, mapper.get(), {str: 'line1'}
+	utest.like 34, mapper.get(), {str: 'line2'}
+	utest.falsy 35, mapper.eof()
 
-	tester.like 37, token0 = mapper.get(), {str: 'line3'}
-	tester.equal 38, mapper.lineNum, 3
-	tester.truthy 39, mapper.eof()
-	tester.succeeds 40, () -> mapper.unfetch(token0)
-	tester.falsy 41, mapper.eof()
-	tester.equal 42, mapper.get(), token0
-	tester.truthy 43, mapper.eof()
+	utest.like 37, token0 = mapper.get(), {str: 'line3'}
+	utest.equal 38, mapper.lineNum, 3
+	utest.truthy 39, mapper.eof()
+	utest.succeeds 40, () -> mapper.unfetch(token0)
+	utest.falsy 41, mapper.eof()
+	utest.equal 42, mapper.get(), token0
+	utest.truthy 43, mapper.eof()
 	)()
 
 # ---------------------------------------------------------------------------
@@ -50,13 +50,13 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t'])
 
-	tester.like 53, mapper.peek(), {str: 'abc'}
-	tester.like 54, mapper.peek(), {str: 'abc'}
-	tester.falsy 55, mapper.eof()
-	tester.like 56, mapper.get(), {str: 'abc'}
-	tester.like 57, mapper.get(), {str: 'def'}
-	tester.like 58, mapper.get(), {str: 'ghi'}
-	tester.equal 59, mapper.lineNum, 3
+	utest.like 53, mapper.peek(), {str: 'abc'}
+	utest.like 54, mapper.peek(), {str: 'abc'}
+	utest.falsy 55, mapper.eof()
+	utest.like 56, mapper.get(), {str: 'abc'}
+	utest.like 57, mapper.get(), {str: 'def'}
+	utest.like 58, mapper.get(), {str: 'ghi'}
+	utest.equal 59, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -70,22 +70,22 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		line3
 		""")
-	tester.like 73, mapper.get(), {
+	utest.like 73, mapper.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	tester.like 78, mapper.get(), {
+	utest.like 78, mapper.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	tester.like 83, mapper.get(), {
+	utest.like 83, mapper.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	tester.equal 88, mapper.get(), undef
+	utest.equal 88, mapper.get(), undef
 
 	)()
 
@@ -102,17 +102,17 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			mno
 			""")
 
-	tester.like 105, mapper.fetch(), {str: 'abc'}
+	utest.like 105, mapper.fetch(), {str: 'abc'}
 
 	# 'jkl' will be discarded
 	func = (hNode) -> (hNode.str == 'jkl')
-	tester.like 109, mapper.fetchUntil(func, 'discardEndLine'), [
+	utest.like 109, mapper.fetchUntil(func, 'discardEndLine'), [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
 
-	tester.like 114, mapper.fetch(), {str: 'mno'}
-	tester.equal 115, mapper.lineNum, 5
+	utest.like 114, mapper.fetch(), {str: 'mno'}
+	utest.equal 115, mapper.lineNum, 5
 	)()
 
 # ---------------------------------------------------------------------------
@@ -131,27 +131,27 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 	# --- You can pass any iterator to the Mapper() constructor
 	mapper = new Mapper(undef, generator())
 
-	tester.like 134, mapper.peek(), {str: 'line1'}
-	tester.like 135, mapper.peek(), {str: 'line1'}
-	tester.falsy 136, mapper.eof()
-	tester.like 137, token0 = mapper.get(), {str: 'line1'}
-	tester.like 138, token1 = mapper.get(), {str: 'line2'}
-	tester.equal 139, mapper.lineNum, 2
+	utest.like 134, mapper.peek(), {str: 'line1'}
+	utest.like 135, mapper.peek(), {str: 'line1'}
+	utest.falsy 136, mapper.eof()
+	utest.like 137, token0 = mapper.get(), {str: 'line1'}
+	utest.like 138, token1 = mapper.get(), {str: 'line2'}
+	utest.equal 139, mapper.lineNum, 2
 
-	tester.falsy 141, mapper.eof()
-	tester.succeeds 142, () -> mapper.unfetch(token1)
-	tester.succeeds 143, () -> mapper.unfetch(token0)
-	tester.like 144, mapper.get(), {str: 'line1'}
-	tester.like 145, mapper.get(), {str: 'line2'}
-	tester.falsy 146, mapper.eof()
+	utest.falsy 141, mapper.eof()
+	utest.succeeds 142, () -> mapper.unfetch(token1)
+	utest.succeeds 143, () -> mapper.unfetch(token0)
+	utest.like 144, mapper.get(), {str: 'line1'}
+	utest.like 145, mapper.get(), {str: 'line2'}
+	utest.falsy 146, mapper.eof()
 
-	tester.like 148, token3 = mapper.get(), {str: 'line3'}
-	tester.truthy 149, mapper.eof()
-	tester.succeeds 150, () -> mapper.unfetch(token3)
-	tester.falsy 151, mapper.eof()
-	tester.equal 152, mapper.get(), token3
-	tester.truthy 153, mapper.eof()
-	tester.equal 154, mapper.lineNum, 3
+	utest.like 148, token3 = mapper.get(), {str: 'line3'}
+	utest.truthy 149, mapper.eof()
+	utest.succeeds 150, () -> mapper.unfetch(token3)
+	utest.falsy 151, mapper.eof()
+	utest.equal 152, mapper.get(), token3
+	utest.truthy 153, mapper.eof()
+	utest.equal 154, mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	tester.equal 192, numLines, 3
+	utest.equal 192, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			""")
 
-	tester.equal 205, mapper.getBlock(), """
+	utest.equal 205, mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -241,7 +241,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	tester.equal 244, numLines, 2
+	utest.equal 244, numLines, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -319,7 +319,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			The meaning of life is __meaning__
 			""", Mapper)
 
-	tester.equal 322, result, """
+	utest.equal 322, result, """
 			abc
 			The meaning of life is 42
 			"""
@@ -348,7 +348,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			#for x in lItems
 			""", MyMapper)
 
-	tester.equal 351, result, """
+	utest.equal 351, result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -377,7 +377,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 			defghi
 			""", MyMapper)
-	tester.equal 380, result, """
+	utest.equal 380, result, """
 			3
 			6
 			"""
@@ -396,23 +396,23 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 				--x
 			""")
 
-	tester.like 399, mapper.peek(), {str: 'if (x == 2)', level: 0}
-	tester.like 400, mapper.get(),  {str: 'if (x == 2)', level: 0}
+	utest.like 399, mapper.peek(), {str: 'if (x == 2)', level: 0}
+	utest.like 400, mapper.get(),  {str: 'if (x == 2)', level: 0}
 
-	tester.like 402, mapper.peek(), {str: 'doThis', level: 1}
-	tester.like 403, mapper.get(),  {str: 'doThis', level: 1}
+	utest.like 402, mapper.peek(), {str: 'doThis', level: 1}
+	utest.like 403, mapper.get(),  {str: 'doThis', level: 1}
 
-	tester.like 405, mapper.peek(), {str: 'doThat', level: 1}
-	tester.like 406, mapper.get(),  {str: 'doThat', level: 1}
+	utest.like 405, mapper.peek(), {str: 'doThat', level: 1}
+	utest.like 406, mapper.get(),  {str: 'doThat', level: 1}
 
-	tester.like 408, mapper.peek(), {str: 'then this', level: 2}
-	tester.like 409, mapper.get(),  {str: 'then this', level: 2}
+	utest.like 408, mapper.peek(), {str: 'then this', level: 2}
+	utest.like 409, mapper.get(),  {str: 'then this', level: 2}
 
-	tester.like 411, mapper.peek(), {str: 'while (x > 2)', level: 0}
-	tester.like 412, mapper.get(),  {str: 'while (x > 2)', level: 0}
+	utest.like 411, mapper.peek(), {str: 'while (x > 2)', level: 0}
+	utest.like 412, mapper.get(),  {str: 'while (x > 2)', level: 0}
 
-	tester.like 414, mapper.peek(), {str: '--x', level: 1}
-	tester.like 415, mapper.get(),  {str: '--x', level: 1}
+	utest.like 414, mapper.peek(), {str: '--x', level: 1}
+	utest.like 415, mapper.get(),  {str: '--x', level: 1}
 
 	)()
 
@@ -448,7 +448,7 @@ class JSMapper extends Mapper
 
 	mapTester = new JSTester()
 
-	# --- some tester tests of JSMapper
+	# --- some utest tests of JSMapper
 
 	mapTester.equal 453, """
 			# |||| $:
@@ -533,7 +533,7 @@ export class BarMapper extends Mapper
 	mapTester = new BarTester()
 
 	# ..........................................................
-	# --- some tester tests of BarMapper
+	# --- some utest tests of BarMapper
 
 	mapTester.equal 538, """
 			# --- a comment (should remove)
@@ -603,7 +603,7 @@ export class DebarMapper extends Mapper
 	mapTester = new DebarTester()
 
 	# ..........................................................
-	# --- some tester tests of DebarMapper
+	# --- some utest tests of DebarMapper
 
 	mapTester.equal 608, """
 			<h1>title</h1>
@@ -652,7 +652,7 @@ export class DebarMapper extends Mapper
 	mapTester = new MultiTester()
 
 	# ..........................................................
-	# --- some tester tests of multiple mapping
+	# --- some utest tests of multiple mapping
 
 	mapTester.equal 657, """
 			# --- a comment (should remove)
@@ -713,14 +713,14 @@ export class DebarMapper extends Mapper
 		123
 		"""
 
-	tester.equal 716, func(block), """
+	utest.equal 716, func(block), """
 		ABC
 		XYZ
 		"""
 
 	# --- test using map()
 	mapper = new FuncMapper(import.meta.url, block, func)
-	tester.equal 723, map(import.meta.url, block, mapper), """
+	utest.equal 723, map(import.meta.url, block, mapper), """
 		ABC
 		XYZ
 		"""

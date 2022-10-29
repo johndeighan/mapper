@@ -11,7 +11,7 @@ import {
 
 import {
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {

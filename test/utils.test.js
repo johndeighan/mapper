@@ -2,15 +2,15 @@
   // utils.test.coffee
 import {
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {
   isHashComment
 } from '@jdeighan/mapper/utils';
 
-tester.truthy(6, isHashComment('# abc'));
+utest.truthy(6, isHashComment('# abc'));
 
-tester.truthy(7, isHashComment('   # abc'));
+utest.truthy(7, isHashComment('   # abc'));
 
-tester.falsy(8, isHashComment('#abc'));
+utest.falsy(8, isHashComment('#abc'));

@@ -15,7 +15,7 @@ import {
 
 import {
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {
@@ -50,51 +50,51 @@ import {
 } from '@jdeighan/mapper/heredoc';
 
 // ---------------------------------------------------------------------------
-tester.truthy(20, isHereDocType('one line'));
+utest.truthy(20, isHereDocType('one line'));
 
-tester.truthy(21, isHereDocType('taml'));
+utest.truthy(21, isHereDocType('taml'));
 
-tester.falsy(22, isHereDocType('two line'));
-
-// ---------------------------------------------------------------------------
-tester.equal(26, lineToParts('this is not a heredoc'), ['this is not a heredoc']);
-
-tester.equal(30, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
-
-tester.equal(38, lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
-
-tester.equal(46, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
-
-tester.equal(54, lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
-
-tester.equal(62, lineToParts('<<<'), ['', '<<<', '']);
-
-tester.equal(68, lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
+utest.falsy(22, isHereDocType('two line'));
 
 // ---------------------------------------------------------------------------
-tester.equal(78, mapHereDoc(`abc
+utest.equal(26, lineToParts('this is not a heredoc'), ['this is not a heredoc']);
+
+utest.equal(30, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
+
+utest.equal(38, lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
+
+utest.equal(46, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
+
+utest.equal(54, lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
+
+utest.equal(62, lineToParts('<<<'), ['', '<<<', '']);
+
+utest.equal(68, lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
+
+// ---------------------------------------------------------------------------
+utest.equal(78, mapHereDoc(`abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-tester.equal(86, mapHereDoc(`===
+utest.equal(86, mapHereDoc(`===
 abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-tester.equal(95, mapHereDoc(`...
+utest.equal(95, mapHereDoc(`...
 abc
 def`), '"abc def"');
 
 // ---------------------------------------------------------------------------
-tester.equal(104, mapHereDoc(`() -> count += 1`), '() -> count += 1');
+utest.equal(104, mapHereDoc(`() -> count += 1`), '() -> count += 1');
 
 // ---------------------------------------------------------------------------
-tester.equal(111, mapHereDoc(`---
+utest.equal(111, mapHereDoc(`---
 a: 1
 b: 2`), '{"a":1,"b":2}');
 
 // ---------------------------------------------------------------------------
-tester.equal(120, mapHereDoc(`---
+utest.equal(120, mapHereDoc(`---
 - a
 - b`), '["a","b"]');
 

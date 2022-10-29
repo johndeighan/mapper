@@ -1,7 +1,7 @@
 # Symbols.test.coffee
 
 import {LOG, assert, croak, setDebugging} from '@jdeighan/exceptions'
-import {UnitTesterNorm, UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, OL, words, isEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
@@ -26,7 +26,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 # @jdeighan/coffee-utils/log
 #    log/logger
 
-tester.equal 31, getAvailSymbols(import.meta.url), {
+utest.equal 31, getAvailSymbols(import.meta.url), {
 	barf: {
 		lib: '@jdeighan/coffee-utils/fs',
 		},
@@ -72,37 +72,37 @@ symTester = new SymbolsTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 77, getNeededSymbols("""
+utest.equal 77, getNeededSymbols("""
 	name = 'John'
 	"""), []
 
-tester.equal 81, getNeededSymbols("""
+utest.equal 81, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-tester.equal 86, getNeededSymbols("""
+utest.equal 86, getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-tester.equal 91, getNeededSymbols("""
+utest.equal 91, getNeededSymbols("""
 	x = z
 	y = x + 5
 	"""), ['z']
 
-tester.equal 96, getNeededSymbols("""
+utest.equal 96, getNeededSymbols("""
 	x = myfunc(4)
 	y = x + 5
 	"""), ['myfunc']
 
-tester.equal 101, getNeededSymbols("""
+utest.equal 101, getNeededSymbols("""
 	import {z} from 'somewhere'
 	x = z
 	y = x + 5
 	"""), []
 
-tester.equal 107, getNeededSymbols("""
+utest.equal 107, getNeededSymbols("""
 	import {myfunc} from 'somewhere'
 	x = myfunc(4)
 	y = x + 5
@@ -116,7 +116,7 @@ tester.equal 107, getNeededSymbols("""
 # --- make sure it's using the testing .symbols file
 
 hSymbols = getAvailSymbols(import.meta.url)
-tester.equal 121, hSymbols, {
+utest.equal 121, hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
 		readFile:{lib: 'fs'}
@@ -142,7 +142,7 @@ tester.equal 121, hSymbols, {
 		"import {slurp} from '#jdeighan/coffee-utils/fs'",
 		]
 
-	tester.equal 147, joinBlocks(lImports..., text), """
+	utest.equal 147, joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/coffee-utils/fs'
 			x = 42
@@ -153,10 +153,10 @@ tester.equal 121, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
-	tester.equal 158, buildImportList([]), []
+	utest.equal 158, buildImportList([]), []
 
 	lMissing = words('say undef logger slurp barf fs')
-	tester.equal 161, buildImportList(lMissing, import.meta.url), [
+	utest.equal 161, buildImportList(lMissing, import.meta.url), [
 		"import fs from 'fs'"
 		"import {say,undef} from '@jdeighan/coffee-utils'"
 		"import {slurp,barf} from '@jdeighan/coffee-utils/fs'"

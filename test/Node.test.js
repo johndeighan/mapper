@@ -11,7 +11,7 @@ import {
 } from '@jdeighan/exceptions';
 
 import {
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {
@@ -27,4 +27,4 @@ node = new Node('div', 0, import.meta.url, 1);
 
 node.incLevel();
 
-tester.equal(13, node.getLine("   "), "   div");
+utest.equal(13, node.getLine("   "), "   div");

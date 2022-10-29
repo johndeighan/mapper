@@ -10,7 +10,7 @@ import {
 import {
   UnitTesterNorm,
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {
@@ -187,7 +187,7 @@ func(x, "abc")`);
 if fs.existsSync('file.txt')
 	logger "file exists"`;
   jsCode = map(import.meta.url, cieloCode, CieloToJSMapper);
-  return tester.equal(291, jsCode, `import fs from 'fs';
+  return utest.equal(291, jsCode, `import fs from 'fs';
 import {log as logger} from '@jdeighan/coffee-utils/log';
 // --- temp.cielo
 if (fs.existsSync('file.txt')) {

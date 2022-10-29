@@ -1,6 +1,6 @@
 # StoryMapper.test.coffee
 
-import {UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {map} from '@jdeighan/mapper'
 import {StoryMapper} from '@jdeighan/mapper/story'
 

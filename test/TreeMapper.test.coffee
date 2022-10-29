@@ -4,7 +4,7 @@ import {
 	LOG, LOGVALUE, assert, croak, debug, setDebugging,
 	fromTAML,
 	} from '@jdeighan/exceptions'
-import {UnitTester, UnitTesterNorm, tester} from '@jdeighan/unit-tester'
+import {UnitTester, UnitTesterNorm, utest} from '@jdeighan/unit-tester'
 import {
 	undef, pass, OL, defined,
 	isEmpty, nonEmpty, isString, isArray,
@@ -48,7 +48,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# ------------------------------------------------------------------------
 	# --- remove comments and blank lines
-	#     create user object from tester line
+	#     create user object from utest line
 
 	mapTester.like 53, """
 			# --- comment, followed by blank line xxx
@@ -60,7 +60,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# ------------------------------------------------------------------------
 	# --- remove comments and blank lines
-	#     create user object from tester line
+	#     create user object from utest line
 
 	mapTester.like 65, """
 			# --- comment, followed by blank line
@@ -786,22 +786,22 @@ walkTester.equal 754, """
 
 		line3
 		""")
-	tester.like 789, walker.get(), {
+	utest.like 789, walker.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	tester.like 794, walker.get(), {
+	utest.like 794, walker.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	tester.like 799, walker.get(), {
+	utest.like 799, walker.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	tester.equal 804, walker.get(), undef
+	utest.equal 804, walker.get(), undef
 
 	)()
 
@@ -817,19 +817,19 @@ walkTester.equal 754, """
 					ghi
 			""")
 
-	tester.like 820, walker.get(), {
+	utest.like 820, walker.get(), {
 		str:  'abc'
 		level: 0
 		}
-	tester.like 824, walker.get(), {
+	utest.like 824, walker.get(), {
 		str:  'def'
 		level: 1
 		}
-	tester.like 828, walker.get(), {
+	utest.like 828, walker.get(), {
 		str:  'ghi'
 		level: 2
 		}
-	tester.equal 832, walker.get(), undef
+	utest.equal 832, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -846,22 +846,22 @@ walkTester.equal 754, """
 
 	# --- get() should return {uobj, level}
 
-	tester.like 849, walker.get(), {
+	utest.like 849, walker.get(), {
 		str: 'abc def'
 		level: 0
 		}
-	tester.like 853, walker.get(), {
+	utest.like 853, walker.get(), {
 		str: 'ghi'
 		level: 1
 		}
-	tester.equal 857, walker.get(), undef
+	utest.equal 857, walker.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # __END__ only works with no identation
 
 (() ->
-	tester.fails 864, () -> map(import.meta.url, """
+	utest.fails 864, () -> map(import.meta.url, """
 			abc
 					def
 				ghi
@@ -947,7 +947,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	tester.equal 950, map(import.meta.url, block, MyWalker), """
+	utest.equal 950, map(import.meta.url, block, MyWalker), """
 			abc
 			def
 			"""
@@ -995,7 +995,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	tester.equal 998, map(import.meta.url, block, MyWalker), """
+	utest.equal 998, map(import.meta.url, block, MyWalker), """
 			# not a comment
 			abc
 			def
@@ -1236,23 +1236,23 @@ walkTester.equal 754, """
 				--x
 			""")
 
-	tester.like 1239, walker.peek(), {level:0, str: 'if (x == 2)'}
-	tester.like 1240, walker.get(),  {level:0, str: 'if (x == 2)'}
+	utest.like 1239, walker.peek(), {level:0, str: 'if (x == 2)'}
+	utest.like 1240, walker.get(),  {level:0, str: 'if (x == 2)'}
 
-	tester.like 1242, walker.peek(), {level:1, str: 'doThis'}
-	tester.like 1243, walker.get(),  {level:1, str: 'doThis'}
+	utest.like 1242, walker.peek(), {level:1, str: 'doThis'}
+	utest.like 1243, walker.get(),  {level:1, str: 'doThis'}
 
-	tester.like 1245, walker.peek(), {level:1, str: 'doThat'}
-	tester.like 1246, walker.get(),  {level:1, str: 'doThat'}
+	utest.like 1245, walker.peek(), {level:1, str: 'doThat'}
+	utest.like 1246, walker.get(),  {level:1, str: 'doThat'}
 
-	tester.like 1248, walker.peek(), {level:2, str: 'then this'}
-	tester.like 1249, walker.get(),  {level:2, str: 'then this'}
+	utest.like 1248, walker.peek(), {level:2, str: 'then this'}
+	utest.like 1249, walker.get(),  {level:2, str: 'then this'}
 
-	tester.like 1251, walker.peek(), {level:0, str: 'while (x > 2)'}
-	tester.like 1252, walker.get(),  {level:0, str: 'while (x > 2)'}
+	utest.like 1251, walker.peek(), {level:0, str: 'while (x > 2)'}
+	utest.like 1252, walker.get(),  {level:0, str: 'while (x > 2)'}
 
-	tester.like 1254, walker.peek(), {level:1, str: '--x'}
-	tester.like 1255, walker.get(),  {level:1, str: '--x'}
+	utest.like 1254, walker.peek(), {level:1, str: '--x'}
+	utest.like 1255, walker.get(),  {level:1, str: '--x'}
 
 	)()
 
@@ -1487,7 +1487,7 @@ class HtmlMapper extends TreeMapper
 				def
 			"""
 
-	tester.equal 1490, lTrace, [
+	utest.equal 1490, lTrace, [
 		"S 0"
 		"S 1"
 		"E 1"

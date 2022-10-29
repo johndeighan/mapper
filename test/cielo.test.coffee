@@ -1,7 +1,7 @@
 # cielo.test.coffee
 
 import {assert, LOG, debug, setDebugging} from '@jdeighan/exceptions'
-import {UnitTesterNorm, UnitTester, tester} from '@jdeighan/unit-tester'
+import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
 
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
@@ -270,7 +270,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	jsCode = map(import.meta.url, cieloCode, CieloToJSMapper)
 
-	tester.equal 291, jsCode, """
+	utest.equal 291, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo

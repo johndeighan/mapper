@@ -13,7 +13,7 @@ import {
 
 import {
   UnitTester,
-  tester
+  utest
 } from '@jdeighan/unit-tester';
 
 import {
@@ -28,11 +28,6 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  phStr,
-  phReplace
-} from '@jdeighan/coffee-utils/placeholders';
-
-import {
   Node
 } from '@jdeighan/mapper/node';
 
@@ -44,47 +39,47 @@ import {
 (function() {
   var getter, node1, node2, node3;
   getter = new Getter(undef, ['line1', 'line2', 'line3']);
-  tester.like(24, getter.peek(), {
+  utest.like(24, getter.peek(), {
     str: 'line1'
   });
-  tester.like(25, getter.peek(), {
+  utest.like(25, getter.peek(), {
     str: 'line1'
   });
-  tester.falsy(26, getter.eof());
-  tester.like(27, node1 = getter.get(), {
+  utest.falsy(26, getter.eof());
+  utest.like(27, node1 = getter.get(), {
     str: 'line1'
   });
-  tester.like(28, node2 = getter.get(), {
+  utest.like(28, node2 = getter.get(), {
     str: 'line2'
   });
-  tester.equal(29, getter.lineNum, 2);
-  tester.falsy(31, getter.eof());
-  tester.succeeds(32, function() {
+  utest.equal(29, getter.lineNum, 2);
+  utest.falsy(31, getter.eof());
+  utest.succeeds(32, function() {
     return getter.unfetch(node2);
   });
-  tester.succeeds(33, function() {
+  utest.succeeds(33, function() {
     return getter.unfetch(node1);
   });
-  tester.like(34, getter.get(), {
+  utest.like(34, getter.get(), {
     str: 'line1'
   });
-  tester.like(35, getter.get(), {
+  utest.like(35, getter.get(), {
     str: 'line2'
   });
-  tester.falsy(36, getter.eof());
-  tester.like(38, node3 = getter.get(), {
+  utest.falsy(36, getter.eof());
+  utest.like(38, node3 = getter.get(), {
     str: 'line3'
   });
-  tester.equal(39, getter.lineNum, 3);
-  tester.truthy(40, getter.eof());
-  tester.succeeds(41, function() {
+  utest.equal(39, getter.lineNum, 3);
+  utest.truthy(40, getter.eof());
+  utest.succeeds(41, function() {
     return getter.unfetch(node3);
   });
-  tester.falsy(42, getter.eof());
-  tester.like(43, getter.get(), {
+  utest.falsy(42, getter.eof());
+  utest.like(43, getter.get(), {
     str: 'line3'
   });
-  return tester.truthy(44, getter.eof());
+  return utest.truthy(44, getter.eof());
 })();
 
 // ---------------------------------------------------------------------------
@@ -92,23 +87,23 @@ import {
 (function() {
   var getter;
   getter = new Getter(undef, ['abc', 'def  ', 'ghi\t\t']);
-  tester.like(54, getter.peek(), {
+  utest.like(54, getter.peek(), {
     str: 'abc'
   });
-  tester.like(55, getter.peek(), {
+  utest.like(55, getter.peek(), {
     str: 'abc'
   });
-  tester.falsy(56, getter.eof());
-  tester.like(57, getter.get(), {
+  utest.falsy(56, getter.eof());
+  utest.like(57, getter.get(), {
     str: 'abc'
   });
-  tester.like(58, getter.get(), {
+  utest.like(58, getter.get(), {
     str: 'def'
   });
-  tester.like(59, getter.get(), {
+  utest.like(59, getter.get(), {
     str: 'ghi'
   });
-  return tester.equal(60, getter.lineNum, 3);
+  return utest.equal(60, getter.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -120,14 +115,14 @@ def
 ghi
 jkl
 mno`);
-  tester.like(76, getter.fetch(), {
+  utest.like(76, getter.fetch(), {
     str: 'abc'
   });
   // 'jkl' will be discarded
   func = function(hNode) {
     return hNode.str === 'jkl';
   };
-  tester.like(80, getter.fetchUntil(func, 'discardEndLine'), [
+  utest.like(80, getter.fetchUntil(func, 'discardEndLine'), [
     {
       str: 'def'
     },
@@ -135,10 +130,10 @@ mno`);
       str: 'ghi'
     }
   ]);
-  tester.like(85, getter.fetch(), {
+  utest.like(85, getter.fetch(), {
     str: 'mno'
   });
-  return tester.equal(86, getter.lineNum, 5);
+  return utest.equal(86, getter.lineNum, 5);
 })();
 
 // ---------------------------------------------------------------------------
@@ -153,47 +148,47 @@ mno`);
   };
   // --- You can pass any iterator to the Getter() constructor
   getter = new Getter(undef, generator());
-  tester.like(105, getter.peek(), {
+  utest.like(105, getter.peek(), {
     str: 'line1'
   });
-  tester.like(106, getter.peek(), {
+  utest.like(106, getter.peek(), {
     str: 'line1'
   });
-  tester.falsy(107, getter.eof());
-  tester.like(108, node1 = getter.get(), {
+  utest.falsy(107, getter.eof());
+  utest.like(108, node1 = getter.get(), {
     str: 'line1'
   });
-  tester.like(109, node2 = getter.get(), {
+  utest.like(109, node2 = getter.get(), {
     str: 'line2'
   });
-  tester.equal(110, getter.lineNum, 2);
-  tester.falsy(112, getter.eof());
-  tester.succeeds(113, function() {
+  utest.equal(110, getter.lineNum, 2);
+  utest.falsy(112, getter.eof());
+  utest.succeeds(113, function() {
     return getter.unfetch(node2);
   });
-  tester.succeeds(114, function() {
+  utest.succeeds(114, function() {
     return getter.unfetch(node1);
   });
-  tester.like(115, getter.get(), {
+  utest.like(115, getter.get(), {
     str: 'line1'
   });
-  tester.like(116, getter.get(), {
+  utest.like(116, getter.get(), {
     str: 'line2'
   });
-  tester.falsy(117, getter.eof());
-  tester.like(119, node3 = getter.get(), {
+  utest.falsy(117, getter.eof());
+  utest.like(119, node3 = getter.get(), {
     str: 'line3'
   });
-  tester.truthy(120, getter.eof());
-  tester.succeeds(121, function() {
+  utest.truthy(120, getter.eof());
+  utest.succeeds(121, function() {
     return getter.unfetch(node3);
   });
-  tester.falsy(122, getter.eof());
-  tester.like(123, getter.get(), {
+  utest.falsy(122, getter.eof());
+  utest.like(123, getter.get(), {
     str: 'line3'
   });
-  tester.truthy(124, getter.eof());
-  return tester.equal(125, getter.lineNum, 3);
+  utest.truthy(124, getter.eof());
+  return utest.equal(125, getter.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -205,51 +200,51 @@ mno`);
 		then this
 while (x > 2)
 	--x`);
-  tester.like(141, getter.peek(), {
+  utest.like(141, getter.peek(), {
     str: 'if (x == 2)',
     level: 0
   });
-  tester.like(142, getter.get(), {
+  utest.like(142, getter.get(), {
     str: 'if (x == 2)',
     level: 0
   });
-  tester.like(144, getter.peek(), {
+  utest.like(144, getter.peek(), {
     str: 'doThis',
     level: 1
   });
-  tester.like(145, getter.get(), {
+  utest.like(145, getter.get(), {
     str: 'doThis',
     level: 1
   });
-  tester.like(147, getter.peek(), {
+  utest.like(147, getter.peek(), {
     str: 'doThat',
     level: 1
   });
-  tester.like(148, getter.get(), {
+  utest.like(148, getter.get(), {
     str: 'doThat',
     level: 1
   });
-  tester.like(150, getter.peek(), {
+  utest.like(150, getter.peek(), {
     str: 'then this',
     level: 2
   });
-  tester.like(151, getter.get(), {
+  utest.like(151, getter.get(), {
     str: 'then this',
     level: 2
   });
-  tester.like(153, getter.peek(), {
+  utest.like(153, getter.peek(), {
     str: 'while (x > 2)',
     level: 0
   });
-  tester.like(154, getter.get(), {
+  utest.like(154, getter.get(), {
     str: 'while (x > 2)',
     level: 0
   });
-  tester.like(156, getter.peek(), {
+  utest.like(156, getter.peek(), {
     str: '--x',
     level: 1
   });
-  return tester.like(157, getter.get(), {
+  return utest.like(157, getter.get(), {
     str: '--x',
     level: 1
   });
@@ -268,7 +263,7 @@ while (x > 2)
 h1 title
 	p paragraph`;
   getter = new Getter(import.meta.url, block);
-  tester.like(178, getter.getAll(), [
+  utest.like(178, getter.getAll(), [
     {
       str: '#starbucks webpage',
       level: 0,
@@ -299,7 +294,7 @@ h1 title
     return hNode.str.match(/^#\s/);
   };
   getter = new Getter(import.meta.url, block);
-  tester.like(189, getter.getUntil(func, 'discardEndLine'), [
+  utest.like(189, getter.getUntil(func, 'discardEndLine'), [
     {
       str: '#starbucks webpage',
       level: 0,
@@ -311,13 +306,13 @@ h1 title
       uobj: ''
     }
   ]);
-  tester.like(193, getter.get(), {
+  utest.like(193, getter.get(), {
     str: 'h1 title',
     level: 0,
     uobj: 'h1 title'
   });
   getter = new Getter(import.meta.url, block);
-  tester.like(200, getter.getUntil(func, 'keepEndLine'), [
+  utest.like(200, getter.getUntil(func, 'keepEndLine'), [
     {
       str: '#starbucks webpage',
       level: 0,
@@ -329,7 +324,7 @@ h1 title
       uobj: ''
     }
   ]);
-  return tester.like(204, getter.get(), {
+  return utest.like(204, getter.get(), {
     str: '# --- comment',
     level: 0,
     uobj: '# --- comment'
@@ -359,18 +354,16 @@ h1 title
     finalizeBlock(block) {
       var strVars;
       strVars = this.lVars.join(',');
-      return phReplace(block, {
-        'vars': strVars
-      });
+      return block.replace('__vars__', strVars);
     }
 
   };
   // .......................................................
-  getter = new VarGetter(undef, `var ${phStr('vars')}
+  getter = new VarGetter(undef, `var __vars__
 x = 2
 y = 3`);
   result = getter.getBlock();
-  return tester.like(253, result, `var x,y
+  return utest.like(253, result, `var x,y
 x = 2
 y = 3`);
 })();

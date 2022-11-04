@@ -2,10 +2,15 @@
   // cielo.coffee
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -71,7 +76,7 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
   // ..........................................................
   visitCmd(hNode) {
     var argstr, cmd, code, level, lineNum, result, srcLevel, uobj;
-    debug("enter CieloToCoffeeMapper.visitCmd()", hNode);
+    dbgEnter("CieloToCoffeeMapper.visitCmd", hNode);
     ({uobj, srcLevel, level, lineNum} = hNode);
     ({cmd, argstr} = uobj);
     switch (cmd) {
@@ -80,18 +85,18 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
         //     OR following indented text
         //     but not both
         code = this.containedText(hNode, argstr);
-        debug('code', code);
+        dbg('code', code);
         if (code === argstr) {
           result = arrayToBlock([indented('# |||| $:', level), indented(code, level)]);
         } else {
           result = arrayToBlock([indented('# |||| $: {', level), indented(code, level), indented('# |||| }', level)]);
         }
-        debug("return from CieloToCoffeeMapper.visitCmd()", result);
+        dbgReturn("CieloToCoffeeMapper.visitCmd", result);
         return result;
       default:
         super.visitCmd(hNode);
     }
-    debug("return undef from CieloToCoffeeMapper.visitCmd()");
+    dbgReturn("CieloToCoffeeMapper.visitCmd", undef);
     return undef;
   }
 
@@ -101,15 +106,15 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
 export var CieloToJSMapper = class CieloToJSMapper extends CieloToCoffeeMapper {
   finalizeBlock(coffeeCode) {
     var err, jsCode, lImports, lNeededSymbols, stmt;
-    debug("enter CieloToJSMapper.finalizeBlock()", coffeeCode);
+    dbgEnter("CieloToJSMapper.finalizeBlock", coffeeCode);
     lNeededSymbols = getNeededSymbols(coffeeCode);
-    debug(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
+    dbg(`${lNeededSymbols.length} needed symbols`, lNeededSymbols);
     try {
       jsCode = coffeeCodeToJS(coffeeCode, this.source, {
         bare: true,
         header: false
       });
-      debug("jsCode", jsCode);
+      dbg("jsCode", jsCode);
     } catch (error) {
       err = error;
       croak(err, "Original Code", coffeeCode);
@@ -117,7 +122,7 @@ export var CieloToJSMapper = class CieloToJSMapper extends CieloToCoffeeMapper {
     if (nonEmpty(lNeededSymbols)) {
       // --- Prepend needed imports
       lImports = buildImportList(lNeededSymbols, this.source);
-      debug("lImports", lImports);
+      dbg("lImports", lImports);
       // --- append ';' to import statements
       lImports = (function() {
         var i, len, results;
@@ -131,7 +136,7 @@ export var CieloToJSMapper = class CieloToJSMapper extends CieloToCoffeeMapper {
       // --- joinBlocks() flattens all its arguments to array of strings
       jsCode = joinBlocks(lImports, jsCode);
     }
-    debug("return from CieloToJSMapper.finalizeBlock()", jsCode);
+    dbgReturn("CieloToJSMapper.finalizeBlock", jsCode);
     return jsCode;
   }
 
@@ -151,14 +156,14 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
       dumpfile = withExt(srcPath, '.ast');
       lNeeded = getNeededSymbols(cieloCode, {dumpfile});
       if ((lNeeded === undef) || (lNeeded.length === 0)) {
-        debug(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
+        dbg(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
       } else {
         n = lNeeded.length;
         word = n === 1 ? 'SYMBOL' : 'SYMBOLS';
-        debug(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
+        dbg(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
         for (i = 0, len = lNeeded.length; i < len; i++) {
           sym = lNeeded[i];
-          debug(`   - ${sym}`);
+          dbg(`   - ${sym}`);
         }
       }
     }

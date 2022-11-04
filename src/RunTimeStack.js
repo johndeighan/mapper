@@ -3,7 +3,6 @@
 import {
   LOG,
   LOGVALUE,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';

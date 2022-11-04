@@ -4,12 +4,17 @@ var hHereDocs, lHereDocs;
 
 import {
   LOG,
-  debug,
   assert,
   croak,
   isTAML,
   fromTAML
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -74,23 +79,23 @@ export var BaseHereDoc = class BaseHereDoc {
 // Returns a CieloScript expression or undef
 export var mapHereDoc = function(block) {
   var heredoc, i, len, result, str, type;
-  debug("enter mapHereDoc()", block);
+  dbgEnter("mapHereDoc", block);
   assert(isString(block), "not a string");
   for (i = 0, len = lHereDocs.length; i < len; i++) {
     type = lHereDocs[i];
-    debug(`CHECK FOR ${type} HEREDOC`);
+    dbg(`CHECK FOR ${type} HEREDOC`);
     heredoc = hHereDocs[type];
     if (defined(str = heredoc.map(block))) {
-      debug(`   - FOUND ${type} HEREDOC`);
-      debug("return from mapHereDoc()", str);
+      dbg(`   - FOUND ${type} HEREDOC`);
+      dbgReturn("mapHereDoc", str);
       return str;
     } else {
-      debug(`   - NOT A ${type} HEREDOC`);
+      dbg(`   - NOT A ${type} HEREDOC`);
     }
   }
-  debug("HEREDOC type 'default'");
+  dbg("HEREDOC type 'default'");
   result = JSON.stringify(block); // can directly replace <<<
-  debug("return from mapHereDoc()", result);
+  dbgReturn("mapHereDoc", result);
   return result;
 };
 
@@ -102,23 +107,24 @@ export var isHereDocType = function(type) {
 // ---------------------------------------------------------------------------
 export var addHereDocType = function(type, inputClass) {
   var installed, name, oHereDoc;
+  dbgEnter("addHereDocType", type, inputClass);
   assert(inputClass != null, "Missing input class");
   name = className(inputClass);
-  debug("enter addHereDocType()", type, name);
   if (defined(hHereDocs[type])) {
     // --- Already installed, but OK if it's the same class
     installed = className(hHereDocs[type]);
     if (installed !== name) {
       croak(`type ${OL(type)}: add ${name}, installed is ${installed}`);
     }
-    debug("return from addHereDocType() - already installed");
+    dbg("already installed");
+    dbgReturn("addHereDocType");
     return;
   }
   oHereDoc = new inputClass();
   assert(oHereDoc instanceof BaseHereDoc, "addHereDocType() requires a BaseHereDoc subclass");
   lHereDocs.push(type);
   hHereDocs[type] = oHereDoc;
-  debug("return from addHereDocType()");
+  dbgReturn("addHereDocType");
 };
 
 // ---------------------------------------------------------------------------
@@ -168,15 +174,15 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
   // ........................................................................
   isFunctionDef(block) {
     var _, lMatches, strBody, strParms;
-    debug("enter isFunctionDef()", block);
+    dbgEnter("isFunctionDef", block);
     lMatches = block.match(/^\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\s*\)\s*->[ \t]*\n?(.*)$/s); // optional parameters
     if (lMatches) {
       // --- HERE, we should check if it compiles
       [_, strParms, strBody] = lMatches;
-      debug("return from isFunctionDef - OK");
+      dbgReturn("isFunctionDef", true);
       return true;
     } else {
-      debug("return from isFunctionDef - no match");
+      dbgReturn("isFunctionDef", false);
       return false;
     }
   }

@@ -1,12 +1,14 @@
 # ASTWalker.test.coffee
 
 import {
-	setDebugging, resetDebugging, setCustomDebugLogger,
-	} from '@jdeighan/exceptions'
+	setDebugging, resetDebugging, dbgReset, dbgGetLog,
+	} from '@jdeighan/exceptions/debug'
+import {LOG, LOGVALUE} from '@jdeighan/exceptions/log'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
 import {defined, nonEmpty} from '@jdeighan/coffee-utils'
 import {toBlock} from '@jdeighan/coffee-utils/block'
-import {mkpath, barf, slurp, projRoot} from '@jdeighan/coffee-utils/fs'
+import {indented} from '@jdeighan/coffee-utils/indent'
+import {mkpath, slurp, projRoot} from '@jdeighan/coffee-utils/fs'
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
 rootDir = projRoot import.meta.url
@@ -18,8 +20,8 @@ class ASTTester extends UnitTester
 	transformValue: (coffeeCode) ->
 
 		walker = new ASTWalker(coffeeCode)
-		barf mkpath(rootDir, 'test', 'ast.txt'), walker.getBasicAST()
 		result = walker.walk('asText')
+		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
 		return result
 
 tester = new ASTTester()
@@ -724,48 +726,39 @@ tester.equal 709, '''
 # This tester includes debugging info
 
 (() ->
-	lLines = []
+	setDebugging 'ASTWalker.visit beginScope endScope',
+		'Context.add Context.addGlobal',
+		{
+			returnFrom: () ->
+
+				return true
+
+			enter: (funcName, lArgs, level) ->
+
+				switch funcName
+					when 'ASTWalker.visit'
+						LOG indented(lArgs[0].type, level)
+					when 'beginScope'
+						LOG indented('BEGIN SCOPE', level)
+					when 'endScope'
+						LOG indented('END SCOPE', level)
+					when 'Context.add'
+						LOG indented("ADD #{lArgs[0]}", level)
+					when 'Context.addGlobal'
+						LOG indented("ADDGLOBAL #{lArgs[0]}", level)
+					else
+						return false
+			}
 
 	class ASTTester2 extends UnitTester
 
 		transformValue: (coffeeCode) ->
 
-			setDebugging 'ASTWalker.visit beginScope endScope',
-							'Context.add Context.addGlobal'
-
-			setCustomDebugLogger 'return', () -> return true
-			setCustomDebugLogger 'enter', (label, lObjects, level) ->
-				if lMatches = label.match(///^
-						enter \s+ ASTWalker \. visit \(
-						type = ([A-Za-z]+)
-						\)
-						$///)
-					[_, name] = lMatches
-					lLines.push "\t".repeat(level) + name
-					return true
-				else if (label == 'enter beginScope()')
-					lLines.push "\t".repeat(level) + 'BEGIN SCOPE'
-					return true
-				else if (label == 'enter endScope()')
-					lLines.push "\t".repeat(level) + 'END SCOPE'
-					return true
-				else if lMatches = label.match(///^
-						enter \s+ Context \. (add | addGlobal) \(
-						\' ([A-Za-z]+) \'
-						\)
-						$///)
-					[_, method, name] = lMatches
-					lLines.push "\t".repeat(level) + method.toUpperCase() + ' ' + name
-					return true
-
-				else
-					return false
-
+			dbgReset()
 			walker = new ASTWalker(coffeeCode)
-			barf mkpath(rootDir, 'test', 'ast.txt'), walker.getBasicAST()
 			result = walker.walk('asText')
-			resetDebugging()   # undo debugging setup
-			return result
+			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
+			return dbgGetLog()
 
 	tester2 = new ASTTester2()
 
@@ -777,13 +770,7 @@ tester.equal 709, '''
 		export removeKeys = (h, lKeys) =>
 			removeKeys(lKeys)
 			return
-		''',
-
-		'''
-		lExported: charCount removeKeys
-		'''
-
-	utest.equal 784, toBlock(lLines), """
+		''', '''
 		File
 			Program
 				ExportNamedDeclaration
@@ -806,5 +793,5 @@ tester.equal 709, '''
 									CallExpression
 								ReturnStatement
 							END SCOPE
-		"""
+		'''
 	)()

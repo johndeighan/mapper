@@ -1,10 +1,11 @@
 # Symbols.coffee
 
 import {
-	LOG, LOGVALUE, assert, croak, debug,
+	LOG, LOGVALUE, assert, croak,
 	} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
-	undef, defined, isString, isArray, isEmpty, nonEmpty,
+	undef, defined, notdefined, isString, isArray, isEmpty, nonEmpty,
 	uniq, words, escapeStr, OL,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -24,28 +25,29 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	#        dumpfile: <filepath>   - where to dump ast
 	#     NOTE: items in array returned will always be unique
 
-	debug "enter getNeededSymbols()", coffeeCode, hOptions
+	dbgEnter "getNeededSymbols", coffeeCode, hOptions
 	assert isString(coffeeCode), "code not a string"
 	assert isUndented(coffeeCode), "coffeeCode has indent"
 	ast = coffeeCodeToAST(coffeeCode)
-	debug 'AST', ast
+	dbg 'AST', ast
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.walk()
 	if hOptions.dumpfile
 		barf hOptions.dumpfile, "AST:\n" + tamlStringify(ast)
 	result = uniq(hSymbolInfo.lMissing)
-	debug "return from getNeededSymbols()", result
+	dbgReturn "getNeededSymbols", result
 	return result
 
 # ---------------------------------------------------------------------------
 
 export buildImportList = (lNeededSymbols, source) ->
 
-	debug "enter buildImportList()", lNeededSymbols, source
+	dbgEnter "buildImportList", lNeededSymbols, source
 
 	if isEmpty(lNeededSymbols)
-		debug "return from buildImportList() - no needed symbols"
+		dbg 'no needed symbols'
+		dbgReturn "buildImportList", []
 		return []
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
@@ -79,7 +81,7 @@ export buildImportList = (lNeededSymbols, source) ->
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
 	assert isArray(lImports), "lImports is not an array!"
-	debug "return from buildImportList()", lImports
+	dbgReturn "buildImportList", lImports
 	return lImports
 
 # ---------------------------------------------------------------------------
@@ -88,21 +90,22 @@ export buildImportList = (lNeededSymbols, source) ->
 export getAvailSymbols = (source=undef) ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
 
-	debug "enter getAvailSymbols()", source
+	dbgEnter "getAvailSymbols", source
 	if (source == undef)
 		searchDir = process.cwd()
 	else
 		hSourceInfo = parseSource(source)
 		searchDir = hSourceInfo.dir
 		assert defined(searchDir), "No directory info for #{OL(source)}"
-	debug "search for .symbols from '#{searchDir}'"
+	dbg "search for .symbols from '#{searchDir}'"
 	filepath = pathTo('.symbols', searchDir, {direction: 'up'})
-	if ! filepath?
-		debug "return from getAvailSymbols() - no .symbols file found"
+	if notdefined(filepath)
+		dbg 'no symbols file found'
+		dbgReturn "getAvailSymbols", {}
 		return {}
 
 	hSymbols = getAvailSymbolsFrom(filepath)
-	debug "return from getAvailSymbols()", hSymbols
+	dbgReturn "getAvailSymbols", hSymbols
 	return hSymbols
 
 # ---------------------------------------------------------------------------
@@ -110,13 +113,13 @@ export getAvailSymbols = (source=undef) ->
 getAvailSymbolsFrom = (filepath) ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
 
-	debug "enter getAvailSymbolsFrom()", filepath
+	dbgEnter "getAvailSymbolsFrom", filepath
 
 	contents = slurp(filepath)
-	debug 'Contents of .symbols', contents
+	dbg 'Contents of .symbols', contents
 	parser = new SymbolParser(filepath, contents)
 	hAvailSymbols = parser.getAvailSymbols()
-	debug "return from getAvailSymbolsFrom()", hAvailSymbols
+	dbgReturn "getAvailSymbolsFrom", hAvailSymbols
 	return hAvailSymbols
 
 # ---------------------------------------------------------------------------
@@ -133,7 +136,7 @@ class SymbolParser extends TreeMapper
 
 	mapNode: (hLine) ->
 
-		debug "enter SymbolParser.mapNode()", hLine
+		dbgEnter "SymbolParser.mapNode", hLine
 
 		{str, level} = hLine
 		if level==0
@@ -168,7 +171,7 @@ class SymbolParser extends TreeMapper
 				@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
-		debug "return from SymbolParser.mapNode()", undef
+		dbgReturn "SymbolParser.mapNode", undef
 		return undef   # doesn't matter what we return
 
 	# ..........................................................

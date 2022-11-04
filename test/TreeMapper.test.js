@@ -7,10 +7,15 @@ import {
   LOGVALUE,
   assert,
   croak,
-  debug,
   setDebugging,
   fromTAML
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   UnitTester,
@@ -724,7 +729,7 @@ p
   MyWalker = class MyWalker extends TreeMapper {
     // --- This removes blank lines
     mapEmptyLine() {
-      debug("in MyWalker.mapEmptyLine()");
+      dbg("in MyWalker.mapEmptyLine()");
       return undef;
     }
 
@@ -816,9 +821,9 @@ def`);
     // .......................................................
     visitCmd(hNode) {
       var result;
-      debug("enter MyWalker.visitCmd()");
+      dbgEnter("MyWalker.visitCmd");
       result = `COMMAND: ${hNode.uobj.cmd}`;
-      debug("return from MyWalker.visitCmd()", result);
+      dbgReturn("MyWalker.visitCmd", result);
       return result;
     }
 
@@ -852,15 +857,16 @@ def`);
     // --- This maps all non-empty lines to the string 'x'
     //     and removes all empty lines
     mapNode(hNode) {
-      var level, str;
-      debug("enter mapNode()", hNode);
+      var level, result, str;
+      dbgEnter("mapNode", hNode);
       ({str, level} = hNode);
       if (isEmpty(str)) {
-        debug("return undef from mapNode() - empty line");
+        dbgReturn("mapNode", undef);
         return undef;
       } else {
-        debug("return 'x' from mapNode()");
-        return indented('x', level, this.oneIndent);
+        result = indented('x', level, this.oneIndent);
+        dbgReturn("mapNode", result);
+        return result;
       }
     }
 
@@ -1069,7 +1075,7 @@ def`);
 HtmlMapper = class HtmlMapper extends TreeMapper {
   mapNode(hNode) {
     var _, body, hResult, lMatches, level, md, str, tag, text;
-    debug("enter MyWalker.mapNode()", hNode);
+    dbgEnter("MyWalker.mapNode", hNode);
     ({str, level} = hNode);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
@@ -1091,23 +1097,24 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
       case 'div:markdown':
         hResult.tag = 'div';
         body = this.fetchBlockAtLevel(level);
-        debug("body", body);
+        dbg("body", body);
         if (nonEmpty(body)) {
           md = map(import.meta.url, body, SimpleMarkDownMapper);
-          debug("md", md);
+          dbg("md", md);
           hResult.body = md;
         }
         break;
       default:
         croak(`Unknown tag: ${OL(tag)}`);
     }
-    debug("return from MyWalker.mapNode()", hResult);
+    dbgReturn("MyWalker.mapNode", hResult);
     return hResult;
   }
 
   // .......................................................
   visit(hNode, hUser, lStack) {
     var _, lMatches, lParts, level, result, str, type, uobj;
+    dbgEnter('visit', hNode, hUser, lStack);
     ({str, uobj, level, type} = hNode);
     switch (type) {
       case 'comment':
@@ -1123,7 +1130,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
       lParts.push(indented(uobj.body, level + 1));
     }
     result = arrayToBlock(lParts);
-    debug('result', result);
+    dbgReturn('visit', result);
     return result;
   }
 

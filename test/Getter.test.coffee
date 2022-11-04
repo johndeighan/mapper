@@ -1,6 +1,6 @@
 # Getter.test.coffee
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
 import {setDebugging} from '@jdeighan/exceptions/debug'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {

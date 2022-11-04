@@ -2,7 +2,8 @@
 
 import {marked} from 'marked'
 
-import {LOG, LOGVALUE, assert, croak, debug} from '@jdeighan/exceptions'
+import {LOG, LOGVALUE, assert, croak} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	undef, defined, OL, isEmpty, nonEmpty, isString,
 	} from '@jdeighan/coffee-utils'
@@ -27,15 +28,15 @@ stripComments = (block) ->
 
 export markdownify = (block) ->
 
-	debug "enter markdownify()", block
+	dbgEnter "markdownify", block
 	assert isString(block), "block is not a string"
 	html = marked.parse(undented(stripComments(block)), {
 		grm: true,
 		headerIds: false,
 		})
-	debug "marked returned", html
+	dbg "marked returned", html
 	result = svelteHtmlEsc(html)
-	debug "return from markdownify()", result
+	dbgReturn "markdownify", result
 	return result
 
 # ---------------------------------------------------------------------------
@@ -54,30 +55,30 @@ export class SimpleMarkDownMapper extends TreeMapper
 
 	visit: (hNode) ->
 
-		debug "enter SimpleMarkDownMapper.visit()", hNode
+		dbgEnter "SimpleMarkDownMapper.visit", hNode
 		{str} = hNode
 		if str.match(/^={3,}$/) && defined(@prevStr)
 			result = "<h1>#{@prevStr}</h1>"
-			debug "set prevStr to undef"
+			dbg "set prevStr to undef"
 			@prevStr = undef
-			debug "return from SimpleMarkDownMapper.visit()", result
+			dbgReturn "SimpleMarkDownMapper.visit", result
 			return result
 		else if str.match(/^-{3,}$/) && defined(@prevStr)
 			result = "<h2>#{@prevStr}</h2>"
-			debug "set prevStr to undef"
+			dbg "set prevStr to undef"
 			@prevStr = undef
-			debug "return from SimpleMarkDownMapper.visit()", result
+			dbgReturn "SimpleMarkDownMapper.visit", result
 			return result
 		else
 			result = @prevStr
-			debug "set prevStr to #{OL(str)}"
+			dbg "set prevStr to #{OL(str)}"
 			@prevStr = str
 			if defined(result)
 				result = "<p>#{result}</p>"
-				debug "return from SimpleMarkDownMapper.visit()", result
+				dbgReturn "SimpleMarkDownMapper.visit", result
 				return result
 			else
-				debug "return undef from SimpleMarkDownMapper.visit()"
+				dbgReturn "SimpleMarkDownMapper.visit", undef
 				return undef
 
 	# ..........................................................

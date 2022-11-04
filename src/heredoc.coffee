@@ -1,8 +1,9 @@
 # heredoc.coffee
 
 import {
-	LOG, debug, assert, croak, isTAML, fromTAML,
+	LOG, assert, croak, isTAML, fromTAML,
 	} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	undef, defined, notdefined, pass,
 	isString, isHash, isEmpty, nonEmpty,
@@ -49,21 +50,21 @@ export class BaseHereDoc
 
 export mapHereDoc = (block) ->
 
-	debug "enter mapHereDoc()", block
+	dbgEnter "mapHereDoc", block
 	assert isString(block), "not a string"
 	for type in lHereDocs
-		debug "CHECK FOR #{type} HEREDOC"
+		dbg "CHECK FOR #{type} HEREDOC"
 		heredoc = hHereDocs[type]
 		if defined(str = heredoc.map(block))
-			debug "   - FOUND #{type} HEREDOC"
-			debug "return from mapHereDoc()", str
+			dbg "   - FOUND #{type} HEREDOC"
+			dbgReturn "mapHereDoc", str
 			return str
 		else
-			debug "   - NOT A #{type} HEREDOC"
+			dbg "   - NOT A #{type} HEREDOC"
 
-	debug "HEREDOC type 'default'"
+	dbg "HEREDOC type 'default'"
 	result = JSON.stringify(block)    # can directly replace <<<
-	debug "return from mapHereDoc()", result
+	dbgReturn "mapHereDoc", result
 	return result
 
 # ---------------------------------------------------------------------------
@@ -76,15 +77,16 @@ export isHereDocType = (type) ->
 
 export addHereDocType = (type, inputClass) ->
 
+	dbgEnter "addHereDocType", type, inputClass
 	assert inputClass?, "Missing input class"
 	name = className(inputClass)
-	debug "enter addHereDocType()", type, name
 	if defined(hHereDocs[type])
 		# --- Already installed, but OK if it's the same class
 		installed = className(hHereDocs[type])
 		if (installed != name)
 			croak "type #{OL(type)}: add #{name}, installed is #{installed}"
-		debug "return from addHereDocType() - already installed"
+		dbg "already installed"
+		dbgReturn "addHereDocType"
 		return
 
 	oHereDoc = new inputClass()
@@ -93,7 +95,7 @@ export addHereDocType = (type, inputClass) ->
 
 	lHereDocs.push type
 	hHereDocs[type]  = oHereDoc
-	debug "return from addHereDocType()"
+	dbgReturn "addHereDocType"
 	return
 
 # ---------------------------------------------------------------------------
@@ -140,7 +142,7 @@ export class FuncHereDoc extends BaseHereDoc
 
 	isFunctionDef: (block) ->
 
-		debug "enter isFunctionDef()", block
+		dbgEnter "isFunctionDef", block
 		lMatches = block.match(///^
 				\(
 				\s*
@@ -164,10 +166,10 @@ export class FuncHereDoc extends BaseHereDoc
 			# --- HERE, we should check if it compiles
 			[_, strParms, strBody] = lMatches
 
-			debug "return from isFunctionDef - OK"
+			dbgReturn "isFunctionDef", true
 			return true
 		else
-			debug "return from isFunctionDef - no match"
+			dbgReturn "isFunctionDef", false
 			return false
 
 # ---------------------------------------------------------------------------

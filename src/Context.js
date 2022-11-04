@@ -4,9 +4,14 @@ var lBuiltins;
 
 import {
   assert,
-  LOG,
-  debug
+  LOG
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -43,16 +48,16 @@ export var Context = class Context {
 
   // ..........................................................
   add(symbol) {
-    debug(`enter Context.add(${OL(symbol)})`);
+    dbgEnter("Context.add", symbol);
     this.currentScope.add(symbol);
-    debug("return from Context.add()");
+    dbgReturn("Context.add");
   }
 
   // ..........................................................
   addGlobal(symbol) {
-    debug(`enter Context.addGlobal(${OL(symbol)})`);
+    dbgEnter("Context.addGlobal", symbol);
     this.globalScope.add(symbol);
-    debug("return from Context.addGlobal()");
+    dbgReturn("Context.addGlobal");
   }
 
   // ..........................................................
@@ -71,19 +76,19 @@ export var Context = class Context {
   // ..........................................................
   beginScope(name = undef, lSymbols = undef) {
     var newScope;
-    debug("enter beginScope()");
+    dbgEnter("beginScope", name, lSymbols);
     newScope = new Scope(name, lSymbols);
     this.lScopes.unshift(newScope);
     this.currentScope = newScope;
-    debug("return from beginScope()");
+    dbgReturn("beginScope");
   }
 
   // ..........................................................
   endScope() {
-    debug("enter endScope()");
+    dbgEnter("endScope");
     this.lScopes.shift(); // remove ended scope
     this.currentScope = this.lScopes[0];
-    debug("return from endScope()");
+    dbgReturn("endScope");
   }
 
   // ..........................................................

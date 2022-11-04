@@ -2,7 +2,8 @@
 
 import CoffeeScript from 'coffeescript'
 
-import {LOG, LOGVALUE, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, LOGVALUE, assert, croak} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	CWS, undef, defined, OL, sep_dash,
 	} from '@jdeighan/coffee-utils'
@@ -35,7 +36,7 @@ export brew = (code, source='internal') ->
 export coffeeExprToJS = (coffeeExpr) ->
 
 	assert isUndented(coffeeExpr), "has indentation"
-	debug "enter coffeeExprToJS()"
+	dbgEnter "coffeeExprToJS"
 
 	try
 		jsExpr = brew(coffeeExpr)
@@ -48,7 +49,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 	catch err
 		croak err, "coffeeExprToJS", coffeeExpr
 
-	debug "return from coffeeExprToJS()", jsExpr
+	dbgReturn "coffeeExprToJS", jsExpr
 	return jsExpr
 
 # ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ export coffeeExprToJS = (coffeeExpr) ->
 export coffeeCodeToJS = (coffeeCode, source=undef, hOptions={}) ->
 
 	assert isUndented(coffeeCode), "has indentation"
-	debug "enter coffeeCodeToJS()", coffeeCode
+	dbgEnter "coffeeCodeToJS", coffeeCode, source, hOptions
 
 	try
 		jsCode = brew(coffeeCode, source)
@@ -77,7 +78,7 @@ export coffeeCodeToJS = (coffeeCode, source=undef, hOptions={}) ->
 	catch err
 		croak err, "Original Code", coffeeCode
 
-	debug "return from coffeeCodeToJS()", jsCode
+	dbgReturn "coffeeCodeToJS", jsCode
 	return jsCode
 
 # ---------------------------------------------------------------------------
@@ -98,13 +99,13 @@ export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 			dumpfile = withExt(srcPath, '.ast')
 			lNeeded = getNeededSymbols(coffeeCode, {dumpfile})
 			if (lNeeded == undef) || (lNeeded.length == 0)
-				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
+				dbg "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
 			else
 				n = lNeeded.length
 				word = if (n==1) then'SYMBOL' else 'SYMBOLS'
-				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
+				dbg "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
-					debug "   - #{sym}"
+					dbg "   - #{sym}"
 		jsCode = coffeeCodeToJS(coffeeCode, srcPath, hOptions)
 		barf destPath, jsCode
 	return
@@ -114,7 +115,7 @@ export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 export coffeeCodeToAST = (coffeeCode, source=undef) ->
 
 	assert isUndented(coffeeCode), "has indentation"
-	debug "enter coffeeCodeToAST()", coffeeCode
+	dbgEnter "coffeeCodeToAST", coffeeCode, source
 	barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
 
 	try
@@ -135,7 +136,7 @@ export coffeeCodeToAST = (coffeeCode, source=undef) ->
 		LOG sep_dash
 		croak "ERROR in CoffeeScript: #{err.message}"
 
-	debug "return from coffeeCodeToAST()", ast
+	dbgReturn "coffeeCodeToAST", ast
 	return ast
 
 # ---------------------------------------------------------------------------
@@ -175,10 +176,10 @@ export class CoffeePreProcessor extends TreeMapper
 	mapComment: (hNode) ->
 
 		# --- Retain comments
-		debug "enter mapComment()"
+		dbgEnter "mapComment"
 		{str, level} = hNode
 		result = indented(str, level, @oneIndent)
-		debug "return from mapComment()", result
+		dbgReturn "mapComment", result
 		return result
 
 	# ..........................................................
@@ -186,7 +187,7 @@ export class CoffeePreProcessor extends TreeMapper
 	mapNode: (hNode) ->
 		# --- only non-special nodes
 
-		debug "enter mapNode()", hNode
+		dbgEnter "mapNode", hNode
 		{str, level} = hNode
 		result = str.replace(///
 				\"
@@ -196,5 +197,5 @@ export class CoffeePreProcessor extends TreeMapper
 			(qstr) -> expand(qstr)
 			)
 		result = indented(result, level, @oneIndent)
-		debug "return from mapNode()", result
+		dbgReturn "mapNode", result
 		return result

@@ -1,7 +1,7 @@
 # coffee.test.coffee
 
 import {
-	LOG, LOGVALUE, debug, assert, croak, setDebugging,
+	LOG, LOGVALUE, assert, croak, setDebugging,
 	} from '@jdeighan/exceptions'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'

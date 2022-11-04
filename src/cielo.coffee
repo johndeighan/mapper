@@ -1,6 +1,7 @@
 # cielo.coffee
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	undef, defined, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,
@@ -36,7 +37,7 @@ export class CieloToCoffeeMapper extends TreeMapper
 
 	visitCmd: (hNode) ->
 
-		debug "enter CieloToCoffeeMapper.visitCmd()", hNode
+		dbgEnter "CieloToCoffeeMapper.visitCmd", hNode
 		{uobj, srcLevel, level, lineNum} = hNode
 		{cmd, argstr} = uobj
 
@@ -46,7 +47,7 @@ export class CieloToCoffeeMapper extends TreeMapper
 				#     OR following indented text
 				#     but not both
 				code = @containedText(hNode, argstr)
-				debug 'code', code
+				dbg 'code', code
 				if (code == argstr)
 					result = arrayToBlock([
 						indented('# |||| $:', level)
@@ -58,13 +59,13 @@ export class CieloToCoffeeMapper extends TreeMapper
 						indented(code, level)
 						indented('# |||| }', level)
 						])
-				debug "return from CieloToCoffeeMapper.visitCmd()", result
+				dbgReturn "CieloToCoffeeMapper.visitCmd", result
 				return result
 
 			else
 				super(hNode)
 
-		debug "return undef from CieloToCoffeeMapper.visitCmd()"
+		dbgReturn "CieloToCoffeeMapper.visitCmd", undef
 		return undef
 
 # ---------------------------------------------------------------------------
@@ -73,22 +74,22 @@ export class CieloToJSMapper extends CieloToCoffeeMapper
 
 	finalizeBlock: (coffeeCode) ->
 
-		debug "enter CieloToJSMapper.finalizeBlock()", coffeeCode
+		dbgEnter "CieloToJSMapper.finalizeBlock", coffeeCode
 		lNeededSymbols = getNeededSymbols(coffeeCode)
-		debug "#{lNeededSymbols.length} needed symbols", lNeededSymbols
+		dbg "#{lNeededSymbols.length} needed symbols", lNeededSymbols
 		try
 			jsCode = coffeeCodeToJS(coffeeCode, @source, {
 				bare: true
 				header: false
 				})
-			debug "jsCode", jsCode
+			dbg "jsCode", jsCode
 		catch err
 			croak err, "Original Code", coffeeCode
 
 		if nonEmpty(lNeededSymbols)
 			# --- Prepend needed imports
 			lImports = buildImportList(lNeededSymbols, @source)
-			debug "lImports", lImports
+			dbg "lImports", lImports
 
 			# --- append ';' to import statements
 			lImports = for stmt in lImports
@@ -97,7 +98,7 @@ export class CieloToJSMapper extends CieloToCoffeeMapper
 			# --- joinBlocks() flattens all its arguments to array of strings
 			jsCode = joinBlocks(lImports, jsCode)
 
-		debug "return from CieloToJSMapper.finalizeBlock()", jsCode
+		dbgReturn "CieloToJSMapper.finalizeBlock", jsCode
 		return jsCode
 
 # ---------------------------------------------------------------------------
@@ -118,13 +119,13 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 			dumpfile = withExt(srcPath, '.ast')
 			lNeeded = getNeededSymbols(cieloCode, {dumpfile})
 			if (lNeeded == undef) || (lNeeded.length == 0)
-				debug "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
+				dbg "NO NEEDED SYMBOLS in #{shortenPath(destPath)}:"
 			else
 				n = lNeeded.length
 				word = if (n==1) then'SYMBOL' else 'SYMBOLS'
-				debug "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
+				dbg "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
-					debug "   - #{sym}"
+					dbg "   - #{sym}"
 		jsCode = map(srcPath, cieloCode, CieloToJSMapper)
 		barf destPath, jsCode
 	return

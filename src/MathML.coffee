@@ -1,6 +1,7 @@
 # MathML.coffee
 
-import {LOG, assert, croak, debug} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	undef, defined, pass, escapeStr, OL,
 	isEmpty, isArray, isNumber, isString,
@@ -27,9 +28,9 @@ export isCommand = (str) -> hCommands[str]?
 
 export mapMath = (line) ->
 
-	debug "enter mapMath('#{escapeStr(line)}')"
+	dbgEnter "mapMath", line
 	if isEmpty(line)
-		debug "return undef from mapMath() - empty string"
+		dbgReturn "mapMath", undef
 		return undef
 
 	# --- These should not be needed
@@ -42,13 +43,13 @@ export mapMath = (line) ->
 
 	if isCommand(lWords[0])
 		cmd = lWords[0]
-		debug "Command '#{cmd}' found"
+		dbg "Command '#{cmd}' found"
 		hNode = getNode(cmd, lWords.slice(1))
 	else
-		debug "expression found"
+		dbg "expression found"
 		hNode = getNode('expr', lWords)
 
-	debug "return from mapMath()", hNode
+	dbgReturn "mapMath", hNode
 	return hNode
 
 # ---------------------------------------------------------------------------
@@ -58,7 +59,7 @@ getNode = (cmd, lArgs) ->
 	#     If no args, don't include key lAtoms
 	#     except that the 'group' command automatically supplies default atoms
 
-	debug "enter getNode('#{cmd}', lArgs", lArgs
+	dbgEnter "getNode", cmd, lArgs
 	assert isCommand(cmd), "getNode(): Not a command: '#{cmd}'"
 	assert isArray(lArgs), "getNode(): lArgs not an array"
 
@@ -73,12 +74,12 @@ getNode = (cmd, lArgs) ->
 		if !right
 			right = matching(left)
 		lArgs = [left, right]
-		debug 'lArgs', lArgs
+		dbg 'lArgs', lArgs
 	else if cmd == 'SIGMA'
 		assert (nArgs <= 1), "Invalid 'SIGMA', #{nArgs} args"
 		if (lArgs.length == 0)
 			lArgs = ['&#x03A3;']
-		debug 'lArgs', lArgs
+		dbg 'lArgs', lArgs
 
 	if lArgs.length == 0
 		hNode = {cmd}
@@ -89,7 +90,7 @@ getNode = (cmd, lArgs) ->
 			}
 
 	checkArgs cmd, hNode.lAtoms
-	debug "return from getNode()", hNode
+	dbgReturn "getNode", hNode
 	return hNode
 
 # ---------------------------------------------------------------------------
@@ -165,15 +166,19 @@ export class MathTreeWalker extends TreeMapper
 	# --- The @dir parameter is required if you use svg
 
 	constructor: (tree, @dir=undef) ->
+
 		super tree
 		@mathml = ''
 
+	# ..........................................................
+
 	visit: (superNode) ->
-		debug "enter visit()"
+
+		dbgEnter "visit"
 		node = superNode.node
 		switch node.cmd
 			when 'expr'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "<mrow>"
 				for atom in node.lAtoms
 					switch atom.type
@@ -184,55 +189,60 @@ export class MathTreeWalker extends TreeMapper
 						when 'op'
 							@mathml += "<mo>#{atom.value}</mo>"
 			when 'svg'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				left = node.lAtoms[0]
 				right = node.lAtoms[1]
 				@mathml += "<semantics><annotation-xml encoding='SVG1.1'>\n"
 				@mathml += getSVG(left, @dir)
 				@mathml += "\n</annotation-xml></semantics>\n"
 			when 'group'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "<mrow>"
 				@mathml += node.lAtoms[0].value
 			when 'sub'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "<msub>"
 			when 'SIGMA'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "<munderover>"
 				@mathml += "<mo class='large'> &#x03A3; </mo>"
 			else
 				croak "visit(): Not a command: '#{node.cmd}'"
-		debug "return from visit()"
+		dbgReturn "visit"
 		return
 
+	# ..........................................................
+
 	endVisit: (superNode) ->
-		debug "enter endVisit()"
+
+		dbgEnter "endVisit"
 		node = superNode.node
 		switch node.cmd
 			when 'expr'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "</mrow>"
 			when 'group'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += node.lAtoms[1].value
 				@mathml += "</mrow>"
 			when 'sub'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "</msub>"
 			when 'SIGMA'
-				debug "cmd: #{node.cmd}"
+				dbg "cmd: #{node.cmd}"
 				@mathml += "</munderover>"
 			when 'svg'
 				pass
 			else
 				croak "endVisit(): Not a command: '#{node.cmd}'"
-		debug "return from endVisit()"
+		dbgReturn "endVisit"
 		return
+
+	# ..........................................................
 
 	getMathML: () ->
 
-		debug "CALL getMathML()"
+		dbg "CALL getMathML()"
 		return @mathml
 
 # ---------------------------------------------------------------------------
@@ -240,14 +250,14 @@ export class MathTreeWalker extends TreeMapper
 getSVG = (fname, dir) ->
 
 	assert dir && isDir(dir), "getSVG(): No search dir set"
-	debug "getSVG(): fname: #{fname}"
+	dbg "getSVG(): fname: #{fname}"
 	assert isSimpleFileName(fname),\
 			"getSVG(): svg file should be simple file name"
 	assert fileExt(fname)=='.svg', "getSVG(): svg file should end with .svg"
 	assert isFile(fname),\
 		"getSVG(): file '#{fname}' does not exist or is not a file"
 	fullpath = pathTo(fname, dir)
-	debug "getSVG(): fullpath: '#{fullpath}'"
+	dbg "getSVG(): fullpath: '#{fullpath}'"
 	contents = slurp(fullpath)
 	return """
 			<semantics><annotation-xml encoding='SVG1.1'>

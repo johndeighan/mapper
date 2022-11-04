@@ -1,6 +1,6 @@
 # Fetcher.test.coffee
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {
 	undef, pass, defined, rtrim, replaceVars,

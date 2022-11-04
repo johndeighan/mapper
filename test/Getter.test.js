@@ -2,7 +2,6 @@
   // Getter.test.coffee
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';

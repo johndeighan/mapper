@@ -1,6 +1,6 @@
 # RunTimeStack.coffee
 
-import {LOG, LOGVALUE, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, LOGVALUE, assert, croak} from '@jdeighan/exceptions'
 import {
 	undef, pass, defined, notdefined, OL, isString, isInteger, isHash,
 	} from '@jdeighan/coffee-utils'

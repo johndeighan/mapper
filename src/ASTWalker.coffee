@@ -1,6 +1,7 @@
 # ASTWalker.coffee
 
-import {assert, croak, debug, LOG, LOGVALUE} from '@jdeighan/exceptions'
+import {assert, croak, LOG, LOGVALUE} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {fromTAML, toTAML} from '@jdeighan/exceptions/taml'
 import {
 	undef, pass, defined, notdefined, OL, words, deepCopy, getOptions,
@@ -8,6 +9,7 @@ import {
 	} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {toBlock} from '@jdeighan/coffee-utils/block'
+import {barf} from '@jdeighan/coffee-utils/fs'
 
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {Context} from '@jdeighan/mapper/context'
@@ -92,7 +94,7 @@ export class ASTWalker
 
 	constructor: (from) ->
 
-		debug "enter ASTWalker()"
+		dbgEnter "ASTWalker", from
 
 		if isString(from)
 			@ast = coffeeCodeToAST(from)
@@ -101,7 +103,7 @@ export class ASTWalker
 
 		# --- @ast can be a hash or array of hashes
 		if isHash(@ast)
-			debug "tree was hash - constructing list from it"
+			dbg "tree was hash - constructing list from it"
 			@ast = [@ast]
 		assert isArrayOfHashes(@ast), "not array of hashes: #{OL(@ast)}"
 
@@ -112,60 +114,60 @@ export class ASTWalker
 		@lMissingSymbols  = []
 
 		@context = new Context()
-		debug "return from ASTWalker()"
+		dbgReturn "ASTWalker"
 
 	# ..........................................................
 
 	addImport: (name, lib) ->
 
-		debug "enter addImport('#{name}')"
+		dbgEnter "addImport", name, lib
 		@check name
 		if @lImportedSymbols.includes(name)
 			LOG "Duplicate import: #{name}"
 		else
 			@lImportedSymbols.push(name)
 		@context.addGlobal(name)
-		debug "return from addImport()"
+		dbgReturn "addImport"
 		return
 
 	# ..........................................................
 
 	addExport: (name, lib) ->
 
-		debug "enter addExport('#{name}')"
+		dbgEnter "addExport", name
 		@check name
 		if @lExportedSymbols.includes(name)
 			LOG "Duplicate export: #{name}"
 		else
 			@lExportedSymbols.push(name)
-		debug "return from addExport()"
+		dbgReturn "addExport"
 		return
 
 	# ..........................................................
 
 	addDefined: (name, value={}) ->
 
-		debug "enter addDefined('#{name}')"
+		dbgEnter "addDefined", name
 		@check name
 		if @context.atGlobalLevel()
 			@context.addGlobal name
 		else
 			@context.add name
-		debug "return from addDefined()"
+		dbgReturn "addDefined"
 		return
 
 	# ..........................................................
 
 	addUsed: (name, value={}) ->
 
-		debug "enter addUsed('#{name}')"
+		dbgEnter "addUsed", name
 		@check name
 		if ! @lUsedSymbols.includes(name)
 			@lUsedSymbols.push(name)
 		if ! @context.has(name) \
 				&& ! @lMissingSymbols.includes(name)
 			@lMissingSymbols.push name
-		debug "return from addUsed()"
+		dbgReturn "addUsed"
 		return
 
 	# ..........................................................
@@ -174,7 +176,7 @@ export class ASTWalker
 		# --- Valid options:
 		#        asText
 
-		debug "enter walk()"
+		dbgEnter "walk"
 		for node in @ast
 			@visit node, 0
 
@@ -186,7 +188,8 @@ export class ASTWalker
 		#        3. not in lExportedSymbols
 		lNotNeeded = []
 		for name in @lImportedSymbols
-			if ! @lUsedSymbols.includes(name) && ! @lExportedSymbols.includes(name)
+			if ! @lUsedSymbols.includes(name) \
+					&& ! @lExportedSymbols.includes(name)
 				lNotNeeded.push name
 
 		hInfo = {
@@ -206,21 +209,21 @@ export class ASTWalker
 		else
 			result = hInfo
 
-		debug "return from walk()", result
+		dbgReturn "walk", result
 		return result
 
 	# ..........................................................
 
 	walkTree: (tree, level=0) ->
 
-		debug "enter walkTree()"
+		dbgEnter "walkTree"
 		if isArray(tree)
 			for node in tree
 				@walkTree node, level
 		else
 			assert isHash(tree, ['type']), "bad tree: #{OL(tree)}"
 			@visit tree, level
-		debug "return from walkTree()"
+		dbgReturn "walkTree"
 		return
 
 	# ..........................................................
@@ -228,17 +231,17 @@ export class ASTWalker
 
 	handle: (node, level) ->
 
-		debug "enter handle()"
+		dbgEnter "handle"
 		{type} = node
-		debug "type is #{OL(type)}"
+		dbg "type is #{OL(type)}"
 		hHandlers = hAllHandlers[type]
 		if notdefined(hHandlers)
-			debug "return false from handle()"
+			dbgReturn "handle", false
 			return false
 
 		{lWalkTrees, lDefined, lUsed} = hHandlers
 		if defined(lDefined)
-			debug "has lDefined"
+			dbg "has lDefined"
 			for key in lDefined
 				subnode = node[key]
 				if subnode.type == 'Identifier'
@@ -247,7 +250,7 @@ export class ASTWalker
 					@walkTree subnode, level+1
 
 		if defined(lUsed)
-			debug "has lUsed"
+			dbg "has lUsed"
 			for key in lUsed
 				subnode = node[key]
 				if subnode.type == 'Identifier'
@@ -256,7 +259,7 @@ export class ASTWalker
 					@walkTree subnode, level+1
 
 		if defined(lWalkTrees)
-			debug "has lWalkTrees"
+			dbg "has lWalkTrees"
 			for key in lWalkTrees
 				subnode = node[key]
 				if isArray(subnode)
@@ -265,18 +268,18 @@ export class ASTWalker
 				else if defined(subnode)
 					@walkTree subnode, level+1
 
-		debug "return true from handle()"
+		dbgReturn "handle", true
 		return true
 
 	# ..........................................................
 
 	visit: (node, level) ->
 
-		debug "enter ASTWalker.visit(type=#{node.type})"
+		dbgEnter "ASTWalker.visit", node, level
 		assert defined(node), "node is undef"
 
 		if @handle(node, level)
-			debug "return from ASTWalker.visit()"
+			dbgReturn "ASTWalker.visit"
 			return
 
 		switch node.type
@@ -300,14 +303,19 @@ export class ASTWalker
 				@walkTree node.body, level+1
 
 			when 'ExportNamedDeclaration'
+#				console.dir node
 				{specifiers, declaration} = node
 				if defined(declaration)
-					{type, id, left} = declaration
-					if (type == 'ClassDeclaration')
-						@addExport id.name
-					else if (type == 'AssignmentExpression')
-						if (left.type == 'Identifier')
-							@addExport left.name
+					{type, id, left, body} = declaration
+					switch type
+						when 'ClassDeclaration'
+							if defined(id)
+								@addExport id.name
+							else if defined(body)
+								@walkTree node.body, level+1
+						when 'AssignmentExpression'
+							if (left.type == 'Identifier')
+								@addExport left.name
 					@walkTree declaration, level+1
 
 				if defined(specifiers)
@@ -379,7 +387,7 @@ export class ASTWalker
 					else
 						@walkTree argument
 
-		debug "return from ASTWalker.visit()"
+		dbgReturn "ASTWalker.visit"
 		return
 
 	# ..........................................................
@@ -391,19 +399,16 @@ export class ASTWalker
 
 	# ..........................................................
 
-	getBasicAST: (asTAML=true) ->
+	barfAST: (filePath, hOptions={}) ->
 
-		ast = deepCopy @ast
-		lToRemove = words(
-			'start end extra declarations loc range tokens comments',
-			'assertions implicit optional async generator id hasIndentedBody'
-			)
-		lSortBy = words(
-			"type params body left right"
-			)
-		removeKeys(ast, lToRemove)
-
-		if asTAML
-			return toTAML(ast, {sortKeys: lSortBy})
+		{full} = getOptions(hOptions)
+		lSortBy = words("type params body left right")
+		if full
+			barf filePath, toTAML(@ast, {sortKeys: lSortBy})
 		else
-			return ast
+			astCopy = deepCopy @ast
+			removeKeys astCopy, words(
+				'start end extra declarations loc range tokens comments',
+				'assertions implicit optional async generato hasIndentedBody'
+				)
+			barf filePath, toTAML(astCopy, {sortKeys: lSortBy})

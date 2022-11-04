@@ -5,7 +5,6 @@ var SassTester, sassTester;
 import {
   assert,
   croak,
-  debug,
   setDebugging
 } from '@jdeighan/exceptions';
 

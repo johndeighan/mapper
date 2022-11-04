@@ -4,12 +4,14 @@ var JSMapper;
 
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
 
 import {
+  dbg,
+  dbgEnter,
+  dbgReturn,
   setDebugging
 } from '@jdeighan/exceptions/debug';
 
@@ -533,7 +535,7 @@ console.log "OK";
 export var BarMapper = class BarMapper extends Mapper {
   mapCmd(hNode) {
     var argstr, block, cmd, code, func, level, result, str, uobj;
-    debug("enter mapCmd()", hNode);
+    dbgEnter("mapCmd", hNode);
     ({str, uobj, level} = hNode);
     ({cmd, argstr} = uobj); // isCmd() put this here
     if (cmd === 'reactive') {
@@ -551,7 +553,7 @@ export var BarMapper = class BarMapper extends Mapper {
         block = arrayToBlock(["# |||| $:", code]);
       }
       result = indented(block, level, this.oneIndent);
-      debug("return from mapCmd()", result);
+      dbgReturn("mapCmd", result);
       return result;
     }
     return super.mapCmd(hNode);

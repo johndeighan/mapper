@@ -5,9 +5,14 @@ import sass from 'sass';
 import {
   LOG,
   assert,
-  croak,
-  debug
+  croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef
@@ -25,16 +30,16 @@ import {
 // ---------------------------------------------------------------------------
 export var sassify = function(block, source) {
   var newblock, result;
-  debug("enter sassify()", block, source);
+  dbgEnter("sassify", block, source);
   // --- NOTE: Mapper will remove comments and blank lines
   newblock = map(source, block, Mapper);
-  debug("newblock", newblock);
+  dbg("newblock", newblock);
   result = sass.renderSync({
     data: newblock,
     indentedSyntax: true,
     indentType: "tab"
   });
   result = result.css.toString();
-  debug("return from sassify()", result);
+  dbgReturn("sassify", result);
   return result;
 };

@@ -1,6 +1,6 @@
 # cielo.test.coffee
 
-import {assert, LOG, debug, setDebugging} from '@jdeighan/exceptions'
+import {assert, LOG, setDebugging} from '@jdeighan/exceptions'
 import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
 
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'

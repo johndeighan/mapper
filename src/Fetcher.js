@@ -4,10 +4,17 @@ import fs from 'fs';
 
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn,
+  dbgYield,
+  dbgResume
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -62,10 +69,10 @@ export var Fetcher = class Fetcher {
     var content;
     this.source = source;
     this.addLevel = addLevel;
-    debug("enter Fetcher()", this.source, collection, this.addLevel);
+    dbgEnter("Fetcher", this.source, collection, this.addLevel);
     if (this.source) {
       this.hSourceInfo = parseSource(this.source);
-      debug('hSourceInfo', this.hSourceInfo);
+      dbg('hSourceInfo', this.hSourceInfo);
       assert(this.hSourceInfo.filename, "parseSource returned no filename");
     } else {
       this.hSourceInfo = {
@@ -78,14 +85,14 @@ export var Fetcher = class Fetcher {
     if (collection === undef) {
       if (this.hSourceInfo.fullpath) {
         content = slurp(this.hSourceInfo.fullpath);
-        debug('content', content);
+        dbg('content', content);
         collection = blockToArray(content);
       } else {
         croak("no source or fullpath");
       }
     } else if (isString(collection)) {
       collection = blockToArray(collection);
-      debug("collection becomes", collection);
+      dbg("collection becomes", collection);
     }
     // --- collection must be iterable
     assert(isIterable(collection), "collection not iterable");
@@ -93,7 +100,7 @@ export var Fetcher = class Fetcher {
     this.lLookAhead = []; // --- support unfetch()
     this.forcedEOF = false;
     this.init();
-    debug("return from Fetcher()");
+    dbgReturn("Fetcher");
   }
 
   // ..........................................................
@@ -124,23 +131,24 @@ export var Fetcher = class Fetcher {
   //        level    - includes added levels when #include'ing
   fetch() {
     var _, done, fname, hNode, lMatches, level, line, prefix, str;
-    debug(`enter Fetcher.fetch() from ${this.hSourceInfo.filename}`);
+    dbgEnter("Fetcher.fetch");
     if (defined(this.altInput)) {
-      debug("has altInput");
+      dbg("has altInput");
       hNode = this.altInput.fetch();
       // --- NOTE: hNode.str will never be #include
       //           because altInput's fetch would handle it
       if (defined(hNode)) {
         // --- NOTE: altInput was created knowing how many levels
         //           to add due to indentation in #include statement
-        debug("return from Fetcher.fetch() - from alt", hNode);
+        dbg("from alt");
+        dbgReturn("Fetcher.fetch", hNode);
         return hNode;
       }
       // --- alternate input is exhausted
       this.altInput = undef;
-      debug("alt EOF");
+      dbg("alt EOF");
     } else {
-      debug("there is no altInput");
+      dbg("there is no altInput");
     }
     // --- return anything in lLookAhead,
     //     even if @forcedEOF is true
@@ -153,22 +161,25 @@ export var Fetcher = class Fetcher {
       //           was put there by unfetch() which doesn't
       //           allow #include
       this.incLineNum(1);
-      debug("return from Fetcher.fetch() - lookahead", hNode);
+      dbg("from lookahead");
+      dbgReturn("Fetcher.fetch", hNode);
       return hNode;
     }
-    debug("no lookahead");
+    dbg("no lookahead");
     if (this.forcedEOF) {
-      debug("return from Fetcher.fetch() - forced EOF", undef);
+      dbg("forced EOF");
+      dbgReturn("Fetcher.fetch", undef);
       return undef;
     }
-    debug("not at forced EOF");
+    dbg("not at forced EOF");
     ({
       value: line,
       done
     } = this.iterator.next());
-    debug("iterator returned", {line, done});
+    dbg("iterator returned", {line, done});
     if (done) {
-      debug("return from Fetcher.fetch() - iterator DONE", undef);
+      dbg("iterator DONE");
+      dbgReturn("Fetcher.fetch", undef);
       return undef;
     }
     assert(isString(line), `line is ${OL(line)}`);
@@ -176,7 +187,8 @@ export var Fetcher = class Fetcher {
       [_, prefix] = lMatches;
       assert(prefix === '', "__END__ should be at level 0");
       this.forceEOF();
-      debug("return from Fetcher.fetch() - __END__", undef);
+      dbg("__END__");
+      dbgReturn("Fetcher.fetch", undef);
       return undef;
     }
     this.incLineNum(1);
@@ -200,23 +212,23 @@ export var Fetcher = class Fetcher {
     // --- check for #include
     if (lMatches = str.match(/^\#include\b\s*(.*)$/)) {
       [_, fname] = lMatches;
-      debug(`#include ${fname}`);
+      dbg(`#include ${fname}`);
       assert(nonEmpty(fname), "missing file name in #include");
       this.createAltInput(fname, level);
       hNode = this.fetch(); // recursive call
-      debug("return from Fetcher.fetch()", hNode);
+      dbgReturn("Fetcher.fetch", hNode);
       return hNode;
     }
-    debug("oneIndent", this.oneIndent);
+    dbg("oneIndent", this.oneIndent);
     hNode = new Node(str, level + this.addLevel, this.sourceInfoStr(), this.lineNum);
-    debug("return from Fetcher.fetch()", hNode);
+    dbgReturn("Fetcher.fetch", hNode);
     return hNode;
   }
 
   // ..........................................................
   createAltInput(fname, level) {
     var dir, fullpath;
-    debug("enter createAltInput()", fname, level);
+    dbgEnter("createAltInput", fname, level);
     // --- Make sure we have a simple file name
     assert(isString(fname), `not a string: ${OL(fname)}`);
     assert(isSimpleFileName(fname), `not a simple file name: ${OL(fname)}`);
@@ -228,24 +240,25 @@ export var Fetcher = class Fetcher {
       dir = process.cwd(); // --- Use current directory
     }
     fullpath = pathTo(fname, dir);
-    debug("fullpath", fullpath);
+    dbg("fullpath", fullpath);
     if (fullpath === undef) {
       croak(`Can't find include file ${fname} in dir ${dir}`);
     }
     assert(fs.existsSync(fullpath), `${fullpath} does not exist`);
     this.altInput = new Fetcher(fullpath, undef, level);
-    debug("return from createAltInput()");
+    dbgReturn("createAltInput");
   }
 
   // ..........................................................
   unfetch(hNode) {
     var lMatches;
-    debug("enter Fetcher.unfetch()", hNode);
+    dbgEnter("Fetcher.unfetch", hNode);
     assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
     if (defined(this.altInput)) {
-      debug("has alt input");
+      dbg("has alt input");
       this.altInput.unfetch(hNode);
-      debug("return from Fetcher.unfetch() - alt");
+      dbg("alt input");
+      dbgReturn("Fetcher.unfetch");
       return;
     }
     assert(defined(hNode), "hNode must be defined");
@@ -253,7 +266,7 @@ export var Fetcher = class Fetcher {
     assert(isEmpty(lMatches), "unfetch() of a #include");
     this.lLookAhead.unshift(hNode);
     this.incLineNum(-1);
-    debug("return from Fetcher.unfetch()");
+    dbgReturn("Fetcher.unfetch");
   }
 
   // ..........................................................
@@ -264,21 +277,22 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   forceEOF() {
-    debug("enter forceEOF()");
+    dbgEnter("forceEOF");
     this.forcedEOF = true;
-    debug("return from forceEOF()");
+    dbgReturn("forceEOF");
   }
 
   // ..........................................................
   // --- GENERATOR
   * all() {
     var hNode;
-    debug("enter Fetcher.all()");
+    dbgEnter("Fetcher.all");
     while (defined(hNode = this.fetch())) {
-      debug("GOT", hNode);
+      dbgYield("Fetcher.all", hNode);
       yield hNode;
+      dbgResume("Fetcher.all");
     }
-    debug("return from Fetcher.all()");
+    dbgReturn("Fetcher.all");
   }
 
   // ..........................................................
@@ -286,40 +300,41 @@ export var Fetcher = class Fetcher {
   * allUntil(func, endLineOption) {
     var hNode;
     // --- stop when func(hNode) returns true
-    debug("enter Fetcher.allUntil()");
+    dbgEnter("Fetcher.allUntil", func, endLineOption);
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     assert(isFunction(func), "Arg 1 not a function");
     while (defined(hNode = this.fetch()) && !func(hNode)) {
-      debug("GOT", hNode);
+      dbgYield("Fetcher.allUntil", hNode);
       yield hNode;
+      dbgResume("Fetcher.allUntil");
     }
     if (defined(hNode) && (endLineOption === 'keepEndLine')) {
       this.unfetch(hNode);
     }
-    debug("return from Fetcher.allUntil()");
+    dbgReturn("Fetcher.allUntil");
   }
 
   // ..........................................................
   // --- fetch a list of Nodes
   fetchAll() {
     var lNodes;
-    debug("enter Fetcher.fetchAll()");
+    dbgEnter("Fetcher.fetchAll");
     lNodes = Array.from(this.all());
-    debug("return from Fetcher.fetchAll()", lNodes);
+    dbgReturn("Fetcher.fetchAll", lNodes);
     return lNodes;
   }
 
   // ..........................................................
   fetchUntil(func, endLineOption) {
     var hNode, lNodes, ref;
-    debug("enter Fetcher.fetchUntil()", func, endLineOption);
+    dbgEnter("Fetcher.fetchUntil", func, endLineOption);
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     lNodes = [];
     ref = this.allUntil(func, endLineOption);
     for (hNode of ref) {
       lNodes.push(hNode);
     }
-    debug("return from Fetcher.fetchUntil()", lNodes);
+    dbgReturn("Fetcher.fetchUntil", lNodes);
     return lNodes;
   }
 
@@ -327,21 +342,21 @@ export var Fetcher = class Fetcher {
   // --- fetch a block
   fetchBlock() {
     var lNodes, result;
-    debug("enter Fetcher.fetchBlock()");
+    dbgEnter("Fetcher.fetchBlock");
     lNodes = Array.from(this.all());
     result = this.nodesToBlock(lNodes);
-    debug("return from Fetcher.fetchBlock()", result);
+    dbgReturn("Fetcher.fetchBlock", result);
     return result;
   }
 
   // ..........................................................
   fetchBlockUntil(func, endLineOption) {
     var lNodes, result;
-    debug("enter Fetcher.fetchBlockUntil()");
+    dbgEnter("Fetcher.fetchBlockUntil");
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     lNodes = this.fetchUntil(func, endLineOption);
     result = this.nodesToBlock(lNodes);
-    debug("return from Fetcher.fetchBlockUntil()", result);
+    dbgReturn("Fetcher.fetchBlockUntil", result);
     return result;
   }
 

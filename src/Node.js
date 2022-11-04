@@ -3,10 +3,15 @@
 import {
   LOG,
   LOGVALUE,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,

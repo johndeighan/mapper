@@ -6,7 +6,6 @@ import {
 import {
 	undef, defined, notdefined, isEmpty,
 	} from '@jdeighan/coffee-utils'
-import {barf, slurp} from '@jdeighan/coffee-utils/fs'
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
 # ---------------------------------------------------------------------------
@@ -23,4 +22,4 @@ if isEmpty(info)
 else
 	LOG info
 
-barf "./test/ast.txt", walker.getBasicAST()
+walker.barfAST("./test/ast.txt")

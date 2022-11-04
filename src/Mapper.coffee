@@ -1,6 +1,7 @@
 # Mapper.coffee
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable,
@@ -21,7 +22,7 @@ export class Mapper extends Getter
 
 	constructor: (source=undef, collection=undef) ->
 
-		debug "enter Mapper()"
+		dbgEnter "Mapper"
 		super source, collection
 
 		# --- These never change
@@ -40,7 +41,7 @@ export class Mapper extends Getter
 		@registerSpecialType 'comment', @isComment, @mapComment
 		@registerSpecialType 'cmd',     @isCmd, @mapCmd
 
-		debug "return from Mapper()"
+		dbgReturn "Mapper"
 
 	# ..........................................................
 
@@ -59,34 +60,34 @@ export class Mapper extends Getter
 
 	incLineNum: (inc=1) ->
 
-		debug "enter incLineNum(#{inc})"
+		dbgEnter "incLineNum", inc
 		super inc
 		@setConst 'LINE', @lineNum
-		debug "return from incLineNum()"
+		dbgReturn "incLineNum"
 		return
 
 	# ..........................................................
 
 	getItemType: (hNode) ->
 
-		debug "enter Mapper.getItemType()", hNode
+		dbgEnter "Mapper.getItemType", hNode
 		{str} = hNode
 
 		assert isString(str), "str is #{OL(str)}"
 		for type in @lSpecials
 			recognizer = @hSpecials[type].recognizer
 			if recognizer.bind(this)(hNode)
-				debug "return from Mapper.getItemType()", type
+				dbgReturn "Mapper.getItemType", type
 				return type
 
-		debug "return from Mapper.getItemType()", undef
+		dbgReturn "Mapper.getItemType", undef
 		return undef
 
 	# ..........................................................
 
 	mapSpecial: (type, hNode) ->
 
-		debug "enter Mapper.mapSpecial()", type, hNode
+		dbgEnter "Mapper.mapSpecial", type, hNode
 		assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
 		assert (hNode.type == type), "hNode is #{OL(hNode)}"
 		h = @hSpecials[type]
@@ -94,7 +95,7 @@ export class Mapper extends Getter
 		mapper = h.mapper.bind(this)
 		assert isFunction(mapper), "Bad mapper for #{OL(type)}"
 		uobj = mapper(hNode)
-		debug "return from Mapper.mapSpecial()", uobj
+		dbgReturn "Mapper.mapSpecial", uobj
 		return uobj
 
 	# ..........................................................
@@ -135,7 +136,7 @@ export class Mapper extends Getter
 
 	isCmd: (hNode) ->
 
-		debug "enter Mapper.isCmd()"
+		dbgEnter "Mapper.isCmd"
 		if lMatches = hNode.str.match(///^
 				\#
 				([A-Za-z_]\w*)   # name of the command
@@ -146,10 +147,10 @@ export class Mapper extends Getter
 				cmd: lMatches[1]
 				argstr: lMatches[2]
 				}
-			debug "return true from Mapper.isCmd()"
+			dbgReturn "Mapper.isCmd", true
 			return true
 		else
-			debug "return false from Mapper.isCmd()"
+			dbgReturn "Mapper.isCmd", false
 			return false
 
 	# ..........................................................
@@ -160,7 +161,7 @@ export class Mapper extends Getter
 
 	mapCmd: (hNode) ->
 
-		debug "enter Mapper.mapCmd()", hNode
+		dbgEnter "Mapper.mapCmd", hNode
 
 		# --- isCmd() put these keys here
 		{cmd, argstr} = hNode.uobj
@@ -177,18 +178,18 @@ export class Mapper extends Getter
 				if tail
 					tail = tail.trim()
 				if isEnv
-					debug "set env var #{name} to '#{tail}'"
+					dbg "set env var #{name} to '#{tail}'"
 					process.env[name] = tail
 				else
-					debug "set var #{name} to '#{tail}'"
+					dbg "set var #{name} to '#{tail}'"
 					@setConst name, tail
-				debug "return undef from Mapper.mapCmd()"
+				dbgReturn "Mapper.mapCmd", undef
 				return undef
 
 			else
 				# --- don't throw exception
 				#     check for unknown commands in visitCmd()
-				debug "return from Mapper.mapCmd()", hNode.uobj
+				dbgReturn "Mapper.mapCmd", hNode.uobj
 				return hNode.uobj
 
 	# ..........................................................
@@ -196,15 +197,15 @@ export class Mapper extends Getter
 	containedText: (hNode, inlineText) ->
 		# --- has side effect of fetching all indented text
 
-		debug "enter Mapper.containedText()", hNode, inlineText
+		dbgEnter "Mapper.containedText", hNode, inlineText
 		{srcLevel} = hNode
 
 		stopFunc = (h) ->
 			return nonEmpty(h.str) && (h.srcLevel <= srcLevel)
 		indentedText = @fetchBlockUntil(stopFunc, 'keepEndLine')
 
-		debug "inline text", inlineText
-		debug "indentedText", indentedText
+		dbg "inline text", inlineText
+		dbg "indentedText", indentedText
 		assert isEmpty(inlineText) || isEmpty(indentedText),
 			"node #{OL(hNode)} has both inline text and indented text"
 
@@ -214,7 +215,7 @@ export class Mapper extends Getter
 			result = ''
 		else
 			result = inlineText
-		debug "return from containedText()", result
+		dbgReturn "containedText", result
 		return result
 
 # ===========================================================================
@@ -244,7 +245,7 @@ export map = (source, content=undef, mapper, hOptions={}) ->
 				result = map(source, result, item, hOptions)
 		return result
 
-	debug "enter map()", source, content, mapper
+	dbgEnter "map", source, content, mapper
 	assert defined(mapper), "Missing input class"
 
 	# --- mapper can be an object, which is an instance of Mapper
@@ -252,12 +253,12 @@ export map = (source, content=undef, mapper, hOptions={}) ->
 	#     has a getBlock() method
 
 	if (typeof mapper.getBlock == 'function')
-		debug "using mapper directly"
+		dbg "using mapper directly"
 		result = mapper.getBlock(hOptions)
 	else
-		debug "creating mapper instance"
+		dbg "creating mapper instance"
 		obj = new mapper(source, content)
 		assert (typeof obj.getBlock == 'function'), "missing getBlock() method"
 		result = obj.getBlock(hOptions)
-	debug "return from map()", result
+	dbgReturn "map", result
 	return result

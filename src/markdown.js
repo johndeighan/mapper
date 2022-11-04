@@ -10,9 +10,14 @@ import {
   LOG,
   LOGVALUE,
   assert,
-  croak,
-  debug
+  croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -60,15 +65,15 @@ stripComments = function(block) {
 // ---------------------------------------------------------------------------
 export var markdownify = function(block) {
   var html, result;
-  debug("enter markdownify()", block);
+  dbgEnter("markdownify", block);
   assert(isString(block), "block is not a string");
   html = marked.parse(undented(stripComments(block)), {
     grm: true,
     headerIds: false
   });
-  debug("marked returned", html);
+  dbg("marked returned", html);
   result = svelteHtmlEsc(html);
-  debug("return from markdownify()", result);
+  dbgReturn("markdownify", result);
   return result;
 };
 
@@ -85,30 +90,30 @@ export var SimpleMarkDownMapper = class SimpleMarkDownMapper extends TreeMapper 
   // ..........................................................
   visit(hNode) {
     var result, str;
-    debug("enter SimpleMarkDownMapper.visit()", hNode);
+    dbgEnter("SimpleMarkDownMapper.visit", hNode);
     ({str} = hNode);
     if (str.match(/^={3,}$/) && defined(this.prevStr)) {
       result = `<h1>${this.prevStr}</h1>`;
-      debug("set prevStr to undef");
+      dbg("set prevStr to undef");
       this.prevStr = undef;
-      debug("return from SimpleMarkDownMapper.visit()", result);
+      dbgReturn("SimpleMarkDownMapper.visit", result);
       return result;
     } else if (str.match(/^-{3,}$/) && defined(this.prevStr)) {
       result = `<h2>${this.prevStr}</h2>`;
-      debug("set prevStr to undef");
+      dbg("set prevStr to undef");
       this.prevStr = undef;
-      debug("return from SimpleMarkDownMapper.visit()", result);
+      dbgReturn("SimpleMarkDownMapper.visit", result);
       return result;
     } else {
       result = this.prevStr;
-      debug(`set prevStr to ${OL(str)}`);
+      dbg(`set prevStr to ${OL(str)}`);
       this.prevStr = str;
       if (defined(result)) {
         result = `<p>${result}</p>`;
-        debug("return from SimpleMarkDownMapper.visit()", result);
+        dbgReturn("SimpleMarkDownMapper.visit", result);
         return result;
       } else {
-        debug("return undef from SimpleMarkDownMapper.visit()");
+        dbgReturn("SimpleMarkDownMapper.visit", undef);
         return undef;
       }
     }

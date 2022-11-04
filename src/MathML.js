@@ -5,9 +5,14 @@ var atom, atomList, checkArgs, getNode, getSVG, hCommands, isIdentifier, isInteg
 import {
   LOG,
   assert,
-  croak,
-  debug
+  croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -52,9 +57,9 @@ export var isCommand = function(str) {
 // ---------------------------------------------------------------------------
 export var mapMath = function(line) {
   var cmd, hNode, lWords;
-  debug(`enter mapMath('${escapeStr(line)}')`);
+  dbgEnter("mapMath", line);
   if (isEmpty(line)) {
-    debug("return undef from mapMath() - empty string");
+    dbgReturn("mapMath", undef);
     return undef;
   }
   // --- These should not be needed
@@ -65,13 +70,13 @@ export var mapMath = function(line) {
   assert(lWords.length > 0, "lWords is empty!");
   if (isCommand(lWords[0])) {
     cmd = lWords[0];
-    debug(`Command '${cmd}' found`);
+    dbg(`Command '${cmd}' found`);
     hNode = getNode(cmd, lWords.slice(1));
   } else {
-    debug("expression found");
+    dbg("expression found");
     hNode = getNode('expr', lWords);
   }
-  debug("return from mapMath()", hNode);
+  dbgReturn("mapMath", hNode);
   return hNode;
 };
 
@@ -81,7 +86,7 @@ getNode = function(cmd, lArgs) {
   // --- Converts lArgs to array of atoms lAtoms
   //     If no args, don't include key lAtoms
   //     except that the 'group' command automatically supplies default atoms
-  debug(`enter getNode('${cmd}', lArgs`, lArgs);
+  dbgEnter("getNode", cmd, lArgs);
   assert(isCommand(cmd), `getNode(): Not a command: '${cmd}'`);
   assert(isArray(lArgs), "getNode(): lArgs not an array");
   nArgs = lArgs.length;
@@ -96,13 +101,13 @@ getNode = function(cmd, lArgs) {
       right = matching(left);
     }
     lArgs = [left, right];
-    debug('lArgs', lArgs);
+    dbg('lArgs', lArgs);
   } else if (cmd === 'SIGMA') {
     assert(nArgs <= 1, `Invalid 'SIGMA', ${nArgs} args`);
     if (lArgs.length === 0) {
       lArgs = ['&#x03A3;'];
     }
-    debug('lArgs', lArgs);
+    dbg('lArgs', lArgs);
   }
   if (lArgs.length === 0) {
     hNode = {cmd};
@@ -113,7 +118,7 @@ getNode = function(cmd, lArgs) {
     };
   }
   checkArgs(cmd, hNode.lAtoms);
-  debug("return from getNode()", hNode);
+  dbgReturn("getNode", hNode);
   return hNode;
 };
 
@@ -205,13 +210,14 @@ export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
     this.mathml = '';
   }
 
+  // ..........................................................
   visit(superNode) {
     var j, left, len, node, ref, right;
-    debug("enter visit()");
+    dbgEnter("visit");
     node = superNode.node;
     switch (node.cmd) {
       case 'expr':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "<mrow>";
         ref = node.lAtoms;
         for (j = 0, len = ref.length; j < len; j++) {
@@ -229,7 +235,7 @@ export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
         }
         break;
       case 'svg':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         left = node.lAtoms[0];
         right = node.lAtoms[1];
         this.mathml += "<semantics><annotation-xml encoding='SVG1.1'>\n";
@@ -237,45 +243,46 @@ export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
         this.mathml += "\n</annotation-xml></semantics>\n";
         break;
       case 'group':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "<mrow>";
         this.mathml += node.lAtoms[0].value;
         break;
       case 'sub':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "<msub>";
         break;
       case 'SIGMA':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "<munderover>";
         this.mathml += "<mo class='large'> &#x03A3; </mo>";
         break;
       default:
         croak(`visit(): Not a command: '${node.cmd}'`);
     }
-    debug("return from visit()");
+    dbgReturn("visit");
   }
 
+  // ..........................................................
   endVisit(superNode) {
     var node;
-    debug("enter endVisit()");
+    dbgEnter("endVisit");
     node = superNode.node;
     switch (node.cmd) {
       case 'expr':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "</mrow>";
         break;
       case 'group':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += node.lAtoms[1].value;
         this.mathml += "</mrow>";
         break;
       case 'sub':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "</msub>";
         break;
       case 'SIGMA':
-        debug(`cmd: ${node.cmd}`);
+        dbg(`cmd: ${node.cmd}`);
         this.mathml += "</munderover>";
         break;
       case 'svg':
@@ -284,11 +291,12 @@ export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
       default:
         croak(`endVisit(): Not a command: '${node.cmd}'`);
     }
-    debug("return from endVisit()");
+    dbgReturn("endVisit");
   }
 
+  // ..........................................................
   getMathML() {
-    debug("CALL getMathML()");
+    dbg("CALL getMathML()");
     return this.mathml;
   }
 
@@ -298,12 +306,12 @@ export var MathTreeWalker = class MathTreeWalker extends TreeMapper {
 getSVG = function(fname, dir) {
   var contents, fullpath;
   assert(dir && isDir(dir), "getSVG(): No search dir set");
-  debug(`getSVG(): fname: ${fname}`);
+  dbg(`getSVG(): fname: ${fname}`);
   assert(isSimpleFileName(fname), "getSVG(): svg file should be simple file name");
   assert(fileExt(fname) === '.svg', "getSVG(): svg file should end with .svg");
   assert(isFile(fname), `getSVG(): file '${fname}' does not exist or is not a file`);
   fullpath = pathTo(fname, dir);
-  debug(`getSVG(): fullpath: '${fullpath}'`);
+  dbg(`getSVG(): fullpath: '${fullpath}'`);
   contents = slurp(fullpath);
   return `<semantics><annotation-xml encoding='SVG1.1'>
 	     	${contents}

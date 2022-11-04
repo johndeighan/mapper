@@ -5,8 +5,14 @@ var ASTTester, coffeeCode, rootDir, tester;
 import {
   setDebugging,
   resetDebugging,
-  setCustomDebugLogger
-} from '@jdeighan/exceptions';
+  dbgReset,
+  dbgGetLog
+} from '@jdeighan/exceptions/debug';
+
+import {
+  LOG,
+  LOGVALUE
+} from '@jdeighan/exceptions/log';
 
 import {
   utest,
@@ -23,8 +29,11 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
+  indented
+} from '@jdeighan/coffee-utils/indent';
+
+import {
   mkpath,
-  barf,
   slurp,
   projRoot
 } from '@jdeighan/coffee-utils/fs';
@@ -40,8 +49,8 @@ ASTTester = class ASTTester extends UnitTester {
   transformValue(coffeeCode) {
     var result, walker;
     walker = new ASTWalker(coffeeCode);
-    barf(mkpath(rootDir, 'test', 'ast.txt'), walker.getBasicAST());
     result = walker.walk('asText');
+    walker.barfAST(mkpath(rootDir, 'test', 'ast.txt'), 'full');
     return result;
   }
 
@@ -458,51 +467,46 @@ export removeKeys = (h, lKeys) =>
 // ---------------------------------------------------------------------------
 // This tester includes debugging info
 (function() {
-  var ASTTester2, lLines, tester2;
-  lLines = [];
+  var ASTTester2, tester2;
+  setDebugging('ASTWalker.visit beginScope endScope', 'Context.add Context.addGlobal', {
+    returnFrom: function() {
+      return true;
+    },
+    enter: function(funcName, lArgs, level) {
+      switch (funcName) {
+        case 'ASTWalker.visit':
+          return LOG(indented(lArgs[0].type, level));
+        case 'beginScope':
+          return LOG(indented('BEGIN SCOPE', level));
+        case 'endScope':
+          return LOG(indented('END SCOPE', level));
+        case 'Context.add':
+          return LOG(indented(`ADD ${lArgs[0]}`, level));
+        case 'Context.addGlobal':
+          return LOG(indented(`ADDGLOBAL ${lArgs[0]}`, level));
+        default:
+          return false;
+      }
+    }
+  });
   ASTTester2 = class ASTTester2 extends UnitTester {
     transformValue(coffeeCode) {
       var result, walker;
-      setDebugging('ASTWalker.visit beginScope endScope', 'Context.add Context.addGlobal');
-      setCustomDebugLogger('return', function() {
-        return true;
-      });
-      setCustomDebugLogger('enter', function(label, lObjects, level) {
-        var _, lMatches, method, name;
-        if (lMatches = label.match(/^enter\s+ASTWalker\.visit\(type=([A-Za-z]+)\)$/)) {
-          [_, name] = lMatches;
-          lLines.push("\t".repeat(level) + name);
-          return true;
-        } else if (label === 'enter beginScope()') {
-          lLines.push("\t".repeat(level) + 'BEGIN SCOPE');
-          return true;
-        } else if (label === 'enter endScope()') {
-          lLines.push("\t".repeat(level) + 'END SCOPE');
-          return true;
-        } else if (lMatches = label.match(/^enter\s+Context\.(add|addGlobal)\(\'([A-Za-z]+)\'\)$/)) {
-          [_, method, name] = lMatches;
-          lLines.push("\t".repeat(level) + method.toUpperCase() + ' ' + name);
-          return true;
-        } else {
-          return false;
-        }
-      });
+      dbgReset();
       walker = new ASTWalker(coffeeCode);
-      barf(mkpath(rootDir, 'test', 'ast.txt'), walker.getBasicAST());
       result = walker.walk('asText');
-      resetDebugging(); // undo debugging setup
-      return result;
+      walker.barfAST(mkpath(rootDir, 'test', 'ast.txt'));
+      return dbgGetLog();
     }
 
   };
   tester2 = new ASTTester2();
   // ------------------------------------------------------------------------
-  tester2.equal(736, `export charCount = () ->
+  return tester2.equal(736, `export charCount = () ->
 	return
 export removeKeys = (h, lKeys) =>
 	removeKeys(lKeys)
-	return`, `lExported: charCount removeKeys`);
-  return utest.equal(784, toBlock(lLines), `File
+	return`, `File
 	Program
 		ExportNamedDeclaration
 			AssignmentExpression

@@ -1,7 +1,7 @@
 # markdown.test.coffee
 
 import {
-	LOG, LOGVALUE, debug, setDebugging, assert, croak,
+	LOG, LOGVALUE, setDebugging, assert, croak,
 	} from '@jdeighan/exceptions'
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'

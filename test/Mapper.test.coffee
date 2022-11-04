@@ -1,7 +1,9 @@
 # Mapper.test.coffee
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
-import {setDebugging} from '@jdeighan/exceptions/debug'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {
+	dbg, dbgEnter, dbgReturn, setDebugging,
+	} from '@jdeighan/exceptions/debug'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, rtrim, replaceVars} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
@@ -492,7 +494,7 @@ export class BarMapper extends Mapper
 
 	mapCmd: (hNode) ->
 
-		debug "enter mapCmd()", hNode
+		dbgEnter "mapCmd", hNode
 		{str, uobj, level} = hNode
 		{cmd, argstr} = uobj        # isCmd() put this here
 
@@ -518,7 +520,7 @@ export class BarMapper extends Mapper
 					code
 					])
 			result = indented(block, level, @oneIndent)
-			debug "return from mapCmd()", result
+			dbgReturn "mapCmd", result
 			return result
 		return super(hNode)
 

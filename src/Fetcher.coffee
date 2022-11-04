@@ -2,7 +2,10 @@
 
 import fs from 'fs'
 
-import {LOG, debug, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {
+	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
+	} from '@jdeighan/exceptions/debug'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
 	escapeStr, isString, isHash, isArray,
@@ -31,11 +34,11 @@ export class Fetcher
 
 	constructor: (@source=undef, collection=undef, @addLevel=0) ->
 
-		debug "enter Fetcher()", @source, collection, @addLevel
+		dbgEnter "Fetcher", @source, collection, @addLevel
 
 		if @source
 			@hSourceInfo = parseSource(@source)
-			debug 'hSourceInfo', @hSourceInfo
+			dbg 'hSourceInfo', @hSourceInfo
 			assert @hSourceInfo.filename,
 					"parseSource returned no filename"
 		else
@@ -50,13 +53,13 @@ export class Fetcher
 		if (collection == undef)
 			if @hSourceInfo.fullpath
 				content = slurp(@hSourceInfo.fullpath)
-				debug 'content', content
+				dbg 'content', content
 				collection = blockToArray(content)
 			else
 				croak "no source or fullpath"
 		else if isString(collection)
 			collection = blockToArray(collection)
-			debug "collection becomes", collection
+			dbg "collection becomes", collection
 
 		# --- collection must be iterable
 		assert isIterable(collection), "collection not iterable"
@@ -65,7 +68,7 @@ export class Fetcher
 		@forcedEOF = false
 
 		@init()
-		debug "return from Fetcher()"
+		dbgReturn "Fetcher"
 
 	# ..........................................................
 
@@ -99,10 +102,10 @@ export class Fetcher
 
 	fetch: () ->
 
-		debug "enter Fetcher.fetch() from #{@hSourceInfo.filename}"
+		dbgEnter "Fetcher.fetch"
 
 		if defined(@altInput)
-			debug "has altInput"
+			dbg "has altInput"
 			hNode = @altInput.fetch()
 
 			# --- NOTE: hNode.str will never be #include
@@ -111,14 +114,15 @@ export class Fetcher
 			if defined(hNode)
 				# --- NOTE: altInput was created knowing how many levels
 				#           to add due to indentation in #include statement
-				debug "return from Fetcher.fetch() - from alt", hNode
+				dbg "from alt"
+				dbgReturn "Fetcher.fetch", hNode
 				return hNode
 
 			# --- alternate input is exhausted
 			@altInput = undef
-			debug "alt EOF"
+			dbg "alt EOF"
 		else
-			debug "there is no altInput"
+			dbg "there is no altInput"
 
 		# --- return anything in lLookAhead,
 		#     even if @forcedEOF is true
@@ -134,21 +138,24 @@ export class Fetcher
 			#           allow #include
 
 			@incLineNum 1
-			debug "return from Fetcher.fetch() - lookahead", hNode
+			dbg "from lookahead"
+			dbgReturn "Fetcher.fetch", hNode
 			return hNode
 
-		debug "no lookahead"
+		dbg "no lookahead"
 
 		if @forcedEOF
-			debug "return from Fetcher.fetch() - forced EOF", undef
+			dbg "forced EOF"
+			dbgReturn "Fetcher.fetch", undef
 			return undef
 
-		debug "not at forced EOF"
+		dbg "not at forced EOF"
 
 		{value: line, done} = @iterator.next()
-		debug "iterator returned", {line, done}
+		dbg "iterator returned", {line, done}
 		if (done)
-			debug "return from Fetcher.fetch() - iterator DONE", undef
+			dbg "iterator DONE"
+			dbgReturn "Fetcher.fetch", undef
 			return undef
 
 		assert isString(line), "line is #{OL(line)}"
@@ -156,7 +163,8 @@ export class Fetcher
 			[_, prefix] = lMatches
 			assert (prefix == ''), "__END__ should be at level 0"
 			@forceEOF()
-			debug "return from Fetcher.fetch() - __END__", undef
+			dbg "__END__"
+			dbgReturn "Fetcher.fetch", undef
 			return undef
 
 		@incLineNum 1
@@ -187,24 +195,24 @@ export class Fetcher
 				(.*)
 				$///)
 			[_, fname] = lMatches
-			debug "#include #{fname}"
+			dbg "#include #{fname}"
 			assert nonEmpty(fname), "missing file name in #include"
 			@createAltInput fname, level
 			hNode = @fetch()    # recursive call
-			debug "return from Fetcher.fetch()", hNode
+			dbgReturn "Fetcher.fetch", hNode
 			return hNode
 
-		debug "oneIndent", @oneIndent
+		dbg "oneIndent", @oneIndent
 		hNode = new Node(str, level + @addLevel, @sourceInfoStr(), @lineNum)
 
-		debug "return from Fetcher.fetch()", hNode
+		dbgReturn "Fetcher.fetch", hNode
 		return hNode
 
 	# ..........................................................
 
 	createAltInput: (fname, level) ->
 
-		debug "enter createAltInput()", fname, level
+		dbgEnter "createAltInput", fname, level
 
 		# --- Make sure we have a simple file name
 		assert isString(fname), "not a string: #{OL(fname)}"
@@ -219,26 +227,27 @@ export class Fetcher
 			dir = process.cwd()  # --- Use current directory
 
 		fullpath = pathTo(fname, dir)
-		debug "fullpath", fullpath
+		dbg "fullpath", fullpath
 		if (fullpath == undef)
 			croak "Can't find include file #{fname} in dir #{dir}"
 		assert fs.existsSync(fullpath), "#{fullpath} does not exist"
 
 		@altInput = new Fetcher(fullpath, undef, level)
-		debug "return from createAltInput()"
+		dbgReturn "createAltInput"
 		return
 
 	# ..........................................................
 
 	unfetch: (hNode) ->
 
-		debug "enter Fetcher.unfetch()", hNode
+		dbgEnter "Fetcher.unfetch", hNode
 		assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
 
 		if defined(@altInput)
-			debug "has alt input"
+			dbg "has alt input"
 			@altInput.unfetch hNode
-			debug "return from Fetcher.unfetch() - alt"
+			dbg "alt input"
+			dbgReturn "Fetcher.unfetch"
 			return
 
 		assert defined(hNode), "hNode must be defined"
@@ -250,7 +259,7 @@ export class Fetcher
 
 		@lLookAhead.unshift hNode
 		@incLineNum -1
-		debug "return from Fetcher.unfetch()"
+		dbgReturn "Fetcher.unfetch"
 		return
 
 	# ..........................................................
@@ -265,9 +274,9 @@ export class Fetcher
 
 	forceEOF: () ->
 
-		debug "enter forceEOF()"
+		dbgEnter "forceEOF"
 		@forcedEOF = true
-		debug "return from forceEOF()"
+		dbgReturn "forceEOF"
 		return
 
 	# ..........................................................
@@ -275,11 +284,12 @@ export class Fetcher
 
 	all: () ->
 
-		debug "enter Fetcher.all()"
+		dbgEnter "Fetcher.all"
 		while defined(hNode = @fetch())
-			debug "GOT", hNode
+			dbgYield "Fetcher.all", hNode
 			yield hNode
-		debug "return from Fetcher.all()"
+			dbgResume "Fetcher.all"
+		dbgReturn "Fetcher.all"
 		return
 
 	# ..........................................................
@@ -288,7 +298,7 @@ export class Fetcher
 	allUntil: (func, endLineOption) ->
 		# --- stop when func(hNode) returns true
 
-		debug "enter Fetcher.allUntil()"
+		dbgEnter "Fetcher.allUntil", func, endLineOption
 		assert (endLineOption=='keepEndLine') \
 			|| (endLineOption=='discardEndLine'),
 			"bad end line option: #{OL(endLineOption)}"
@@ -296,13 +306,14 @@ export class Fetcher
 		assert isFunction(func), "Arg 1 not a function"
 
 		while defined(hNode = @fetch()) && ! func(hNode)
-			debug "GOT", hNode
+			dbgYield "Fetcher.allUntil", hNode
 			yield hNode
+			dbgResume "Fetcher.allUntil"
 
 		if defined(hNode) && (endLineOption == 'keepEndLine')
 			@unfetch hNode
 
-		debug "return from Fetcher.allUntil()"
+		dbgReturn "Fetcher.allUntil"
 		return
 
 	# ..........................................................
@@ -310,23 +321,23 @@ export class Fetcher
 
 	fetchAll: () ->
 
-		debug "enter Fetcher.fetchAll()"
+		dbgEnter "Fetcher.fetchAll"
 		lNodes = Array.from(@all())
-		debug "return from Fetcher.fetchAll()", lNodes
+		dbgReturn "Fetcher.fetchAll", lNodes
 		return lNodes
 
 	# ..........................................................
 
 	fetchUntil: (func, endLineOption) ->
 
-		debug "enter Fetcher.fetchUntil()", func, endLineOption
+		dbgEnter "Fetcher.fetchUntil", func, endLineOption
 		assert (endLineOption=='keepEndLine') \
 			|| (endLineOption=='discardEndLine'),
 			"bad end line option: #{OL(endLineOption)}"
 		lNodes = []
 		for hNode from @allUntil(func, endLineOption)
 			lNodes.push hNode
-		debug "return from Fetcher.fetchUntil()", lNodes
+		dbgReturn "Fetcher.fetchUntil", lNodes
 		return lNodes
 
 	# ..........................................................
@@ -334,23 +345,23 @@ export class Fetcher
 
 	fetchBlock: () ->
 
-		debug "enter Fetcher.fetchBlock()"
+		dbgEnter "Fetcher.fetchBlock"
 		lNodes = Array.from(@all())
 		result = @nodesToBlock(lNodes)
-		debug "return from Fetcher.fetchBlock()", result
+		dbgReturn "Fetcher.fetchBlock", result
 		return result
 
 	# ..........................................................
 
 	fetchBlockUntil: (func, endLineOption) ->
 
-		debug "enter Fetcher.fetchBlockUntil()"
+		dbgEnter "Fetcher.fetchBlockUntil"
 		assert (endLineOption=='keepEndLine') \
 			|| (endLineOption=='discardEndLine'),
 			"bad end line option: #{OL(endLineOption)}"
 		lNodes = @fetchUntil(func, endLineOption)
 		result = @nodesToBlock(lNodes)
-		debug "return from Fetcher.fetchBlockUntil()", result
+		dbgReturn "Fetcher.fetchBlockUntil", result
 		return result
 
 	# ..........................................................

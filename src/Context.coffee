@@ -1,6 +1,7 @@
 # Context.coffee
 
-import {assert, LOG, debug} from '@jdeighan/exceptions'
+import {assert, LOG} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {undef, deepCopy, words, OL} from '@jdeighan/coffee-utils'
 import {Scope} from '@jdeighan/mapper/scope'
 
@@ -33,18 +34,18 @@ export class Context
 
 	add: (symbol) ->
 
-		debug "enter Context.add(#{OL(symbol)})"
+		dbgEnter "Context.add", symbol
 		@currentScope.add(symbol)
-		debug "return from Context.add()"
+		dbgReturn "Context.add"
 		return
 
 	# ..........................................................
 
 	addGlobal: (symbol) ->
 
-		debug "enter Context.addGlobal(#{OL(symbol)})"
+		dbgEnter "Context.addGlobal", symbol
 		@globalScope.add(symbol)
-		debug "return from Context.addGlobal()"
+		dbgReturn "Context.addGlobal"
 		return
 
 	# ..........................................................
@@ -60,21 +61,21 @@ export class Context
 
 	beginScope: (name=undef, lSymbols=undef) ->
 
-		debug "enter beginScope()"
+		dbgEnter "beginScope", name, lSymbols
 		newScope = new Scope(name, lSymbols)
 		@lScopes.unshift newScope
 		@currentScope = newScope
-		debug "return from beginScope()"
+		dbgReturn "beginScope"
 		return
 
 	# ..........................................................
 
 	endScope: () ->
 
-		debug "enter endScope()"
+		dbgEnter "endScope"
 		@lScopes.shift()    # remove ended scope
 		@currentScope = @lScopes[0]
-		debug "return from endScope()"
+		dbgReturn "endScope"
 		return
 
 	# ..........................................................

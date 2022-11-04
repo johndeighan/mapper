@@ -2,10 +2,17 @@
   // Getter.coffee
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn,
+  dbgYield,
+  dbgResume
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -67,9 +74,9 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   get() {
     var extStr, hExt, hNode, level, str;
-    debug("enter Getter.get()");
+    dbgEnter("Getter.get");
     while (defined(hNode = this.fetch())) {
-      debug("GOT", hNode);
+      dbg("GOT", hNode);
       assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
       level = hNode.level;
       // --- check for extension lines (only if str non-empty)
@@ -88,11 +95,13 @@ export var Getter = class Getter extends Fetcher {
         hNode.uobj = this.mapAnyNode(hNode);
       }
       if (defined(hNode.uobj)) {
-        debug("return from Getter.get() - newly mapped", hNode);
+        dbg("newly mapped");
+        dbgReturn("Getter.get", hNode);
         return hNode;
       }
     }
-    debug("return from Getter.get() - EOF", undef);
+    dbg("EOF");
+    dbgReturn("Getter.get", undef);
     return undef;
   }
 
@@ -103,22 +112,22 @@ export var Getter = class Getter extends Fetcher {
 
   // ..........................................................
   skip() {
-    debug('enter Getter.skip():');
+    dbgEnter('Getter.skip');
     this.get();
-    debug('return from Getter.skip()');
+    dbgReturn('Getter.skip');
   }
 
   // ..........................................................
   peek() {
     var hNode;
-    debug('enter Getter.peek()');
+    dbgEnter('Getter.peek');
     hNode = this.get();
     if (hNode === undef) {
-      debug("return from Getter.peek()", undef);
+      dbgReturn("Getter.peek", undef);
       return undef;
     } else {
       this.unfetch(hNode);
-      debug("return from Getter.peek()", hNode);
+      dbgReturn("Getter.peek", hNode);
       return hNode;
     }
   }
@@ -126,9 +135,9 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   eof() {
     var result;
-    debug("enter Getter.eof()");
+    dbgEnter("Getter.eof");
     result = this.peek() === undef;
-    debug("return from Getter.eof()", result);
+    dbgReturn("Getter.eof", result);
     return result;
   }
 
@@ -138,29 +147,29 @@ export var Getter = class Getter extends Fetcher {
   //     sets key 'type' if a special type
   mapAnyNode(hNode) {
     var level, newstr, str, type, uobj;
-    debug("enter Getter.mapAnyNode()", hNode);
+    dbgEnter("Getter.mapAnyNode", hNode);
     assert(defined(hNode), "hNode is undef");
     type = this.getItemType(hNode);
     if (defined(type)) {
-      debug(`item type is ${OL(type)}`);
+      dbg(`item type is ${OL(type)}`);
       assert(isString(type) && nonEmpty(type), `bad type: ${OL(type)}`);
       hNode.type = type;
       uobj = this.mapSpecial(type, hNode);
-      debug(`mapped ${type}`, uobj);
+      dbg(`mapped ${type}`, uobj);
     } else {
-      debug("no special type");
+      dbg("no special type");
       ({str, level} = hNode);
       assert(defined(str), "str is undef");
       assert(str !== '__END__', "__END__ encountered");
       newstr = this.replaceConsts(str, this.hConsts);
       if (newstr !== str) {
-        debug(`${OL(str)} => ${OL(newstr)}`);
+        dbg(`${OL(str)} => ${OL(newstr)}`);
         hNode.str = newstr;
       }
       uobj = this.mapNonSpecial(hNode);
-      debug("mapped non-special", uobj);
+      dbg("mapped non-special", uobj);
     }
-    debug("return from Getter.mapAnyNode()", uobj);
+    dbgReturn("Getter.mapAnyNode", uobj);
     return uobj;
   }
 
@@ -214,7 +223,7 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   getItemType(hNode) {
     // --- returns name of item type
-    debug("in Getter.getItemType()");
+    dbg("in Getter.getItemType()");
     return undef; // default: no special item types
   }
 
@@ -223,52 +232,52 @@ export var Getter = class Getter extends Fetcher {
   // --- GENERATOR
   * allMapped() {
     var hNode;
-    debug("enter Getter.allMapped()");
+    dbgEnter("Getter.allMapped");
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get())) {
-      debug("GOT", hNode);
+      dbg("GOT", hNode);
       yield hNode;
     }
-    debug("return from Getter.allMapped()");
+    dbgReturn("Getter.allMapped");
   }
 
   // ..........................................................
   // --- GENERATOR
   * allMappedUntil(func, endLineOption) {
     var hNode;
-    debug("enter Getter.allMappedUntil()");
+    dbgEnter("Getter.allMappedUntil");
     assert(isFunction(func), "Arg 1 not a function");
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get()) && !func(hNode)) {
-      debug("GOT", hNode);
+      dbg("GOT", hNode);
       yield hNode;
     }
     if (defined(hNode) && (endLineOption === 'keepEndLine')) {
       this.unfetch(hNode);
     }
-    debug("return from Getter.allMappedUntil()");
+    dbgReturn("Getter.allMappedUntil");
   }
 
   // ..........................................................
   getAll() {
     var lNodes;
-    debug("enter Getter.getAll()");
+    dbgEnter("Getter.getAll");
     lNodes = Array.from(this.allMapped());
-    debug("return from Getter.getAll()", lNodes);
+    dbgReturn("Getter.getAll", lNodes);
     return lNodes;
   }
 
   // ..........................................................
   getUntil(func, endLineOption) {
     var lNodes;
-    debug("enter Getter.getUntil()");
+    dbgEnter("Getter.getUntil");
     assert(isFunction(func), "not a function");
     assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
     lNodes = Array.from(this.allMappedUntil(func, endLineOption));
-    debug("return from Getter.getUntil()", lNodes);
+    dbgReturn("Getter.getUntil", lNodes);
     return lNodes;
   }
 
@@ -278,7 +287,7 @@ export var Getter = class Getter extends Fetcher {
   getBlock(hOptions = {}) {
     var block, endStr, hNode, i, lStrings, ref, result;
     // --- Valid options: logNodes
-    debug("enter Getter.getBlock()");
+    dbgEnter("Getter.getBlock");
     lStrings = [];
     i = 0;
     ref = this.allMapped();
@@ -286,7 +295,7 @@ export var Getter = class Getter extends Fetcher {
       if (hOptions.logNodes) {
         LOG(`hNode[${i}]`, hNode);
       } else {
-        debug(`hNode[${i}]`, hNode);
+        dbg(`hNode[${i}]`, hNode);
       }
       i += 1;
       // --- default visit() & visitSpecial() return uobj
@@ -300,31 +309,31 @@ export var Getter = class Getter extends Fetcher {
         lStrings.push(result);
       }
     }
-    debug('lStrings', lStrings);
+    dbg('lStrings', lStrings);
     if (defined(endStr = this.endBlock())) {
-      debug('endStr', endStr);
+      dbg('endStr', endStr);
       lStrings.push(endStr);
     }
     if (hOptions.logNodes) {
       LOG('logNodes', lStrings);
     }
     block = this.finalizeBlock(arrayToBlock(lStrings));
-    debug("return from Getter.getBlock()", block);
+    dbgReturn("Getter.getBlock", block);
     return block;
   }
 
   // ..........................................................
   visit(hNode) {
     var uobj;
-    debug("enter Getter.visit()", hNode);
+    dbgEnter("Getter.visit", hNode);
     ({uobj} = hNode);
     if (isString(uobj)) {
-      debug("return from Getter.visit()", uobj);
+      dbgReturn("Getter.visit", uobj);
       return uobj;
     } else if (defined(uobj)) {
       return croak(`uobj ${OL(uobj)} should be a string`);
     } else {
-      debug("return undef from Getter.visit()");
+      dbgReturn("Getter.visit", undef);
       return undef;
     }
   }
@@ -332,15 +341,15 @@ export var Getter = class Getter extends Fetcher {
   // ..........................................................
   visitSpecial(type, hNode) {
     var uobj;
-    debug("enter Getter.visitSpecial()", type, hNode);
+    dbgEnter("Getter.visitSpecial", type, hNode);
     ({uobj} = hNode);
     if (isString(uobj)) {
-      debug("return from Getter.visitSpecial()", uobj);
+      dbgReturn("Getter.visitSpecial", uobj);
       return uobj;
     } else if (defined(uobj)) {
       return croak(`uobj ${OL(uobj)} should be a string`);
     } else {
-      debug("return undef from Getter.visitSpecial()");
+      dbgReturn("Getter.visitSpecial", undef);
       return undef;
     }
   }

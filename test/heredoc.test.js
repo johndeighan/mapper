@@ -4,12 +4,14 @@ var HereDocReplacer, HereDocTester, MatrixHereDoc, UCHereDoc, UCHereDoc2, docTes
 
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
 
 import {
+  dbg,
+  dbgEnter,
+  dbgReturn,
   setDebugging
 } from '@jdeighan/exceptions/debug';
 
@@ -136,9 +138,9 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
   map(block) {
     var i, lArray, len, line, ref, result;
     // --- if block starts with a digit
-    debug("enter MatrixHereDoc.map()", block);
+    dbgEnter("MatrixHereDoc.map", block);
     if (notdefined(block.match(/^\s*\d/s))) {
-      debug("return undef from MatrixHereDoc.map()");
+      dbgReturn("MatrixHereDoc.map", undef);
       return undef;
     }
     lArray = [];
@@ -148,7 +150,7 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
       lArray.push(extractMatches(line, /\d+/g, parseInt));
     }
     result = JSON.stringify(lArray);
-    debug("return from MatrixHereDoc.map()", result);
+    dbgReturn("MatrixHereDoc.map", result);
     return result;
   }
 
@@ -164,15 +166,15 @@ docTester.equal(195, `1 2 3
 UCHereDoc = class UCHereDoc extends BaseHereDoc {
   map(block) {
     var result;
-    debug("enter UCHereDoc.map()", block);
+    dbgEnter("UCHereDoc.map", block);
     if (block.indexOf('^^^') !== 0) {
-      debug("return undef from UCHereDoc.map()");
+      dbgReturn("UCHereDoc.map", undef);
       return undef;
     }
     block = block.substring(4).toUpperCase();
-    debug('block', block);
+    dbg('block', block);
     result = JSON.stringify(block);
-    debug("return from UCHereDoc.map()", result);
+    dbgReturn("UCHereDoc.map", result);
     return result;
   }
 
@@ -192,15 +194,15 @@ block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
 UCHereDoc2 = class UCHereDoc2 extends BaseHereDoc {
   map(block) {
     var result;
-    debug("enter UCHereDoc2.map()", block);
+    dbgEnter("UCHereDoc2.map", block);
     if (firstLine(block) !== '***') {
-      debug("return undef from UCHereDoc.map()");
+      dbgReturn("UCHereDoc.map", undef);
       return undef;
     }
     block = CWS(remainingLines(block).toUpperCase());
-    debug('block', block);
+    dbg('block', block);
     result = JSON.stringify(block);
-    debug("return from UCHereDoc2.map()", result);
+    dbgReturn("UCHereDoc2.map", result);
     return result;
   }
 

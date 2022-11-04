@@ -3,7 +3,6 @@
 import {
   LOG,
   LOGVALUE,
-  debug,
   setDebugging,
   assert,
   croak

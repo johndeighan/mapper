@@ -5,10 +5,15 @@ var hAllHandlers;
 import {
   assert,
   croak,
-  debug,
   LOG,
   LOGVALUE
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   fromTAML,
@@ -39,6 +44,10 @@ import {
 import {
   toBlock
 } from '@jdeighan/coffee-utils/block';
+
+import {
+  barf
+} from '@jdeighan/coffee-utils/fs';
 
 import {
   coffeeCodeToAST
@@ -123,7 +132,7 @@ WhileStatement:
 // ---------------------------------------------------------------------------
 export var ASTWalker = class ASTWalker {
   constructor(from) {
-    debug("enter ASTWalker()");
+    dbgEnter("ASTWalker", from);
     if (isString(from)) {
       this.ast = coffeeCodeToAST(from);
     } else {
@@ -131,7 +140,7 @@ export var ASTWalker = class ASTWalker {
     }
     // --- @ast can be a hash or array of hashes
     if (isHash(this.ast)) {
-      debug("tree was hash - constructing list from it");
+      dbg("tree was hash - constructing list from it");
       this.ast = [this.ast];
     }
     assert(isArrayOfHashes(this.ast), `not array of hashes: ${OL(this.ast)}`);
@@ -141,12 +150,12 @@ export var ASTWalker = class ASTWalker {
     this.lUsedSymbols = [];
     this.lMissingSymbols = [];
     this.context = new Context();
-    debug("return from ASTWalker()");
+    dbgReturn("ASTWalker");
   }
 
   // ..........................................................
   addImport(name, lib) {
-    debug(`enter addImport('${name}')`);
+    dbgEnter("addImport", name, lib);
     this.check(name);
     if (this.lImportedSymbols.includes(name)) {
       LOG(`Duplicate import: ${name}`);
@@ -154,36 +163,36 @@ export var ASTWalker = class ASTWalker {
       this.lImportedSymbols.push(name);
     }
     this.context.addGlobal(name);
-    debug("return from addImport()");
+    dbgReturn("addImport");
   }
 
   // ..........................................................
   addExport(name, lib) {
-    debug(`enter addExport('${name}')`);
+    dbgEnter("addExport", name);
     this.check(name);
     if (this.lExportedSymbols.includes(name)) {
       LOG(`Duplicate export: ${name}`);
     } else {
       this.lExportedSymbols.push(name);
     }
-    debug("return from addExport()");
+    dbgReturn("addExport");
   }
 
   // ..........................................................
   addDefined(name, value = {}) {
-    debug(`enter addDefined('${name}')`);
+    dbgEnter("addDefined", name);
     this.check(name);
     if (this.context.atGlobalLevel()) {
       this.context.addGlobal(name);
     } else {
       this.context.add(name);
     }
-    debug("return from addDefined()");
+    dbgReturn("addDefined");
   }
 
   // ..........................................................
   addUsed(name, value = {}) {
-    debug(`enter addUsed('${name}')`);
+    dbgEnter("addUsed", name);
     this.check(name);
     if (!this.lUsedSymbols.includes(name)) {
       this.lUsedSymbols.push(name);
@@ -191,7 +200,7 @@ export var ASTWalker = class ASTWalker {
     if (!this.context.has(name) && !this.lMissingSymbols.includes(name)) {
       this.lMissingSymbols.push(name);
     }
-    debug("return from addUsed()");
+    dbgReturn("addUsed");
   }
 
   // ..........................................................
@@ -199,7 +208,7 @@ export var ASTWalker = class ASTWalker {
     var asText, hInfo, i, j, k, lLines, lNotNeeded, label, len, len1, len2, name, node, ref, ref1, ref2, result;
     // --- Valid options:
     //        asText
-    debug("enter walk()");
+    dbgEnter("walk");
     ref = this.ast;
     for (i = 0, len = ref.length; i < len; i++) {
       node = ref[i];
@@ -240,14 +249,14 @@ export var ASTWalker = class ASTWalker {
     } else {
       result = hInfo;
     }
-    debug("return from walk()", result);
+    dbgReturn("walk", result);
     return result;
   }
 
   // ..........................................................
   walkTree(tree, level = 0) {
     var i, len, node;
-    debug("enter walkTree()");
+    dbgEnter("walkTree");
     if (isArray(tree)) {
       for (i = 0, len = tree.length; i < len; i++) {
         node = tree[i];
@@ -257,24 +266,24 @@ export var ASTWalker = class ASTWalker {
       assert(isHash(tree, ['type']), `bad tree: ${OL(tree)}`);
       this.visit(tree, level);
     }
-    debug("return from walkTree()");
+    dbgReturn("walkTree");
   }
 
   // ..........................................................
   // --- return true if handled, false if not
   handle(node, level) {
     var hHandlers, i, j, k, key, l, lDefined, lUsed, lWalkTrees, len, len1, len2, len3, subnode, tree, type;
-    debug("enter handle()");
+    dbgEnter("handle");
     ({type} = node);
-    debug(`type is ${OL(type)}`);
+    dbg(`type is ${OL(type)}`);
     hHandlers = hAllHandlers[type];
     if (notdefined(hHandlers)) {
-      debug("return false from handle()");
+      dbgReturn("handle", false);
       return false;
     }
     ({lWalkTrees, lDefined, lUsed} = hHandlers);
     if (defined(lDefined)) {
-      debug("has lDefined");
+      dbg("has lDefined");
       for (i = 0, len = lDefined.length; i < len; i++) {
         key = lDefined[i];
         subnode = node[key];
@@ -286,7 +295,7 @@ export var ASTWalker = class ASTWalker {
       }
     }
     if (defined(lUsed)) {
-      debug("has lUsed");
+      dbg("has lUsed");
       for (j = 0, len1 = lUsed.length; j < len1; j++) {
         key = lUsed[j];
         subnode = node[key];
@@ -298,7 +307,7 @@ export var ASTWalker = class ASTWalker {
       }
     }
     if (defined(lWalkTrees)) {
-      debug("has lWalkTrees");
+      dbg("has lWalkTrees");
       for (k = 0, len2 = lWalkTrees.length; k < len2; k++) {
         key = lWalkTrees[k];
         subnode = node[key];
@@ -312,17 +321,17 @@ export var ASTWalker = class ASTWalker {
         }
       }
     }
-    debug("return true from handle()");
+    dbgReturn("handle", true);
     return true;
   }
 
   // ..........................................................
   visit(node, level) {
-    var arg, argument, callee, declaration, hSpec, i, id, importKind, imported, j, k, l, lParmNames, left, len, len1, len2, len3, len4, lib, local, m, name, object, param, parm, ref, ref1, ref2, right, source, spec, specifiers, type;
-    debug(`enter ASTWalker.visit(type=${node.type})`);
+    var arg, argument, body, callee, declaration, hSpec, i, id, importKind, imported, j, k, l, lParmNames, left, len, len1, len2, len3, len4, lib, local, m, name, object, param, parm, ref, ref1, ref2, right, source, spec, specifiers, type;
+    dbgEnter("ASTWalker.visit", node, level);
     assert(defined(node), "node is undef");
     if (this.handle(node, level)) {
-      debug("return from ASTWalker.visit()");
+      dbgReturn("ASTWalker.visit");
       return;
     }
     switch (node.type) {
@@ -351,15 +360,22 @@ export var ASTWalker = class ASTWalker {
         this.walkTree(node.body, level + 1);
         break;
       case 'ExportNamedDeclaration':
+        //				console.dir node
         ({specifiers, declaration} = node);
         if (defined(declaration)) {
-          ({type, id, left} = declaration);
-          if (type === 'ClassDeclaration') {
-            this.addExport(id.name);
-          } else if (type === 'AssignmentExpression') {
-            if (left.type === 'Identifier') {
-              this.addExport(left.name);
-            }
+          ({type, id, left, body} = declaration);
+          switch (type) {
+            case 'ClassDeclaration':
+              if (defined(id)) {
+                this.addExport(id.name);
+              } else if (defined(body)) {
+                this.walkTree(node.body, level + 1);
+              }
+              break;
+            case 'AssignmentExpression':
+              if (left.type === 'Identifier') {
+                this.addExport(left.name);
+              }
           }
           this.walkTree(declaration, level + 1);
         }
@@ -454,7 +470,7 @@ export var ASTWalker = class ASTWalker {
           }
         }
     }
-    debug("return from ASTWalker.visit()");
+    dbgReturn("ASTWalker.visit");
   }
 
   // ..........................................................
@@ -463,18 +479,20 @@ export var ASTWalker = class ASTWalker {
   }
 
   // ..........................................................
-  getBasicAST(asTAML = true) {
-    var ast, lSortBy, lToRemove;
-    ast = deepCopy(this.ast);
-    lToRemove = words('start end extra declarations loc range tokens comments', 'assertions implicit optional async generator id hasIndentedBody');
+  barfAST(filePath, hOptions = {}) {
+    var astCopy, full, lSortBy;
+    ({full} = getOptions(hOptions));
     lSortBy = words("type params body left right");
-    removeKeys(ast, lToRemove);
-    if (asTAML) {
-      return toTAML(ast, {
+    if (full) {
+      return barf(filePath, toTAML(this.ast, {
         sortKeys: lSortBy
-      });
+      }));
     } else {
-      return ast;
+      astCopy = deepCopy(this.ast);
+      removeKeys(astCopy, words('start end extra declarations loc range tokens comments', 'assertions implicit optional async generato hasIndentedBody'));
+      return barf(filePath, toTAML(astCopy, {
+        sortKeys: lSortBy
+      }));
     }
   }
 

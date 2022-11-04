@@ -1,9 +1,9 @@
 # TreeMapper.test.coffee
 
 import {
-	LOG, LOGVALUE, assert, croak, debug, setDebugging,
-	fromTAML,
+	LOG, LOGVALUE, assert, croak, setDebugging, fromTAML,
 	} from '@jdeighan/exceptions'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
 import {UnitTester, UnitTesterNorm, utest} from '@jdeighan/unit-tester'
 import {
 	undef, pass, OL, defined,
@@ -926,7 +926,7 @@ walkTester.equal 754, """
 		# --- This removes blank lines
 		mapEmptyLine: () ->
 
-			debug "in MyWalker.mapEmptyLine()"
+			dbg "in MyWalker.mapEmptyLine()"
 			return undef
 
 	# ..........................................................
@@ -1040,9 +1040,9 @@ walkTester.equal 754, """
 
 		visitCmd: (hNode) ->
 
-			debug "enter MyWalker.visitCmd()"
+			dbgEnter "MyWalker.visitCmd"
 			result = "COMMAND: #{hNode.uobj.cmd}"
-			debug "return from MyWalker.visitCmd()", result
+			dbgReturn "MyWalker.visitCmd", result
 			return result
 
 	# ..........................................................
@@ -1086,14 +1086,15 @@ walkTester.equal 754, """
 		#     and removes all empty lines
 		mapNode: (hNode) ->
 
-			debug "enter mapNode()", hNode
+			dbgEnter "mapNode", hNode
 			{str, level} = hNode
 			if isEmpty(str)
-				debug "return undef from mapNode() - empty line"
+				dbgReturn "mapNode", undef
 				return undef
 			else
-				debug "return 'x' from mapNode()"
-				return indented('x', level, @oneIndent)
+				result = indented('x', level, @oneIndent)
+				dbgReturn "mapNode", result
+				return result
 
 	# ..........................................................
 
@@ -1321,7 +1322,7 @@ class HtmlMapper extends TreeMapper
 
 	mapNode: (hNode) ->
 
-		debug "enter MyWalker.mapNode()", hNode
+		dbgEnter "MyWalker.mapNode", hNode
 		{str, level} = hNode
 		lMatches = str.match(///^
 				(\S+)     # the tag
@@ -1342,21 +1343,22 @@ class HtmlMapper extends TreeMapper
 			when 'div:markdown'
 				hResult.tag = 'div'
 				body = @fetchBlockAtLevel(level)
-				debug "body", body
+				dbg "body", body
 				if nonEmpty(body)
 					md = map(import.meta.url, body, SimpleMarkDownMapper)
-					debug "md", md
+					dbg "md", md
 					hResult.body = md
 			else
 				croak "Unknown tag: #{OL(tag)}"
 
-		debug "return from MyWalker.mapNode()", hResult
+		dbgReturn "MyWalker.mapNode", hResult
 		return hResult
 
 	# .......................................................
 
 	visit: (hNode, hUser, lStack) ->
 
+		dbgEnter 'visit', hNode, hUser, lStack
 		{str, uobj, level, type} = hNode
 		switch type
 			when 'comment'
@@ -1372,7 +1374,7 @@ class HtmlMapper extends TreeMapper
 		if nonEmpty(uobj.body)
 			lParts.push indented(uobj.body, level+1)
 		result = arrayToBlock(lParts)
-		debug 'result', result
+		dbgReturn 'visit', result
 		return result
 
 	# .......................................................

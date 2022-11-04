@@ -2,10 +2,15 @@
   // Mapper.coffee
 import {
   LOG,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
@@ -49,7 +54,7 @@ export var Mapper = class Mapper extends Getter {
   //     performs const substitution
   //     splits mapping into special lines and non-special lines
   constructor(source = undef, collection = undef) {
-    debug("enter Mapper()");
+    dbgEnter("Mapper");
     super(source, collection);
     // --- These never change
     this.setConst('FILE', this.hSourceInfo.filename);
@@ -64,7 +69,7 @@ export var Mapper = class Mapper extends Getter {
     this.registerSpecialType('empty', this.isEmptyLine, this.mapEmptyLine);
     this.registerSpecialType('comment', this.isComment, this.mapComment);
     this.registerSpecialType('cmd', this.isCmd, this.mapCmd);
-    debug("return from Mapper()");
+    dbgReturn("Mapper");
   }
 
   // ..........................................................
@@ -78,16 +83,16 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
-    debug(`enter incLineNum(${inc})`);
+    dbgEnter("incLineNum", inc);
     super.incLineNum(inc);
     this.setConst('LINE', this.lineNum);
-    debug("return from incLineNum()");
+    dbgReturn("incLineNum");
   }
 
   // ..........................................................
   getItemType(hNode) {
     var i, len, recognizer, ref, str, type;
-    debug("enter Mapper.getItemType()", hNode);
+    dbgEnter("Mapper.getItemType", hNode);
     ({str} = hNode);
     assert(isString(str), `str is ${OL(str)}`);
     ref = this.lSpecials;
@@ -95,18 +100,18 @@ export var Mapper = class Mapper extends Getter {
       type = ref[i];
       recognizer = this.hSpecials[type].recognizer;
       if (recognizer.bind(this)(hNode)) {
-        debug("return from Mapper.getItemType()", type);
+        dbgReturn("Mapper.getItemType", type);
         return type;
       }
     }
-    debug("return from Mapper.getItemType()", undef);
+    dbgReturn("Mapper.getItemType", undef);
     return undef;
   }
 
   // ..........................................................
   mapSpecial(type, hNode) {
     var h, mapper, uobj;
-    debug("enter Mapper.mapSpecial()", type, hNode);
+    dbgEnter("Mapper.mapSpecial", type, hNode);
     assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
     assert(hNode.type === type, `hNode is ${OL(hNode)}`);
     h = this.hSpecials[type];
@@ -114,7 +119,7 @@ export var Mapper = class Mapper extends Getter {
     mapper = h.mapper.bind(this);
     assert(isFunction(mapper), `Bad mapper for ${OL(type)}`);
     uobj = mapper(hNode);
-    debug("return from Mapper.mapSpecial()", uobj);
+    dbgReturn("Mapper.mapSpecial", uobj);
     return uobj;
   }
 
@@ -152,17 +157,17 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   isCmd(hNode) {
     var lMatches;
-    debug("enter Mapper.isCmd()");
+    dbgEnter("Mapper.isCmd");
     if (lMatches = hNode.str.match(/^\#([A-Za-z_]\w*)\s*(.*)$/)) { // name of the command
       // argstr for command
       hNode.uobj = {
         cmd: lMatches[1],
         argstr: lMatches[2]
       };
-      debug("return true from Mapper.isCmd()");
+      dbgReturn("Mapper.isCmd", true);
       return true;
     } else {
-      debug("return false from Mapper.isCmd()");
+      dbgReturn("Mapper.isCmd", false);
       return false;
     }
   }
@@ -174,7 +179,7 @@ export var Mapper = class Mapper extends Getter {
   //    then call the base class mapCmd
   mapCmd(hNode) {
     var _, argstr, cmd, isEnv, lMatches, name, tail;
-    debug("enter Mapper.mapCmd()", hNode);
+    dbgEnter("Mapper.mapCmd", hNode);
     // --- isCmd() put these keys here
     ({cmd, argstr} = hNode.uobj);
     assert(nonEmpty(cmd), "mapCmd() with empty cmd");
@@ -187,18 +192,18 @@ export var Mapper = class Mapper extends Getter {
           tail = tail.trim();
         }
         if (isEnv) {
-          debug(`set env var ${name} to '${tail}'`);
+          dbg(`set env var ${name} to '${tail}'`);
           process.env[name] = tail;
         } else {
-          debug(`set var ${name} to '${tail}'`);
+          dbg(`set var ${name} to '${tail}'`);
           this.setConst(name, tail);
         }
-        debug("return undef from Mapper.mapCmd()");
+        dbgReturn("Mapper.mapCmd", undef);
         return undef;
       default:
         // --- don't throw exception
         //     check for unknown commands in visitCmd()
-        debug("return from Mapper.mapCmd()", hNode.uobj);
+        dbgReturn("Mapper.mapCmd", hNode.uobj);
         return hNode.uobj;
     }
   }
@@ -207,14 +212,14 @@ export var Mapper = class Mapper extends Getter {
   containedText(hNode, inlineText) {
     var indentedText, result, srcLevel, stopFunc;
     // --- has side effect of fetching all indented text
-    debug("enter Mapper.containedText()", hNode, inlineText);
+    dbgEnter("Mapper.containedText", hNode, inlineText);
     ({srcLevel} = hNode);
     stopFunc = function(h) {
       return nonEmpty(h.str) && (h.srcLevel <= srcLevel);
     };
     indentedText = this.fetchBlockUntil(stopFunc, 'keepEndLine');
-    debug("inline text", inlineText);
-    debug("indentedText", indentedText);
+    dbg("inline text", inlineText);
+    dbg("indentedText", indentedText);
     assert(isEmpty(inlineText) || isEmpty(indentedText), `node ${OL(hNode)} has both inline text and indented text`);
     if (nonEmpty(indentedText)) {
       result = indentedText;
@@ -223,7 +228,7 @@ export var Mapper = class Mapper extends Getter {
     } else {
       result = inlineText;
     }
-    debug("return from containedText()", result);
+    dbgReturn("containedText", result);
     return result;
   }
 
@@ -260,20 +265,20 @@ export var map = function(source, content = undef, mapper, hOptions = {}) {
     }
     return result;
   }
-  debug("enter map()", source, content, mapper);
+  dbgEnter("map", source, content, mapper);
   assert(defined(mapper), "Missing input class");
   // --- mapper can be an object, which is an instance of Mapper
   //     or it can just be a class which, when instantiated
   //     has a getBlock() method
   if (typeof mapper.getBlock === 'function') {
-    debug("using mapper directly");
+    dbg("using mapper directly");
     result = mapper.getBlock(hOptions);
   } else {
-    debug("creating mapper instance");
+    dbg("creating mapper instance");
     obj = new mapper(source, content);
     assert(typeof obj.getBlock === 'function', "missing getBlock() method");
     result = obj.getBlock(hOptions);
   }
-  debug("return from map()", result);
+  dbgReturn("map", result);
   return result;
 };

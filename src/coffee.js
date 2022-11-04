@@ -7,10 +7,15 @@ import CoffeeScript from 'coffeescript';
 import {
   LOG,
   LOGVALUE,
-  debug,
   assert,
   croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   CWS,
@@ -59,7 +64,7 @@ export var brew = function(code, source = 'internal') {
 export var coffeeExprToJS = function(coffeeExpr) {
   var err, jsExpr, pos;
   assert(isUndented(coffeeExpr), "has indentation");
-  debug("enter coffeeExprToJS()");
+  dbgEnter("coffeeExprToJS");
   try {
     jsExpr = brew(coffeeExpr);
     // --- Remove any trailing semicolon
@@ -71,7 +76,7 @@ export var coffeeExprToJS = function(coffeeExpr) {
     err = error;
     croak(err, "coffeeExprToJS", coffeeExpr);
   }
-  debug("return from coffeeExprToJS()", jsExpr);
+  dbgReturn("coffeeExprToJS", jsExpr);
   return jsExpr;
 };
 
@@ -88,7 +93,7 @@ export var coffeeExprToJS = function(coffeeExpr) {
 export var coffeeCodeToJS = function(coffeeCode, source = undef, hOptions = {}) {
   var err, jsCode;
   assert(isUndented(coffeeCode), "has indentation");
-  debug("enter coffeeCodeToJS()", coffeeCode);
+  dbgEnter("coffeeCodeToJS", coffeeCode, source, hOptions);
   try {
     jsCode = brew(coffeeCode, source);
     // --- cleanJS() does:
@@ -99,7 +104,7 @@ export var coffeeCodeToJS = function(coffeeCode, source = undef, hOptions = {}) 
     err = error;
     croak(err, "Original Code", coffeeCode);
   }
-  debug("return from coffeeCodeToJS()", jsCode);
+  dbgReturn("coffeeCodeToJS", jsCode);
   return jsCode;
 };
 
@@ -117,14 +122,14 @@ export var coffeeFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
       dumpfile = withExt(srcPath, '.ast');
       lNeeded = getNeededSymbols(coffeeCode, {dumpfile});
       if ((lNeeded === undef) || (lNeeded.length === 0)) {
-        debug(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
+        dbg(`NO NEEDED SYMBOLS in ${shortenPath(destPath)}:`);
       } else {
         n = lNeeded.length;
         word = n === 1 ? 'SYMBOL' : 'SYMBOLS';
-        debug(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
+        dbg(`${n} NEEDED ${word} in ${shortenPath(destPath)}:`);
         for (i = 0, len = lNeeded.length; i < len; i++) {
           sym = lNeeded[i];
-          debug(`   - ${sym}`);
+          dbg(`   - ${sym}`);
         }
       }
     }
@@ -137,7 +142,7 @@ export var coffeeFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
 export var coffeeCodeToAST = function(coffeeCode, source = undef) {
   var ast, err, mapped;
   assert(isUndented(coffeeCode), "has indentation");
-  debug("enter coffeeCodeToAST()", coffeeCode);
+  dbgEnter("coffeeCodeToAST", coffeeCode, source);
   barf(mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode);
   try {
     mapped = map(source, coffeeCode, CoffeePreProcessor);
@@ -161,7 +166,7 @@ export var coffeeCodeToAST = function(coffeeCode, source = undef) {
     LOG(sep_dash);
     croak(`ERROR in CoffeeScript: ${err.message}`);
   }
-  debug("return from coffeeCodeToAST()", ast);
+  dbgReturn("coffeeCodeToAST", ast);
   return ast;
 };
 
@@ -195,10 +200,10 @@ export var CoffeePreProcessor = class CoffeePreProcessor extends TreeMapper {
   mapComment(hNode) {
     var level, result, str;
     // --- Retain comments
-    debug("enter mapComment()");
+    dbgEnter("mapComment");
     ({str, level} = hNode);
     result = indented(str, level, this.oneIndent);
-    debug("return from mapComment()", result);
+    dbgReturn("mapComment", result);
     return result;
   }
 
@@ -206,13 +211,13 @@ export var CoffeePreProcessor = class CoffeePreProcessor extends TreeMapper {
   mapNode(hNode) {
     var level, result, str;
     // --- only non-special nodes
-    debug("enter mapNode()", hNode);
+    dbgEnter("mapNode", hNode);
     ({str, level} = hNode);
     result = str.replace(/\"[^"]*\"/g, function(qstr) { // sequence of non-quote characters
       return expand(qstr);
     });
     result = indented(result, level, this.oneIndent);
-    debug("return from mapNode()", result);
+    dbgReturn("mapNode", result);
     return result;
   }
 

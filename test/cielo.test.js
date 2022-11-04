@@ -3,7 +3,6 @@
 import {
   assert,
   LOG,
-  debug,
   setDebugging
 } from '@jdeighan/exceptions';
 

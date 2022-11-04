@@ -6,13 +6,19 @@ import {
   LOG,
   LOGVALUE,
   assert,
-  croak,
-  debug
+  croak
 } from '@jdeighan/exceptions';
+
+import {
+  dbg,
+  dbgEnter,
+  dbgReturn
+} from '@jdeighan/exceptions/debug';
 
 import {
   undef,
   defined,
+  notdefined,
   isString,
   isArray,
   isEmpty,
@@ -58,27 +64,28 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   // --- Valid options:
   //        dumpfile: <filepath>   - where to dump ast
   //     NOTE: items in array returned will always be unique
-  debug("enter getNeededSymbols()", coffeeCode, hOptions);
+  dbgEnter("getNeededSymbols", coffeeCode, hOptions);
   assert(isString(coffeeCode), "code not a string");
   assert(isUndented(coffeeCode), "coffeeCode has indent");
   ast = coffeeCodeToAST(coffeeCode);
-  debug('AST', ast);
+  dbg('AST', ast);
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.walk();
   if (hOptions.dumpfile) {
     barf(hOptions.dumpfile, "AST:\n" + tamlStringify(ast));
   }
   result = uniq(hSymbolInfo.lMissing);
-  debug("return from getNeededSymbols()", result);
+  dbgReturn("getNeededSymbols", result);
   return result;
 };
 
 // ---------------------------------------------------------------------------
 export var buildImportList = function(lNeededSymbols, source) {
   var hAvailSymbols, hLibs, hSymbol, isDefault, j, k, lImports, len, len1, lib, ref, src, str, strSymbols, symbol;
-  debug("enter buildImportList()", lNeededSymbols, source);
+  dbgEnter("buildImportList", lNeededSymbols, source);
   if (isEmpty(lNeededSymbols)) {
-    debug("return from buildImportList() - no needed symbols");
+    dbg('no needed symbols');
+    dbgReturn("buildImportList", []);
     return [];
   }
   hLibs = {}; // { <lib>: [<symbol>, ... ], ... }
@@ -116,7 +123,7 @@ export var buildImportList = function(lNeededSymbols, source) {
     lImports.push(`import {${strSymbols}} from '${lib}'`);
   }
   assert(isArray(lImports), "lImports is not an array!");
-  debug("return from buildImportList()", lImports);
+  dbgReturn("buildImportList", lImports);
   return lImports;
 };
 
@@ -125,7 +132,7 @@ export var buildImportList = function(lNeededSymbols, source) {
 export var getAvailSymbols = function(source = undef) {
   var filepath, hSourceInfo, hSymbols, searchDir;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
-  debug("enter getAvailSymbols()", source);
+  dbgEnter("getAvailSymbols", source);
   if (source === undef) {
     searchDir = process.cwd();
   } else {
@@ -133,16 +140,17 @@ export var getAvailSymbols = function(source = undef) {
     searchDir = hSourceInfo.dir;
     assert(defined(searchDir), `No directory info for ${OL(source)}`);
   }
-  debug(`search for .symbols from '${searchDir}'`);
+  dbg(`search for .symbols from '${searchDir}'`);
   filepath = pathTo('.symbols', searchDir, {
     direction: 'up'
   });
-  if (filepath == null) {
-    debug("return from getAvailSymbols() - no .symbols file found");
+  if (notdefined(filepath)) {
+    dbg('no symbols file found');
+    dbgReturn("getAvailSymbols", {});
     return {};
   }
   hSymbols = getAvailSymbolsFrom(filepath);
-  debug("return from getAvailSymbols()", hSymbols);
+  dbgReturn("getAvailSymbols", hSymbols);
   return hSymbols;
 };
 
@@ -150,12 +158,12 @@ export var getAvailSymbols = function(source = undef) {
 getAvailSymbolsFrom = function(filepath) {
   var contents, hAvailSymbols, parser;
   // --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
-  debug("enter getAvailSymbolsFrom()", filepath);
+  dbgEnter("getAvailSymbolsFrom", filepath);
   contents = slurp(filepath);
-  debug('Contents of .symbols', contents);
+  dbg('Contents of .symbols', contents);
   parser = new SymbolParser(filepath, contents);
   hAvailSymbols = parser.getAvailSymbols();
-  debug("return from getAvailSymbolsFrom()", hAvailSymbols);
+  dbgReturn("getAvailSymbolsFrom", hAvailSymbols);
   return hAvailSymbols;
 };
 
@@ -170,7 +178,7 @@ SymbolParser = class SymbolParser extends TreeMapper {
   // ..........................................................
   mapNode(hLine) {
     var _, alt, hDesc, i, isDefault, j, lMatches, lWords, len, level, numWords, src, str, symbol, word;
-    debug("enter SymbolParser.mapNode()", hLine);
+    dbgEnter("SymbolParser.mapNode", hLine);
     ({str, level} = hLine);
     if (level === 0) {
       this.curLib = str;
@@ -203,7 +211,7 @@ SymbolParser = class SymbolParser extends TreeMapper {
     } else {
       croak(`Bad .symbols file - level = ${level}`);
     }
-    debug("return from SymbolParser.mapNode()", undef);
+    dbgReturn("SymbolParser.mapNode", undef);
     return undef; // doesn't matter what we return
   }
 

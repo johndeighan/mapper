@@ -50,7 +50,7 @@ ASTTester = class ASTTester extends UnitTester {
     var result, walker;
     walker = new ASTWalker(coffeeCode);
     result = walker.walk('asText');
-    walker.barfAST(mkpath(rootDir, 'test', 'ast.txt'), 'full');
+    //		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
     return result;
   }
 
@@ -495,7 +495,7 @@ export removeKeys = (h, lKeys) =>
       dbgReset();
       walker = new ASTWalker(coffeeCode);
       result = walker.walk('asText');
-      walker.barfAST(mkpath(rootDir, 'test', 'ast.txt'));
+      //			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
       return dbgGetLog();
     }
 

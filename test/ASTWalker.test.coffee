@@ -21,7 +21,7 @@ class ASTTester extends UnitTester
 
 		walker = new ASTWalker(coffeeCode)
 		result = walker.walk('asText')
-		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
+#		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
 		return result
 
 tester = new ASTTester()
@@ -757,7 +757,7 @@ tester.equal 709, '''
 			dbgReset()
 			walker = new ASTWalker(coffeeCode)
 			result = walker.walk('asText')
-			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
+#			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
 			return dbgGetLog()
 
 	tester2 = new ASTTester2()

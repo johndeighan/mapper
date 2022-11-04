@@ -2,8 +2,8 @@
 
 import {
 	LOG, LOGVALUE, assert, croak, setDebugging, fromTAML,
-	} from '@jdeighan/exceptions'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
+	} from '@jdeighan/base-utils'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
 import {UnitTester, UnitTesterNorm, utest} from '@jdeighan/unit-tester'
 import {
 	undef, pass, OL, defined,

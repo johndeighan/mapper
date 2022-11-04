@@ -2,10 +2,10 @@
 
 import fs from 'fs'
 
-import {LOG, assert, croak} from '@jdeighan/exceptions'
+import {LOG, assert, croak} from '@jdeighan/base-utils'
 import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
-	} from '@jdeighan/exceptions/debug'
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
 	escapeStr, isString, isHash, isArray,

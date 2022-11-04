@@ -4,11 +4,11 @@ import {
   LOG,
   assert,
   croak
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   setDebugging
-} from '@jdeighan/exceptions/debug';
+} from '@jdeighan/base-utils/debug';
 
 import {
   UnitTester,

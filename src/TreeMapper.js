@@ -10,17 +10,17 @@ import {
   assert,
   croak,
   toTAML
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   dbg,
   dbgEnter,
   dbgReturn
-} from '@jdeighan/exceptions/debug';
+} from '@jdeighan/base-utils/debug';
 
 import {
   unescapeStr
-} from '@jdeighan/exceptions/utils';
+} from '@jdeighan/base-utils/utils';
 
 import {
   undef,

@@ -2,7 +2,7 @@
 
 import {
 	assert, croak, setDebugging, LOG, LOGVALUE,
-	} from '@jdeighan/exceptions'
+	} from '@jdeighan/base-utils'
 import {
 	undef, defined, notdefined, isEmpty,
 	} from '@jdeighan/coffee-utils'

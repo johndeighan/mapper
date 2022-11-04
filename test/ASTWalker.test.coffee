@@ -2,8 +2,8 @@
 
 import {
 	setDebugging, resetDebugging, dbgReset, dbgGetLog,
-	} from '@jdeighan/exceptions/debug'
-import {LOG, LOGVALUE} from '@jdeighan/exceptions/log'
+	} from '@jdeighan/base-utils/debug'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
 import {defined, nonEmpty} from '@jdeighan/coffee-utils'
 import {toBlock} from '@jdeighan/coffee-utils/block'

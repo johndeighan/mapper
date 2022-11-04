@@ -8,7 +8,7 @@ import {
   setDebugging,
   setLogger,
   LOG
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   utest

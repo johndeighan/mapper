@@ -1,6 +1,6 @@
 # Symbols.test.coffee
 
-import {LOG, assert, croak, setDebugging} from '@jdeighan/exceptions'
+import {LOG, assert, croak, setDebugging} from '@jdeighan/base-utils'
 import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, OL, words, isEmpty} from '@jdeighan/coffee-utils'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'

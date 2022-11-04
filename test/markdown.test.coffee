@@ -2,7 +2,7 @@
 
 import {
 	LOG, LOGVALUE, setDebugging, assert, croak,
-	} from '@jdeighan/exceptions'
+	} from '@jdeighan/base-utils'
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'

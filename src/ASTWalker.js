@@ -7,18 +7,18 @@ import {
   croak,
   LOG,
   LOGVALUE
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   dbg,
   dbgEnter,
   dbgReturn
-} from '@jdeighan/exceptions/debug';
+} from '@jdeighan/base-utils/debug';
 
 import {
   fromTAML,
   toTAML
-} from '@jdeighan/exceptions/taml';
+} from '@jdeighan/base-utils/taml';
 
 import {
   undef,

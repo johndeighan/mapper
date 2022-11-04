@@ -1,6 +1,6 @@
 # MathML.test.coffee
 
-import {LOG, assert, croak, setDebugging} from '@jdeighan/exceptions'
+import {LOG, assert, croak, setDebugging} from '@jdeighan/base-utils'
 import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isArray, isString,

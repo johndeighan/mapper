@@ -1,6 +1,6 @@
 # sass.test.coffee
 
-import {assert, croak, setDebugging} from '@jdeighan/exceptions'
+import {assert, croak, setDebugging} from '@jdeighan/base-utils'
 import {UnitTesterNorm} from '@jdeighan/unit-tester'
 import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'

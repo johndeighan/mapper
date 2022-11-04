@@ -7,7 +7,7 @@ import {
   croak,
   setDebugging,
   setLogger
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   UnitTester

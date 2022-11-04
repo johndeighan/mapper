@@ -7,12 +7,12 @@ import {
   resetDebugging,
   dbgReset,
   dbgGetLog
-} from '@jdeighan/exceptions/debug';
+} from '@jdeighan/base-utils/debug';
 
 import {
   LOG,
   LOGVALUE
-} from '@jdeighan/exceptions/log';
+} from '@jdeighan/base-utils/log';
 
 import {
   utest,

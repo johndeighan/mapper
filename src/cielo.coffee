@@ -1,7 +1,7 @@
 # cielo.coffee
 
-import {LOG, assert, croak} from '@jdeighan/exceptions'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
+import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
 import {
 	undef, defined, OL, replaceVars, className,
 	isEmpty, nonEmpty, isString, isHash, isArray,

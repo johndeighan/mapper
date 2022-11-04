@@ -7,7 +7,7 @@ import {
   assert,
   croak,
   setDebugging
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   UnitTesterNorm,

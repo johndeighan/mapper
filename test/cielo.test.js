@@ -4,7 +4,7 @@ import {
   assert,
   LOG,
   setDebugging
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   UnitTesterNorm,

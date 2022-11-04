@@ -8,7 +8,7 @@ import {
   setDebugging,
   LOG,
   LOGVALUE
-} from '@jdeighan/exceptions';
+} from '@jdeighan/base-utils';
 
 import {
   undef,

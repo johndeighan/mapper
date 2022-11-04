@@ -1,7 +1,7 @@
 # Node.coffee
 
-import {LOG, LOGVALUE, assert, croak} from '@jdeighan/exceptions'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
+import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, defined, notdefined, OL, isString, isInteger,
 	} from '@jdeighan/coffee-utils'

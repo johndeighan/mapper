@@ -1,6 +1,6 @@
 # traceNodes.test.coffee
 
-import {assert, croak, setDebugging, setLogger} from '@jdeighan/exceptions'
+import {assert, croak, setDebugging, setLogger} from '@jdeighan/base-utils'
 import {UnitTester} from '@jdeighan/unit-tester'
 import {untabify} from '@jdeighan/coffee-utils/indent'
 import {toBlock} from '@jdeighan/coffee-utils/block'

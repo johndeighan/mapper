@@ -1,7 +1,7 @@
 # coffee-utils.imports.coffee
 
-import {assert, croak} from '@jdeighan/exceptions'
-import {LOG, sep_dash, sep_eq} from '@jdeighan/exceptions/log'
+import {assert, croak} from '@jdeighan/base-utils'
+import {LOG, sep_dash, sep_eq} from '@jdeighan/base-utils/log'
 import {dummy} from '@jdeighan/coffee-utils/indent'
 import {
 	undef, pass, defined, notdefined,
@@ -10,7 +10,7 @@ import {
 	isConstructor, isFunction, isRegExp, isObject, getClassName,
 	jsType,
 	isEmpty, nonEmpty, chomp, rtrim, setCharsAt, words, getOptions,
-	} from '@jdeighan/exceptions/utils'
+	} from '@jdeighan/base-utils/utils'
 
 export {
 	undef, pass, defined, notdefined, sep_dash, sep_eq,

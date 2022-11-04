@@ -1,7 +1,7 @@
 # Mapper.coffee
 
-import {LOG, assert, croak} from '@jdeighan/exceptions'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
+import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable,

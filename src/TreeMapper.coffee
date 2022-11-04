@@ -2,9 +2,9 @@
 
 import {
 	LOG, LOGVALUE, setLogger, assert, croak, toTAML,
-	} from '@jdeighan/exceptions'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/exceptions/debug'
-import {unescapeStr} from '@jdeighan/exceptions/utils'
+	} from '@jdeighan/base-utils'
+import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {unescapeStr} from '@jdeighan/base-utils/utils'
 import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,

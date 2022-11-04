@@ -2,7 +2,7 @@
 
 import {
 	assert, croak, setDebugging, setLogger, LOG,
-	} from '@jdeighan/exceptions'
+	} from '@jdeighan/base-utils'
 import {utest} from '@jdeighan/unit-tester'
 import {OL} from '@jdeighan/coffee-utils'
 

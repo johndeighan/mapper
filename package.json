@@ -50,15 +50,15 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^2.0.61",
+		"@jdeighan/unit-tester": "^2.0.62",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/base-utils": "^1.0.0",
-		"@jdeighan/coffee-utils": "^11.0.41",
+		"@jdeighan/base-utils": "^1.0.3",
+		"@jdeighan/coffee-utils": "^11.0.42",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
-		"marked": "^4.2.1",
+		"marked": "^4.2.2",
 		"sass": "^1.56.0"
 	}
 }

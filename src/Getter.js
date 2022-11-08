@@ -237,7 +237,9 @@ export var Getter = class Getter extends Fetcher {
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get())) {
       dbg("GOT", hNode);
+      dbgYield('Getter.allMapped', hNode);
       yield hNode;
+      dbgResume('Getter.allMapped');
     }
     dbgReturn("Getter.allMapped");
   }
@@ -253,7 +255,9 @@ export var Getter = class Getter extends Fetcher {
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get()) && !func(hNode)) {
       dbg("GOT", hNode);
+      dbgYield("Getter.allMappedUntil", hNode);
       yield hNode;
+      dbgResume("Getter.allMappedUntil");
     }
     if (defined(hNode) && (endLineOption === 'keepEndLine')) {
       this.unfetch(hNode);

@@ -2,7 +2,7 @@
 
 import fs from 'fs'
 
-import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
 import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
@@ -35,6 +35,8 @@ export class Fetcher
 	constructor: (@source=undef, collection=undef, @addLevel=0) ->
 
 		dbgEnter "Fetcher", @source, collection, @addLevel
+		assert defined(@source) || defined(collection),
+			"NO SOURCE OR COLLECTION"
 
 		if @source
 			@hSourceInfo = parseSource(@source)
@@ -42,20 +44,22 @@ export class Fetcher
 			assert @hSourceInfo.filename,
 					"parseSource returned no filename"
 		else
-			@hSourceInfo = {
-				filename: '<unknown>'
-				}
+			dbg "No source, so filename is <unknown>"
+			@hSourceInfo = {filename: '<unknown>'}
 
 		@altInput = undef
 		@lineNum = 0
 		@oneIndent = undef   # set from 1st line with indentation
 
 		if (collection == undef)
+			dbg "No collection - check for fullpath"
 			if @hSourceInfo.fullpath
+				dbg "slurping #{@hSourceInfo.fullpath}"
 				content = slurp(@hSourceInfo.fullpath)
 				dbg 'content', content
 				collection = blockToArray(content)
 			else
+				dbg "croaking"
 				croak "no source or fullpath"
 		else if isString(collection)
 			collection = blockToArray(collection)
@@ -267,7 +271,9 @@ export class Fetcher
 
 	incLineNum: (inc=1) ->
 
+		dbgEnter "Fetcher.incLineNum"
 		@lineNum += inc
+		dbgReturn "Fetcher.incLineNum"
 		return
 
 	# ..........................................................

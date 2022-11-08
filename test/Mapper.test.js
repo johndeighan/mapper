@@ -344,7 +344,7 @@ meaning is 42`);
   //        1. empty lines are removed
   //        2. '#' style comments are recognized and removed
   //        3. Only the #define command is interpreted
-  result = map(import.meta.url, `# - test.txt
+  result = map(`# - test.txt
 
 abc
 #define meaning 42
@@ -370,7 +370,7 @@ The meaning of life is 42`);
     }
 
   };
-  result = map(import.meta.url, `// test.txt
+  result = map(`// test.txt
 
 abc
 #define meaning 42
@@ -403,7 +403,7 @@ The meaning of life is 42
     }
 
   };
-  result = map(import.meta.url, `// test.txt
+  result = map(`// test.txt
 
 abc
 
@@ -499,7 +499,7 @@ JSMapper = class JSMapper extends Mapper {
   var JSTester, mapTester;
   JSTester = class JSTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, JSMapper);
+      return map(block, JSMapper);
     }
 
   };
@@ -545,11 +545,11 @@ export var BarMapper = class BarMapper extends Mapper {
         };
         code = this.fetchBlockUntil(func, 'keepEndLine');
         // --- simulate conversion to JavaScript
-        code = map(this.source, code, JSMapper);
+        code = map(code, JSMapper);
         block = arrayToBlock(["# |||| $: {", code, "# |||| }"]);
       } else {
         // --- simulate conversion to JavaScript
-        code = map(this.source, argstr, JSMapper);
+        code = map(argstr, JSMapper);
         block = arrayToBlock(["# |||| $:", code]);
       }
       result = indented(block, level, this.oneIndent);
@@ -565,7 +565,7 @@ export var BarMapper = class BarMapper extends Mapper {
   var BarTester, mapTester;
   BarTester = class BarTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, BarMapper);
+      return map(block, BarMapper);
     }
 
   };
@@ -622,7 +622,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
   var DebarTester, mapTester;
   DebarTester = class DebarTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, DebarMapper);
+      return map(block, DebarMapper);
     }
 
   };
@@ -658,7 +658,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
   var MultiTester, mapTester;
   MultiTester = class MultiTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, [BarMapper, DebarMapper]);
+      return map(block, [BarMapper, DebarMapper]);
     }
 
   };
@@ -718,6 +718,6 @@ xyz
 XYZ`);
   // --- test using map()
   mapper = new FuncMapper(import.meta.url, block, func);
-  return utest.equal(723, map(import.meta.url, block, mapper), `ABC
+  return utest.equal(723, map(block, mapper), `ABC
 XYZ`);
 })();

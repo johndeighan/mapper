@@ -126,6 +126,6 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				dbg "#{n} NEEDED #{word} in #{shortenPath(destPath)}:"
 				for sym in lNeeded
 					dbg "   - #{sym}"
-		jsCode = map(srcPath, cieloCode, CieloToJSMapper)
+		jsCode = map({source: srcPath, content: cieloCode}, CieloToJSMapper)
 		barf destPath, jsCode
 	return

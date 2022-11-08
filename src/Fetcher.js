@@ -4,6 +4,7 @@ import fs from 'fs';
 
 import {
   LOG,
+  LOGVALUE,
   assert,
   croak
 } from '@jdeighan/base-utils';
@@ -70,11 +71,13 @@ export var Fetcher = class Fetcher {
     this.source = source;
     this.addLevel = addLevel;
     dbgEnter("Fetcher", this.source, collection, this.addLevel);
+    assert(defined(this.source) || defined(collection), "NO SOURCE OR COLLECTION");
     if (this.source) {
       this.hSourceInfo = parseSource(this.source);
       dbg('hSourceInfo', this.hSourceInfo);
       assert(this.hSourceInfo.filename, "parseSource returned no filename");
     } else {
+      dbg("No source, so filename is <unknown>");
       this.hSourceInfo = {
         filename: '<unknown>'
       };
@@ -83,11 +86,14 @@ export var Fetcher = class Fetcher {
     this.lineNum = 0;
     this.oneIndent = undef; // set from 1st line with indentation
     if (collection === undef) {
+      dbg("No collection - check for fullpath");
       if (this.hSourceInfo.fullpath) {
+        dbg(`slurping ${this.hSourceInfo.fullpath}`);
         content = slurp(this.hSourceInfo.fullpath);
         dbg('content', content);
         collection = blockToArray(content);
       } else {
+        dbg("croaking");
         croak("no source or fullpath");
       }
     } else if (isString(collection)) {
@@ -272,7 +278,9 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
+    dbgEnter("Fetcher.incLineNum");
     this.lineNum += inc;
+    dbgReturn("Fetcher.incLineNum");
   }
 
   // ..........................................................

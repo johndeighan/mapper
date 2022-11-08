@@ -313,7 +313,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 	#        2. '#' style comments are recognized and removed
 	#        3. Only the #define command is interpreted
 
-	result = map(import.meta.url, """
+	result = map("""
 			# - test.txt
 
 			abc
@@ -341,7 +341,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			else
 				return super(hNode)
 
-	result = map(import.meta.url, """
+	result = map("""
 			// test.txt
 
 			abc
@@ -372,7 +372,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 		mapNonSpecial: (hNode) ->
 			return hNode.str.length.toString()
 
-	result = map(import.meta.url, """
+	result = map("""
 			// test.txt
 
 			abc
@@ -446,7 +446,7 @@ class JSMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, JSMapper)
+			return map(block, JSMapper)
 
 	mapTester = new JSTester()
 
@@ -504,7 +504,7 @@ export class BarMapper extends Mapper
 				code = @fetchBlockUntil(func, 'keepEndLine')
 
 				# --- simulate conversion to JavaScript
-				code = map(@source, code, JSMapper)
+				code = map(code, JSMapper)
 
 				block = arrayToBlock([
 					"# |||| $: {"
@@ -513,7 +513,7 @@ export class BarMapper extends Mapper
 					])
 			else
 				# --- simulate conversion to JavaScript
-				code = map(@source, argstr, JSMapper)
+				code = map(argstr, JSMapper)
 
 				block = arrayToBlock([
 					"# |||| $:"
@@ -530,7 +530,7 @@ export class BarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, BarMapper)
+			return map(block, BarMapper)
 
 	mapTester = new BarTester()
 
@@ -600,7 +600,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, DebarMapper)
+			return map(block, DebarMapper)
 
 	mapTester = new DebarTester()
 
@@ -649,7 +649,7 @@ export class DebarMapper extends Mapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, [BarMapper, DebarMapper])
+			return map(block, [BarMapper, DebarMapper])
 
 	mapTester = new MultiTester()
 
@@ -722,7 +722,7 @@ export class DebarMapper extends Mapper
 
 	# --- test using map()
 	mapper = new FuncMapper(import.meta.url, block, func)
-	utest.equal 723, map(import.meta.url, block, mapper), """
+	utest.equal 723, map(block, mapper), """
 		ABC
 		XYZ
 		"""

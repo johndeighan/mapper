@@ -11,12 +11,12 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
 
-export sassify = (block, source) ->
+export sassify = (block) ->
 
-	dbgEnter "sassify", block, source
+	dbgEnter "sassify", block
 
 	# --- NOTE: Mapper will remove comments and blank lines
-	newblock = map(source, block, Mapper)
+	newblock = map(block, Mapper)
 	dbg "newblock", newblock
 	result = sass.renderSync({
 		data: newblock,

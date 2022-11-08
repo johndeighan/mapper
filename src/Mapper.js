@@ -25,9 +25,11 @@ import {
   isArray,
   isFunction,
   isIterable,
+  isObject,
   isEmpty,
   nonEmpty,
-  isSubclassOf
+  isSubclassOf,
+  isConstructor
 } from '@jdeighan/coffee-utils';
 
 import {
@@ -54,7 +56,7 @@ export var Mapper = class Mapper extends Getter {
   //     performs const substitution
   //     splits mapping into special lines and non-special lines
   constructor(source = undef, collection = undef) {
-    dbgEnter("Mapper");
+    dbgEnter("Mapper", source, collection);
     super(source, collection);
     // --- These never change
     this.setConst('FILE', this.hSourceInfo.filename);
@@ -83,10 +85,10 @@ export var Mapper = class Mapper extends Getter {
   // ..........................................................
   // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
-    dbgEnter("incLineNum", inc);
+    dbgEnter("Mapper.incLineNum", inc);
     super.incLineNum(inc);
     this.setConst('LINE', this.lineNum);
-    dbgReturn("incLineNum");
+    dbgReturn("Mapper.incLineNum");
   }
 
   // ..........................................................
@@ -228,7 +230,7 @@ export var Mapper = class Mapper extends Getter {
     } else {
       result = inlineText;
     }
-    dbgReturn("containedText", result);
+    dbgReturn("Mapper.containedText", result);
     return result;
   }
 
@@ -251,33 +253,58 @@ export var FuncMapper = class FuncMapper extends Mapper {
 };
 
 // ===========================================================================
-export var map = function(source, content = undef, mapper, hOptions = {}) {
-  var i, item, len, obj, result;
+export var map = function(hInput, mapper, hOptions = {}) {
+  var content, i, item, len, obj, result, source;
   // --- Valid options:
   //        logNodes
+  dbgEnter("map", hInput, mapper, hOptions);
+  if (isString(hInput)) {
+    dbg("hInput is a string, constructing new hInput");
+    hInput = {
+      content: hInput
+    };
+  }
+  // --- An array can be provided - the input is processed
+  //     by each array element sequentially
   if (isArray(mapper)) {
-    result = content;
+    dbg("mapper is an array - using each array element");
     for (i = 0, len = mapper.length; i < len; i++) {
       item = mapper[i];
       if (defined(item)) {
-        result = map(source, result, item, hOptions);
+        hInput.content = map(hInput, item, hOptions);
       }
     }
-    return result;
+    dbgReturn("map", hInput.content);
+    return hInput.content;
   }
-  dbgEnter("map", source, content, mapper);
-  assert(defined(mapper), "Missing input class");
+  assert(isHash(hInput), `hInput not a hash: ${OL(hInput)}`);
+  ({source, content} = hInput);
+  dbg("unpacked:");
+  dbg('   source =', source);
+  dbg('   content =', content);
+  assert(defined(mapper), "Missing mapper");
   // --- mapper can be an object, which is an instance of Mapper
   //     or it can just be a class which, when instantiated
   //     has a getBlock() method
-  if (typeof mapper.getBlock === 'function') {
-    dbg("using mapper directly");
+  if (isObject(mapper, '&getBlock')) {
+    dbg("mapper is object, calling its getBlock()");
     result = mapper.getBlock(hOptions);
-  } else {
-    dbg("creating mapper instance");
+  } else if (isConstructor(mapper)) {
+    dbg("mapper is constructor, creating instance");
+    dbg('source =', source);
+    dbg('content =', content);
     obj = new mapper(source, content);
-    assert(typeof obj.getBlock === 'function', "missing getBlock() method");
+    assert(isObject(obj, '&getBlock'), 'object has no getBlock method');
     result = obj.getBlock(hOptions);
+  } else if (isFunction(mapper)) {
+    dbg("mapper is a function, calling it");
+    if (notdefined(content)) {
+      assert(defined(source), "Neither source nor content defined");
+      content = slurp(source);
+    }
+    result = mapper(content);
+  } else {
+    croak(`Bad mapper in map(): ${OL(mapper)}`);
   }
   dbgReturn("map", result);
   return result;

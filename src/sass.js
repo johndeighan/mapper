@@ -28,11 +28,11 @@ import {
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
-export var sassify = function(block, source) {
+export var sassify = function(block) {
   var newblock, result;
-  dbgEnter("sassify", block, source);
+  dbgEnter("sassify", block);
   // --- NOTE: Mapper will remove comments and blank lines
-  newblock = map(source, block, Mapper);
+  newblock = map(block, Mapper);
   dbg("newblock", newblock);
   result = sass.renderSync({
     data: newblock,

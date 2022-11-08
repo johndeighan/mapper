@@ -19,13 +19,13 @@ projRoot = mkpath('c:', 'Users', 'johnd', 'mapper')
 
 # ---------------------------------------------------------------------------
 
-export brew = (code, source='internal') ->
+export brew = (code) ->
 
 	hCoffeeOptions = {
 		bare: true
 		header: false
 		}
-	mapped = map(source, code, CoffeePreProcessor)
+	mapped = map(code, CoffeePreProcessor)
 	result = CoffeeScript.compile(mapped, hCoffeeOptions)
 
 	# --- Result is JS code
@@ -112,14 +112,14 @@ export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 
 # ---------------------------------------------------------------------------
 
-export coffeeCodeToAST = (coffeeCode, source=undef) ->
+export coffeeCodeToAST = (coffeeCode) ->
 
 	assert isUndented(coffeeCode), "has indentation"
-	dbgEnter "coffeeCodeToAST", coffeeCode, source
+	dbgEnter "coffeeCodeToAST", coffeeCode
 	barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
 
 	try
-		mapped = map(source, coffeeCode, CoffeePreProcessor)
+		mapped = map(coffeeCode, CoffeePreProcessor)
 		assert defined(mapped), "mapped is undef"
 		barf mkpath(projRoot, 'test', 'ast.cielo'), mapped
 	catch err

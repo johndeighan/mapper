@@ -685,7 +685,7 @@ __END__
 // __END__ only works with no identation
 (function() {
   return utest.fails(864, function() {
-    return map(import.meta.url, `abc
+    return map(`abc
 		def
 	ghi
 	__END__
@@ -698,7 +698,7 @@ __END__
   var Tester, treeTester;
   Tester = class Tester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, TreeMapper);
+      return map(block, TreeMapper);
     }
 
   };
@@ -737,7 +737,7 @@ p
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };
@@ -746,7 +746,7 @@ p
   block = `abc
 
 def`;
-  utest.equal(950, map(import.meta.url, block, MyWalker), `abc
+  utest.equal(950, map(block, MyWalker), `abc
 def`);
   return treeTester.equal(955, block, `abc
 def`);
@@ -771,7 +771,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };
@@ -782,7 +782,7 @@ def`);
 # not a comment
 abc
 def`;
-  utest.equal(998, map(import.meta.url, block, MyWalker), `# not a comment
+  utest.equal(998, map(block, MyWalker), `# not a comment
 abc
 def`);
   return treeTester.equal(1004, block, `# not a comment
@@ -831,7 +831,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };
@@ -874,7 +874,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };
@@ -906,7 +906,7 @@ x`);
     // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };
@@ -925,7 +925,7 @@ ghi`);
   var MyTester, treeTester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, TreeMapper);
+      return map(block, TreeMapper);
     }
 
   };
@@ -1036,7 +1036,7 @@ while (x > 2)
   var MyTester, treeTester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, TreeMapper);
+      return map(block, TreeMapper);
     }
 
   };
@@ -1099,7 +1099,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
         body = this.fetchBlockAtLevel(level);
         dbg("body", body);
         if (nonEmpty(body)) {
-          md = map(import.meta.url, body, SimpleMarkDownMapper);
+          md = map(body, SimpleMarkDownMapper);
           dbg("md", md);
           hResult.body = md;
         }
@@ -1151,7 +1151,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
   var MyTester, treeTester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, HtmlMapper);
+      return map(block, HtmlMapper);
     }
 
   };
@@ -1186,7 +1186,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
   var MyTester, treeTester;
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, TreeMapper);
+      return map(block, TreeMapper);
     }
 
   };
@@ -1217,7 +1217,7 @@ xyz`);
   };
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(import.meta.url, block, MyWalker);
+      return map(block, MyWalker);
     }
 
   };

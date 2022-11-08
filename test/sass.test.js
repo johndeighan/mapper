@@ -27,7 +27,7 @@ import {
 // ---------------------------------------------------------------------------
 SassTester = class SassTester extends UnitTesterNorm {
   transformValue(text) {
-    return sassify(text, import.meta.url);
+    return sassify(text);
   }
 
 };

@@ -1,6 +1,6 @@
 # cielo.test.coffee
 
-import {assert, LOG, setDebugging} from '@jdeighan/base-utils'
+import {assert, LOG, LOGVALUE, setDebugging} from '@jdeighan/base-utils'
 import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
 
 import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
@@ -27,7 +27,11 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			return map(import.meta.url, code, TreeMapper)
+			hInput = {
+				source: import.meta.url
+				content: code
+				}
+			return map(hInput, TreeMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
@@ -44,7 +48,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	cieloTester.equal 52, """
+	cieloTester.equal 51, """
 			y = x
 
 			""", """
@@ -57,7 +61,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# for i in range(5)
 	#    y *= i
 
-	cieloTester.equal 65, """
+	cieloTester.equal 64, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -70,7 +74,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	cieloTester.equal 78, """
+	cieloTester.equal 77, """
 			x = 23
 			y = x
 					+ 5
@@ -82,7 +86,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	cieloTester.equal 90, """
+	cieloTester.equal 89, """
 			x = 23
 			y = x \
 			+ 5
@@ -95,7 +99,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	cieloTester.equal 103, """
+	cieloTester.equal 102, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -105,7 +109,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			+ 5
 			"""
 
-	cieloTester.equal 113, """
+	cieloTester.equal 112, """
 			str = <<<
 				abc
 				def
@@ -116,7 +120,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = 42
 			"""
 
-	cieloTester.equal 124, """
+	cieloTester.equal 123, """
 			str = <<<
 				===
 				abc
@@ -128,7 +132,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = 42
 			"""
 
-	cieloTester.equal 136, """
+	cieloTester.equal 135, """
 			str = <<<
 				...this is a
 					long line
@@ -136,7 +140,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			str = "this is a long line"
 			"""
 
-	cieloTester.equal 144, """
+	cieloTester.equal 143, """
 			lItems = <<<
 				---
 				- a
@@ -145,7 +149,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			lItems = ["a","b"]
 			"""
 
-	cieloTester.equal 153, """
+	cieloTester.equal 152, """
 			hItems = <<<
 				---
 				a: 13
@@ -154,7 +158,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			hItems = {"a":13,"b":42}
 			"""
 
-	cieloTester.equal 162, """
+	cieloTester.equal 161, """
 			lItems = <<<
 				---
 				-
@@ -167,7 +171,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	cieloTester.equal 175, """
+	cieloTester.equal 174, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -183,7 +187,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	cieloTester.equal 191, """
+	cieloTester.equal 190, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -196,7 +200,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 204, """
+	cieloTester.equal 203, """
 			str = \"\"\"
 				this is a
 				long string
@@ -210,7 +214,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 218, '''
+	cieloTester.equal 217, '''
 			str = """
 				this is a
 				long string
@@ -224,7 +228,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 232, """
+	cieloTester.equal 231, """
 			str = '''
 				this is a
 				long string
@@ -239,7 +243,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# Test function HEREDOC types
 
-	cieloTester.equal 260, """
+	cieloTester.equal 246, """
 			handler = <<<
 				() ->
 					return 42
@@ -248,7 +252,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 				return 42
 			"""
 
-	cieloTester.equal 269, """
+	cieloTester.equal 255, """
 			handler = <<<
 				(x, y) ->
 					return 42
@@ -268,9 +272,13 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 				logger "file exists"
 			"""
 
-	jsCode = map(import.meta.url, cieloCode, CieloToJSMapper)
+	hInput = {
+		source: import.meta.url
+		content: cieloCode
+		}
+	jsCode = map(hInput, CieloToJSMapper)
 
-	utest.equal 291, jsCode, """
+	utest.equal 281, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
@@ -288,13 +296,17 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			return map(import.meta.url, code, CieloToJSMapper)
+			hInput = {
+				source: import.meta.url
+				content: code
+				}
+			return map(hInput, CieloToJSMapper)
 
 	cieloTester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	cieloTester.equal 314, """
+	cieloTester.equal 309, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -306,7 +318,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- But not if we're already importing them
 
-	cieloTester.equal 326, """
+	cieloTester.equal 321, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -320,7 +332,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	cieloTester.equal 340, """
+	cieloTester.equal 335, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -328,7 +340,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = undef;
 			"""
 
-	cieloTester.equal 348, """
+	cieloTester.equal 343, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -343,7 +355,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 				});
 			"""
 
-	cieloTester.equal 363, """
+	cieloTester.equal 358, """
 			x = 23
 			logger x
 			""", """
@@ -375,13 +387,17 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			return map(import.meta.url, code, MyMapper)
+			hInput = {
+				source: import.meta.url
+				content: code
+				}
+			return map(hInput, MyMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 399, """
+	cieloTester.equal 400, """
 			# --- a comment
 			# |||| stuff
 			y = x
@@ -411,13 +427,17 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			return map(import.meta.url, code, MyMapper)
+			hInput = {
+				source: import.meta.url
+				content: code
+				}
+			return map(hInput, MyMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 424, """
+	cieloTester.equal 440, """
 			# --- a comment
 			# |||| stuff
 			y = x

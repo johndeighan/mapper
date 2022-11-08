@@ -8,7 +8,7 @@ class StoryTester extends UnitTester
 
 	transformValue: (block) ->
 
-		return map(import.meta.url, block, StoryMapper)
+		return map(block, StoryMapper)
 
 storyTester = new StoryTester()
 

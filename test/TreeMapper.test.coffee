@@ -861,7 +861,7 @@ walkTester.equal 754, """
 # __END__ only works with no identation
 
 (() ->
-	utest.fails 864, () -> map(import.meta.url, """
+	utest.fails 864, () -> map("""
 			abc
 					def
 				ghi
@@ -878,7 +878,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, TreeMapper)
+			return map(block, TreeMapper)
 
 	treeTester = new Tester()
 
@@ -935,7 +935,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 
@@ -947,7 +947,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	utest.equal 950, map(import.meta.url, block, MyWalker), """
+	utest.equal 950, map(block, MyWalker), """
 			abc
 			def
 			"""
@@ -981,7 +981,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 
@@ -995,7 +995,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	utest.equal 998, map(import.meta.url, block, MyWalker), """
+	utest.equal 998, map(block, MyWalker), """
 			# not a comment
 			abc
 			def
@@ -1050,7 +1050,7 @@ walkTester.equal 754, """
 	class MyTester extends UnitTester
 
 		transformValue: (block) ->
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 
@@ -1102,7 +1102,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 
@@ -1140,7 +1140,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 
@@ -1166,7 +1166,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, TreeMapper)
+			return map(block, TreeMapper)
 
 	# ..........................................................
 
@@ -1266,7 +1266,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, TreeMapper)
+			return map(block, TreeMapper)
 
 	# ..........................................................
 
@@ -1345,7 +1345,7 @@ class HtmlMapper extends TreeMapper
 				body = @fetchBlockAtLevel(level)
 				dbg "body", body
 				if nonEmpty(body)
-					md = map(import.meta.url, body, SimpleMarkDownMapper)
+					md = map(body, SimpleMarkDownMapper)
 					dbg "md", md
 					hResult.body = md
 			else
@@ -1395,7 +1395,7 @@ class HtmlMapper extends TreeMapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, HtmlMapper)
+			return map(block, HtmlMapper)
 
 	treeTester = new MyTester()
 
@@ -1438,7 +1438,7 @@ class HtmlMapper extends TreeMapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, TreeMapper)
+			return map(block, TreeMapper)
 
 	treeTester = new MyTester()
 
@@ -1477,7 +1477,7 @@ class HtmlMapper extends TreeMapper
 
 		transformValue: (block) ->
 
-			return map(import.meta.url, block, MyWalker)
+			return map(block, MyWalker)
 
 	treeTester = new MyTester()
 

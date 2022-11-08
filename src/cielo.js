@@ -167,7 +167,10 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
         }
       }
     }
-    jsCode = map(srcPath, cieloCode, CieloToJSMapper);
+    jsCode = map({
+      source: srcPath,
+      content: cieloCode
+    }, CieloToJSMapper);
     barf(destPath, jsCode);
   }
 };

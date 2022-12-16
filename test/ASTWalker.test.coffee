@@ -1,9 +1,9 @@
 # ASTWalker.test.coffee
 
 import {
-	setDebugging, resetDebugging, dbgReset, dbgGetLog,
+	setDebugging, resetDebugging, getDebugLog,
 	} from '@jdeighan/base-utils/debug'
-import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {LOG, LOGVALUE, clearAllLogs} from '@jdeighan/base-utils/log'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
 import {defined, nonEmpty} from '@jdeighan/coffee-utils'
 import {toBlock} from '@jdeighan/coffee-utils/block'
@@ -754,11 +754,11 @@ tester.equal 709, '''
 
 		transformValue: (coffeeCode) ->
 
-			dbgReset()
+			clearAllLogs()
 			walker = new ASTWalker(coffeeCode)
 			result = walker.walk('asText')
 #			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
-			return dbgGetLog()
+			return getDebugLog()
 
 	tester2 = new ASTTester2()
 

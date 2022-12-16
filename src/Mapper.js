@@ -55,9 +55,9 @@ export var Mapper = class Mapper extends Getter {
   // --- handles #define
   //     performs const substitution
   //     splits mapping into special lines and non-special lines
-  constructor(source = undef, collection = undef) {
-    dbgEnter("Mapper", source, collection);
-    super(source, collection);
+  constructor(hInput, options = {}) {
+    dbgEnter("Mapper", hInput, options);
+    super(hInput, options);
     // --- These never change
     this.setConst('FILE', this.hSourceInfo.filename);
     this.setConst('DIR', this.hSourceInfo.dir);
@@ -219,7 +219,7 @@ export var Mapper = class Mapper extends Getter {
     stopFunc = function(h) {
       return nonEmpty(h.str) && (h.srcLevel <= srcLevel);
     };
-    indentedText = this.fetchBlockUntil(stopFunc, 'keepEndLine');
+    indentedText = this.getBlockUntil(stopFunc, 'keepEndLine');
     dbg("inline text", inlineText);
     dbg("indentedText", indentedText);
     assert(isEmpty(inlineText) || isEmpty(indentedText), `node ${OL(hNode)} has both inline text and indented text`);

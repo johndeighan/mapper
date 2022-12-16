@@ -1,7 +1,9 @@
 # Mapper.coffee
 
 import {LOG, assert, croak} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable, isObject,
@@ -20,10 +22,10 @@ export class Mapper extends Getter
 	#     performs const substitution
 	#     splits mapping into special lines and non-special lines
 
-	constructor: (source=undef, collection=undef) ->
+	constructor: (hInput, options={}) ->
 
-		dbgEnter "Mapper", source, collection
-		super source, collection
+		dbgEnter "Mapper", hInput, options
+		super hInput, options
 
 		# --- These never change
 		@setConst 'FILE', @hSourceInfo.filename
@@ -202,7 +204,7 @@ export class Mapper extends Getter
 
 		stopFunc = (h) ->
 			return nonEmpty(h.str) && (h.srcLevel <= srcLevel)
-		indentedText = @fetchBlockUntil(stopFunc, 'keepEndLine')
+		indentedText = @getBlockUntil(stopFunc, 'keepEndLine')
 
 		dbg "inline text", inlineText
 		dbg "indentedText", indentedText

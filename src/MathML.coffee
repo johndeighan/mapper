@@ -1,7 +1,9 @@
 # MathML.coffee
 
 import {LOG, assert, croak} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, defined, pass, escapeStr, OL,
 	isEmpty, isArray, isNumber, isString,

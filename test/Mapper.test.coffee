@@ -14,89 +14,41 @@ import {
 import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 # ---------------------------------------------------------------------------
-
-(() ->
-	mapper = new Mapper(undef, """
-		line1
-		line2
-		line3
-		""")
-
-	utest.like 23, mapper.peek(), {str: 'line1', level: 0}
-	utest.like 24, mapper.peek(), {str: 'line1', level: 0}
-	utest.falsy 25, mapper.eof()
-	utest.like 26, token0 = mapper.get(), {str: 'line1'}
-	utest.like 27, token1 = mapper.get(), {str: 'line2'}
-	utest.equal 28, mapper.lineNum, 2
-
-	utest.falsy 30, mapper.eof()
-	utest.succeeds 31, () -> mapper.unfetch(token1)
-	utest.succeeds 32, () -> mapper.unfetch(token0)
-	utest.like 33, mapper.get(), {str: 'line1'}
-	utest.like 34, mapper.get(), {str: 'line2'}
-	utest.falsy 35, mapper.eof()
-
-	utest.like 37, token0 = mapper.get(), {str: 'line3'}
-	utest.equal 38, mapper.lineNum, 3
-	utest.truthy 39, mapper.eof()
-	utest.succeeds 40, () -> mapper.unfetch(token0)
-	utest.falsy 41, mapper.eof()
-	utest.equal 42, mapper.get(), token0
-	utest.truthy 43, mapper.eof()
-	)()
-
-# ---------------------------------------------------------------------------
-# --- Trailing whitespace is stripped from strings
-
-(() ->
-
-	mapper = new Mapper(undef, ['abc', 'def  ', 'ghi\t\t'])
-
-	utest.like 53, mapper.peek(), {str: 'abc'}
-	utest.like 54, mapper.peek(), {str: 'abc'}
-	utest.falsy 55, mapper.eof()
-	utest.like 56, mapper.get(), {str: 'abc'}
-	utest.like 57, mapper.get(), {str: 'def'}
-	utest.like 58, mapper.get(), {str: 'ghi'}
-	utest.equal 59, mapper.lineNum, 3
-	)()
-
-# ---------------------------------------------------------------------------
 # --- Special lines
 
 (() ->
-	mapper = new Mapper(undef, """
+	mapper = new Mapper("""
 		line1
 		# a comment
 		line2
 
 		line3
 		""")
-	utest.like 73, mapper.get(), {
+	utest.like 27, mapper.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	utest.like 78, mapper.get(), {
+	utest.like 32, mapper.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	utest.like 83, mapper.get(), {
+	utest.like 37, mapper.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	utest.equal 88, mapper.get(), undef
+	utest.equal 42, mapper.get(), undef
 
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test fetch(), fetchUntil()
+# --- Test allUntil()
 
 (() ->
 
-	mapper = new Mapper(undef, """
+	mapper = new Mapper("""
 			abc
 			def
 			ghi
@@ -104,17 +56,39 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			mno
 			""")
 
-	utest.like 105, mapper.fetch(), {str: 'abc'}
+	func = (item) -> (item.str == 'jkl')
+	lStrings = []
 
-	# 'jkl' will be discarded
-	func = (hNode) -> (hNode.str == 'jkl')
-	utest.like 109, mapper.fetchUntil(func, 'discardEndLine'), [
-		{str: 'def'}
-		{str: 'ghi'}
-		]
+	# --- By default, the end line is discarded
+	for item from mapper.allUntil(func)
+		lStrings.push item.str
 
-	utest.like 114, mapper.fetch(), {str: 'mno'}
-	utest.equal 115, mapper.lineNum, 5
+	utest.equal 63, lStrings, ['abc','def','ghi']
+	utest.like 67, mapper.fetch(), {str: 'mno'}
+	)()
+
+# ---------------------------------------------------------------------------
+# --- Test allUntil()
+
+(() ->
+
+	mapper = new Mapper("""
+			abc
+			def
+			ghi
+			jkl
+			mno
+			""")
+
+	func = (item) -> (item.str == 'jkl')
+	lStrings = []
+
+	# --- Tell allUntil() to keep the end line
+	for item from mapper.allUntil(func, 'keepEndLine')
+		lStrings.push item.str
+
+	utest.equal 63, lStrings, ['abc','def','ghi']
+	utest.like 91, mapper.fetch(), {str: 'jlk'}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -131,29 +105,12 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 		return
 
 	# --- You can pass any iterator to the Mapper() constructor
-	mapper = new Mapper(undef, generator())
+	mapper = new Mapper(generator())
 
-	utest.like 134, mapper.peek(), {str: 'line1'}
-	utest.like 135, mapper.peek(), {str: 'line1'}
-	utest.falsy 136, mapper.eof()
-	utest.like 137, token0 = mapper.get(), {str: 'line1'}
-	utest.like 138, token1 = mapper.get(), {str: 'line2'}
-	utest.equal 139, mapper.lineNum, 2
-
-	utest.falsy 141, mapper.eof()
-	utest.succeeds 142, () -> mapper.unfetch(token1)
-	utest.succeeds 143, () -> mapper.unfetch(token0)
-	utest.like 144, mapper.get(), {str: 'line1'}
-	utest.like 145, mapper.get(), {str: 'line2'}
-	utest.falsy 146, mapper.eof()
-
-	utest.like 148, token3 = mapper.get(), {str: 'line3'}
-	utest.truthy 149, mapper.eof()
-	utest.succeeds 150, () -> mapper.unfetch(token3)
-	utest.falsy 151, mapper.eof()
-	utest.equal 152, mapper.get(), token3
-	utest.truthy 153, mapper.eof()
-	utest.equal 154, mapper.lineNum, 3
+	utest.like 110, mapper.fetch(), {str: 'line1'}
+	utest.like 111, mapper.fetch(), {str: 'line2'}
+	utest.like 112, mapper.fetch(), {str: 'line3'}
+	utest.is    113, mapper.fetch(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -171,7 +128,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		transformValue: (block) ->
 
-			mapper = new Mapper(import.meta.url, block)
+			mapper = new Mapper(block)
 			block = mapper.getBlock()
 			numLines = mapper.lineNum   # set variable numLines
 			return block
@@ -180,7 +137,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 181, """
+	myTester.equal 140, """
 			abc
 				#include title.md
 			def
@@ -191,20 +148,20 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	utest.equal 192, numLines, 3
+	utest.equal 151, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
 
 (() ->
 
-	mapper = new Mapper(import.meta.url, """
+	mapper = new Mapper("""
 			abc
 				#include title.md
 			def
 			""")
 
-	utest.equal 205, mapper.getBlock(), """
+	utest.equal 164, mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -223,7 +180,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		transformValue: (block) ->
 
-			mapper = new Mapper(import.meta.url, block)
+			mapper = new Mapper(block)
 			block = mapper.getBlock()
 			numLines = mapper.lineNum   # set variable numLines
 			return block
@@ -232,7 +189,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 233, """
+	myTester.equal 192, """
 			abc
 			def
 			__END__
@@ -243,7 +200,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	utest.equal 244, numLines, 2
+	utest.equal 203, numLines, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -255,7 +212,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		transformValue: (block) ->
 
-			mapper = new Mapper(import.meta.url, block)
+			mapper = new Mapper(block)
 			block = mapper.getBlock()
 			return block
 
@@ -263,7 +220,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 264, """
+	myTester.equal 223, """
 			abc
 				#include ended.md
 			def
@@ -284,7 +241,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		transformValue: (block) ->
 
-			mapper = new Mapper(import.meta.url, block)
+			mapper = new Mapper(block)
 			block = mapper.getBlock()
 			return block
 
@@ -292,7 +249,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 293, """
+	myTester.equal 252, """
 			abc
 			#define meaning 42
 			meaning is __meaning__
@@ -321,7 +278,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			The meaning of life is __meaning__
 			""", Mapper)
 
-	utest.equal 322, result, """
+	utest.equal 281, result, """
 			abc
 			The meaning of life is 42
 			"""
@@ -350,7 +307,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			#for x in lItems
 			""", MyMapper)
 
-	utest.equal 351, result, """
+	utest.equal 310, result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -379,43 +336,10 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 			defghi
 			""", MyMapper)
-	utest.equal 380, result, """
+	utest.equal 339, result, """
 			3
 			6
 			"""
-	)()
-
-# ---------------------------------------------------------------------------
-
-(() ->
-
-	mapper = new Mapper(undef, """
-			if (x == 2)
-				doThis
-				doThat
-					then this
-			while (x > 2)
-				--x
-			""")
-
-	utest.like 399, mapper.peek(), {str: 'if (x == 2)', level: 0}
-	utest.like 400, mapper.get(),  {str: 'if (x == 2)', level: 0}
-
-	utest.like 402, mapper.peek(), {str: 'doThis', level: 1}
-	utest.like 403, mapper.get(),  {str: 'doThis', level: 1}
-
-	utest.like 405, mapper.peek(), {str: 'doThat', level: 1}
-	utest.like 406, mapper.get(),  {str: 'doThat', level: 1}
-
-	utest.like 408, mapper.peek(), {str: 'then this', level: 2}
-	utest.like 409, mapper.get(),  {str: 'then this', level: 2}
-
-	utest.like 411, mapper.peek(), {str: 'while (x > 2)', level: 0}
-	utest.like 412, mapper.get(),  {str: 'while (x > 2)', level: 0}
-
-	utest.like 414, mapper.peek(), {str: '--x', level: 1}
-	utest.like 415, mapper.get(),  {str: '--x', level: 1}
-
 	)()
 
 # ---------------------------------------------------------------------------
@@ -452,7 +376,7 @@ class JSMapper extends Mapper
 
 	# --- some utest tests of JSMapper
 
-	mapTester.equal 453, """
+	mapTester.equal 379, """
 			# |||| $:
 			y = 2*x
 			""", """
@@ -460,7 +384,7 @@ class JSMapper extends Mapper
 			y = 2*x;
 			"""
 
-	mapTester.equal 461, """
+	mapTester.equal 387, """
 			# |||| $: {
 			y = 2*x
 			console.log "OK"
@@ -501,7 +425,7 @@ export class BarMapper extends Mapper
 		if (cmd == 'reactive')
 			if (argstr == '')
 				func = (hBlock) -> return (hBlock.level <= level)
-				code = @fetchBlockUntil(func, 'keepEndLine')
+				code = @getBlockUntil(func, 'keepEndLine')
 
 				# --- simulate conversion to JavaScript
 				code = map(code, JSMapper)
@@ -537,7 +461,7 @@ export class BarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of BarMapper
 
-	mapTester.equal 538, """
+	mapTester.equal 464, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -552,7 +476,7 @@ export class BarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 553, """
+	mapTester.equal 479, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -607,7 +531,7 @@ export class DebarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of DebarMapper
 
-	mapTester.equal 608, """
+	mapTester.equal 534, """
 			<h1>title</h1>
 			<script>
 				# |||| $:
@@ -621,7 +545,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 622, """
+	mapTester.equal 548, """
 			<h1>title</h1>
 			<script>
 				# |||| $: {
@@ -656,7 +580,7 @@ export class DebarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of multiple mapping
 
-	mapTester.equal 657, """
+	mapTester.equal 583, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -671,7 +595,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 672, """
+	mapTester.equal 598, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -715,14 +639,14 @@ export class DebarMapper extends Mapper
 		123
 		"""
 
-	utest.equal 716, func(block), """
+	utest.equal 642, func(block), """
 		ABC
 		XYZ
 		"""
 
 	# --- test using map()
 	mapper = new FuncMapper(import.meta.url, block, func)
-	utest.equal 723, map(block, mapper), """
+	utest.equal 649, map(block, mapper), """
 		ABC
 		XYZ
 		"""

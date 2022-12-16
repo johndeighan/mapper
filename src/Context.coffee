@@ -1,7 +1,9 @@
 # Context.coffee
 
 import {assert, LOG} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {undef, deepCopy, words, OL} from '@jdeighan/coffee-utils'
 import {Scope} from '@jdeighan/mapper/scope'
 

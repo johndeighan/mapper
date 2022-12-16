@@ -49,18 +49,18 @@ import {
 } from '@jdeighan/mapper/fetcher';
 
 // ---------------------------------------------------------------------------
-//   class Getter
-//      - get(), peek(), eof(), skip() for mapped data
+//   class Getter - get() for mapped data
 export var Getter = class Getter extends Fetcher {
-  constructor(source = undef, collection = undef) {
-    super(source, collection);
+  constructor(hInput, options = {}) {
+    super(hInput, options);
     this.hConsts = {}; // support variable replacement
   }
 
   
     // ..........................................................
   setConst(name, value) {
-    assert((name === 'LINE') || (this.hConsts[name] === undef), `cannot set constant ${name} twice`);
+    // --- Only const LINE can be redefined
+    assert((name === 'LINE') || notdefined(this.hConsts[name]), `cannot set constant ${name} twice`);
     this.hConsts[name] = value;
   }
 
@@ -73,29 +73,15 @@ export var Getter = class Getter extends Fetcher {
   //        Mapped Data
   // ..........................................................
   get() {
-    var extStr, hExt, hNode, level, str;
+    var hNode, uobj;
+    // --- Return of undef indicates no more data
+    //     But, if mapAnyNode() returns undef, that just means
+    //        to skip this node - not necessarily end of file
     dbgEnter("Getter.get");
-    while (defined(hNode = this.fetch())) {
-      dbg("GOT", hNode);
-      assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
-      level = hNode.level;
-      // --- check for extension lines (only if str non-empty)
-      str = hNode.str;
-      if (nonEmpty(str)) {
-        while (defined(hExt = this.fetch()) && assert(hExt instanceof Node, `hExt = ${OL(hExt)}`) && (hExt.level >= level + 2)) {
-          extStr = hExt.str;
-          str += this.extSep(str, extStr) + extStr;
-        }
-        if (defined(hExt)) {
-          this.unfetch(hExt);
-        }
-        hNode.str = str;
-      }
-      if (hNode.notMapped()) {
-        hNode.uobj = this.mapAnyNode(hNode);
-      }
-      if (defined(hNode.uobj)) {
-        dbg("newly mapped");
+    while (hNode = this.fetch()) {
+      uobj = this.mapAnyNode(hNode);
+      if (defined(uobj)) {
+        hNode.uobj = uobj;
         dbgReturn("Getter.get", hNode);
         return hNode;
       }
@@ -103,42 +89,6 @@ export var Getter = class Getter extends Fetcher {
     dbg("EOF");
     dbgReturn("Getter.get", undef);
     return undef;
-  }
-
-  // ..........................................................
-  extSep(str, nextStr) {
-    return ' ';
-  }
-
-  // ..........................................................
-  skip() {
-    dbgEnter('Getter.skip');
-    this.get();
-    dbgReturn('Getter.skip');
-  }
-
-  // ..........................................................
-  peek() {
-    var hNode;
-    dbgEnter('Getter.peek');
-    hNode = this.get();
-    if (hNode === undef) {
-      dbgReturn("Getter.peek", undef);
-      return undef;
-    } else {
-      this.unfetch(hNode);
-      dbgReturn("Getter.peek", hNode);
-      return hNode;
-    }
-  }
-
-  // ..........................................................
-  eof() {
-    var result;
-    dbgEnter("Getter.eof");
-    result = this.peek() === undef;
-    dbgReturn("Getter.eof", result);
-    return result;
   }
 
   // ..........................................................
@@ -230,100 +180,17 @@ export var Getter = class Getter extends Fetcher {
   
     // ..........................................................
   // --- GENERATOR
-  * allMapped() {
+  * all() {
     var hNode;
-    dbgEnter("Getter.allMapped");
+    dbgEnter("Getter.all");
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get())) {
-      dbg("GOT", hNode);
-      dbgYield('Getter.allMapped', hNode);
+      dbgYield('Getter.all', hNode);
       yield hNode;
-      dbgResume('Getter.allMapped');
+      dbgResume('Getter.all');
     }
-    dbgReturn("Getter.allMapped");
-  }
-
-  // ..........................................................
-  // --- GENERATOR
-  * allMappedUntil(func, endLineOption) {
-    var hNode;
-    dbgEnter("Getter.allMappedUntil");
-    assert(isFunction(func), "Arg 1 not a function");
-    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
-    // --- NOTE: @get will skip items that are mapped to undef
-    //           and only returns undef when the input is exhausted
-    while (defined(hNode = this.get()) && !func(hNode)) {
-      dbg("GOT", hNode);
-      dbgYield("Getter.allMappedUntil", hNode);
-      yield hNode;
-      dbgResume("Getter.allMappedUntil");
-    }
-    if (defined(hNode) && (endLineOption === 'keepEndLine')) {
-      this.unfetch(hNode);
-    }
-    dbgReturn("Getter.allMappedUntil");
-  }
-
-  // ..........................................................
-  getAll() {
-    var lNodes;
-    dbgEnter("Getter.getAll");
-    lNodes = Array.from(this.allMapped());
-    dbgReturn("Getter.getAll", lNodes);
-    return lNodes;
-  }
-
-  // ..........................................................
-  getUntil(func, endLineOption) {
-    var lNodes;
-    dbgEnter("Getter.getUntil");
-    assert(isFunction(func), "not a function");
-    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
-    lNodes = Array.from(this.allMappedUntil(func, endLineOption));
-    dbgReturn("Getter.getUntil", lNodes);
-    return lNodes;
-  }
-
-  // ..........................................................
-  // --- Rarely used - requires that uobj's are strings
-  //     TreeMapper overrides this, and is more commonly used
-  getBlock(hOptions = {}) {
-    var block, endStr, hNode, i, lStrings, ref, result;
-    // --- Valid options: logNodes
-    dbgEnter("Getter.getBlock");
-    lStrings = [];
-    i = 0;
-    ref = this.allMapped();
-    for (hNode of ref) {
-      if (hOptions.logNodes) {
-        LOG(`hNode[${i}]`, hNode);
-      } else {
-        dbg(`hNode[${i}]`, hNode);
-      }
-      i += 1;
-      // --- default visit() & visitSpecial() return uobj
-      if (hNode.type === undef) {
-        result = this.visit(hNode);
-      } else {
-        result = this.visitSpecial(hNode.type, hNode);
-      }
-      if (defined(result)) {
-        assert(isString(result), "not a string");
-        lStrings.push(result);
-      }
-    }
-    dbg('lStrings', lStrings);
-    if (defined(endStr = this.endBlock())) {
-      dbg('endStr', endStr);
-      lStrings.push(endStr);
-    }
-    if (hOptions.logNodes) {
-      LOG('logNodes', lStrings);
-    }
-    block = this.finalizeBlock(arrayToBlock(lStrings));
-    dbgReturn("Getter.getBlock", block);
-    return block;
+    dbgReturn("Getter.all");
   }
 
   // ..........................................................
@@ -362,11 +229,6 @@ export var Getter = class Getter extends Fetcher {
   endBlock() {
     // --- currently, only used in markdown processing
     return undef;
-  }
-
-  // ..........................................................
-  finalizeBlock(block) {
-    return block;
   }
 
 };

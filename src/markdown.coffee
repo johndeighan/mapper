@@ -3,7 +3,9 @@
 import {marked} from 'marked'
 
 import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, defined, OL, isEmpty, nonEmpty, isString,
 	} from '@jdeighan/coffee-utils'

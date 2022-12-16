@@ -31,22 +31,24 @@ import {
 
 // ---------------------------------------------------------------------------
 export var Node = class Node {
-  constructor(str, level, source, lineNum, hData) {
-    this.str = str;
-    this.level = level;
-    this.source = source;
-    this.lineNum = lineNum;
-    assert(isString(this.str), `str ${OL(this.str)} not a string`);
-    assert(isInteger(this.level, {
-      min: 0
-    }), `level ${OL(this.level)} not an integer`);
-    assert(isString(this.source), `source ${OL(this.source)} not a string`);
-    assert(isInteger(this.lineNum, {
-      min: 1
-    }), `lineNum ${OL(this.lineNum)} not an integer`);
+  constructor(hNodeDesc) {
+    this.checkNode(hNodeDesc);
+    Object.assign(this, hNodeDesc);
+    this.checkNode(this);
     // --- level may later be adjusted, but srcLevel should be const
     this.srcLevel = this.level;
-    Object.assign(this, hData);
+  }
+
+  // ..........................................................
+  checkNode(h) {
+    assert(isString(h.str), `str ${OL(h.str)} not a string`);
+    assert(isInteger(h.level, {
+      min: 0
+    }), `level ${OL(h.level)} not an integer`);
+    assert(isString(h.source), `source ${OL(this.source)} not a string`);
+    assert(isInteger(h.lineNum, {
+      min: 1
+    }), `lineNum ${OL(h.lineNum)} not an integer`);
   }
 
   // ..........................................................
@@ -56,17 +58,7 @@ export var Node = class Node {
   }
 
   // ..........................................................
-  isMapped() {
-    return defined(this.uobj);
-  }
-
-  // ..........................................................
-  notMapped() {
-    return notdefined(this.uobj);
-  }
-
-  // ..........................................................
-  getLine(oneIndent) {
+  getLine(oneIndent = "\t") {
     return indented(this.str, this.level, oneIndent);
   }
 

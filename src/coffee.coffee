@@ -3,7 +3,9 @@
 import CoffeeScript from 'coffeescript'
 
 import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	CWS, undef, defined, OL, sep_dash,
 	} from '@jdeighan/coffee-utils'

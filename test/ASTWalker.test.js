@@ -5,13 +5,13 @@ var ASTTester, coffeeCode, rootDir, tester;
 import {
   setDebugging,
   resetDebugging,
-  dbgReset,
-  dbgGetLog
+  getDebugLog
 } from '@jdeighan/base-utils/debug';
 
 import {
   LOG,
-  LOGVALUE
+  LOGVALUE,
+  clearAllLogs
 } from '@jdeighan/base-utils/log';
 
 import {
@@ -492,11 +492,11 @@ export removeKeys = (h, lKeys) =>
   ASTTester2 = class ASTTester2 extends UnitTester {
     transformValue(coffeeCode) {
       var result, walker;
-      dbgReset();
+      clearAllLogs();
       walker = new ASTWalker(coffeeCode);
       result = walker.walk('asText');
       //			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
-      return dbgGetLog();
+      return getDebugLog();
     }
 
   };

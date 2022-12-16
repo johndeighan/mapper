@@ -1,9 +1,12 @@
 # TreeMapper.coffee
 
 import {
-	LOG, LOGVALUE, setLogger, assert, croak, toTAML,
+	LOG, LOGVALUE, assert, croak, toTAML,
 	} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {setLogger} from '@jdeighan/base-utils/log'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {unescapeStr} from '@jdeighan/base-utils/utils'
 import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
@@ -156,7 +159,7 @@ export class TreeMapper extends Mapper
 					"insufficient indentation: srcLevel=#{srcLevel}," \
 					+ " node at #{hNode.srcLevel}"
 				return false
-		block = @fetchBlockUntil(func, 'discardEndLine')
+		block = @getBlockUntil(func, 'discardEndLine')
 		dbgReturn "TreeMapper.fetchHereDocBlock", block
 		return block
 
@@ -216,7 +219,7 @@ export class TreeMapper extends Mapper
 		dbgEnter "TreeMapper.skipLinesAtLevel", srcLevel
 		func = (hNode) =>
 			return (hNode.srcLevel <= srcLevel)
-		block = @fetchBlockUntil(func, 'keepEndLine')
+		block = @getBlockUntil(func, 'keepEndLine')
 		dbgReturn "TreeMapper.skipLinesAtLevel", block
 		return block
 
@@ -229,7 +232,7 @@ export class TreeMapper extends Mapper
 		dbgEnter "TreeMapper.fetchBlockAtLevel", srcLevel
 		func = (hNode) =>
 			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
-		block = @fetchBlockUntil(func, 'keepEndLine')
+		block = @getBlockUntil(func, 'keepEndLine')
 		dbgReturn "TreeMapper.fetchBlockAtLevel", block
 		return block
 

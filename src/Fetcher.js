@@ -10,6 +10,10 @@ import {
 } from '@jdeighan/base-utils';
 
 import {
+  getOptions
+} from '@jdeighan/base-utils/utils';
+
+import {
   dbg,
   dbgEnter,
   dbgReturn,
@@ -28,6 +32,7 @@ import {
   isString,
   isHash,
   isArray,
+  isInteger,
   isFunction,
   isIterable,
   isEmpty,
@@ -41,8 +46,8 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  arrayToBlock,
-  blockToArray
+  toBlock,
+  toArray
 } from '@jdeighan/coffee-utils/block';
 
 import {
@@ -60,50 +65,64 @@ import {
 // ---------------------------------------------------------------------------
 //   class Fetcher
 //      - sets @hSourceInfo
-//      - fetch(), unfetch()
+//      - fetch()
+//      - handles extension lines
 //      - removes trailing WS from strings
 //      - stops at __END__
 //      - all() - generator
-//      - fetchAll(), fetchBlock(), fetchUntil()
+//      - allUntil() - generator
 export var Fetcher = class Fetcher {
-  constructor(source = undef, collection = undef, addLevel = 0) {
-    var content;
-    this.source = source;
-    this.addLevel = addLevel;
-    dbgEnter("Fetcher", this.source, collection, this.addLevel);
-    assert(defined(this.source) || defined(collection), "NO SOURCE OR COLLECTION");
-    if (this.source) {
-      this.hSourceInfo = parseSource(this.source);
-      dbg('hSourceInfo', this.hSourceInfo);
-      assert(this.hSourceInfo.filename, "parseSource returned no filename");
-    } else {
-      dbg("No source, so filename is <unknown>");
+  constructor(hInput, options = {}) {
+    var addLevel, content, fullpath, source;
+    dbgEnter("Fetcher", hInput, options);
+    // --- We need to set:
+    //        @hSourceInfo - information about the source of input
+    //        @iterator    - must be an iterator
+
+    // --- hInput can be a plain string,
+    //     or a hash with keys 'source' and/or 'content'
+    if (isString(hInput)) {
       this.hSourceInfo = {
         filename: '<unknown>'
       };
+      content = hInput;
+    } else {
+      assert(isHash(hInput), `not a hash: ${OL(hInput)}`);
+      ({source, content} = hInput);
+      assert(defined(source) || defined(content), "No source or content");
+      if (defined(source)) {
+        this.hSourceInfo = parseSource(source);
+      } else {
+        dbg("No source, so filename is <unknown>");
+        this.hSourceInfo = {
+          filename: '<unknown>'
+        };
+      }
+      if (!defined(content)) {
+        dbg("No content - check for fullpath");
+        fullpath = this.hSourceInfo.fullpath;
+        assert(fullpath, "No content and no fullpath");
+        dbg(`slurping ${fullpath}`);
+        content = slurp(fullpath);
+      }
     }
-    this.altInput = undef;
+    // --- @hSourceInfo must exist and have a filename key
+    dbg('hSourceInfo', this.hSourceInfo);
+    assert(this.hSourceInfo.filename, "parseSource returned no filename");
+    // --- content must be iterable
+    if (isString(content)) {
+      content = toArray(content);
+    }
+    assert(isIterable(content), "content not iterable");
+    this.iterator = content[Symbol.iterator]();
+    // --- Handle options
+    ({addLevel} = getOptions(options));
+    this.addLevel = addLevel || 0;
+    this.lookahead = undef; // if defined, [level, str]
+    this.numBlankLines = 0; // num blank lines to return before lookahead
+    this.altInput = undef; // implements #include
     this.lineNum = 0;
     this.oneIndent = undef; // set from 1st line with indentation
-    if (collection === undef) {
-      dbg("No collection - check for fullpath");
-      if (this.hSourceInfo.fullpath) {
-        dbg(`slurping ${this.hSourceInfo.fullpath}`);
-        content = slurp(this.hSourceInfo.fullpath);
-        dbg('content', content);
-        collection = blockToArray(content);
-      } else {
-        dbg("croaking");
-        croak("no source or fullpath");
-      }
-    } else if (isString(collection)) {
-      collection = blockToArray(collection);
-      dbg("collection becomes", collection);
-    }
-    // --- collection must be iterable
-    assert(isIterable(collection), "collection not iterable");
-    this.iterator = collection[Symbol.iterator]();
-    this.lLookAhead = []; // --- support unfetch()
     this.forcedEOF = false;
     this.init();
     dbgReturn("Fetcher");
@@ -113,19 +132,82 @@ export var Fetcher = class Fetcher {
   init() {}
 
   // ..........................................................
-  sourceInfoStr() {
-    var lParts;
-    lParts = [];
-    lParts.push(this.sourceStr());
-    if (defined(this.altInput)) {
-      lParts.push(this.altInput.sourceStr());
+  // --- returns [level, str] or [undef, undef]
+  //     handles:
+  //        return lookahead if defined
+  //        return undef if __END__ previously found
+  //        return undef if iterator at EOF
+  //        check for __END__
+  //        Determine level, set @oneIndent if possible
+  fetchLine() {
+    var _, done, lMatches, level, line, prefix, result, str;
+    dbgEnter("Fetcher.fetchLine");
+    // --- return any blank lines
+    if (this.numBlankLines > 0) {
+      dbg(`found ${this.numBlankLines} blank lines`);
+      this.numBlankLines = -1;
+      this.incLineNum();
+      dbgReturn("Fetcher.fetchLine", '');
+      return [0, ''];
     }
-    return lParts.join(' ');
-  }
-
-  // ..........................................................
-  sourceStr() {
-    return `${this.hSourceInfo.filename}/${this.lineNum}`;
+    // --- return anything in @lookahead,
+    //     even if @forcedEOF is true
+    if (defined(this.lookahead)) {
+      dbg("found lookahead");
+      result = this.lookahead;
+      this.lookahead = undef;
+      this.incLineNum();
+      dbgReturn("Fetcher.fetchLine", result);
+      return result;
+    }
+    dbg("no lookahead");
+    if (this.forcedEOF) {
+      dbg("forced EOF");
+      dbgReturn("Fetcher.fetchLine", [undef, undef]);
+      return [undef, undef];
+    }
+    dbg("not at forced EOF");
+    ({
+      value: line,
+      done
+    } = this.iterator.next());
+    dbg("iterator returned", {line, done});
+    if (done) {
+      dbg("iterator DONE");
+      dbgReturn("Fetcher.fetchLine", [undef, undef]);
+      return [undef, undef];
+    }
+    assert(isString(line), `line is ${OL(line)}`);
+    if (lMatches = line.match(/^(\s*)__END__$/)) {
+      [_, prefix] = lMatches;
+      assert(prefix === '', "__END__ should be at level 0");
+      this.forceEOF();
+      dbg("found __END__");
+      dbgReturn("Fetcher.fetchLine", [undef, undef]);
+      return [undef, undef];
+    }
+    this.incLineNum();
+    [prefix, str] = splitPrefix(line);
+    // --- Determine level
+    if (prefix === '') {
+      level = 0;
+    } else if (defined(this.oneIndent)) {
+      level = indentLevel(prefix, this.oneIndent);
+    } else {
+      // --- Set @oneIndent
+      if (lMatches = prefix.match(/^\t+$/)) {
+        this.oneIndent = "\t";
+        level = prefix.length;
+      } else {
+        this.oneIndent = prefix;
+        level = 1;
+      }
+      dbg("oneIndent", this.oneIndent);
+    }
+    assert((prefix === '') || defined(this.oneIndent), `Bad prefix ${OL(prefix)}`);
+    result = [level, str];
+    dbgReturn("Fetcher.fetchLine", result);
+    return result;
   }
 
   // ..........................................................
@@ -136,8 +218,9 @@ export var Fetcher = class Fetcher {
   //        srcLevel - level in source code
   //        level    - includes added levels when #include'ing
   fetch() {
-    var _, done, fname, hNode, lMatches, level, line, prefix, str;
+    var _, actualLineNum, fname, hNode, lMatches, level, nextLevel, nextStr, str;
     dbgEnter("Fetcher.fetch");
+    // --- Check if data available from @altInput
     if (defined(this.altInput)) {
       dbg("has altInput");
       hNode = this.altInput.fetch();
@@ -146,6 +229,7 @@ export var Fetcher = class Fetcher {
       if (defined(hNode)) {
         // --- NOTE: altInput was created knowing how many levels
         //           to add due to indentation in #include statement
+        assert(hNode instanceof Node, `Not a Node: ${OL(hNode)}`);
         dbg("from alt");
         dbgReturn("Fetcher.fetch", hNode);
         return hNode;
@@ -156,65 +240,32 @@ export var Fetcher = class Fetcher {
     } else {
       dbg("there is no altInput");
     }
-    // --- return anything in lLookAhead,
-    //     even if @forcedEOF is true
-    if (this.lLookAhead.length > 0) {
-      hNode = this.lLookAhead.shift();
-      assert(defined(hNode), "undef in lLookAhead");
-      assert(!hNode.str.match(/^\#include\b/), `got ${OL(hNode)} from lLookAhead`);
-      // --- NOTE: hNode.str will never be #include
-      //           because anything that came from lLookAhead
-      //           was put there by unfetch() which doesn't
-      //           allow #include
-      this.incLineNum(1);
-      dbg("from lookahead");
-      dbgReturn("Fetcher.fetch", hNode);
-      return hNode;
-    }
-    dbg("no lookahead");
-    if (this.forcedEOF) {
-      dbg("forced EOF");
+    // --- At EOF, @fetchLine() returns [undef, undef]
+    [level, str] = this.fetchLine();
+    assert(notdefined(this.lookahead), `lookahead after fetchLine: ${OL(this.lookahead)}`);
+    if (notdefined(str)) {
       dbgReturn("Fetcher.fetch", undef);
       return undef;
     }
-    dbg("not at forced EOF");
-    ({
-      value: line,
-      done
-    } = this.iterator.next());
-    dbg("iterator returned", {line, done});
-    if (done) {
-      dbg("iterator DONE");
-      dbgReturn("Fetcher.fetch", undef);
-      return undef;
+    assert(isString(str), `not a string: ${OL(str)}`);
+    // --- Handle extension lines
+    actualLineNum = this.lineNum; // save current line number
+    [nextLevel, nextStr] = this.fetchLine();
+    while (defined(nextStr) && (nextLevel >= level + 2)) {
+      str += this.extSep(str, nextStr) + nextStr;
+      [nextLevel, nextStr] = this.fetchLine();
     }
-    assert(isString(line), `line is ${OL(line)}`);
-    if (lMatches = line.match(/^(\s*)__END__$/)) {
-      [_, prefix] = lMatches;
-      assert(prefix === '', "__END__ should be at level 0");
-      this.forceEOF();
-      dbg("__END__");
-      dbgReturn("Fetcher.fetch", undef);
-      return undef;
-    }
-    this.incLineNum(1);
-    [prefix, str] = splitPrefix(line);
-    // --- Ensure that @oneIndent is set, if possible
-    //     set level
-    if (prefix === '') {
-      level = 0;
-    } else if (defined(this.oneIndent)) {
-      level = indentLevel(prefix, this.oneIndent);
-    } else {
-      if (lMatches = prefix.match(/^\t+$/)) {
-        this.oneIndent = "\t";
-        level = prefix.length;
+    if (defined(nextStr)) {
+      if (nextStr === '') {
+        dbg("inc numBlankLines");
+        this.numBlankLines += 1;
       } else {
-        this.oneIndent = prefix;
-        level = 1;
+        dbg("set lookahead", [nextLevel, nextStr]);
+        this.lookahead = [nextLevel, nextStr];
       }
+      dbg("dec lineNum");
+      this.decLineNum();
     }
-    assert(defined(this.oneIndent) || (prefix === ''), `Bad prefix ${OL(prefix)}`);
     // --- check for #include
     if (lMatches = str.match(/^\#include\b\s*(.*)$/)) {
       [_, fname] = lMatches;
@@ -224,17 +275,45 @@ export var Fetcher = class Fetcher {
       hNode = this.fetch(); // recursive call
       dbgReturn("Fetcher.fetch", hNode);
       return hNode;
+    } else {
+      dbg("no #include");
     }
-    dbg("oneIndent", this.oneIndent);
-    hNode = new Node(str, level + this.addLevel, this.sourceInfoStr(), this.lineNum);
+    dbg("create Node object");
+    hNode = new Node({
+      str: str,
+      level: level + this.addLevel,
+      source: this.sourceInfoStr(actualLineNum),
+      lineNum: actualLineNum
+    });
     dbgReturn("Fetcher.fetch", hNode);
     return hNode;
   }
 
   // ..........................................................
+  sourceInfoStr(lineNum) {
+    var lParts;
+    if (defined(lineNum)) {
+      assert(isInteger(lineNum), `Bad lineNum: ${OL(lineNum)}`);
+    } else {
+      lineNum = this.lineNum;
+    }
+    lParts = [];
+    lParts.push(`${this.hSourceInfo.filename}/${lineNum}`);
+    if (defined(this.altInput)) {
+      lParts.push(this.altInput.sourceInfoStr());
+    }
+    return lParts.join(' ');
+  }
+
+  // ..........................................................
+  extSep(str, nextStr) {
+    return ' ';
+  }
+
+  // ..........................................................
   createAltInput(fname, level) {
     var dir, fullpath;
-    dbgEnter("createAltInput", fname, level);
+    dbgEnter("Fetcher.createAltInput", fname, level);
     // --- Make sure we have a simple file name
     assert(isString(fname), `not a string: ${OL(fname)}`);
     assert(isSimpleFileName(fname), `not a simple file name: ${OL(fname)}`);
@@ -251,36 +330,28 @@ export var Fetcher = class Fetcher {
       croak(`Can't find include file ${fname} in dir ${dir}`);
     }
     assert(fs.existsSync(fullpath), `${fullpath} does not exist`);
-    this.altInput = new Fetcher(fullpath, undef, level);
-    dbgReturn("createAltInput");
+    this.altInput = new Fetcher({
+      source: fullpath
+    }, {
+      addLevel: level
+    });
+    dbgReturn("Fetcher.createAltInput");
   }
 
   // ..........................................................
-  unfetch(hNode) {
-    var lMatches;
-    dbgEnter("Fetcher.unfetch", hNode);
-    assert(hNode instanceof Node, `hNode is ${OL(hNode)}`);
-    if (defined(this.altInput)) {
-      dbg("has alt input");
-      this.altInput.unfetch(hNode);
-      dbg("alt input");
-      dbgReturn("Fetcher.unfetch");
-      return;
-    }
-    assert(defined(hNode), "hNode must be defined");
-    lMatches = hNode.str.match(/^\#include\b/);
-    assert(isEmpty(lMatches), "unfetch() of a #include");
-    this.lLookAhead.unshift(hNode);
-    this.incLineNum(-1);
-    dbgReturn("Fetcher.unfetch");
-  }
-
-  // ..........................................................
-  // --- override to keep variable LINE updated
   incLineNum(inc = 1) {
-    dbgEnter("Fetcher.incLineNum");
+    dbgEnter("Fetcher.incLineNum", inc);
     this.lineNum += inc;
+    dbg(`lineNum = ${this.lineNum}`);
     dbgReturn("Fetcher.incLineNum");
+  }
+
+  // ..........................................................
+  decLineNum(dec = 1) {
+    dbgEnter("Fetcher.decLineNum", dec);
+    this.lineNum -= dec;
+    dbg(`lineNum = ${this.lineNum}`);
+    dbgReturn("Fetcher.decLineNum");
   }
 
   // ..........................................................
@@ -305,82 +376,64 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   // --- GENERATOR
-  * allUntil(func, endLineOption) {
-    var hNode;
+  * allUntil(func, options = {}) {
+    var hNode, keepEndLine, ref;
     // --- stop when func(hNode) returns true
-    dbgEnter("Fetcher.allUntil", func, endLineOption);
-    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
+    dbgEnter("Fetcher.allUntil", func, options);
     assert(isFunction(func), "Arg 1 not a function");
-    while (defined(hNode = this.fetch()) && !func(hNode)) {
+    ({keepEndLine} = getOptions(options));
+    ref = this.all();
+    for (hNode of ref) {
+      assert(defined(hNode), "BAD - hNode is undef in allUntil()");
+      if (func(hNode)) {
+        // --- When func returns true, we're done
+        //     We don't return hNode, but might save it
+        if (keepEndLine) {
+          this.lookahead = hNode;
+        }
+        dbgReturn("Fetcher.allUntil");
+        return;
+      }
       dbgYield("Fetcher.allUntil", hNode);
       yield hNode;
       dbgResume("Fetcher.allUntil");
-    }
-    if (defined(hNode) && (endLineOption === 'keepEndLine')) {
-      this.unfetch(hNode);
     }
     dbgReturn("Fetcher.allUntil");
   }
 
   // ..........................................................
-  // --- fetch a list of Nodes
-  fetchAll() {
-    var lNodes;
-    dbgEnter("Fetcher.fetchAll");
-    lNodes = Array.from(this.all());
-    dbgReturn("Fetcher.fetchAll", lNodes);
-    return lNodes;
-  }
-
-  // ..........................................................
-  fetchUntil(func, endLineOption) {
-    var hNode, lNodes, ref;
-    dbgEnter("Fetcher.fetchUntil", func, endLineOption);
-    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
-    lNodes = [];
-    ref = this.allUntil(func, endLineOption);
+  getBlockUntil(func, options = {}) {
+    var hNode, lLines, oneIndent, ref, result;
+    dbgEnter("Fetcher.getBlockUntil");
+    ({oneIndent} = getOptions(options));
+    lLines = [];
+    ref = this.allUntil(func, options);
     for (hNode of ref) {
-      lNodes.push(hNode);
+      lLines.push(hNode.getLine(oneIndent)); // uses TAB if undef
     }
-    dbgReturn("Fetcher.fetchUntil", lNodes);
-    return lNodes;
-  }
-
-  // ..........................................................
-  // --- fetch a block
-  fetchBlock() {
-    var lNodes, result;
-    dbgEnter("Fetcher.fetchBlock");
-    lNodes = Array.from(this.all());
-    result = this.nodesToBlock(lNodes);
-    dbgReturn("Fetcher.fetchBlock", result);
+    result = toBlock(lLines);
+    dbgReturn("Fetcher.getBlockUntil", result);
     return result;
   }
 
   // ..........................................................
-  fetchBlockUntil(func, endLineOption) {
-    var lNodes, result;
-    dbgEnter("Fetcher.fetchBlockUntil");
-    assert((endLineOption === 'keepEndLine') || (endLineOption === 'discardEndLine'), `bad end line option: ${OL(endLineOption)}`);
-    lNodes = this.fetchUntil(func, endLineOption);
-    result = this.nodesToBlock(lNodes);
-    dbgReturn("Fetcher.fetchBlockUntil", result);
+  getBlock(options = {}) {
+    var hNode, lLines, oneIndent, ref, result;
+    dbgEnter("Fetcher.getBlock");
+    ({oneIndent} = getOptions(options));
+    lLines = [];
+    ref = this.all();
+    for (hNode of ref) {
+      lLines.push(hNode.getLine(oneIndent));
+    }
+    result = this.finalizeBlock(toBlock(lLines));
+    dbgReturn("Fetcher.getBlock", result);
     return result;
   }
 
   // ..........................................................
-  nodesToBlock(lNodes) {
-    var hNode, i, lNewStrings, lStrings, len, line;
-    lStrings = [];
-    for (i = 0, len = lNodes.length; i < len; i++) {
-      hNode = lNodes[i];
-      line = hNode.getLine(this.oneIndent);
-      assert(isString(line), `getLine() returned ${OL(line)}`);
-      lStrings.push(line);
-    }
-    lNewStrings = undented(lStrings);
-    assert(isArray(lNewStrings), `undented returned ${OL(lNewStrings)} when given ${OL(lStrings)}`);
-    return arrayToBlock(lNewStrings);
+  finalizeBlock(block) {
+    return block;
   }
 
 };

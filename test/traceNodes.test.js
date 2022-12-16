@@ -5,8 +5,7 @@ var TraceTester, tester;
 import {
   assert,
   croak,
-  setDebugging,
-  setLogger
+  setDebugging
 } from '@jdeighan/base-utils';
 
 import {

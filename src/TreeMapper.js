@@ -6,11 +6,14 @@ var hstr, threeSpaces,
 import {
   LOG,
   LOGVALUE,
-  setLogger,
   assert,
   croak,
   toTAML
 } from '@jdeighan/base-utils';
+
+import {
+  setLogger
+} from '@jdeighan/base-utils/log';
 
 import {
   dbg,
@@ -190,7 +193,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
         return false;
       }
     };
-    block = this.fetchBlockUntil(func, 'discardEndLine');
+    block = this.getBlockUntil(func, 'discardEndLine');
     dbgReturn("TreeMapper.fetchHereDocBlock", block);
     return block;
   }
@@ -249,7 +252,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
     func = (hNode) => {
       return hNode.srcLevel <= srcLevel;
     };
-    block = this.fetchBlockUntil(func, 'keepEndLine');
+    block = this.getBlockUntil(func, 'keepEndLine');
     dbgReturn("TreeMapper.skipLinesAtLevel", block);
     return block;
   }
@@ -263,7 +266,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
     func = (hNode) => {
       return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str);
     };
-    block = this.fetchBlockUntil(func, 'keepEndLine');
+    block = this.getBlockUntil(func, 'keepEndLine');
     dbgReturn("TreeMapper.fetchBlockAtLevel", block);
     return block;
   }

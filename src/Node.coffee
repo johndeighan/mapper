@@ -1,7 +1,9 @@
 # Node.coffee
 
 import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, defined, notdefined, OL, isString, isInteger,
 	} from '@jdeighan/coffee-utils'
@@ -13,18 +15,26 @@ import {
 
 export class Node
 
-	constructor: (@str, @level, @source, @lineNum, hData) ->
+	constructor: (hNodeDesc) ->
 
-		assert isString(@str), "str #{OL(@str)} not a string"
-		assert isInteger(@level, {min: 0}),
-			"level #{OL(@level)} not an integer"
-		assert isString(@source), "source #{OL(@source)} not a string"
-		assert isInteger(@lineNum, {min: 1}),
-			"lineNum #{OL(@lineNum)} not an integer"
+		@checkNode hNodeDesc
+		Object.assign(this, hNodeDesc)
+		@checkNode this
 
 		# --- level may later be adjusted, but srcLevel should be const
 		@srcLevel = @level
-		Object.assign(this, hData)
+
+	# ..........................................................
+
+	checkNode: (h) ->
+
+		assert isString(h.str), "str #{OL(h.str)} not a string"
+		assert isInteger(h.level, {min: 0}),
+			"level #{OL(h.level)} not an integer"
+		assert isString(h.source), "source #{OL(@source)} not a string"
+		assert isInteger(h.lineNum, {min: 1}),
+			"lineNum #{OL(h.lineNum)} not an integer"
+		return
 
 	# ..........................................................
 	# --- used when '#include <file>' has indentation
@@ -36,18 +46,6 @@ export class Node
 
 	# ..........................................................
 
-	isMapped: () ->
-
-		return defined(@uobj)
-
-	# ..........................................................
-
-	notMapped: () ->
-
-		return notdefined(@uobj)
-
-	# ..........................................................
-
-	getLine: (oneIndent) ->
+	getLine: (oneIndent="\t") ->
 
 		return indented(@str, @level, oneIndent)

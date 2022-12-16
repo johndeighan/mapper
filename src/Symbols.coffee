@@ -3,7 +3,9 @@
 import {
 	LOG, LOGVALUE, assert, croak,
 	} from '@jdeighan/base-utils'
-import {dbg, dbgEnter, dbgReturn} from '@jdeighan/base-utils/debug'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	undef, defined, notdefined, isString, isArray, isEmpty, nonEmpty,
 	uniq, words, escapeStr, OL,

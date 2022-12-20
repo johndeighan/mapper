@@ -25,4 +25,13 @@ utest.like 21, node, {
 	lineNum: 1
 	srcLevel: 0
 	}
-utest.equal 13, node.getLine("=> "), "=> div"
+utest.equal 28, node.getLine({oneIndent: "=> "}), "=> div"
+
+utest.equal 30, new Node({str: 'abc', level:1}).getLine(),
+	"\tabc"
+utest.equal 32, new Node({str: 'abc', level:2}).getLine({oneIndent:'  '}),
+	"    abc"
+utest.equal 34, new Node({str: 'abc', level:0}).getLine(),
+	"abc"
+utest.equal 36, new Node({str: 'abc', level:3}).getLine(),
+	"\t\t\tabc"

@@ -238,8 +238,8 @@ export var Mapper = class Mapper extends Getter {
 
 // ===========================================================================
 export var FuncMapper = class FuncMapper extends Mapper {
-  constructor(source = undef, collection = undef, func) {
-    super(source, collection);
+  constructor(hInput, func) {
+    super(hInput);
     this.func = func;
     assert(isFunction(this.func), "3rd arg not a function");
   }
@@ -253,11 +253,16 @@ export var FuncMapper = class FuncMapper extends Mapper {
 };
 
 // ===========================================================================
+// --- arg mapper must be a subclass of Mapper or an array
+//     of subclasses of Mapper. If you have a function to do
+//     a mapping, pass in new FuncMapper(func)
 export var map = function(hInput, mapper, hOptions = {}) {
   var content, i, item, len, obj, result, source;
   // --- Valid options:
   //        logNodes
   dbgEnter("map", hInput, mapper, hOptions);
+  // --- This shouldn't be necessary
+  //     ...BUT it should work
   if (isString(hInput)) {
     dbg("hInput is a string, constructing new hInput");
     hInput = {
@@ -293,7 +298,7 @@ export var map = function(hInput, mapper, hOptions = {}) {
     dbg("mapper is constructor, creating instance");
     dbg('source =', source);
     dbg('content =', content);
-    obj = new mapper(source, content);
+    obj = new mapper({source, content});
     assert(isObject(obj, '&getBlock'), 'object has no getBlock method');
     result = obj.getBlock(hOptions);
   } else if (isFunction(mapper)) {

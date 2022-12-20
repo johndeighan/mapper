@@ -32,10 +32,6 @@ import {
 } from '@jdeighan/coffee-utils';
 
 import {
-  indented
-} from '@jdeighan/coffee-utils/indent';
-
-import {
   arrayToBlock,
   blockToArray
 } from '@jdeighan/coffee-utils/block';
@@ -78,7 +74,7 @@ export var Getter = class Getter extends Fetcher {
     //     But, if mapAnyNode() returns undef, that just means
     //        to skip this node - not necessarily end of file
     dbgEnter("Getter.get");
-    while (hNode = this.fetch()) {
+    while (defined(hNode = this.fetch())) {
       uobj = this.mapAnyNode(hNode);
       if (defined(uobj)) {
         hNode.uobj = uobj;
@@ -140,10 +136,8 @@ export var Getter = class Getter extends Fetcher {
   // --- designed to override
   //     only non-special nodes
   mapNode(hNode) {
-    var level, str;
-    // --- by default, just returns str key indented
-    ({str, level} = hNode);
-    return indented(str, level, this.oneIndent);
+    // --- by default, just returns str key
+    return hNode.str;
   }
 
   // ..........................................................
@@ -186,6 +180,7 @@ export var Getter = class Getter extends Fetcher {
     // --- NOTE: @get will skip items that are mapped to undef
     //           and only returns undef when the input is exhausted
     while (defined(hNode = this.get())) {
+      assert(defined(hNode.uobj), "uobj is not defined");
       dbgYield('Getter.all', hNode);
       yield hNode;
       dbgResume('Getter.all');

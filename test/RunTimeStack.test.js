@@ -18,27 +18,31 @@ import {
 // ---------------------------------------------------------------------------
 stack = new RunTimeStack();
 
-utest.equal(9, stack.len, 0);
+utest.equal(10, stack.size(), 0);
 
-stack.push(new Node('abc', 0, 'file', 1, {
+stack.push(new Node({
+  str: 'abc',
+  level: 0,
   hUser: {
     _parent: {}
   }
 }));
 
-utest.equal(13, stack.len, 1);
+utest.equal(13, stack.size(), 1);
 
 utest.like(14, stack.TOS(), {
   str: 'abc'
 });
 
-stack.push(new Node('def', 0, 'file', 2, {
+stack.push(new Node({
+  str: 'def',
+  level: 0,
   hUser: {
     _parent: {}
   }
 }));
 
-utest.equal(17, stack.len, 2);
+utest.equal(17, stack.size(), 2);
 
 utest.like(18, stack.TOS(), {
   str: 'def'
@@ -46,7 +50,7 @@ utest.like(18, stack.TOS(), {
 
 node = stack.pop();
 
-utest.equal(21, stack.len, 1);
+utest.equal(21, stack.size(), 1);
 
 utest.like(22, stack.TOS(), {
   str: 'abc'

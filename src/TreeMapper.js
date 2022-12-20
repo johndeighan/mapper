@@ -12,7 +12,9 @@ import {
 } from '@jdeighan/base-utils';
 
 import {
-  setLogger
+  setLogger,
+  clearMyLogs,
+  getMyLog
 } from '@jdeighan/base-utils/log';
 
 import {
@@ -22,7 +24,8 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  unescapeStr
+  unescapeStr,
+  getOptions
 } from '@jdeighan/base-utils/utils';
 
 import {
@@ -81,8 +84,8 @@ threeSpaces = "   ";
 //      endVisit(hNode, hUser, hParent, stack)
 //      endLevel(hUser, level) -
 export var TreeMapper = class TreeMapper extends Mapper {
-  constructor(source = undef, content = undef, hOptions = {}) {
-    super(source, content, hOptions);
+  constructor(hInput, hOptions = {}) {
+    super(hInput, hOptions);
     this.hSpecialVisitTypes = {};
     this.registerVisitType('empty', this.visitEmptyLine, this.endVisitEmptyLine);
     this.registerVisitType('comment', this.visitComment, this.endVisitComment);
@@ -146,7 +149,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
 
   // ..........................................................
   handleHereDocsInLine(line, srcLevel) {
-    var block, hOptions, j, lNewParts, lParts, len, part, result, str, uobj;
+    var block, hOptions, j, lNewParts, lParts, len, part, result, stopper, str, uobj;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
     dbgEnter("handleHereDocsInLine", line);
@@ -157,13 +160,18 @@ export var TreeMapper = class TreeMapper extends Mapper {
     for (j = 0, len = lParts.length; j < len; j++) {
       part = lParts[j];
       if (part === '<<<') {
-        dbg(`get HEREDOC lines at level ${srcLevel + 1}`);
-        hOptions = {
-          stopOn: '',
-          discard: true // discard the terminating empty line
+        dbg("get HEREDOC lines until blank line");
+        // --- block will be undented, blank line will be discarded
+        stopper = function(hNode) {
+          return isEmpty(hNode.str);
         };
-        // --- block will be undented
-        block = this.fetchHereDocBlock(srcLevel);
+        hOptions = {
+          undent: true,
+          oneIndent: this.oneIndent,
+          keepEndLine: false,
+          nomap: true
+        };
+        block = this.getBlockUntil(stopper, hOptions);
         dbg('block', block);
         uobj = mapHereDoc(block);
         assert(defined(uobj), "mapHereDoc returned undef");
@@ -178,24 +186,6 @@ export var TreeMapper = class TreeMapper extends Mapper {
     result = lNewParts.join('');
     dbgReturn("handleHereDocsInLine", result);
     return result;
-  }
-
-  // ..........................................................
-  fetchHereDocBlock(srcLevel) {
-    var block, func;
-    // --- srcLevel is the level of the line with <<<
-    dbgEnter("TreeMapper.fetchHereDocBlock", srcLevel);
-    func = (hNode) => {
-      if (isEmpty(hNode.str)) {
-        return true;
-      } else {
-        assert(hNode.srcLevel > srcLevel, `insufficient indentation: srcLevel=${srcLevel},` + ` node at ${hNode.srcLevel}`);
-        return false;
-      }
-    };
-    block = this.getBlockUntil(func, 'discardEndLine');
-    dbgReturn("TreeMapper.fetchHereDocBlock", block);
-    return block;
   }
 
   // ..........................................................
@@ -259,14 +249,14 @@ export var TreeMapper = class TreeMapper extends Mapper {
 
   // ..........................................................
   fetchBlockAtLevel(srcLevel) {
-    var block, func;
+    var block, stopper;
     // --- srcLevel is the level of enclosing cmd/tag
     //     don't discard the end line
     dbgEnter("TreeMapper.fetchBlockAtLevel", srcLevel);
-    func = (hNode) => {
+    stopper = (hNode) => {
       return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str);
     };
-    block = this.getBlockUntil(func, 'keepEndLine');
+    block = this.getBlockUntil(stopper, 'keepEndLine nomap undent');
     dbgReturn("TreeMapper.fetchBlockAtLevel", block);
     return block;
   }
@@ -351,40 +341,27 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  getLog() {
-    return toBlock(this.lLog);
-  }
-
-  // ..........................................................
   walk(hOptions = {}) {
-    var add, diff, doBeginLevel, doBeginWalk, doEndLevel, doEndVisit, doEndWalk, doVisit, hGlobalUser, hNode, hPrevNode, hUser, i, j, lLines, len, level, log, ref, stack, str;
-    // --- Valid options: logNodes, includeUserHash
+    var add, addItem, diff, doBeginLevel, doBeginWalk, doEndLevel, doEndVisit, doEndWalk, doVisit, hGlobalUser, hNode, hPrevNode, hUser, i, includeUserHash, lLines, level, log, logNodes, ref, stack, str;
+    // --- Valid options:
+    //        logNodes
+    //        includeUserHash
     //     returns an array, normally strings
     dbgEnter("TreeMapper.walk", hOptions);
-    this.logNodes = !!hOptions.logNodes;
-    if (this.logNodes) {
-      this.lLog = [];
-      this.includeUserHash = !!hOptions.includeUserHash;
-    }
-    // --- Initialize local state
-    lLines = []; // --- resulting output lines (but may be objects)
-    stack = new RunTimeStack(); // --- a stack of Node objects
-    hGlobalUser = {}; // --- hParent for level 0 nodes
+    // --- These are needed by local functions
+    ({logNodes, includeUserHash} = getOptions(hOptions));
+    lLines = []; // --- resulting output
     
     // .......................................................
     //     Local Functions
     // .......................................................
     log = (level, text, hUser) => {
-      var oldLogger;
-      if (!this.logNodes) {
+      if (!logNodes) {
         return;
       }
       dbgEnter("log", level, text, hUser);
-      oldLogger = setLogger((str) => {
-        return this.lLog.push(str);
-      });
       LOG(toBlock(indented([text], level, threeSpaces)));
-      if (this.includeUserHash && defined(hUser)) {
+      if (includeUserHash && defined(hUser)) {
         if (isEmpty(hUser)) {
           LOG("hUser = {}");
         } else {
@@ -392,28 +369,36 @@ export var TreeMapper = class TreeMapper extends Mapper {
           LOG("");
         }
       }
-      setLogger(oldLogger);
       dbgReturn("log");
     };
     // .......................................................
-    add = (text) => {
-      var item, j, len;
-      // --- in fact, text can be any type of object
-      dbgEnter("add", text);
-      assert(defined(text), "text is undef");
-      if (isArray(text)) {
-        dbg("text is an array");
-        for (j = 0, len = text.length; j < len; j++) {
-          item = text[j];
-          if (defined(item)) {
-            lLines.push(item);
+    add = (item) => {
+      var j, len, subitem;
+      // --- item can be any type of object
+      dbgEnter("add", item);
+      assert(defined(item), "item is undef");
+      if (isArray(item)) {
+        dbg("item is an array");
+        for (j = 0, len = item.length; j < len; j++) {
+          subitem = item[j];
+          if (defined(subitem)) {
+            lLines.push(subitem);
           }
         }
       } else {
-        dbg(`add text ${OL(text)}`);
-        lLines.push(text);
+        dbg(`add item ${OL(item)}`);
+        lLines.push(item);
       }
       dbgReturn("add");
+    };
+    // .......................................................
+    addItem = (item, level) => {
+      assert(!isArray(item), "item is an array");
+      if (isString(item)) {
+        return lLines.push(indented(item, level));
+      } else {
+        return lLines.push(item);
+      }
     };
     // .......................................................
     doBeginWalk = (hUser) => {
@@ -494,23 +479,27 @@ export var TreeMapper = class TreeMapper extends Mapper {
       }
     };
     // .......................................................
+    //     main body of walk()
+    // .......................................................
+
+    // --- Initialize local state
+    stack = new RunTimeStack(); // --- a stack of Node objects
+    hGlobalUser = {}; // --- hParent for level 0 nodes
     doBeginWalk(hGlobalUser);
     // --- Iterate over all input lines
     dbg("getting lines");
     i = 0;
-    ref = Array.from(this.allMapped());
-    // iterators mess up debugging
-    for (j = 0, len = ref.length; j < len; j++) {
-      hNode = ref[j];
-      
+    ref = this.all();
+    for (hNode of ref) {
       // --- Log input lines for debugging
       dbg(`hNode[${i}]`, hNode);
       ({level, str} = hNode); // unpack node
       if (i === 0) {
-        // --- The first node is a special case, we handle it,
-        //     then continue to the second node (if any)
-        assert(level === 0, `first node at level ${level}`);
-        i = 1;
+        // --- The first node is a special case because
+        //        - it must be at level 0
+        //        - its parent is the global user hash
+        //     handle it, then continue to the 2nd node (if any)
+        assert(level === 0, `first node at level ${level}, not 0`);
         hNode.hUser = {
           _parent: hGlobalUser
         };
@@ -518,9 +507,10 @@ export var TreeMapper = class TreeMapper extends Mapper {
         doVisit(hNode);
         stack.push(hNode);
         dbg('stack', stack);
+        i = 1;
         continue; // restart the loop
       }
-      i += 1;
+      
       // --- add user hash
       hUser = hNode.hUser = {
         _parent: stack.TOS().hUser
@@ -548,8 +538,9 @@ export var TreeMapper = class TreeMapper extends Mapper {
         doVisit(hNode);
         stack.push(hNode);
       }
+      i += 1;
     }
-    while (stack.len > 0) {
+    while (stack.size() > 0) {
       hPrevNode = stack.pop();
       dbg("pop node", hPrevNode);
       doEndVisit(hPrevNode);
@@ -589,9 +580,12 @@ export var TreeMapper = class TreeMapper extends Mapper {
 
   // ..........................................................
   visit(hNode, hUser, hParent, stack) {
-    var uobj;
+    var level, uobj;
     dbgEnter("visit", hNode, hUser);
-    uobj = hNode.uobj;
+    ({uobj, level} = hNode);
+    if (isString(uobj) && (level > 0)) {
+      uobj = indented(uobj, level, this.oneIndent);
+    }
     dbgReturn("visit", uobj);
     return uobj;
   }
@@ -621,7 +615,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
     dbgEnter("visitComment", hNode, hUser, hParent);
     ({uobj, level} = hNode);
     assert(isString(uobj), "uobj not a string");
-    result = indented(uobj, level);
+    result = indented(uobj, level, this.oneIndent);
     dbgReturn("visitComment", result);
     return result;
   }
@@ -672,7 +666,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
   // ..........................................................
   getBlock(hOptions = {}) {
     var block, lLines, result;
-    // --- Valid options: logNodes
+    // --- Valid options: logNodes, includeUserHash
     dbgEnter("getBlock");
     lLines = this.walk(hOptions);
     if (isArrayOfStrings(lLines)) {
@@ -691,14 +685,15 @@ export var TreeMapper = class TreeMapper extends Mapper {
 // ---------------------------------------------------------------------------
 // UTILITIES
 // ---------------------------------------------------------------------------
-export var trace = function(source, content = undef) {
+export var trace = function(hInput) {
   var mapper, result;
-  dbgEnter("trace", source, content);
-  mapper = new TreeMapper(source, content);
+  dbgEnter("trace", hInput);
+  mapper = new TreeMapper(hInput);
+  clearMyLogs();
   mapper.walk({
     logNodes: true
   });
-  result = mapper.getLog();
+  result = getMyLog();
   dbgReturn("trace", result);
   return result;
 };

@@ -224,9 +224,9 @@ export class Mapper extends Getter
 
 export class FuncMapper extends Mapper
 
-	constructor: (source=undef, collection=undef, @func) ->
+	constructor: (hInput, @func) ->
 
-		super(source, collection)
+		super(hInput)
 		assert isFunction(@func), "3rd arg not a function"
 
 	getBlock: (hOptions={}) ->
@@ -235,12 +235,19 @@ export class FuncMapper extends Mapper
 		return @func(block)
 
 # ===========================================================================
+# --- arg mapper must be a subclass of Mapper or an array
+#     of subclasses of Mapper. If you have a function to do
+#     a mapping, pass in new FuncMapper(func)
 
 export map = (hInput, mapper, hOptions={}) ->
 	# --- Valid options:
 	#        logNodes
 
 	dbgEnter "map", hInput, mapper, hOptions
+
+	# --- This shouldn't be necessary
+	#     ...BUT it should work
+
 	if isString(hInput)
 		dbg "hInput is a string, constructing new hInput"
 		hInput = {content: hInput}
@@ -273,7 +280,7 @@ export map = (hInput, mapper, hOptions={}) ->
 		dbg "mapper is constructor, creating instance"
 		dbg 'source =', source
 		dbg 'content =', content
-		obj = new mapper(source, content)
+		obj = new mapper({source, content})
 		assert isObject(obj, '&getBlock'), 'object has no getBlock method'
 		result = obj.getBlock(hOptions)
 	else if isFunction(mapper)

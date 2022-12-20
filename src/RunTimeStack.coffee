@@ -13,14 +13,19 @@ export class RunTimeStack
 	constructor: () ->
 
 		@lStack = []     # contains Node objects
-		@len = 0
+
+	# ..........................................................
+
+	size: () ->
+
+		return @lStack.length
 
 	# ..........................................................
 
 	replaceTOS: (hNode) ->
 
 		@checkNode hNode
-		@lStack[@len-1] = hNode
+		@lStack[@lStack.length - 1] = hNode
 		return
 
 	# ..........................................................
@@ -29,41 +34,38 @@ export class RunTimeStack
 
 		@checkNode hNode
 		@lStack.push hNode
-		@len += 1
 		return
 
 	# ..........................................................
 
 	pop: () ->
 
-		assert (@len > 0), "pop() on empty stack"
+		assert (@lStack.length > 0), "pop() on empty stack"
 		hNode = @lStack.pop()
 		@checkNode hNode
-		@len -= 1
 		return hNode
 
 	# ..........................................................
 
 	isEmpty: () ->
 
-		return (@len == 0)
+		return (@lStack.length == 0)
 
 	# ..........................................................
 
 	nonEmpty: () ->
 
-		return (@len > 0)
+		return (@lStack.length > 0)
 
 	# ..........................................................
 
 	TOS: () ->
 
-		if (@len > 0)
-			hNode = @lStack[@len-1]
-			@checkNode hNode
-			return hNode
-		else
+		if (@lStack.length == 0)
 			return undef
+		hNode = @lStack[@lStack.length - 1]
+		@checkNode hNode
+		return hNode
 
 	# ..........................................................
 

@@ -1,13 +1,13 @@
 # Fetcher.test.coffee
 
-import {haltOnError} from '@jdeighan/base-utils'
 import {
 	assert, LOG, LOGVALUE, undef, setDebugging,
 	} from '@jdeighan/coffee-utils'
+import {toBlock} from '@jdeighan/coffee-utils/block'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
-haltOnError false
+stopper = (h) => h.str == 'stop'
 
 # ---------------------------------------------------------------------------
 # --- Fetcher should:
@@ -29,13 +29,50 @@ haltOnError false
 		transformValue: (hInput) ->
 
 			fetcher = new Fetcher(hInput)
+
+#			lLines = []
+#			for hNode from fetcher.allUntil(stopper)
+#				lLines.push hNode.str
+#			block = toBlock(lLines)
+
+			block = fetcher.getBlockUntil(stopper)
+			return block
+
+	tester = new MyTester()
+
+	# ----------------------------------------------------------
+
+	tester.equal 39, """
+		abc
+
+		def
+		# --- a comment
+		stop
+		ghi
+		""", """
+		abc
+
+		def
+		# --- a comment
+		"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+	class MyTester extends UnitTester
+
+		transformValue: (hInput) ->
+
+			fetcher = new Fetcher(hInput)
 			return fetcher.getBlock()
 
 	tester = new MyTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.like 38, """
+	tester.like 69, """
 		abc
 		def
 		ghi
@@ -47,7 +84,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 50, """
+	tester.like 81, """
 		abc
 			def
 				ghi
@@ -59,7 +96,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 62, """
+	tester.like 93, """
 		abc
 				def
 		ghi
@@ -70,7 +107,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 73, """
+	tester.like 104, """
 		abc
 				def
 			ghi
@@ -81,7 +118,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 84, """
+	tester.like 115, """
 		abc
 				def
 				ghi
@@ -91,7 +128,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 94, "abc  \ndef\t\t\nghi", """
+	tester.like 125, "abc  \ndef\t\t\nghi", """
 		abc
 		def
 		ghi
@@ -99,7 +136,7 @@ haltOnError false
 
 	# ------------------------------------------------------------------------
 
-	tester.like 102, """
+	tester.like 133, """
 		abc
 		def
 		__END__
@@ -127,7 +164,7 @@ haltOnError false
 	# =====
 	# ------------------------------------------------------------------------
 
-	tester.like 130, {
+	tester.like 161, {
 		source: import.meta.url
 		content: """
 			abc
@@ -137,10 +174,11 @@ haltOnError false
 		abc
 		header
 		======
+
 		ghi
 		"""
 
-	tester.like 144, {
+	tester.like 175, {
 		source: import.meta.url
 		content: """
 			abc
@@ -150,10 +188,11 @@ haltOnError false
 		abc
 			header
 			======
+
 		ghi
 		"""
 
-	tester.like 158, {
+	tester.like 189, {
 		source: import.meta.url
 		content: """
 			abc
@@ -164,7 +203,7 @@ haltOnError false
 		ghi
 		"""
 
-	tester.like 169, {
+	tester.like 200, {
 		source: import.meta.url
 		content: """
 			abc
@@ -176,6 +215,8 @@ haltOnError false
 		===
 			title
 			=====
+
+
 		ghi
 		"""
 

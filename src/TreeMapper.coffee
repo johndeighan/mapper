@@ -3,11 +3,11 @@
 import {
 	LOG, LOGVALUE, assert, croak, toTAML,
 	} from '@jdeighan/base-utils'
-import {setLogger} from '@jdeighan/base-utils/log'
+import {setLogger, clearMyLogs, getMyLog} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {unescapeStr} from '@jdeighan/base-utils/utils'
+import {unescapeStr, getOptions} from '@jdeighan/base-utils/utils'
 import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,
@@ -37,9 +37,9 @@ threeSpaces = "   "
 
 export class TreeMapper extends Mapper
 
-	constructor: (source=undef, content=undef, hOptions={}) ->
+	constructor: (hInput, hOptions={}) ->
 
-		super source, content, hOptions
+		super hInput, hOptions
 
 		@hSpecialVisitTypes = {}
 
@@ -121,14 +121,19 @@ export class TreeMapper extends Mapper
 		lNewParts = []    # to be joined to form new line
 		for part in lParts
 			if part == '<<<'
-				dbg "get HEREDOC lines at level #{srcLevel+1}"
+				dbg "get HEREDOC lines until blank line"
+
+				# --- block will be undented, blank line will be discarded
+				stopper = (hNode) ->
+					return isEmpty(hNode.str)
 				hOptions = {
-					stopOn: ''
-					discard: true    # discard the terminating empty line
+					undent: true
+					oneIndent: @oneIndent
+					keepEndLine: false
+					nomap: true
 					}
 
-				# --- block will be undented
-				block = @fetchHereDocBlock(srcLevel)
+				block = @getBlockUntil(stopper, hOptions)
 				dbg 'block', block
 
 				uobj = mapHereDoc(block)
@@ -144,24 +149,6 @@ export class TreeMapper extends Mapper
 		result = lNewParts.join('')
 		dbgReturn "handleHereDocsInLine", result
 		return result
-
-	# ..........................................................
-
-	fetchHereDocBlock: (srcLevel) ->
-		# --- srcLevel is the level of the line with <<<
-
-		dbgEnter "TreeMapper.fetchHereDocBlock", srcLevel
-		func = (hNode) =>
-			if isEmpty(hNode.str)
-				return true
-			else
-				assert (hNode.srcLevel > srcLevel),
-					"insufficient indentation: srcLevel=#{srcLevel}," \
-					+ " node at #{hNode.srcLevel}"
-				return false
-		block = @getBlockUntil(func, 'discardEndLine')
-		dbgReturn "TreeMapper.fetchHereDocBlock", block
-		return block
 
 	# ..........................................................
 
@@ -230,9 +217,9 @@ export class TreeMapper extends Mapper
 		#     don't discard the end line
 
 		dbgEnter "TreeMapper.fetchBlockAtLevel", srcLevel
-		func = (hNode) =>
+		stopper = (hNode) =>
 			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
-		block = @getBlockUntil(func, 'keepEndLine')
+		block = @getBlockUntil(stopper, 'keepEndLine nomap undent')
 		dbgReturn "TreeMapper.fetchBlockAtLevel", block
 		return block
 
@@ -317,28 +304,17 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	getLog: () ->
-
-		return toBlock(@lLog)
-
-	# ..........................................................
-
 	walk: (hOptions={}) ->
-		# --- Valid options: logNodes, includeUserHash
+		# --- Valid options:
+		#        logNodes
+		#        includeUserHash
 		#     returns an array, normally strings
 
 		dbgEnter "TreeMapper.walk", hOptions
 
-		@logNodes = !! hOptions.logNodes
-		if @logNodes
-			@lLog = []
-			@includeUserHash = !! hOptions.includeUserHash
-
-		# --- Initialize local state
-
-		lLines = []   # --- resulting output lines (but may be objects)
-		stack = new RunTimeStack()   # --- a stack of Node objects
-		hGlobalUser = {}  # --- hParent for level 0 nodes
+		# --- These are needed by local functions
+		{logNodes, includeUserHash} = getOptions(hOptions)
+		lLines = []                  # --- resulting output
 
 		# .......................................................
 		#     Local Functions
@@ -346,39 +322,47 @@ export class TreeMapper extends Mapper
 
 		log = (level, text, hUser) =>
 
-			if ! @logNodes
+			if ! logNodes
 				return
 
 			dbgEnter "log", level, text, hUser
-			oldLogger = setLogger (str) => @lLog.push(str)
 			LOG toBlock(indented([text], level, threeSpaces))
-			if @includeUserHash && defined(hUser)
+			if includeUserHash && defined(hUser)
 				if isEmpty(hUser)
 					LOG "hUser = {}"
 				else
 					LOGVALUE 'hUser', hUser
 					LOG ""
-			setLogger oldLogger
 			dbgReturn "log"
 			return
 
 		# .......................................................
 
-		add = (text) =>
-			# --- in fact, text can be any type of object
+		add = (item) =>
+			# --- item can be any type of object
 
-			dbgEnter "add", text
-			assert defined(text), "text is undef"
-			if isArray(text)
-				dbg "text is an array"
-				for item in text
-					if defined(item)
-						lLines.push item
+			dbgEnter "add", item
+			assert defined(item), "item is undef"
+			if isArray(item)
+				dbg "item is an array"
+				for subitem in item
+					if defined(subitem)
+						lLines.push subitem
 			else
-				dbg "add text #{OL(text)}"
-				lLines.push text
+				dbg "add item #{OL(item)}"
+				lLines.push item
 			dbgReturn "add"
 			return
+
+		# .......................................................
+
+		addItem = (item, level) =>
+
+			assert !isArray(item), "item is an array"
+			if isString(item)
+				lLines.push indented(item, level)
+			else
+				lLines.push item
 
 		# .......................................................
 
@@ -465,6 +449,13 @@ export class TreeMapper extends Mapper
 			return
 
 		# .......................................................
+		#     main body of walk()
+		# .......................................................
+
+		# --- Initialize local state
+
+		stack = new RunTimeStack()   # --- a stack of Node objects
+		hGlobalUser = {}             # --- hParent for level 0 nodes
 
 		doBeginWalk hGlobalUser
 
@@ -472,7 +463,7 @@ export class TreeMapper extends Mapper
 
 		dbg "getting lines"
 		i = 0
-		for hNode in Array.from(@allMapped()) # iterators mess up debugging
+		for hNode from @all()
 
 			# --- Log input lines for debugging
 
@@ -481,19 +472,19 @@ export class TreeMapper extends Mapper
 			{level, str} = hNode     # unpack node
 
 			if (i==0)
-				# --- The first node is a special case, we handle it,
-				#     then continue to the second node (if any)
+				# --- The first node is a special case because
+				#        - it must be at level 0
+				#        - its parent is the global user hash
+				#     handle it, then continue to the 2nd node (if any)
 
-				assert (level == 0), "first node at level #{level}"
-				i = 1
+				assert (level == 0), "first node at level #{level}, not 0"
 				hNode.hUser = {_parent: hGlobalUser}
 				doBeginLevel hGlobalUser, 0
 				doVisit hNode
 				stack.push hNode
 				dbg 'stack', stack
+				i = 1
 				continue    # restart the loop
-
-			i += 1
 
 			# --- add user hash
 
@@ -526,8 +517,9 @@ export class TreeMapper extends Mapper
 				doBeginLevel hUser, level
 				doVisit hNode
 				stack.push hNode
+			i += 1
 
-		while (stack.len > 0)
+		while (stack.size() > 0)
 			hPrevNode = stack.pop()
 			dbg "pop node", hPrevNode
 
@@ -576,7 +568,9 @@ export class TreeMapper extends Mapper
 	visit: (hNode, hUser, hParent, stack) ->
 
 		dbgEnter "visit", hNode, hUser
-		uobj = hNode.uobj
+		{uobj, level} = hNode
+		if isString(uobj) && (level > 0)
+			uobj = indented(uobj, level, @oneIndent)
 		dbgReturn "visit", uobj
 		return uobj
 
@@ -609,7 +603,7 @@ export class TreeMapper extends Mapper
 		dbgEnter "visitComment", hNode, hUser, hParent
 		{uobj, level} = hNode
 		assert isString(uobj), "uobj not a string"
-		result = indented(uobj, level)
+		result = indented(uobj, level, @oneIndent)
 		dbgReturn "visitComment", result
 		return result
 
@@ -662,7 +656,7 @@ export class TreeMapper extends Mapper
 	# ..........................................................
 
 	getBlock: (hOptions={}) ->
-		# --- Valid options: logNodes
+		# --- Valid options: logNodes, includeUserHash
 
 		dbgEnter "getBlock"
 		lLines = @walk(hOptions)
@@ -679,12 +673,13 @@ export class TreeMapper extends Mapper
 # UTILITIES
 # ---------------------------------------------------------------------------
 
-export trace = (source, content=undef) ->
+export trace = (hInput) ->
 
-	dbgEnter "trace", source, content
-	mapper = new TreeMapper(source, content)
+	dbgEnter "trace", hInput
+	mapper = new TreeMapper(hInput)
+	clearMyLogs()
 	mapper.walk({logNodes: true})
-	result = mapper.getLog()
+	result = getMyLog()
 	dbgReturn "trace", result
 	return result
 

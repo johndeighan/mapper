@@ -10,7 +10,6 @@ import {
 	escapeStr, isString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
-import {indented} from '@jdeighan/coffee-utils/indent'
 import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
 
 import {Node} from '@jdeighan/mapper/node'
@@ -53,7 +52,7 @@ export class Getter extends Fetcher
 
 		dbgEnter "Getter.get"
 
-		while hNode = @fetch()
+		while defined(hNode = @fetch())
 			uobj = @mapAnyNode(hNode)
 			if defined(uobj)
 				hNode.uobj = uobj
@@ -118,9 +117,8 @@ export class Getter extends Fetcher
 
 	mapNode: (hNode) ->
 
-		# --- by default, just returns str key indented
-		{str, level} = hNode
-		return indented(str, level, @oneIndent)
+		# --- by default, just returns str key
+		return hNode.str
 
 	# ..........................................................
 
@@ -166,6 +164,7 @@ export class Getter extends Fetcher
 		# --- NOTE: @get will skip items that are mapped to undef
 		#           and only returns undef when the input is exhausted
 		while defined(hNode = @get())
+			assert defined(hNode.uobj), "uobj is not defined"
 			dbgYield 'Getter.all', hNode
 			yield hNode
 			dbgResume 'Getter.all'

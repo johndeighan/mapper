@@ -25,13 +25,11 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	class TreeMapper should handle the following:
 		- remove empty lines and comments
 		- extension lines
-		- can override @mapNode() - used in @getAll()
+		- can override @mapNode()
 		- call @walk() to walk the tree
 		- can override beginLevel(), visit(), endVisit(), endLevel()
 ###
 
-# ---------------------------------------------------------------------------
-#             BEGIN allMapped
 # ---------------------------------------------------------------------------
 
 (() ->
@@ -39,12 +37,12 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			walker = new TreeMapper(import.meta.url, block)
-			lUserObjects = []
-			for uobj from walker.allMapped()
-				lUserObjects.push uobj
-			assert isArray(lUserObjects), "lUserObjects is #{OL(lUserObjects)}"
-			return lUserObjects
+			mapper = new TreeMapper(block)
+			lNodes = []
+			for hNode from mapper.all()
+				lNodes.push hNode
+			assert isArray(lNodes), "lNodes is #{OL(lNodes)}"
+			return lNodes
 
 	mapTester = new MapTester()
 
@@ -108,14 +106,14 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			walker = new TreeMapper(import.meta.url, block)
-			lUserObjects = []
-			for uobj from walker.allMapped()
-				lUserObjects.push uobj
+			mapper = new TreeMapper(block)
+			lNodes = []
+			for hNode from mapper.all()
+				lNodes.push hNode
 			if @debug
-				LOG 'lUserObjects', lUserObjects
-			assert isArray(lUserObjects), "lUserObjects is #{OL(lUserObjects)}"
-			return lUserObjects
+				LOG 'lNodes', lNodes
+			assert isArray(lNodes), "lNodes is #{OL(lNodes)}"
+			return lNodes
 
 		getUserObj: (line) ->
 
@@ -521,10 +519,6 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	)()
 
 # ---------------------------------------------------------------------------
-#             END allMapped
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 #             BEGIN walk
 # ---------------------------------------------------------------------------
 
@@ -536,17 +530,17 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return trace(import.meta.url, block)
+			return trace(block)
 
 	walkTester = new Tester()
 
-	walkTester.equal 541, """
+	walkTester.equal 537, """
 			""", """
 			BEGIN WALK
 			END WALK
 			"""
 
-	walkTester.equal 547, """
+	walkTester.equal 543, """
 			abc
 			""", """
 			BEGIN WALK
@@ -557,7 +551,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 558, """
+	walkTester.equal 554, """
 			abc
 			def
 			""", """
@@ -571,7 +565,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 572, """
+	walkTester.equal 568, """
 			abc
 				def
 			""", """
@@ -587,7 +581,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 588, """
+	walkTester.equal 584, """
 			# this is a unit test
 			abc
 
@@ -605,7 +599,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 606, """
+	walkTester.equal 602, """
 			# this is a unit test
 			abc
 			__END__
@@ -619,7 +613,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 620, """
+	walkTester.equal 616, """
 			# this is a unit test
 			abc
 					def
@@ -648,13 +642,13 @@ class WalkTester extends UnitTesterNorm
 
 	transformValue: (block) ->
 
-			return trace(import.meta.url, block)
+			return trace(block)
 
 walkTester = new WalkTester()
 
 # ..........................................................
 
-walkTester.equal 655, """
+walkTester.equal 651, """
 		abc
 		""", """
 		BEGIN WALK
@@ -665,7 +659,7 @@ walkTester.equal 655, """
 		END WALK
 		"""
 
-walkTester.equal 666, """
+walkTester.equal 662, """
 		abc
 		def
 		""", """
@@ -679,7 +673,7 @@ walkTester.equal 666, """
 		END WALK
 		"""
 
-walkTester.equal 680, """
+walkTester.equal 676, """
 		abc
 			def
 		""", """
@@ -695,7 +689,7 @@ walkTester.equal 680, """
 		END WALK
 		"""
 
-walkTester.equal 696, """
+walkTester.equal 692, """
 		abc
 		#ifdef NOPE
 			def
@@ -708,7 +702,7 @@ walkTester.equal 696, """
 		END WALK
 		"""
 
-walkTester.equal 709, """
+walkTester.equal 705, """
 		abc
 		#ifndef NOPE
 			def
@@ -723,7 +717,7 @@ walkTester.equal 709, """
 		END WALK
 		"""
 
-walkTester.equal 724, """
+walkTester.equal 720, """
 		#define NOPE 42
 		abc
 		#ifndef NOPE
@@ -737,7 +731,7 @@ walkTester.equal 724, """
 		END WALK
 		"""
 
-walkTester.equal 738, """
+walkTester.equal 734, """
 		#define NOPE 42
 		abc
 		#ifdef NOPE
@@ -753,7 +747,7 @@ walkTester.equal 738, """
 		END WALK
 		"""
 
-walkTester.equal 754, """
+walkTester.equal 750, """
 		#define NOPE 42
 		#define name John
 		abc
@@ -781,29 +775,29 @@ walkTester.equal 754, """
 # --- Test TreeMapper.get() with special lines
 
 (() ->
-	walker = new TreeMapper(undef, """
+	mapper = new TreeMapper("""
 		line1
 		# a comment
 		line2
 
 		line3
 		""")
-	utest.like 789, walker.get(), {
+	utest.like 785, mapper.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	utest.like 794, walker.get(), {
+	utest.like 790, mapper.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	utest.like 799, walker.get(), {
+	utest.like 795, mapper.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	utest.equal 804, walker.get(), undef
+	utest.equal 800, mapper.get(), undef
 
 	)()
 
@@ -811,7 +805,7 @@ walkTester.equal 754, """
 # Test TreeMapper.get()
 
 (() ->
-	walker = new TreeMapper(import.meta.url, """
+	mapper = new TreeMapper("""
 			# --- a comment
 
 			abc
@@ -819,26 +813,26 @@ walkTester.equal 754, """
 					ghi
 			""")
 
-	utest.like 820, walker.get(), {
+	utest.like 816, mapper.get(), {
 		str:  'abc'
 		level: 0
 		}
-	utest.like 824, walker.get(), {
+	utest.like 820, mapper.get(), {
 		str:  'def'
 		level: 1
 		}
-	utest.like 828, walker.get(), {
+	utest.like 824, mapper.get(), {
 		str:  'ghi'
 		level: 2
 		}
-	utest.equal 832, walker.get(), undef
+	utest.equal 828, mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # Test __END__ and extension lines with TreeMapper.get()
 
 (() ->
-	walker = new TreeMapper(import.meta.url, """
+	mapper = new TreeMapper("""
 			abc
 					def
 				ghi
@@ -848,22 +842,22 @@ walkTester.equal 754, """
 
 	# --- get() should return {uobj, level}
 
-	utest.like 849, walker.get(), {
+	utest.like 845, mapper.get(), {
 		str: 'abc def'
 		level: 0
 		}
-	utest.like 853, walker.get(), {
+	utest.like 849, mapper.get(), {
 		str: 'ghi'
 		level: 1
 		}
-	utest.equal 857, walker.get(), undef
+	utest.equal 853, mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # __END__ only works with no identation
 
 (() ->
-	utest.fails 864, () -> map("""
+	utest.fails 860, () -> map("""
 			abc
 					def
 				ghi
@@ -887,7 +881,7 @@ walkTester.equal 754, """
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	treeTester.equal 888, """
+	treeTester.equal 884, """
 			abc
 			def
 			""", """
@@ -895,7 +889,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	treeTester.equal 896, """
+	treeTester.equal 892, """
 			abc
 
 			def
@@ -904,7 +898,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	treeTester.equal 905, """
+	treeTester.equal 901, """
 		# --- a comment
 		p
 			margin: 0
@@ -923,12 +917,12 @@ walkTester.equal 754, """
 # Test empty line handling
 
 (() ->
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		# --- This removes blank lines
 		mapEmptyLine: () ->
 
-			dbg "in MyWalker.mapEmptyLine()"
+			dbg "in MyMapper.mapEmptyLine()"
 			return undef
 
 	# ..........................................................
@@ -937,7 +931,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
@@ -949,12 +943,12 @@ walkTester.equal 754, """
 			def
 			"""
 
-	utest.equal 950, map(block, MyWalker), """
+	utest.equal 946, map(block, MyMapper), """
 			abc
 			def
 			"""
 
-	treeTester.equal 955, block, """
+	treeTester.equal 951, block, """
 			abc
 			def
 			"""
@@ -965,7 +959,7 @@ walkTester.equal 754, """
 # Test comment handling
 
 (() ->
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		isComment: (hNode) ->
 
@@ -983,7 +977,7 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
@@ -997,13 +991,13 @@ walkTester.equal 754, """
 			def
 			"""
 
-	utest.equal 998, map(block, MyWalker), """
+	utest.equal 994, map(block, MyMapper), """
 			# not a comment
 			abc
 			def
 			"""
 
-	treeTester.equal 1004, block, """
+	treeTester.equal 1000, block, """
 			# not a comment
 			abc
 			def
@@ -1015,7 +1009,7 @@ walkTester.equal 754, """
 # Test command handling
 
 (() ->
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		isCmd: (hNode) ->
 			# --- commands consist of '-' + one whitespace char + word
@@ -1042,9 +1036,9 @@ walkTester.equal 754, """
 
 		visitCmd: (hNode) ->
 
-			dbgEnter "MyWalker.visitCmd"
+			dbgEnter "MyMapper.visitCmd"
 			result = "COMMAND: #{hNode.uobj.cmd}"
-			dbgReturn "MyWalker.visitCmd", result
+			dbgReturn "MyMapper.visitCmd", result
 			return result
 
 	# ..........................................................
@@ -1052,7 +1046,7 @@ walkTester.equal 754, """
 	class MyTester extends UnitTester
 
 		transformValue: (block) ->
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
@@ -1066,7 +1060,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	treeTester.equal 1067, block, """
+	treeTester.equal 1063, block, """
 			abc
 			COMMAND: command
 			def
@@ -1082,7 +1076,7 @@ walkTester.equal 754, """
 	# --- NOTE: mapNode() returns anything,
 	#           or undef to ignore the line
 
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		# --- This maps all non-empty lines to the string 'x'
 		#     and removes all empty lines
@@ -1094,7 +1088,7 @@ walkTester.equal 754, """
 				dbgReturn "mapNode", undef
 				return undef
 			else
-				result = indented('x', level, @oneIndent)
+				result = 'x'
 				dbgReturn "mapNode", result
 				return result
 
@@ -1104,13 +1098,13 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
 	# ..........................................................
 
-	treeTester.equal 1110, """
+	treeTester.equal 1107, """
 			abc
 				def
 
@@ -1123,12 +1117,12 @@ walkTester.equal 754, """
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test ability to access 'this' object from a walker
+# --- Test ability to access 'this' object from a TreeMapper
 #     Goal: remove not only blank lines, but also the line following
 
 (()->
 
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		# --- Remove blank lines PLUS the line following a blank line
 		mapEmptyLine: (hNode) ->
@@ -1142,13 +1136,13 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
 	# ..........................................................
 
-	treeTester.equal 1148, """
+	treeTester.equal 1145, """
 			abc
 
 			def
@@ -1174,7 +1168,7 @@ walkTester.equal 754, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1174, """
+	treeTester.equal 1171, """
 			abc
 				#include title.md
 			def
@@ -1198,12 +1192,12 @@ walkTester.equal 754, """
 
 		transformValue: (block) ->
 
-			walker = new TreeMapper(import.meta.url, block)
-			return walker.getAll()
+			mapper = new TreeMapper(block)
+			return Array.from(mapper.all())
 
 	treeTester = new MyTester()
 
-	treeTester.like 1203, """
+	treeTester.like 1200, """
 			abc
 				def
 					ghi
@@ -1230,7 +1224,7 @@ walkTester.equal 754, """
 
 (() ->
 
-	walker = new TreeMapper(import.meta.url, """
+	mapper = new TreeMapper("""
 			if (x == 2)
 				doThis
 				doThat
@@ -1239,24 +1233,12 @@ walkTester.equal 754, """
 				--x
 			""")
 
-	utest.like 1239, walker.peek(), {level:0, str: 'if (x == 2)'}
-	utest.like 1240, walker.get(),  {level:0, str: 'if (x == 2)'}
-
-	utest.like 1242, walker.peek(), {level:1, str: 'doThis'}
-	utest.like 1243, walker.get(),  {level:1, str: 'doThis'}
-
-	utest.like 1245, walker.peek(), {level:1, str: 'doThat'}
-	utest.like 1246, walker.get(),  {level:1, str: 'doThat'}
-
-	utest.like 1248, walker.peek(), {level:2, str: 'then this'}
-	utest.like 1249, walker.get(),  {level:2, str: 'then this'}
-
-	utest.like 1251, walker.peek(), {level:0, str: 'while (x > 2)'}
-	utest.like 1252, walker.get(),  {level:0, str: 'while (x > 2)'}
-
-	utest.like 1254, walker.peek(), {level:1, str: '--x'}
-	utest.like 1255, walker.get(),  {level:1, str: '--x'}
-
+	utest.like 1236, mapper.get(),  {level:0, str: 'if (x == 2)'}
+	utest.like 1237, mapper.get(),  {level:1, str: 'doThis'}
+	utest.like 1238, mapper.get(),  {level:1, str: 'doThat'}
+	utest.like 1239, mapper.get(),  {level:2, str: 'then this'}
+	utest.like 1240, mapper.get(),  {level:0, str: 'while (x > 2)'}
+	utest.like 1241, mapper.get(),  {level:1, str: '--x'}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -1274,7 +1256,7 @@ walkTester.equal 754, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1274, """
+	treeTester.equal 1259, """
 			abc
 			if x == <<<
 				abc
@@ -1287,7 +1269,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	treeTester.equal 1287, """
+	treeTester.equal 1272, """
 			abc
 			if x == <<<
 				===
@@ -1301,7 +1283,7 @@ walkTester.equal 754, """
 			def
 			"""
 
-	treeTester.equal 1301, """
+	treeTester.equal 1286, """
 			abc
 			if x == <<<
 				...
@@ -1324,7 +1306,7 @@ class HtmlMapper extends TreeMapper
 
 	mapNode: (hNode) ->
 
-		dbgEnter "MyWalker.mapNode", hNode
+		dbgEnter "MyMapper.mapNode", hNode
 		{str, level} = hNode
 		lMatches = str.match(///^
 				(\S+)     # the tag
@@ -1353,7 +1335,7 @@ class HtmlMapper extends TreeMapper
 			else
 				croak "Unknown tag: #{OL(tag)}"
 
-		dbgReturn "MyWalker.mapNode", hResult
+		dbgReturn "MyMapper.mapNode", hResult
 		return hResult
 
 	# .......................................................
@@ -1403,7 +1385,7 @@ class HtmlMapper extends TreeMapper
 
 	# ----------------------------------------------------------
 
-	treeTester.equal 1402, """
+	treeTester.equal 1388, """
 			body
 				# a comment
 
@@ -1444,7 +1426,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1443, """
+	treeTester.equal 1429, """
 			abc
 			#ifdef something
 				def
@@ -1465,7 +1447,7 @@ class HtmlMapper extends TreeMapper
 
 	lTrace = []
 
-	class MyWalker extends TreeMapper
+	class MyMapper extends TreeMapper
 
 		beginLevel: (hUser, level) ->
 			lTrace.push "S #{level}"
@@ -1479,11 +1461,11 @@ class HtmlMapper extends TreeMapper
 
 		transformValue: (block) ->
 
-			return map(block, MyWalker)
+			return map(block, MyMapper)
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1482, """
+	treeTester.equal 1468, """
 			abc
 				def
 			""", """
@@ -1491,7 +1473,7 @@ class HtmlMapper extends TreeMapper
 				def
 			"""
 
-	utest.equal 1490, lTrace, [
+	utest.equal 1476, lTrace, [
 		"S 0"
 		"S 1"
 		"E 1"

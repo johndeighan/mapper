@@ -9,7 +9,7 @@ import {
 	} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
-	escapeStr, isString, isHash, isArray, isInteger,
+	escapeStr, isString, isHash, isArray, isBoolean, isInteger,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
 import {
@@ -38,17 +38,20 @@ export class Fetcher
 
 		dbgEnter "Fetcher", hInput, options
 
+		# --- hInput can be:
+		#        1. a plain string
+		#        2. a hash with keys 'source' and/or 'content',
+		#        3. an iterator
+
 		# --- We need to set:
 		#        @hSourceInfo - information about the source of input
 		#        @iterator    - must be an iterator
 
-		# --- hInput can be a plain string,
-		#     or a hash with keys 'source' and/or 'content'
 		if isString(hInput)
 			@hSourceInfo = { filename: '<unknown>' }
-			content = hInput
-		else
-			assert isHash(hInput), "not a hash: #{OL(hInput)}"
+			content = toArray(hInput)
+			@iterator = content[Symbol.iterator]()
+		else if isHash(hInput)
 			{source, content} = hInput
 			assert defined(source) || defined(content),
 					"No source or content"
@@ -58,22 +61,30 @@ export class Fetcher
 				dbg "No source, so filename is <unknown>"
 				@hSourceInfo = {filename: '<unknown>'}
 
-			if ! defined(content)
+			if defined(content)
+				if isString(content)
+					content = toArray(content)
+				assert isIterable(content), "content not iterable"
+				@iterator = content[Symbol.iterator]()
+			else
 				dbg "No content - check for fullpath"
 				fullpath = @hSourceInfo.fullpath
 				assert fullpath, "No content and no fullpath"
+
+				# --- ultimately, we want to create an iterator here
+				#     rather than blindly reading the entire file
+
 				dbg "slurping #{fullpath}"
-				content = slurp(fullpath)
+				content = toArray(slurp(fullpath))
+				@iterator = content[Symbol.iterator]()
+		else
+			@hSourceInfo = { filename: '<unknown>' }
+			assert isIterable(hInput), "hInput not iterable"
+			@iterator = hInput[Symbol.iterator]()
 
 		# --- @hSourceInfo must exist and have a filename key
 		dbg 'hSourceInfo', @hSourceInfo
 		assert @hSourceInfo.filename, "parseSource returned no filename"
-
-		# --- content must be iterable
-		if isString(content)
-			content = toArray(content)
-		assert isIterable(content), "content not iterable"
-		@iterator = content[Symbol.iterator]()
 
 		# --- Handle options
 		{addLevel} = getOptions(options)
@@ -113,7 +124,7 @@ export class Fetcher
 			dbg "found #{@numBlankLines} blank lines"
 			@numBlankLines =- 1
 			@incLineNum()
-			dbgReturn "Fetcher.fetchLine", ''
+			dbgReturn "Fetcher.fetchLine", [0, '']
 			return [0, '']
 
 		# --- return anything in @lookahead,
@@ -121,6 +132,8 @@ export class Fetcher
 		if defined(@lookahead)
 			dbg "found lookahead"
 			result = @lookahead
+			assert isArray(result) && (result.length == 2),
+				"Bad lookahead: #{OL(result)}"
 			@lookahead = undef
 			@incLineNum()
 			dbgReturn "Fetcher.fetchLine", result
@@ -364,20 +377,38 @@ export class Fetcher
 	# ..........................................................
 	# --- GENERATOR
 
-	allUntil: (func, options={}) ->
+	allUntil: (func, hOptions={}) ->
 		# --- stop when func(hNode) returns true
+		# --- Valid options:
+		#        keepEndLine - keep the line where func returns true
+		#        nomap - don't map
 
-		dbgEnter "Fetcher.allUntil", func, options
+		dbgEnter "Fetcher.allUntil", func, hOptions
 		assert isFunction(func), "Arg 1 not a function"
-		{keepEndLine} = getOptions(options)
+		{keepEndLine, nomap} = getOptions(hOptions)
 
-		for hNode from @all()
+		# --- Set the iterator to use in the main loop
+		if nomap
+			# --- Simulate all(), but in a way that can't be overridden
+			#     a generator requires using ->, not =>
+			#     but that creates a new 'this', so we have to save
+			#     the current this to use it in the generator
+			self = this
+			iterator = (() ->
+				while defined(h=self.fetch())
+					yield h
+				return
+				)();
+		else
+			iterator = @all()   # --- possibly overridden
+
+		for hNode from iterator
 			assert defined(hNode), "BAD - hNode is undef in allUntil()"
 			if func(hNode)
 				# --- When func returns true, we're done
 				#     We don't return hNode, but might save it
 				if keepEndLine
-					@lookahead = hNode
+					@lookahead = [hNode.level, hNode.str]
 				dbgReturn "Fetcher.allUntil"
 				return
 
@@ -385,19 +416,44 @@ export class Fetcher
 			yield hNode
 			dbgResume "Fetcher.allUntil"
 
-
 		dbgReturn "Fetcher.allUntil"
 		return
 
 	# ..........................................................
 
-	getBlockUntil: (func, options={}) ->
+	getBlockUntil: (func, hOptions={}) ->
+		# --- Valid options:
+		#        oneIndent
+		#        keepEndLine - keep the line where func returns true
+		#           - passed to @allUntil
+		#        undent - boolean or num levels to undent
+		#        nomap - don't map nodes
 
 		dbgEnter "Fetcher.getBlockUntil"
-		{oneIndent} = getOptions(options)
+		{oneIndent, keepEndLine, undent, nomap} = getOptions(hOptions, {
+			# --- defaults
+			oneIndent: "\t"
+			keepEndLine: false
+			undent: 0
+			})
+		dbg "undent is set to #{OL(undent)}"
+		assert isBoolean(undent) || isInteger(undent), "not a bool or int"
+
+		# --- If undent is an integer, it's the number of levels to remove
+		#        if it's 'true', get it from the 1st non-blank line
+		# --- NOTE: there might be blank lines, which are always
+		#           at level 0 and are therefore not used
+
 		lLines = []
-		for hNode from @allUntil(func, options)
-			lLines.push hNode.getLine(oneIndent)  # uses TAB if undef
+		for hNode from @allUntil(func, {keepEndLine, nomap})
+			dbg 'hNode', hNode
+			if hNode.isEmptyLine()
+				lLines.push hNode.getLine({oneIndent, undent})
+				continue
+			if (undent == true)
+				dbg "changing undent to #{OL(hNode.level)}"
+				undent = hNode.level
+			lLines.push hNode.getLine({oneIndent, undent})
 		result = toBlock(lLines)
 		dbgReturn "Fetcher.getBlockUntil", result
 		return result
@@ -410,6 +466,7 @@ export class Fetcher
 		{oneIndent} = getOptions(options)
 		lLines = []
 		for hNode from @all()
+			dbg 'hNode', hNode
 			lLines.push hNode.getLine(oneIndent)
 		result = @finalizeBlock(toBlock(lLines))
 		dbgReturn "Fetcher.getBlock", result

@@ -32,6 +32,7 @@ import {
   isString,
   isHash,
   isArray,
+  isBoolean,
   isInteger,
   isFunction,
   isIterable,
@@ -75,19 +76,21 @@ export var Fetcher = class Fetcher {
   constructor(hInput, options = {}) {
     var addLevel, content, fullpath, source;
     dbgEnter("Fetcher", hInput, options);
+    // --- hInput can be:
+    //        1. a plain string
+    //        2. a hash with keys 'source' and/or 'content',
+    //        3. an iterator
+
     // --- We need to set:
     //        @hSourceInfo - information about the source of input
     //        @iterator    - must be an iterator
-
-    // --- hInput can be a plain string,
-    //     or a hash with keys 'source' and/or 'content'
     if (isString(hInput)) {
       this.hSourceInfo = {
         filename: '<unknown>'
       };
-      content = hInput;
-    } else {
-      assert(isHash(hInput), `not a hash: ${OL(hInput)}`);
+      content = toArray(hInput);
+      this.iterator = content[Symbol.iterator]();
+    } else if (isHash(hInput)) {
       ({source, content} = hInput);
       assert(defined(source) || defined(content), "No source or content");
       if (defined(source)) {
@@ -98,23 +101,32 @@ export var Fetcher = class Fetcher {
           filename: '<unknown>'
         };
       }
-      if (!defined(content)) {
+      if (defined(content)) {
+        if (isString(content)) {
+          content = toArray(content);
+        }
+        assert(isIterable(content), "content not iterable");
+        this.iterator = content[Symbol.iterator]();
+      } else {
         dbg("No content - check for fullpath");
         fullpath = this.hSourceInfo.fullpath;
         assert(fullpath, "No content and no fullpath");
+        // --- ultimately, we want to create an iterator here
+        //     rather than blindly reading the entire file
         dbg(`slurping ${fullpath}`);
-        content = slurp(fullpath);
+        content = toArray(slurp(fullpath));
+        this.iterator = content[Symbol.iterator]();
       }
+    } else {
+      this.hSourceInfo = {
+        filename: '<unknown>'
+      };
+      assert(isIterable(hInput), "hInput not iterable");
+      this.iterator = hInput[Symbol.iterator]();
     }
     // --- @hSourceInfo must exist and have a filename key
     dbg('hSourceInfo', this.hSourceInfo);
     assert(this.hSourceInfo.filename, "parseSource returned no filename");
-    // --- content must be iterable
-    if (isString(content)) {
-      content = toArray(content);
-    }
-    assert(isIterable(content), "content not iterable");
-    this.iterator = content[Symbol.iterator]();
     // --- Handle options
     ({addLevel} = getOptions(options));
     this.addLevel = addLevel || 0;
@@ -147,7 +159,7 @@ export var Fetcher = class Fetcher {
       dbg(`found ${this.numBlankLines} blank lines`);
       this.numBlankLines = -1;
       this.incLineNum();
-      dbgReturn("Fetcher.fetchLine", '');
+      dbgReturn("Fetcher.fetchLine", [0, '']);
       return [0, ''];
     }
     // --- return anything in @lookahead,
@@ -155,6 +167,7 @@ export var Fetcher = class Fetcher {
     if (defined(this.lookahead)) {
       dbg("found lookahead");
       result = this.lookahead;
+      assert(isArray(result) && (result.length === 2), `Bad lookahead: ${OL(result)}`);
       this.lookahead = undef;
       this.incLineNum();
       dbgReturn("Fetcher.fetchLine", result);
@@ -376,20 +389,38 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   // --- GENERATOR
-  * allUntil(func, options = {}) {
-    var hNode, keepEndLine, ref;
+  * allUntil(func, hOptions = {}) {
+    var hNode, iterator, keepEndLine, nomap, self;
     // --- stop when func(hNode) returns true
-    dbgEnter("Fetcher.allUntil", func, options);
+    // --- Valid options:
+    //        keepEndLine - keep the line where func returns true
+    //        nomap - don't map
+    dbgEnter("Fetcher.allUntil", func, hOptions);
     assert(isFunction(func), "Arg 1 not a function");
-    ({keepEndLine} = getOptions(options));
-    ref = this.all();
-    for (hNode of ref) {
+    ({keepEndLine, nomap} = getOptions(hOptions));
+    // --- Set the iterator to use in the main loop
+    if (nomap) {
+      // --- Simulate all(), but in a way that can't be overridden
+      //     a generator requires using ->, not =>
+      //     but that creates a new 'this', so we have to save
+      //     the current this to use it in the generator
+      self = this;
+      iterator = (function*() {
+        var h;
+        while (defined(h = self.fetch())) {
+          yield h;
+        }
+      })();
+    } else {
+      iterator = this.all(); // --- possibly overridden
+    }
+    for (hNode of iterator) {
       assert(defined(hNode), "BAD - hNode is undef in allUntil()");
       if (func(hNode)) {
         // --- When func returns true, we're done
         //     We don't return hNode, but might save it
         if (keepEndLine) {
-          this.lookahead = hNode;
+          this.lookahead = [hNode.level, hNode.str];
         }
         dbgReturn("Fetcher.allUntil");
         return;
@@ -402,14 +433,40 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  getBlockUntil(func, options = {}) {
-    var hNode, lLines, oneIndent, ref, result;
+  getBlockUntil(func, hOptions = {}) {
+    var hNode, keepEndLine, lLines, nomap, oneIndent, ref, result, undent;
+    // --- Valid options:
+    //        oneIndent
+    //        keepEndLine - keep the line where func returns true
+    //           - passed to @allUntil
+    //        undent - boolean or num levels to undent
+    //        nomap - don't map nodes
     dbgEnter("Fetcher.getBlockUntil");
-    ({oneIndent} = getOptions(options));
+    ({oneIndent, keepEndLine, undent, nomap} = getOptions(hOptions, {
+      // --- defaults
+      oneIndent: "\t",
+      keepEndLine: false,
+      undent: 0
+    }));
+    dbg(`undent is set to ${OL(undent)}`);
+    assert(isBoolean(undent) || isInteger(undent), "not a bool or int");
+    // --- If undent is an integer, it's the number of levels to remove
+    //        if it's 'true', get it from the 1st non-blank line
+    // --- NOTE: there might be blank lines, which are always
+    //           at level 0 and are therefore not used
     lLines = [];
-    ref = this.allUntil(func, options);
+    ref = this.allUntil(func, {keepEndLine, nomap});
     for (hNode of ref) {
-      lLines.push(hNode.getLine(oneIndent)); // uses TAB if undef
+      dbg('hNode', hNode);
+      if (hNode.isEmptyLine()) {
+        lLines.push(hNode.getLine({oneIndent, undent}));
+        continue;
+      }
+      if (undent === true) {
+        dbg(`changing undent to ${OL(hNode.level)}`);
+        undent = hNode.level;
+      }
+      lLines.push(hNode.getLine({oneIndent, undent}));
     }
     result = toBlock(lLines);
     dbgReturn("Fetcher.getBlockUntil", result);
@@ -424,6 +481,7 @@ export var Fetcher = class Fetcher {
     lLines = [];
     ref = this.all();
     for (hNode of ref) {
+      dbg('hNode', hNode);
       lLines.push(hNode.getLine(oneIndent));
     }
     result = this.finalizeBlock(toBlock(lLines));

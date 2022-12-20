@@ -68,26 +68,24 @@ import {
 	class TreeMapper should handle the following:
 		- remove empty lines and comments
 		- extension lines
-		- can override @mapNode() - used in @getAll()
+		- can override @mapNode()
 		- call @walk() to walk the tree
 		- can override beginLevel(), visit(), endVisit(), endLevel()
 */
-// ---------------------------------------------------------------------------
-//             BEGIN allMapped
 // ---------------------------------------------------------------------------
 (function() {
   var MapTester, mapTester;
   MapTester = class MapTester extends UnitTester {
     transformValue(block) {
-      var lUserObjects, ref, uobj, walker;
-      walker = new TreeMapper(import.meta.url, block);
-      lUserObjects = [];
-      ref = walker.allMapped();
-      for (uobj of ref) {
-        lUserObjects.push(uobj);
+      var hNode, lNodes, mapper, ref;
+      mapper = new TreeMapper(block);
+      lNodes = [];
+      ref = mapper.all();
+      for (hNode of ref) {
+        lNodes.push(hNode);
       }
-      assert(isArray(lUserObjects), `lUserObjects is ${OL(lUserObjects)}`);
-      return lUserObjects;
+      assert(isArray(lNodes), `lNodes is ${OL(lNodes)}`);
+      return lNodes;
     }
 
   };
@@ -163,18 +161,18 @@ xyz`, [
     }
 
     transformValue(block) {
-      var lUserObjects, ref, uobj, walker;
-      walker = new TreeMapper(import.meta.url, block);
-      lUserObjects = [];
-      ref = walker.allMapped();
-      for (uobj of ref) {
-        lUserObjects.push(uobj);
+      var hNode, lNodes, mapper, ref;
+      mapper = new TreeMapper(block);
+      lNodes = [];
+      ref = mapper.all();
+      for (hNode of ref) {
+        lNodes.push(hNode);
       }
       if (this.debug) {
-        LOG('lUserObjects', lUserObjects);
+        LOG('lNodes', lNodes);
       }
-      assert(isArray(lUserObjects), `lUserObjects is ${OL(lUserObjects)}`);
-      return lUserObjects;
+      assert(isArray(lNodes), `lNodes is ${OL(lNodes)}`);
+      return lNodes;
     }
 
     getUserObj(line) {
@@ -421,10 +419,6 @@ ghi`, `0 ghi`);
 })();
 
 // ---------------------------------------------------------------------------
-//             END allMapped
-// ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
 //             BEGIN walk
 // ---------------------------------------------------------------------------
 
@@ -434,20 +428,20 @@ ghi`, `0 ghi`);
   var Tester, walkTester;
   Tester = class Tester extends UnitTesterNorm {
     transformValue(block) {
-      return trace(import.meta.url, block);
+      return trace(block);
     }
 
   };
   walkTester = new Tester();
-  walkTester.equal(541, `			`, `BEGIN WALK
+  walkTester.equal(537, `			`, `BEGIN WALK
 END WALK`);
-  walkTester.equal(547, `abc`, `BEGIN WALK
+  walkTester.equal(543, `abc`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT     0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(558, `abc
+  walkTester.equal(554, `abc
 def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT     0 'abc'
@@ -456,7 +450,7 @@ VISIT     0 'def'
 END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(572, `abc
+  walkTester.equal(568, `abc
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT     0 'abc'
@@ -467,7 +461,7 @@ END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(588, `# this is a unit test
+  walkTester.equal(584, `# this is a unit test
 abc
 
 	def`, `BEGIN WALK
@@ -480,7 +474,7 @@ END LEVEL 1
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(606, `# this is a unit test
+  walkTester.equal(602, `# this is a unit test
 abc
 __END__
 	def`, `BEGIN WALK
@@ -489,7 +483,7 @@ VISIT     0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  return walkTester.equal(620, `# this is a unit test
+  return walkTester.equal(616, `# this is a unit test
 abc
 		def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -510,7 +504,7 @@ END WALK`);
   // ---------------------------------------------------------------------------
 WalkTester = class WalkTester extends UnitTesterNorm {
   transformValue(block) {
-    return trace(import.meta.url, block);
+    return trace(block);
   }
 
 };
@@ -518,14 +512,14 @@ WalkTester = class WalkTester extends UnitTesterNorm {
 walkTester = new WalkTester();
 
 // ..........................................................
-walkTester.equal(655, `abc`, `BEGIN WALK
+walkTester.equal(651, `abc`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT       0 'abc'
 END VISIT   0 'abc'
 END LEVEL   0
 END WALK`);
 
-walkTester.equal(666, `abc
+walkTester.equal(662, `abc
 def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT     0 'abc'
@@ -535,7 +529,7 @@ END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(680, `abc
+walkTester.equal(676, `abc
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT     0 'abc'
@@ -547,7 +541,7 @@ END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(696, `abc
+walkTester.equal(692, `abc
 #ifdef NOPE
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -556,7 +550,7 @@ END VISIT 0 'abc'
 END LEVEL   0
 END WALK`);
 
-walkTester.equal(709, `abc
+walkTester.equal(705, `abc
 #ifndef NOPE
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -567,7 +561,7 @@ END VISIT 0 'def'
 END LEVEL   0
 END WALK`);
 
-walkTester.equal(724, `#define NOPE 42
+walkTester.equal(720, `#define NOPE 42
 abc
 #ifndef NOPE
 	def`, `BEGIN WALK
@@ -577,7 +571,7 @@ END VISIT 0 'abc'
 END LEVEL   0
 END WALK`);
 
-walkTester.equal(738, `#define NOPE 42
+walkTester.equal(734, `#define NOPE 42
 abc
 #ifdef NOPE
 	def`, `BEGIN WALK
@@ -589,7 +583,7 @@ END VISIT 0 'def'
 END LEVEL   0
 END WALK`);
 
-walkTester.equal(754, `#define NOPE 42
+walkTester.equal(750, `#define NOPE 42
 #define name John
 abc
 #ifdef NOPE
@@ -612,79 +606,79 @@ END WALK`);
 
   // --- Test TreeMapper.get() with special lines
 (function() {
-  var walker;
-  walker = new TreeMapper(undef, `line1
+  var mapper;
+  mapper = new TreeMapper(`line1
 # a comment
 line2
 
 line3`);
-  utest.like(789, walker.get(), {
+  utest.like(785, mapper.get(), {
     str: 'line1',
     level: 0,
     lineNum: 1
   });
-  utest.like(794, walker.get(), {
+  utest.like(790, mapper.get(), {
     str: 'line2',
     level: 0,
     lineNum: 3
   });
-  utest.like(799, walker.get(), {
+  utest.like(795, mapper.get(), {
     str: 'line3',
     level: 0,
     lineNum: 5
   });
-  return utest.equal(804, walker.get(), undef);
+  return utest.equal(800, mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // Test TreeMapper.get()
 (function() {
-  var walker;
-  walker = new TreeMapper(import.meta.url, `# --- a comment
+  var mapper;
+  mapper = new TreeMapper(`# --- a comment
 
 abc
 	def
 		ghi`);
-  utest.like(820, walker.get(), {
+  utest.like(816, mapper.get(), {
     str: 'abc',
     level: 0
   });
-  utest.like(824, walker.get(), {
+  utest.like(820, mapper.get(), {
     str: 'def',
     level: 1
   });
-  utest.like(828, walker.get(), {
+  utest.like(824, mapper.get(), {
     str: 'ghi',
     level: 2
   });
-  return utest.equal(832, walker.get(), undef);
+  return utest.equal(828, mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // Test __END__ and extension lines with TreeMapper.get()
 (function() {
-  var walker;
-  walker = new TreeMapper(import.meta.url, `abc
+  var mapper;
+  mapper = new TreeMapper(`abc
 		def
 	ghi
 __END__
 		ghi`);
   // --- get() should return {uobj, level}
-  utest.like(849, walker.get(), {
+  utest.like(845, mapper.get(), {
     str: 'abc def',
     level: 0
   });
-  utest.like(853, walker.get(), {
+  utest.like(849, mapper.get(), {
     str: 'ghi',
     level: 1
   });
-  return utest.equal(857, walker.get(), undef);
+  return utest.equal(853, mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // __END__ only works with no identation
 (function() {
-  return utest.fails(864, function() {
+  return utest.fails(860, function() {
     return map(`abc
 		def
 	ghi
@@ -705,14 +699,14 @@ __END__
   treeTester = new Tester();
   // ---------------------------------------------------------------------------
   // --- Test basic reading till EOF
-  treeTester.equal(888, `abc
+  treeTester.equal(884, `abc
 def`, `abc
 def`);
-  treeTester.equal(896, `abc
+  treeTester.equal(892, `abc
 
 def`, `abc
 def`);
-  return treeTester.equal(905, `# --- a comment
+  return treeTester.equal(901, `# --- a comment
 p
 	margin: 0
 	span
@@ -725,11 +719,11 @@ p
 // ---------------------------------------------------------------------------
 // Test empty line handling
 (function() {
-  var MyTester, MyWalker, block, treeTester;
-  MyWalker = class MyWalker extends TreeMapper {
+  var MyMapper, MyTester, block, treeTester;
+  MyMapper = class MyMapper extends TreeMapper {
     // --- This removes blank lines
     mapEmptyLine() {
-      dbg("in MyWalker.mapEmptyLine()");
+      dbg("in MyMapper.mapEmptyLine()");
       return undef;
     }
 
@@ -737,7 +731,7 @@ p
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
@@ -746,17 +740,17 @@ p
   block = `abc
 
 def`;
-  utest.equal(950, map(block, MyWalker), `abc
+  utest.equal(946, map(block, MyMapper), `abc
 def`);
-  return treeTester.equal(955, block, `abc
+  return treeTester.equal(951, block, `abc
 def`);
 })();
 
 // ---------------------------------------------------------------------------
 // Test comment handling
 (function() {
-  var MyTester, MyWalker, block, treeTester;
-  MyWalker = class MyWalker extends TreeMapper {
+  var MyMapper, MyTester, block, treeTester;
+  MyMapper = class MyMapper extends TreeMapper {
     isComment(hNode) {
       // --- comments start with //
       return hNode.str.match(/^\/\//);
@@ -771,7 +765,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
@@ -782,10 +776,10 @@ def`);
 # not a comment
 abc
 def`;
-  utest.equal(998, map(block, MyWalker), `# not a comment
+  utest.equal(994, map(block, MyMapper), `# not a comment
 abc
 def`);
-  return treeTester.equal(1004, block, `# not a comment
+  return treeTester.equal(1000, block, `# not a comment
 abc
 def`);
 })();
@@ -793,8 +787,8 @@ def`);
 // ---------------------------------------------------------------------------
 // Test command handling
 (function() {
-  var MyTester, MyWalker, block, treeTester;
-  MyWalker = class MyWalker extends TreeMapper {
+  var MyMapper, MyTester, block, treeTester;
+  MyMapper = class MyMapper extends TreeMapper {
     isCmd(hNode) {
       var lMatches;
       // --- commands consist of '-' + one whitespace char + word
@@ -821,9 +815,9 @@ def`);
     // .......................................................
     visitCmd(hNode) {
       var result;
-      dbgEnter("MyWalker.visitCmd");
+      dbgEnter("MyMapper.visitCmd");
       result = `COMMAND: ${hNode.uobj.cmd}`;
-      dbgReturn("MyWalker.visitCmd", result);
+      dbgReturn("MyMapper.visitCmd", result);
       return result;
     }
 
@@ -831,7 +825,7 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
@@ -842,7 +836,7 @@ def`);
 abc
 - command
 def`;
-  return treeTester.equal(1067, block, `abc
+  return treeTester.equal(1063, block, `abc
 COMMAND: command
 def`);
 })();
@@ -850,10 +844,10 @@ def`);
 // ---------------------------------------------------------------------------
 // try retaining indentation for mapped lines
 (function() {
-  var MyTester, MyWalker, treeTester;
+  var MyMapper, MyTester, treeTester;
   // --- NOTE: mapNode() returns anything,
   //           or undef to ignore the line
-  MyWalker = class MyWalker extends TreeMapper {
+  MyMapper = class MyMapper extends TreeMapper {
     // --- This maps all non-empty lines to the string 'x'
     //     and removes all empty lines
     mapNode(hNode) {
@@ -864,7 +858,7 @@ def`);
         dbgReturn("mapNode", undef);
         return undef;
       } else {
-        result = indented('x', level, this.oneIndent);
+        result = 'x';
         dbgReturn("mapNode", result);
         return result;
       }
@@ -874,13 +868,13 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
   treeTester = new MyTester();
   // ..........................................................
-  return treeTester.equal(1110, `abc
+  return treeTester.equal(1107, `abc
 	def
 
 ghi`, `x
@@ -889,11 +883,11 @@ x`);
 })();
 
 // ---------------------------------------------------------------------------
-// --- Test ability to access 'this' object from a walker
+// --- Test ability to access 'this' object from a TreeMapper
 //     Goal: remove not only blank lines, but also the line following
 (function() {
-  var MyTester, MyWalker, treeTester;
-  MyWalker = class MyWalker extends TreeMapper {
+  var MyMapper, MyTester, treeTester;
+  MyMapper = class MyMapper extends TreeMapper {
     // --- Remove blank lines PLUS the line following a blank line
     mapEmptyLine(hNode) {
       var follow;
@@ -906,13 +900,13 @@ x`);
     // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
   treeTester = new MyTester();
   // ..........................................................
-  return treeTester.equal(1148, `abc
+  return treeTester.equal(1145, `abc
 
 def
 ghi`, `abc
@@ -931,7 +925,7 @@ ghi`);
   };
   // ..........................................................
   treeTester = new MyTester();
-  return treeTester.equal(1174, `abc
+  return treeTester.equal(1171, `abc
 	#include title.md
 def`, `abc
 	title
@@ -946,14 +940,14 @@ def`);
   // ..........................................................
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      var walker;
-      walker = new TreeMapper(import.meta.url, block);
-      return walker.getAll();
+      var mapper;
+      mapper = new TreeMapper(block);
+      return Array.from(mapper.all());
     }
 
   };
   treeTester = new MyTester();
-  return treeTester.like(1203, `abc
+  return treeTester.like(1200, `abc
 	def
 		ghi
 jkl`, fromTAML(`---
@@ -973,58 +967,34 @@ jkl`, fromTAML(`---
 
 // ---------------------------------------------------------------------------
 (function() {
-  var walker;
-  walker = new TreeMapper(import.meta.url, `if (x == 2)
+  var mapper;
+  mapper = new TreeMapper(`if (x == 2)
 	doThis
 	doThat
 		then this
 while (x > 2)
 	--x`);
-  utest.like(1239, walker.peek(), {
+  utest.like(1236, mapper.get(), {
     level: 0,
     str: 'if (x == 2)'
   });
-  utest.like(1240, walker.get(), {
-    level: 0,
-    str: 'if (x == 2)'
-  });
-  utest.like(1242, walker.peek(), {
+  utest.like(1237, mapper.get(), {
     level: 1,
     str: 'doThis'
   });
-  utest.like(1243, walker.get(), {
-    level: 1,
-    str: 'doThis'
-  });
-  utest.like(1245, walker.peek(), {
+  utest.like(1238, mapper.get(), {
     level: 1,
     str: 'doThat'
   });
-  utest.like(1246, walker.get(), {
-    level: 1,
-    str: 'doThat'
-  });
-  utest.like(1248, walker.peek(), {
+  utest.like(1239, mapper.get(), {
     level: 2,
     str: 'then this'
   });
-  utest.like(1249, walker.get(), {
-    level: 2,
-    str: 'then this'
-  });
-  utest.like(1251, walker.peek(), {
+  utest.like(1240, mapper.get(), {
     level: 0,
     str: 'while (x > 2)'
   });
-  utest.like(1252, walker.get(), {
-    level: 0,
-    str: 'while (x > 2)'
-  });
-  utest.like(1254, walker.peek(), {
-    level: 1,
-    str: '--x'
-  });
-  return utest.like(1255, walker.get(), {
+  return utest.like(1241, mapper.get(), {
     level: 1,
     str: '--x'
   });
@@ -1042,7 +1012,7 @@ while (x > 2)
   };
   // ..........................................................
   treeTester = new MyTester();
-  treeTester.equal(1274, `abc
+  treeTester.equal(1259, `abc
 if x == <<<
 	abc
 	def
@@ -1050,7 +1020,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  treeTester.equal(1287, `abc
+  treeTester.equal(1272, `abc
 if x == <<<
 	===
 	abc
@@ -1059,7 +1029,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  return treeTester.equal(1301, `abc
+  return treeTester.equal(1286, `abc
 if x == <<<
 	...
 	abc
@@ -1075,7 +1045,7 @@ def`);
 HtmlMapper = class HtmlMapper extends TreeMapper {
   mapNode(hNode) {
     var _, body, hResult, lMatches, level, md, str, tag, text;
-    dbgEnter("MyWalker.mapNode", hNode);
+    dbgEnter("MyMapper.mapNode", hNode);
     ({str, level} = hNode);
     lMatches = str.match(/^(\S+)(?:\s+(.*))?$/); // the tag
     // some whitespace
@@ -1107,7 +1077,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
       default:
         croak(`Unknown tag: ${OL(tag)}`);
     }
-    dbgReturn("MyWalker.mapNode", hResult);
+    dbgReturn("MyMapper.mapNode", hResult);
     return hResult;
   }
 
@@ -1157,7 +1127,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
   };
   treeTester = new MyTester();
   // ----------------------------------------------------------
-  return treeTester.equal(1402, `body
+  return treeTester.equal(1388, `body
 	# a comment
 
 	div:markdown
@@ -1191,7 +1161,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
 
   };
   treeTester = new MyTester();
-  return treeTester.equal(1443, `abc
+  return treeTester.equal(1429, `abc
 #ifdef something
 	def
 	ghi
@@ -1203,9 +1173,9 @@ xyz`);
 // ---------------------------------------------------------------------------
 // --- test beginLevel() and endLevel()
 (function() {
-  var MyTester, MyWalker, lTrace, treeTester;
+  var MyMapper, MyTester, lTrace, treeTester;
   lTrace = [];
-  MyWalker = class MyWalker extends TreeMapper {
+  MyMapper = class MyMapper extends TreeMapper {
     beginLevel(hUser, level) {
       lTrace.push(`S ${level}`);
     }
@@ -1217,13 +1187,13 @@ xyz`);
   };
   MyTester = class MyTester extends UnitTester {
     transformValue(block) {
-      return map(block, MyWalker);
+      return map(block, MyMapper);
     }
 
   };
   treeTester = new MyTester();
-  treeTester.equal(1482, `abc
+  treeTester.equal(1468, `abc
 	def`, `abc
 	def`);
-  return utest.equal(1490, lTrace, ["S 0", "S 1", "E 1", "E 0"]);
+  return utest.equal(1476, lTrace, ["S 0", "S 1", "E 1", "E 0"]);
 })();

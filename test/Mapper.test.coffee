@@ -8,10 +8,12 @@ import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {undef, rtrim, replaceVars} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {
-	arrayToBlock, blockToArray, joinBlocks,
+	joinBlocks, toBlock, toArray,
 	} from '@jdeighan/coffee-utils/block'
 
 import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
+
+stopper = (h) => h.str == 'stop'
 
 # ---------------------------------------------------------------------------
 # --- Special lines
@@ -24,22 +26,22 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 		line3
 		""")
-	utest.like 27, mapper.get(), {
+	utest.like 29, mapper.get(), {
 		str: 'line1'
 		level: 0
 		lineNum: 1
 		}
-	utest.like 32, mapper.get(), {
+	utest.like 34, mapper.get(), {
 		str: 'line2'
 		level: 0
 		lineNum: 3
 		}
-	utest.like 37, mapper.get(), {
+	utest.like 39, mapper.get(), {
 		str: 'line3'
 		level: 0
 		lineNum: 5
 		}
-	utest.equal 42, mapper.get(), undef
+	utest.equal 44, mapper.get(), undef
 
 	)()
 
@@ -63,12 +65,11 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 	for item from mapper.allUntil(func)
 		lStrings.push item.str
 
-	utest.equal 63, lStrings, ['abc','def','ghi']
-	utest.like 67, mapper.fetch(), {str: 'mno'}
+	utest.equal 68, lStrings, ['abc','def','ghi']
+	utest.like 69, mapper.fetch(), {str: 'mno'}
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test allUntil()
 
 (() ->
 
@@ -87,8 +88,81 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 	for item from mapper.allUntil(func, 'keepEndLine')
 		lStrings.push item.str
 
-	utest.equal 63, lStrings, ['abc','def','ghi']
-	utest.like 91, mapper.fetch(), {str: 'jlk'}
+	utest.equal 91, lStrings, ['abc','def','ghi']
+	utest.like 92, mapper.fetch(), {str: 'jkl'}
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+	class MyTester extends UnitTester
+
+		transformValue: (hInput) ->
+
+			mapper = new Mapper(hInput)
+
+#			lLines = []
+#			for hNode from mapper.allUntil(stopper)
+#				lLines.push hNode.str
+#			block = toBlock(lLines)
+
+			block = mapper.getBlockUntil(stopper)
+			return block
+
+	tester = new MyTester()
+
+	# ----------------------------------------------------------
+
+	tester.equal 112, """
+		abc
+
+		def
+		# --- a comment
+		stop
+		ghi
+		""", """
+		abc
+		def
+		"""
+
+	)()
+
+# ---------------------------------------------------------------------------
+# --- test using option 'nomap'
+
+(() ->
+	class MyTester extends UnitTester
+
+		transformValue: (hInput) ->
+
+			mapper = new Mapper(hInput)
+
+#			lLines = []
+#			for hNode from mapper.allUntil(stopper, 'nomap')
+#				lLines.push hNode.str
+#			block = toBlock(lLines)
+
+			block = mapper.getBlockUntil(stopper, 'nomap')
+			return block
+
+	tester = new MyTester()
+
+	# ----------------------------------------------------------
+
+	tester.equal 144, """
+		abc
+
+		def
+		# --- a comment
+		stop
+		ghi
+		""", """
+		abc
+
+		def
+		# --- a comment
+		"""
+
 	)()
 
 # ---------------------------------------------------------------------------
@@ -107,10 +181,10 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 	# --- You can pass any iterator to the Mapper() constructor
 	mapper = new Mapper(generator())
 
-	utest.like 110, mapper.fetch(), {str: 'line1'}
-	utest.like 111, mapper.fetch(), {str: 'line2'}
-	utest.like 112, mapper.fetch(), {str: 'line3'}
-	utest.is    113, mapper.fetch(), undef
+	utest.like  176, mapper.fetch(), {str: 'line1'}
+	utest.like  177, mapper.fetch(), {str: 'line2'}
+	utest.like  178, mapper.fetch(), {str: 'line3'}
+	utest.equal 179, mapper.fetch(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -137,7 +211,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 140, """
+	myTester.equal 206, """
 			abc
 				#include title.md
 			def
@@ -148,7 +222,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	utest.equal 151, numLines, 3
+	utest.equal 217, numLines, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -161,7 +235,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			""")
 
-	utest.equal 164, mapper.getBlock(), """
+	utest.equal 230, mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -189,7 +263,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 192, """
+	myTester.equal 258, """
 			abc
 			def
 			__END__
@@ -200,7 +274,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			def
 			"""
 
-	utest.equal 203, numLines, 2
+	utest.equal 269, numLines, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -220,7 +294,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 223, """
+	myTester.equal 289, """
 			abc
 				#include ended.md
 			def
@@ -249,7 +323,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 252, """
+	myTester.equal 318, """
 			abc
 			#define meaning 42
 			meaning is __meaning__
@@ -278,7 +352,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			The meaning of life is __meaning__
 			""", Mapper)
 
-	utest.equal 281, result, """
+	utest.equal 347, result, """
 			abc
 			The meaning of life is 42
 			"""
@@ -307,7 +381,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 			#for x in lItems
 			""", MyMapper)
 
-	utest.equal 310, result, """
+	utest.equal 376, result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -336,7 +410,7 @@ import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
 
 			defghi
 			""", MyMapper)
-	utest.equal 339, result, """
+	utest.equal 405, result, """
 			3
 			6
 			"""
@@ -356,13 +430,11 @@ class JSMapper extends Mapper
 
 	mapComment: (hNode) ->
 
-		{str, level} = hNode
-		return indented(str, level, @oneIndent)
+		return hNode.str
 
 	mapNode: (hNode) ->
 
-		{str, level} = hNode
-		return indented("#{str};", level, @oneIndent)
+		return hNode.str + ';'
 
 (() ->
 
@@ -376,7 +448,7 @@ class JSMapper extends Mapper
 
 	# --- some utest tests of JSMapper
 
-	mapTester.equal 379, """
+	mapTester.equal 443, """
 			# |||| $:
 			y = 2*x
 			""", """
@@ -384,7 +456,7 @@ class JSMapper extends Mapper
 			y = 2*x;
 			"""
 
-	mapTester.equal 387, """
+	mapTester.equal 451, """
 			# |||| $: {
 			y = 2*x
 			console.log "OK"
@@ -424,28 +496,29 @@ export class BarMapper extends Mapper
 
 		if (cmd == 'reactive')
 			if (argstr == '')
-				func = (hBlock) -> return (hBlock.level <= level)
-				code = @getBlockUntil(func, 'keepEndLine')
+				# --- A reactive block
+				func = (hNode) -> return (hNode.level <= level)
+				code = @getBlockUntil(func, 'keepEndLine undent')
 
 				# --- simulate conversion to JavaScript
 				code = map(code, JSMapper)
 
-				block = arrayToBlock([
+				block = toBlock([
 					"# |||| $: {"
 					code
 					"# |||| }"
 					])
 			else
-				# --- simulate conversion to JavaScript
+				# --- A reactive statement
 				code = map(argstr, JSMapper)
 
-				block = arrayToBlock([
+				block = toBlock([
 					"# |||| $:"
 					code
 					])
-			result = indented(block, level, @oneIndent)
-			dbgReturn "mapCmd", result
-			return result
+			dbgReturn "mapCmd", block
+			return block
+
 		return super(hNode)
 
 (() ->
@@ -461,7 +534,7 @@ export class BarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of BarMapper
 
-	mapTester.equal 464, """
+	mapTester.equal 529, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -476,7 +549,7 @@ export class BarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 479, """
+	mapTester.equal 544, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -515,7 +588,7 @@ export class DebarMapper extends Mapper
 				\s*            # skip whitespace
 				(.*)           # anything
 				$///)
-			str = indented(lMatches[1], level, @oneIndent)
+			str = lMatches[1]
 		return str
 
 (() ->
@@ -531,7 +604,7 @@ export class DebarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of DebarMapper
 
-	mapTester.equal 534, """
+	mapTester.equal 599, """
 			<h1>title</h1>
 			<script>
 				# |||| $:
@@ -545,7 +618,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 548, """
+	mapTester.equal 613, """
 			<h1>title</h1>
 			<script>
 				# |||| $: {
@@ -580,7 +653,7 @@ export class DebarMapper extends Mapper
 	# ..........................................................
 	# --- some utest tests of multiple mapping
 
-	mapTester.equal 583, """
+	mapTester.equal 648, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -595,7 +668,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 598, """
+	mapTester.equal 663, """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -626,10 +699,10 @@ export class DebarMapper extends Mapper
 
 	func = (block) ->
 		lResult = []
-		for line in blockToArray(block)
+		for line in toArray(block)
 			if line.match(/^\s*[A-Za-z]/)
 				lResult.push line.toUpperCase()
-		return arrayToBlock(lResult)
+		return toBlock(lResult)
 
 	# --- test func directly
 	block = """
@@ -639,14 +712,14 @@ export class DebarMapper extends Mapper
 		123
 		"""
 
-	utest.equal 642, func(block), """
+	utest.equal 707, func(block), """
 		ABC
 		XYZ
 		"""
 
 	# --- test using map()
-	mapper = new FuncMapper(import.meta.url, block, func)
-	utest.equal 649, map(block, mapper), """
+	mapper = new FuncMapper(block, func)
+	utest.equal 714, map(block, mapper), """
 		ABC
 		XYZ
 		"""

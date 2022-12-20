@@ -26,52 +26,54 @@ import {
 export var RunTimeStack = class RunTimeStack {
   constructor() {
     this.lStack = []; // contains Node objects
-    this.len = 0;
+  }
+
+  
+    // ..........................................................
+  size() {
+    return this.lStack.length;
   }
 
   // ..........................................................
   replaceTOS(hNode) {
     this.checkNode(hNode);
-    this.lStack[this.len - 1] = hNode;
+    this.lStack[this.lStack.length - 1] = hNode;
   }
 
   // ..........................................................
   push(hNode) {
     this.checkNode(hNode);
     this.lStack.push(hNode);
-    this.len += 1;
   }
 
   // ..........................................................
   pop() {
     var hNode;
-    assert(this.len > 0, "pop() on empty stack");
+    assert(this.lStack.length > 0, "pop() on empty stack");
     hNode = this.lStack.pop();
     this.checkNode(hNode);
-    this.len -= 1;
     return hNode;
   }
 
   // ..........................................................
   isEmpty() {
-    return this.len === 0;
+    return this.lStack.length === 0;
   }
 
   // ..........................................................
   nonEmpty() {
-    return this.len > 0;
+    return this.lStack.length > 0;
   }
 
   // ..........................................................
   TOS() {
     var hNode;
-    if (this.len > 0) {
-      hNode = this.lStack[this.len - 1];
-      this.checkNode(hNode);
-      return hNode;
-    } else {
+    if (this.lStack.length === 0) {
       return undef;
     }
+    hNode = this.lStack[this.lStack.length - 1];
+    this.checkNode(hNode);
+    return hNode;
   }
 
   // ..........................................................

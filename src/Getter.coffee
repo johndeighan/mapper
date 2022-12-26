@@ -1,29 +1,36 @@
 # Getter.coffee
 
-import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
-	escapeStr, isString, isHash, isArray,
+	escapeStr, isString, isNonEmptyString, isHash, isArray,
 	isFunction, isIterable, isEmpty, nonEmpty,
 	} from '@jdeighan/coffee-utils'
-import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
+import {toBlock, toArray} from '@jdeighan/coffee-utils/block'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 # ---------------------------------------------------------------------------
-#   class Getter - get() for mapped data
+#   class Getter - adds:
+#      1. setConst() and getConst()
+#      2. replacing constants in non-special lines, incl env vars
+#            NOTE: does not implement #define
+#      2. get() - fetch(), then determine node type and either:
+#            - call mapSpecial()
+#            - call mapNode()
 
 export class Getter extends Fetcher
 
 	constructor: (hInput, options={}) ->
 
 		super hInput, options
-		@hConsts = {}   # support variable replacement
+		@hConsts = {}   # support constant replacement
 
 	# ..........................................................
 
@@ -48,12 +55,38 @@ export class Getter extends Fetcher
 	get: () ->
 		# --- Return of undef indicates no more data
 		#     But, if mapAnyNode() returns undef, that just means
-		#        to skip this node - not necessarily end of file
+		#        to skip this node - not necessarily EOF
 
 		dbgEnter "Getter.get"
 
+		if defined(@getStopperNode)
+			save = @getStopperNode
+			@getStopperNode = undef
+			dbg "return stopper node"
+			dbgReturn 'Getter.get', save
+			return save
+
 		while defined(hNode = @fetch())
-			uobj = @mapAnyNode(hNode)
+			type = @getItemType(hNode)
+			if defined(type)
+				dbg "item type is type #{OL(type)}"
+				assert isNonEmptyString(type), "bad type: #{OL(type)}"
+				hNode.type = type
+				uobj = @mapSpecial(type, hNode)   # might be undef
+				dbg "mapped #{type}", uobj
+			else
+				dbg "no special type"
+				{str, level} = hNode
+				assert defined(str), "str is undef"
+				assert (str != '__END__'), "__END__ encountered"
+				newstr = @replaceConsts(str)
+				if (newstr != str)
+					dbg "#{OL(str)} => #{OL(newstr)}"
+					hNode.str = newstr
+
+				uobj = @mapNode(hNode)    # might be undef
+				dbg "mapped non-special", uobj
+
 			if defined(uobj)
 				hNode.uobj = uobj
 				dbgReturn "Getter.get", hNode
@@ -64,39 +97,16 @@ export class Getter extends Fetcher
 		return undef
 
 	# ..........................................................
-	# --- return of undef doesn't mean EOF, it means skip this item
-	#     sets key 'uobj' to a defined value if not returning undef
-	#     sets key 'type' if a special type
+	# --- designed to override
 
-	mapAnyNode: (hNode) ->
+	getItemType: (hNode) ->
+		# --- returns name of item type
 
-		dbgEnter "Getter.mapAnyNode", hNode
-		assert defined(hNode), "hNode is undef"
-
-		type = @getItemType(hNode)
-		if defined(type)
-			dbg "item type is #{OL(type)}"
-			assert isString(type) && nonEmpty(type), "bad type: #{OL(type)}"
-			hNode.type = type
-			uobj = @mapSpecial(type, hNode)
-			dbg "mapped #{type}", uobj
-		else
-			dbg "no special type"
-			{str, level} = hNode
-			assert defined(str), "str is undef"
-			assert (str != '__END__'), "__END__ encountered"
-			newstr = @replaceConsts(str, @hConsts)
-			if (newstr != str)
-				dbg "#{OL(str)} => #{OL(newstr)}"
-				hNode.str = newstr
-
-			uobj = @mapNonSpecial(hNode)
-			dbg "mapped non-special", uobj
-
-		dbgReturn "Getter.mapAnyNode", uobj
-		return uobj
+		return undef   # default: no special item types
 
 	# ..........................................................
+	# --- designed to override
+	#     return a uobj
 
 	mapSpecial: (type, hNode) ->
 
@@ -105,15 +115,9 @@ export class Getter extends Fetcher
 		return undef
 
 	# ..........................................................
-
-	mapNonSpecial: (hNode) ->
-		# --- TreeMapper overrides this
-
-		return @mapNode(hNode)
-
-	# ..........................................................
 	# --- designed to override
-	#     only non-special nodes
+	#     only called for non-special nodes
+	#     return a uobj
 
 	mapNode: (hNode) ->
 
@@ -122,15 +126,13 @@ export class Getter extends Fetcher
 
 	# ..........................................................
 
-	replaceConsts: (str, hVars={}) ->
-
-		assert isHash(hVars), "hVars is not a hash"
+	replaceConsts: (str) ->
 
 		replacerFunc = (match, prefix, name) =>
 			if prefix
 				return process.env[name]
 			else
-				value = hVars[name]
+				value = @hConsts[name]
 				if defined(value)
 					if isString(value)
 						return value
@@ -147,63 +149,22 @@ export class Getter extends Fetcher
 				///g, replacerFunc)
 
 	# ..........................................................
-
-	getItemType: (hNode) ->
-		# --- returns name of item type
-
-		dbg "in Getter.getItemType()"
-		return undef   # default: no special item types
-
-	# ..........................................................
 	# --- GENERATOR
 
-	all: () ->
+	all: (stopperFunc=undef) ->
 
 		dbgEnter "Getter.all"
 
 		# --- NOTE: @get will skip items that are mapped to undef
 		#           and only returns undef when the input is exhausted
 		while defined(hNode = @get())
+			if defined(stopperFunc) && stopperFunc(hNode)
+				@getStopperNode = hNode
+				dbgReturn 'Getter.all'
+				return
 			assert defined(hNode.uobj), "uobj is not defined"
 			dbgYield 'Getter.all', hNode
 			yield hNode
 			dbgResume 'Getter.all'
 		dbgReturn "Getter.all"
 		return
-
-	# ..........................................................
-
-	visit: (hNode) ->
-
-		dbgEnter "Getter.visit", hNode
-		{uobj} = hNode
-		if isString(uobj)
-			dbgReturn "Getter.visit", uobj
-			return uobj
-		else if defined(uobj)
-			croak "uobj #{OL(uobj)} should be a string"
-		else
-			dbgReturn "Getter.visit", undef
-			return undef
-
-	# ..........................................................
-
-	visitSpecial: (type, hNode) ->
-
-		dbgEnter "Getter.visitSpecial", type, hNode
-		{uobj} = hNode
-		if isString(uobj)
-			dbgReturn "Getter.visitSpecial", uobj
-			return uobj
-		else if defined(uobj)
-			croak "uobj #{OL(uobj)} should be a string"
-		else
-			dbgReturn "Getter.visitSpecial", undef
-			return undef
-
-	# ..........................................................
-
-	endBlock: () ->
-		# --- currently, only used in markdown processing
-
-		return undef

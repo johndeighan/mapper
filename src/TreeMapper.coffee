@@ -60,53 +60,48 @@ export class TreeMapper extends Mapper
 		return
 
 	# ..........................................................
-
-	mapNode: (hNode) ->
-
-		dbgEnter "TreeMapper.mapNode", hNode
-		if @adjustLevel(hNode)
-			dbg "hNode.level adjusted", hNode
-		else
-			dbg "no adjustment"
-		uobj = super(hNode)
-		dbgReturn "TreeMapper.mapNode", uobj
-		return uobj
-
-	# ..........................................................
-	# --- Should always return either:
-	#        undef
-	#        uobj - mapped object
 	# --- Will only receive non-special lines
-	#     1. replace HEREDOCs
-	#     2. call mapNode()
+	#        - adjust level if #ifdef or #ifndef was encountered
+	#        - replace HEREDOCs
+	#        - call mapNode() - returns str by default
 
 	mapNonSpecial: (hNode) ->
 
-		dbgEnter "TreeMapper.mapNonSpecial", hNode
+		dbgEnter "TreeMapper.mapNode", hNode
 		assert notdefined(hNode.type), "hNode is #{OL(hNode)}"
 
 		{str, level, srcLevel} = hNode
+		assert nonEmpty(str), "empty str in #{OL(hNode)}"
+		assert isInteger(srcLevel, {min: 0}), "Bad srcLevel in #{OL(hNode)}"
+		assert isInteger(level, {min: 0}), "Bad level in #{OL(hNode)}"
+		assert (level == srcLevel), "levels not equal in #{OL(hNode)}"
 
-		# --- from here on, str is a non-empty string
-		assert nonEmpty(str), "hNode is #{OL(hNode)}"
-		assert isInteger(srcLevel, {min: 0}), "hNode is #{OL(hNode)}"
+		if @adjustLevel(hNode)
+			dbg "hNode.level adjusted #{level} => #{hNode.level}"
+		else
+			dbg "no level adjustment"
 
-		# --- handle HEREDOCs
 		dbg "check for HEREDOC"
 		if (str.indexOf('<<<') >= 0)
 			newStr = @handleHereDocsInLine(str, srcLevel)
-			str = newStr
-			dbg "=> #{OL(str)}"
+			dbg "=> #{OL(newStr)}"
+			hNode.str = newStr
 		else
 			dbg "no HEREDOCs"
-
-		hNode.str = str
 
 		# --- NOTE: mapNode() may return undef, meaning to ignore
 		#     We must pass srcLevel since mapNode() may use fetch()
 		uobj = @mapNode(hNode)
-		dbgReturn "TreeMapper.mapNonSpecial", uobj
+		dbgReturn "TreeMapper.mapNode", uobj
 		return uobj
+
+	# ..........................................................
+
+	mapNode: (hNode) ->
+		# --- returns str by default
+		#     designed to override
+
+		return hNode.str
 
 	# ..........................................................
 
@@ -124,16 +119,12 @@ export class TreeMapper extends Mapper
 				dbg "get HEREDOC lines until blank line"
 
 				# --- block will be undented, blank line will be discarded
-				stopper = (hNode) ->
+				stopperFunc = (hNode) ->
 					return isEmpty(hNode.str)
-				hOptions = {
-					undent: true
-					oneIndent: @oneIndent
-					keepEndLine: false
-					nomap: true
-					}
 
-				block = @getBlockUntil(stopper, hOptions)
+				# --- block will use TABs for indentation
+				block = undented @getBlock(stopperFunc)
+				@fetch()             # skip the terminating line
 				dbg 'block', block
 
 				uobj = mapHereDoc(block)
@@ -204,9 +195,9 @@ export class TreeMapper extends Mapper
 		#     don't discard the end line
 
 		dbgEnter "TreeMapper.skipLinesAtLevel", srcLevel
-		func = (hNode) =>
+		stopperFunc = (hNode) =>
 			return (hNode.srcLevel <= srcLevel)
-		block = @getBlockUntil(func, 'keepEndLine')
+		block = @getBlock(stopperFunc)
 		dbgReturn "TreeMapper.skipLinesAtLevel", block
 		return block
 
@@ -217,9 +208,9 @@ export class TreeMapper extends Mapper
 		#     don't discard the end line
 
 		dbgEnter "TreeMapper.fetchBlockAtLevel", srcLevel
-		stopper = (hNode) =>
+		stopperFunc = (hNode) =>
 			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
-		block = @getBlockUntil(stopper, 'keepEndLine nomap undent')
+		block = undented @getBlock(stopperFunc)
 		dbgReturn "TreeMapper.fetchBlockAtLevel", block
 		return block
 
@@ -307,7 +298,7 @@ export class TreeMapper extends Mapper
 	walk: (hOptions={}) ->
 		# --- Valid options:
 		#        logNodes
-		#        includeUserHash
+		#        includeUserHash - include user hash in the logged nodes
 		#     returns an array, normally strings
 
 		dbgEnter "TreeMapper.walk", hOptions
@@ -653,10 +644,11 @@ export class TreeMapper extends Mapper
 		return func(hNode, hUser, hUser._parent, stack)
 
 	# ..........................................................
-	# ..........................................................
 
 	getBlock: (hOptions={}) ->
-		# --- Valid options: logNodes, includeUserHash
+		# --- Valid options:
+		#        logNodes
+		#        includeUserHash
 
 		dbgEnter "getBlock"
 		lLines = @walk(hOptions)

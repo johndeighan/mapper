@@ -13,6 +13,10 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  fromTAML
+} from '@jdeighan/base-utils/taml';
+
+import {
   undef,
   pass,
   OL,
@@ -51,10 +55,15 @@ import {
 } from '@jdeighan/mapper/getter';
 
 // ---------------------------------------------------------------------------
+// class Mapper - adds:
+//    1. registering special types of nodes, by default:
+//          - empty lines
+//          - comments
+//          - commands
+//    2. defines constants FILE, DIR, SRC and LINE
+//    3. maintain the LINE variable
+//    3. implements command #define
 export var Mapper = class Mapper extends Getter {
-  // --- handles #define
-  //     performs const substitution
-  //     splits mapping into special lines and non-special lines
   constructor(hInput, options = {}) {
     dbgEnter("Mapper", hInput, options);
     super(hInput, options);
@@ -203,66 +212,25 @@ export var Mapper = class Mapper extends Getter {
         dbgReturn("Mapper.mapCmd", undef);
         return undef;
       default:
-        // --- don't throw exception
-        //     check for unknown commands in visitCmd()
-        dbgReturn("Mapper.mapCmd", hNode.uobj);
-        return hNode.uobj;
+        return croak(`Unknown command: ${OL(cmd)}`);
     }
-  }
-
-  // ..........................................................
-  containedText(hNode, inlineText) {
-    var indentedText, result, srcLevel, stopFunc;
-    // --- has side effect of fetching all indented text
-    dbgEnter("Mapper.containedText", hNode, inlineText);
-    ({srcLevel} = hNode);
-    stopFunc = function(h) {
-      return nonEmpty(h.str) && (h.srcLevel <= srcLevel);
-    };
-    indentedText = this.getBlockUntil(stopFunc, 'keepEndLine');
-    dbg("inline text", inlineText);
-    dbg("indentedText", indentedText);
-    assert(isEmpty(inlineText) || isEmpty(indentedText), `node ${OL(hNode)} has both inline text and indented text`);
-    if (nonEmpty(indentedText)) {
-      result = indentedText;
-    } else if (isEmpty(inlineText)) {
-      result = '';
-    } else {
-      result = inlineText;
-    }
-    dbgReturn("Mapper.containedText", result);
-    return result;
   }
 
 };
 
-// ===========================================================================
-export var FuncMapper = class FuncMapper extends Mapper {
-  constructor(hInput, func) {
-    super(hInput);
-    this.func = func;
-    assert(isFunction(this.func), "3rd arg not a function");
-  }
-
-  getBlock(hOptions = {}) {
-    var block;
-    block = super.getBlock(hOptions);
-    return this.func(block);
-  }
-
-};
+// --- don't throw exception
+//     check for unknown commands in visitCmd()
+//				dbgReturn "Mapper.mapCmd", hNode.uobj
+//				return hNode.uobj
 
 // ===========================================================================
-// --- arg mapper must be a subclass of Mapper or an array
-//     of subclasses of Mapper. If you have a function to do
-//     a mapping, pass in new FuncMapper(func)
-export var map = function(hInput, mapper, hOptions = {}) {
-  var content, i, item, len, obj, result, source;
+// --- mapper must be a subclass of Mapper or an array
+//     of subclasses of Mapper.
+export var map = function(hInput, mapperClass, hOptions = {}) {
+  var content, i, item, len, mapper, result, source;
   // --- Valid options:
   //        logNodes
-  dbgEnter("map", hInput, mapper, hOptions);
-  // --- This shouldn't be necessary
-  //     ...BUT it should work
+  dbgEnter("map", hInput, mapperClass, hOptions);
   if (isString(hInput)) {
     dbg("hInput is a string, constructing new hInput");
     hInput = {
@@ -271,10 +239,10 @@ export var map = function(hInput, mapper, hOptions = {}) {
   }
   // --- An array can be provided - the input is processed
   //     by each array element sequentially
-  if (isArray(mapper)) {
-    dbg("mapper is an array - using each array element");
-    for (i = 0, len = mapper.length; i < len; i++) {
-      item = mapper[i];
+  if (isArray(mapperClass)) {
+    dbg("mapperClass is an array - using each array element");
+    for (i = 0, len = mapperClass.length; i < len; i++) {
+      item = mapperClass[i];
       if (defined(item)) {
         hInput.content = map(hInput, item, hOptions);
       }
@@ -287,30 +255,10 @@ export var map = function(hInput, mapper, hOptions = {}) {
   dbg("unpacked:");
   dbg('   source =', source);
   dbg('   content =', content);
-  assert(defined(mapper), "Missing mapper");
-  // --- mapper can be an object, which is an instance of Mapper
-  //     or it can just be a class which, when instantiated
-  //     has a getBlock() method
-  if (isObject(mapper, '&getBlock')) {
-    dbg("mapper is object, calling its getBlock()");
-    result = mapper.getBlock(hOptions);
-  } else if (isConstructor(mapper)) {
-    dbg("mapper is constructor, creating instance");
-    dbg('source =', source);
-    dbg('content =', content);
-    obj = new mapper({source, content});
-    assert(isObject(obj, '&getBlock'), 'object has no getBlock method');
-    result = obj.getBlock(hOptions);
-  } else if (isFunction(mapper)) {
-    dbg("mapper is a function, calling it");
-    if (notdefined(content)) {
-      assert(defined(source), "Neither source nor content defined");
-      content = slurp(source);
-    }
-    result = mapper(content);
-  } else {
-    croak(`Bad mapper in map(): ${OL(mapper)}`);
-  }
+  assert(isConstructor(mapperClass), "mapper not a constructor");
+  mapper = new mapperClass({source, content});
+  assert(mapper instanceof Mapper, "not a Mapper class");
+  result = mapper.getBlock(hOptions);
   dbgReturn("map", result);
   return result;
 };

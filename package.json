@@ -6,11 +6,11 @@
 	},
 	"version": "30.0.0",
 	"description": "A class to help parse text files",
-	"main": "./StringInput.js",
 	"exports": {
 		"./node": "./src/Node.js",
 		"./stack": "./src/RunTimeStack.js",
 		"./fetcher": "./src/Fetcher.js",
+		"./fetcherex": "./src/FetcherEx.js",
 		"./getter": "./src/Getter.js",
 		".": "./src/Mapper.js",
 		"./tree": "./src/TreeMapper.js",
@@ -25,7 +25,7 @@
 		"./coffee": "./src/coffee.js",
 		"./cielo": "./src/cielo.js",
 		"./math": "./src/MathML.js",
-		"./story": "./src/StoryMapper.js",
+		"./util-mappers": "./src/UtilMappers.js",
 		"./fsa": "./src/fsa.js",
 		"./utils": "./src/utils.js",
 		"./mysql": "./src/mysql.js",
@@ -57,10 +57,10 @@
 	},
 	"dependencies": {
 		"@jdeighan/base-utils": "^2.0.8",
-		"@jdeighan/coffee-utils": "^13.0.9",
+		"@jdeighan/coffee-utils": "^13.0.13",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
-		"marked": "^4.2.4",
+		"marked": "^4.2.5",
 		"mysql-await": "^2.2.3",
 		"sass": "^1.57.1"
 	}

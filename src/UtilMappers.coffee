@@ -1,9 +1,18 @@
-# StoryMapper.coffee
+# UtilMappers.coffee
 
 import {undef, defined} from '@jdeighan/coffee-utils'
+import {fromTAML} from '@jdeighan/base-utils/taml'
 
 import {Mapper} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
+
+# ---------------------------------------------------------------------------
+
+export class TamlMapper extends Mapper
+
+	finalizeBlock: (block) ->
+
+		return fromTAML(block)
 
 # ---------------------------------------------------------------------------
 #    Convert lines like:
@@ -42,3 +51,9 @@ export class StoryMapper extends TreeMapper
 				return "#{key}: #{value}"
 		else
 			return hNode.str
+
+	# ..........................................................
+
+	finalizeBlock: (block) ->
+
+		return fromTAML(block)

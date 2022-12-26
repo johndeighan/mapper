@@ -11,7 +11,7 @@ import {
 	joinBlocks, toBlock, toArray,
 	} from '@jdeighan/coffee-utils/block'
 
-import {Mapper, FuncMapper, map} from '@jdeighan/mapper'
+import {Mapper, map} from '@jdeighan/mapper'
 
 stopper = (h) => h.str == 'stop'
 
@@ -686,42 +686,5 @@ export class DebarMapper extends Mapper
 				}
 			</script>
 			"""
-
-	)()
-
-# ---------------------------------------------------------------------------
-# --- test FuncMapper
-
-(() ->
-
-	# --- Lines that begin with a letter are converted to upper-case
-	#     Any other lines are removed
-
-	func = (block) ->
-		lResult = []
-		for line in toArray(block)
-			if line.match(/^\s*[A-Za-z]/)
-				lResult.push line.toUpperCase()
-		return toBlock(lResult)
-
-	# --- test func directly
-	block = """
-		abc
-		---
-		xyz
-		123
-		"""
-
-	utest.equal 707, func(block), """
-		ABC
-		XYZ
-		"""
-
-	# --- test using map()
-	mapper = new FuncMapper(block, func)
-	utest.equal 714, map(block, mapper), """
-		ABC
-		XYZ
-		"""
 
 	)()

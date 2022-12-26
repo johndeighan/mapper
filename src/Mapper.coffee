@@ -4,6 +4,7 @@ import {LOG, assert, croak} from '@jdeighan/base-utils'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {fromTAML} from '@jdeighan/base-utils/taml'
 import {
 	undef, pass, OL, rtrim, defined, escapeStr, className,
 	isString, isHash, isArray, isFunction, isIterable, isObject,
@@ -16,11 +17,16 @@ import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
 
 # ---------------------------------------------------------------------------
+# class Mapper - adds:
+#    1. registering special types of nodes, by default:
+#          - empty lines
+#          - comments
+#          - commands
+#    2. defines constants FILE, DIR, SRC and LINE
+#    3. maintain the LINE variable
+#    3. implements command #define
 
 export class Mapper extends Getter
-	# --- handles #define
-	#     performs const substitution
-	#     splits mapping into special lines and non-special lines
 
 	constructor: (hInput, options={}) ->
 
@@ -29,8 +35,8 @@ export class Mapper extends Getter
 
 		# --- These never change
 		@setConst 'FILE', @hSourceInfo.filename
-		@setConst 'DIR', @hSourceInfo.dir
-		@setConst 'SRC', @sourceInfoStr()
+		@setConst 'DIR',  @hSourceInfo.dir
+		@setConst 'SRC',  @sourceInfoStr()
 
 		# --- This needs to be kept updated
 		@setConst 'LINE', @lineNum
@@ -187,66 +193,23 @@ export class Mapper extends Getter
 					@setConst name, tail
 				dbgReturn "Mapper.mapCmd", undef
 				return undef
-
 			else
+				croak "Unknown command: #{OL(cmd)}"
+
 				# --- don't throw exception
 				#     check for unknown commands in visitCmd()
-				dbgReturn "Mapper.mapCmd", hNode.uobj
-				return hNode.uobj
-
-	# ..........................................................
-
-	containedText: (hNode, inlineText) ->
-		# --- has side effect of fetching all indented text
-
-		dbgEnter "Mapper.containedText", hNode, inlineText
-		{srcLevel} = hNode
-
-		stopFunc = (h) ->
-			return nonEmpty(h.str) && (h.srcLevel <= srcLevel)
-		indentedText = @getBlockUntil(stopFunc, 'keepEndLine')
-
-		dbg "inline text", inlineText
-		dbg "indentedText", indentedText
-		assert isEmpty(inlineText) || isEmpty(indentedText),
-			"node #{OL(hNode)} has both inline text and indented text"
-
-		if nonEmpty(indentedText)
-			result = indentedText
-		else if isEmpty(inlineText)
-			result = ''
-		else
-			result = inlineText
-		dbgReturn "Mapper.containedText", result
-		return result
+#				dbgReturn "Mapper.mapCmd", hNode.uobj
+#				return hNode.uobj
 
 # ===========================================================================
+# --- mapper must be a subclass of Mapper or an array
+#     of subclasses of Mapper.
 
-export class FuncMapper extends Mapper
-
-	constructor: (hInput, @func) ->
-
-		super(hInput)
-		assert isFunction(@func), "3rd arg not a function"
-
-	getBlock: (hOptions={}) ->
-
-		block = super(hOptions)
-		return @func(block)
-
-# ===========================================================================
-# --- arg mapper must be a subclass of Mapper or an array
-#     of subclasses of Mapper. If you have a function to do
-#     a mapping, pass in new FuncMapper(func)
-
-export map = (hInput, mapper, hOptions={}) ->
+export map = (hInput, mapperClass, hOptions={}) ->
 	# --- Valid options:
 	#        logNodes
 
-	dbgEnter "map", hInput, mapper, hOptions
-
-	# --- This shouldn't be necessary
-	#     ...BUT it should work
+	dbgEnter "map", hInput, mapperClass, hOptions
 
 	if isString(hInput)
 		dbg "hInput is a string, constructing new hInput"
@@ -254,9 +217,9 @@ export map = (hInput, mapper, hOptions={}) ->
 
 	# --- An array can be provided - the input is processed
 	#     by each array element sequentially
-	if isArray(mapper)
-		dbg "mapper is an array - using each array element"
-		for item in mapper
+	if isArray(mapperClass)
+		dbg "mapperClass is an array - using each array element"
+		for item in mapperClass
 			if defined(item)
 				hInput.content = map(hInput, item, hOptions)
 		dbgReturn "map", hInput.content
@@ -267,29 +230,11 @@ export map = (hInput, mapper, hOptions={}) ->
 	dbg "unpacked:"
 	dbg '   source =', source
 	dbg '   content =', content
-	assert defined(mapper), "Missing mapper"
+	assert isConstructor(mapperClass), "mapper not a constructor"
 
-	# --- mapper can be an object, which is an instance of Mapper
-	#     or it can just be a class which, when instantiated
-	#     has a getBlock() method
+	mapper = new mapperClass({source, content})
+	assert (mapper instanceof Mapper), "not a Mapper class"
+	result = mapper.getBlock(hOptions)
 
-	if isObject(mapper, '&getBlock')
-		dbg "mapper is object, calling its getBlock()"
-		result = mapper.getBlock(hOptions)
-	else if isConstructor(mapper)
-		dbg "mapper is constructor, creating instance"
-		dbg 'source =', source
-		dbg 'content =', content
-		obj = new mapper({source, content})
-		assert isObject(obj, '&getBlock'), 'object has no getBlock method'
-		result = obj.getBlock(hOptions)
-	else if isFunction(mapper)
-		dbg "mapper is a function, calling it"
-		if notdefined(content)
-			assert defined(source), "Neither source nor content defined"
-			content = slurp(source)
-		result = mapper(content)
-	else
-		croak "Bad mapper in map(): #{OL(mapper)}"
 	dbgReturn "map", result
 	return result

@@ -38,7 +38,6 @@ import {
 
 import {
   Mapper,
-  FuncMapper,
   map
 } from '@jdeighan/mapper';
 
@@ -602,35 +601,4 @@ export var DebarMapper = class DebarMapper extends Mapper {
 	console.log "OK";
 	}
 </script>`);
-})();
-
-// ---------------------------------------------------------------------------
-// --- test FuncMapper
-(function() {
-  var block, func, mapper;
-  // --- Lines that begin with a letter are converted to upper-case
-  //     Any other lines are removed
-  func = function(block) {
-    var i, lResult, len, line, ref;
-    lResult = [];
-    ref = toArray(block);
-    for (i = 0, len = ref.length; i < len; i++) {
-      line = ref[i];
-      if (line.match(/^\s*[A-Za-z]/)) {
-        lResult.push(line.toUpperCase());
-      }
-    }
-    return toBlock(lResult);
-  };
-  // --- test func directly
-  block = `abc
----
-xyz
-123`;
-  utest.equal(707, func(block), `ABC
-XYZ`);
-  // --- test using map()
-  mapper = new FuncMapper(block, func);
-  return utest.equal(714, map(block, mapper), `ABC
-XYZ`);
 })();

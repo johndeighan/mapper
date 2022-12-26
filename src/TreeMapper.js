@@ -100,56 +100,53 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  mapNode(hNode) {
-    var uobj;
+  // --- Will only receive non-special lines
+  //        - adjust level if #ifdef or #ifndef was encountered
+  //        - replace HEREDOCs
+  //        - call mapNode() - returns str by default
+  mapNonSpecial(hNode) {
+    var level, newStr, srcLevel, str, uobj;
     dbgEnter("TreeMapper.mapNode", hNode);
+    assert(notdefined(hNode.type), `hNode is ${OL(hNode)}`);
+    ({str, level, srcLevel} = hNode);
+    assert(nonEmpty(str), `empty str in ${OL(hNode)}`);
+    assert(isInteger(srcLevel, {
+      min: 0
+    }), `Bad srcLevel in ${OL(hNode)}`);
+    assert(isInteger(level, {
+      min: 0
+    }), `Bad level in ${OL(hNode)}`);
+    assert(level === srcLevel, `levels not equal in ${OL(hNode)}`);
     if (this.adjustLevel(hNode)) {
-      dbg("hNode.level adjusted", hNode);
+      dbg(`hNode.level adjusted ${level} => ${hNode.level}`);
     } else {
-      dbg("no adjustment");
+      dbg("no level adjustment");
     }
-    uobj = super.mapNode(hNode);
+    dbg("check for HEREDOC");
+    if (str.indexOf('<<<') >= 0) {
+      newStr = this.handleHereDocsInLine(str, srcLevel);
+      dbg(`=> ${OL(newStr)}`);
+      hNode.str = newStr;
+    } else {
+      dbg("no HEREDOCs");
+    }
+    // --- NOTE: mapNode() may return undef, meaning to ignore
+    //     We must pass srcLevel since mapNode() may use fetch()
+    uobj = this.mapNode(hNode);
     dbgReturn("TreeMapper.mapNode", uobj);
     return uobj;
   }
 
   // ..........................................................
-  // --- Should always return either:
-  //        undef
-  //        uobj - mapped object
-  // --- Will only receive non-special lines
-  //     1. replace HEREDOCs
-  //     2. call mapNode()
-  mapNonSpecial(hNode) {
-    var level, newStr, srcLevel, str, uobj;
-    dbgEnter("TreeMapper.mapNonSpecial", hNode);
-    assert(notdefined(hNode.type), `hNode is ${OL(hNode)}`);
-    ({str, level, srcLevel} = hNode);
-    // --- from here on, str is a non-empty string
-    assert(nonEmpty(str), `hNode is ${OL(hNode)}`);
-    assert(isInteger(srcLevel, {
-      min: 0
-    }), `hNode is ${OL(hNode)}`);
-    // --- handle HEREDOCs
-    dbg("check for HEREDOC");
-    if (str.indexOf('<<<') >= 0) {
-      newStr = this.handleHereDocsInLine(str, srcLevel);
-      str = newStr;
-      dbg(`=> ${OL(str)}`);
-    } else {
-      dbg("no HEREDOCs");
-    }
-    hNode.str = str;
-    // --- NOTE: mapNode() may return undef, meaning to ignore
-    //     We must pass srcLevel since mapNode() may use fetch()
-    uobj = this.mapNode(hNode);
-    dbgReturn("TreeMapper.mapNonSpecial", uobj);
-    return uobj;
+  mapNode(hNode) {
+    // --- returns str by default
+    //     designed to override
+    return hNode.str;
   }
 
   // ..........................................................
   handleHereDocsInLine(line, srcLevel) {
-    var block, hOptions, j, lNewParts, lParts, len, part, result, stopper, str, uobj;
+    var block, j, lNewParts, lParts, len, part, result, stopperFunc, str, uobj;
     // --- Indentation has been removed from line
     // --- Find each '<<<' and replace with result of mapHereDoc()
     dbgEnter("handleHereDocsInLine", line);
@@ -162,16 +159,12 @@ export var TreeMapper = class TreeMapper extends Mapper {
       if (part === '<<<') {
         dbg("get HEREDOC lines until blank line");
         // --- block will be undented, blank line will be discarded
-        stopper = function(hNode) {
+        stopperFunc = function(hNode) {
           return isEmpty(hNode.str);
         };
-        hOptions = {
-          undent: true,
-          oneIndent: this.oneIndent,
-          keepEndLine: false,
-          nomap: true
-        };
-        block = this.getBlockUntil(stopper, hOptions);
+        // --- block will use TABs for indentation
+        block = undented(this.getBlock(stopperFunc));
+        this.fetch(); // skip the terminating line
         dbg('block', block);
         uobj = mapHereDoc(block);
         assert(defined(uobj), "mapHereDoc returned undef");
@@ -235,28 +228,28 @@ export var TreeMapper = class TreeMapper extends Mapper {
 
   // ..........................................................
   skipLinesAtLevel(srcLevel) {
-    var block, func;
+    var block, stopperFunc;
     // --- srcLevel is the level of #ifdef or #ifndef
     //     don't discard the end line
     dbgEnter("TreeMapper.skipLinesAtLevel", srcLevel);
-    func = (hNode) => {
+    stopperFunc = (hNode) => {
       return hNode.srcLevel <= srcLevel;
     };
-    block = this.getBlockUntil(func, 'keepEndLine');
+    block = this.getBlock(stopperFunc);
     dbgReturn("TreeMapper.skipLinesAtLevel", block);
     return block;
   }
 
   // ..........................................................
   fetchBlockAtLevel(srcLevel) {
-    var block, stopper;
+    var block, stopperFunc;
     // --- srcLevel is the level of enclosing cmd/tag
     //     don't discard the end line
     dbgEnter("TreeMapper.fetchBlockAtLevel", srcLevel);
-    stopper = (hNode) => {
+    stopperFunc = (hNode) => {
       return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str);
     };
-    block = this.getBlockUntil(stopper, 'keepEndLine nomap undent');
+    block = undented(this.getBlock(stopperFunc));
     dbgReturn("TreeMapper.fetchBlockAtLevel", block);
     return block;
   }
@@ -345,7 +338,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
     var add, addItem, diff, doBeginLevel, doBeginWalk, doEndLevel, doEndVisit, doEndWalk, doVisit, hGlobalUser, hNode, hPrevNode, hUser, i, includeUserHash, lLines, level, log, logNodes, ref, stack, str;
     // --- Valid options:
     //        logNodes
-    //        includeUserHash
+    //        includeUserHash - include user hash in the logged nodes
     //     returns an array, normally strings
     dbgEnter("TreeMapper.walk", hOptions);
     // --- These are needed by local functions
@@ -663,10 +656,11 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  // ..........................................................
   getBlock(hOptions = {}) {
     var block, lLines, result;
-    // --- Valid options: logNodes, includeUserHash
+    // --- Valid options:
+    //        logNodes
+    //        includeUserHash
     dbgEnter("getBlock");
     lLines = this.walk(hOptions);
     if (isArrayOfStrings(lLines)) {

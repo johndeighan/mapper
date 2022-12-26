@@ -1,8 +1,10 @@
-# StoryMapper.test.coffee
+# UtilMappers.test.coffee
 
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {map} from '@jdeighan/mapper'
-import {StoryMapper} from '@jdeighan/mapper/story'
+import {TamlMapper, StoryMapper} from '@jdeighan/mapper/util-mappers'
+
+# ---------------------------------------------------------------------------
 
 class StoryTester extends UnitTester
 

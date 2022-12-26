@@ -1,7 +1,10 @@
 # Getter.test.coffee
 
-import {LOG, assert, croak} from '@jdeighan/base-utils'
-import {setDebugging, dbgEnter, dbgReturn, dbg} from '@jdeighan/base-utils/debug'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, dumpLog} from '@jdeighan/base-utils/log'
+import {
+	setDebugging, dbgEnter, dbgReturn, dbg,
+	} from '@jdeighan/base-utils/debug'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 import {
 	undef, rtrim, replaceVars,
@@ -14,60 +17,43 @@ import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
 
 # ---------------------------------------------------------------------------
-
-(() ->
-
-	getter = new Getter({content: ['line1', 'line2', 'line3']})
-
-	utest.like 22, node1 = getter.get(), {str: 'line1'}
-	utest.like 23, node2 = getter.get(), {str: 'line2'}
-	utest.equal 24, getter.lineNum, 2
-
-	utest.like 26, node3 = getter.get(), {str: 'line3'}
-	utest.equal 27, getter.lineNum, 3
-	)()
-
+# --- Getter should:
+#     ✓ implement get()
+#     ✓ define and replace constants in any non-special lines
+#     - allow defining special types
+#          - by overriding getItemType(hNode) and mapSpecial(type, hNode)
+#     - allow override of mapNonSpecial(hNode)
+#     - implement generator all(stopperFunc)
 # ---------------------------------------------------------------------------
-# --- Trailing whitespace is stripped from strings
+# --- Test get()
 
 (() ->
 
-	getter = new Getter({content: ['abc', 'def  ', 'ghi\t\t']})
+	getter = new Getter("""
+		abc
+		def
+		ghi
+		jkl
+		mno
+		""")
 
-	utest.like 37, getter.get(), {str: 'abc'}
-	utest.like 38, getter.get(), {str: 'def'}
-	utest.like 39, getter.get(), {str: 'ghi'}
-	utest.equal 40, getter.lineNum, 3
-	)()
+	utest.like 40, getter.get(), {str: 'abc', level: 0}
 
-# ---------------------------------------------------------------------------
-# --- Test get(), getUntil()
-
-(() ->
-
-	getter = new Getter({content: """
-			abc
-			def
-			ghi
-			jkl
-			mno
-			"""})
-
-	utest.like 56, getter.get(), {str: 'abc'}
-
-	# 'jkl' will be discarded
-	func = (hNode) -> return (hNode.str == 'jkl')
+	stopperFunc = (hNode) -> return (hNode.str == 'jkl')
 
 	lItems = []
-	for item from getter.allUntil(func)
-		lItems.push item
-	utest.like 64, lItems, [
+	for hNode from getter.all(stopperFunc)
+		lItems.push hNode
+
+	utest.like 48, lItems, [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
 
-	utest.like 69, getter.get(), {str: 'mno'}
-	utest.equal 70, getter.lineNum, 5
+	utest.like 53,  getter.get(), {str: 'jkl', level: 0}
+	utest.like 54,  getter.get(), {str: 'mno', level: 0}
+	utest.equal 55, getter.lineNum, 5
+	utest.equal 56, getter.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -86,34 +72,51 @@ import {Getter} from '@jdeighan/mapper/getter'
 	# --- You can pass any iterator to the Getter() constructor
 	getter = new Getter({content: generator()})
 
-	utest.like 89, node1 = getter.get(), {str: 'line1'}
-	utest.like 90, node2 = getter.get(), {str: 'line2'}
-	utest.equal 91, getter.lineNum, 2
+	utest.like 75, node1 = getter.get(), {str: 'line1', level: 0}
+	utest.like 76, node2 = getter.get(), {str: 'line2', level: 0}
+	utest.equal 77, getter.lineNum, 2
 
-	utest.like 93, node3 = getter.get(), {str: 'line3'}
-	utest.equal 94, getter.lineNum, 3
+	utest.like 79, node3 = getter.get(), {str: 'line3', level: 0}
+	utest.equal 80, getter.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
 
 (() ->
 
-	getter = new Getter({content: """
+	getter = new Getter("""
 			if (x == 2)
 				doThis
 				doThat
 					then this
 			while (x > 2)
 				--x
-			"""})
+			""")
 
-	utest.like 110, getter.get(),  {str: 'if (x == 2)', level: 0}
-	utest.like 111, getter.get(),  {str: 'doThis', level: 1}
-	utest.like 112, getter.get(),  {str: 'doThat', level: 1}
-	utest.like 113, getter.get(),  {str: 'then this', level: 2}
-	utest.like 114, getter.get(),  {str: 'while (x > 2)', level: 0}
-	utest.like 115, getter.get(),  {str: '--x', level: 1}
+	utest.like 96, getter.get(),  {str: 'if (x == 2)', level: 0}
+	utest.like 97, getter.get(),  {str: 'doThis', level: 1}
+	utest.like 98, getter.get(),  {str: 'doThat', level: 1}
+	utest.like 99, getter.get(),  {str: 'then this', level: 2}
+	utest.like 100, getter.get(),  {str: 'while (x > 2)', level: 0}
+	utest.like 101, getter.get(),  {str: '--x', level: 1}
 
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+	getter = new Getter("""
+		abc
+		meaning is __meaning__
+		my name is __name__
+		""")
+	getter.setConst 'meaning', '42'
+	getter.setConst 'name', 'John Deighan'
+	utest.equal 115, getter.getBlock(), """
+		abc
+		meaning is 42
+		my name is John Deighan
+		"""
 	)()
 
 # ---------------------------------------------------------------------------
@@ -130,9 +133,9 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 		# .......................................................
 
-		mapNonSpecial: (hNode) ->
+		mapNode: (hNode) ->
 
-			dbgEnter 'mapNonSpecial', hNode
+			dbgEnter 'mapNode', hNode
 			if lMatches = hNode.str.match(///^
 					([A-Za-z_][A-Za-z0-9_]*)    # an identifier
 					\s*
@@ -142,7 +145,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 				dbg "found var #{varName}"
 				@lVars.push varName
 
-			dbgReturn 'mapNonSpecial', hNode.str
+			dbgReturn 'mapNode', hNode.str
 			return hNode.str
 
 		# .......................................................
@@ -157,13 +160,13 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 		# .......................................................
 
-	getter = new VarGetter({content: """
+	getter = new VarGetter("""
 			var __vars__
 			x = 2
 			y = 3
-			"""})
+			""")
 	result = getter.getBlock()
-	utest.like 160, result, """
+	utest.like 169, result, """
 			var x,y
 			x = 2
 			y = 3

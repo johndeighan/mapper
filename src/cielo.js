@@ -65,7 +65,7 @@ import {
 } from '@jdeighan/mapper';
 
 // ---------------------------------------------------------------------------
-export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
+export var CieloMapper = class CieloMapper extends TreeMapper {
   mapComment(hNode) {
     var level, str;
     // --- Retain comments
@@ -76,7 +76,7 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
   // ..........................................................
   visitCmd(hNode) {
     var argstr, cmd, code, level, lineNum, result, srcLevel, uobj;
-    dbgEnter("CieloToCoffeeMapper.visitCmd", hNode);
+    dbgEnter("CieloMapper.visitCmd", hNode);
     ({uobj, srcLevel, level, lineNum} = hNode);
     ({cmd, argstr} = uobj);
     switch (cmd) {
@@ -91,19 +91,44 @@ export var CieloToCoffeeMapper = class CieloToCoffeeMapper extends TreeMapper {
         } else {
           result = arrayToBlock([indented('# |||| $: {', level), indented(code, level), indented('# |||| }', level)]);
         }
-        dbgReturn("CieloToCoffeeMapper.visitCmd", result);
+        dbgReturn("CieloMapper.visitCmd", result);
         return result;
       default:
         super.visitCmd(hNode);
     }
-    dbgReturn("CieloToCoffeeMapper.visitCmd", undef);
+    dbgReturn("CieloMapper.visitCmd", undef);
     return undef;
+  }
+
+  // ..........................................................
+  containedText(hNode, inlineText) {
+    var hNext, indentedText, lLines, result, srcLevel;
+    // --- has side effect of fetching all indented text
+    dbgEnter("CieloMapper.containedText", hNode, inlineText);
+    ({srcLevel} = hNode);
+    lLines = [];
+    while (defined(hNext = this.peek()) && (hNext.isEmptyLine() || (hNext.srcLevel > srcLevel))) {
+      lLines.push(this.fetch().getLine());
+    }
+    indentedText = undented(toBlock(lLines));
+    dbg("inline text", inlineText);
+    dbg("indentedText", indentedText);
+    if (nonEmpty(indentedText)) {
+      assert(isEmpty(inlineText), `node ${OL(hNode)} has both inline text and indented text`);
+      result = indentedText;
+    } else if (isEmpty(inlineText)) {
+      result = '';
+    } else {
+      result = inlineText;
+    }
+    dbgReturn("CieloMapper.containedText", result);
+    return result;
   }
 
 };
 
 // ---------------------------------------------------------------------------
-export var CieloToJSMapper = class CieloToJSMapper extends CieloToCoffeeMapper {
+export var CieloToJSMapper = class CieloToJSMapper extends CieloMapper {
   finalizeBlock(coffeeCode) {
     var err, jsCode, lImports, lNeededSymbols, stmt;
     dbgEnter("CieloToJSMapper.finalizeBlock", coffeeCode);

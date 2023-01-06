@@ -1,14 +1,16 @@
 # ASTWalker.test.coffee
 
+import {defined, nonEmpty, toBlock, OL} from '@jdeighan/base-utils'
 import {
-	setDebugging, resetDebugging, getDebugLog,
+	LOG, LOGVALUE, clearMyLogs, getMyLog, dumpLog,
+	} from '@jdeighan/base-utils/log'
+import {
+	setDebugging, getDebugLog,
 	} from '@jdeighan/base-utils/debug'
-import {LOG, LOGVALUE, clearAllLogs} from '@jdeighan/base-utils/log'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {defined, nonEmpty} from '@jdeighan/coffee-utils'
-import {toBlock} from '@jdeighan/coffee-utils/block'
 import {indented} from '@jdeighan/coffee-utils/indent'
 import {mkpath, slurp, projRoot} from '@jdeighan/coffee-utils/fs'
+
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
 rootDir = projRoot import.meta.url
@@ -665,7 +667,7 @@ tester.equal 640, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 664, slurp(mkpath(rootDir, 'src', 'utils.coffee')),
+tester.equal 664, slurp(mkpath(rootDir, 'test', 'utils_utest.coffee')),
 
 	'''
 	lExported: isHashComment
@@ -726,14 +728,24 @@ tester.equal 709, '''
 # This tester includes debugging info
 
 (() ->
-	setDebugging 'ASTWalker.visit beginScope endScope',
-		'Context.add Context.addGlobal',
+	setDebugging [
+		'ASTWalker.visit'
+		'beginScope'
+		'endScope'
+		'Context.add'
+		'Context.addGlobal'
+		],
 		{
-			returnFrom: () ->
+			noecho: true,
+			returnFrom: () => return true
+			yield: ()      => return true
+			resume: ()     => return true
+			string: ()     => return true
+			value: ()      => return true
 
-				return true
+			# --- set a custom logger for dbgEnter()
 
-			enter: (funcName, lArgs, level) ->
+			enter: (level, funcName, lArgs) ->
 
 				switch funcName
 					when 'ASTWalker.visit'
@@ -747,18 +759,19 @@ tester.equal 709, '''
 					when 'Context.addGlobal'
 						LOG indented("ADDGLOBAL #{lArgs[0]}", level)
 					else
-						return false
+						console.log "ERROR: UNKNOWN funcName #{OL(funcName)}"
+						return true
 			}
 
 	class ASTTester2 extends UnitTester
 
 		transformValue: (coffeeCode) ->
 
-			clearAllLogs()
+			clearMyLogs()
 			walker = new ASTWalker(coffeeCode)
-			result = walker.walk('asText')
-#			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
-			return getDebugLog()
+			result = walker.walk('logCalls')
+			# walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
+			return getMyLog()
 
 	tester2 = new ASTTester2()
 

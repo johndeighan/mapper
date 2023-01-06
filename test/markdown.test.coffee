@@ -1,10 +1,10 @@
 # markdown.test.coffee
 
-import {
-	LOG, LOGVALUE, setDebugging, assert, croak,
-	} from '@jdeighan/base-utils'
+import {undef} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {setDebugging} from '@jdeighan/base-utils/debug'
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
-import {undef} from '@jdeighan/coffee-utils'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 
 import {
@@ -93,7 +93,7 @@ import {
 
 		transformValue: (block) ->
 
-			getter = new SimpleMarkDownMapper(import.meta.url, block)
+			getter = new SimpleMarkDownMapper(block)
 			return getter.getBlock()
 
 	mdTester = new MarkdownTester()

@@ -1,15 +1,17 @@
 # Mapper.coffee
 
-import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {
+	undef, pass, OL, rtrim, defined, notdefined,
+	escapeStr, isHashComment,
+	isString, isHash, isArray, isFunction, isIterable, isObject,
+	isEmpty, nonEmpty, isClass, className,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
 import {fromTAML} from '@jdeighan/base-utils/taml'
-import {
-	undef, pass, OL, rtrim, defined, escapeStr, className,
-	isString, isHash, isArray, isFunction, isIterable, isObject,
-	isEmpty, nonEmpty, isSubclassOf, isConstructor,
-	} from '@jdeighan/coffee-utils'
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
 import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
 
@@ -22,8 +24,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 #          - empty lines
 #          - comments
 #          - commands
-#    2. defines constants FILE, DIR, SRC and LINE
-#    3. maintain the LINE variable
+#    2. defines constants FILE, DIR and SRC
 #    3. implements command #define
 
 export class Mapper extends Getter
@@ -38,22 +39,25 @@ export class Mapper extends Getter
 		@setConst 'DIR',  @hSourceInfo.dir
 		@setConst 'SRC',  @sourceInfoStr()
 
-		# --- This needs to be kept updated
-		@setConst 'LINE', @lineNum
-
 		@hSpecials = {}
 		@lSpecials = []    # checked in this order
 
 		# --- These must be bound to a specific object when called
-		@registerSpecialType 'empty',   @isEmptyLine, @mapEmptyLine
-		@registerSpecialType 'comment', @isComment, @mapComment
-		@registerSpecialType 'cmd',     @isCmd, @mapCmd
+		@registerType 'empty',   @isEmptyLine, @mapEmptyLine
+		@registerType 'comment', @isComment,   @mapComment
+		@registerType 'cmd',     @isCmd,       @mapCmd
 
 		dbgReturn "Mapper"
 
 	# ..........................................................
 
-	registerSpecialType: (type, recognizer, mapper) ->
+	isValidType: (type) ->
+
+		return defined(@hSpecials[type])
+
+	# ..........................................................
+
+	registerType: (type, recognizer, mapper) ->
 
 		if ! @lSpecials.includes(type)
 			@lSpecials.push(type)
@@ -61,17 +65,6 @@ export class Mapper extends Getter
 			recognizer
 			mapper
 			}
-		return
-
-	# ..........................................................
-	# --- override to keep variable LINE updated
-
-	incLineNum: (inc=1) ->
-
-		dbgEnter "Mapper.incLineNum", inc
-		super inc
-		@setConst 'LINE', @lineNum
-		dbgReturn "Mapper.incLineNum"
 		return
 
 	# ..........................................................
@@ -93,20 +86,33 @@ export class Mapper extends Getter
 
 	# ..........................................................
 
-	mapSpecial: (type, hNode) ->
+	mapNode: (hNode) ->
 
-		dbgEnter "Mapper.mapSpecial", type, hNode
+		dbgEnter "Mapper.mapNode", hNode
 		assert (hNode instanceof Node), "hNode is #{OL(hNode)}"
-		assert (hNode.type == type), "hNode is #{OL(hNode)}"
-		h = @hSpecials[type]
-		assert isHash(h), "Unknown type #{OL(type)}"
-		mapper = h.mapper.bind(this)
-		assert isFunction(mapper), "Bad mapper for #{OL(type)}"
-		uobj = mapper(hNode)
-		dbgReturn "Mapper.mapSpecial", uobj
+		{type} = hNode
+		if type
+			h = @hSpecials[type]
+			assert isHash(h), "Unknown type #{OL(type)}"
+			mapper = h.mapper.bind(this)
+			assert isFunction(mapper), "Bad mapper for #{OL(type)}"
+			uobj = mapper(hNode)
+		else
+			uobj = @mapToUserObj(hNode)
+		dbgReturn "Mapper.mapNode", uobj
 		return uobj
 
 	# ..........................................................
+	# designed to override
+	# only receives nodes without a type
+
+	mapToUserObj: (hNode) ->
+
+		{type, str} = hNode
+		assert notdefined(type), "mapToUserObj(): type = #{type}"
+		return str
+
+	# ==========================================================
 
 	isEmptyLine: (hNode) ->
 
@@ -120,14 +126,13 @@ export class Mapper extends Getter
 		#     return '' to keep empty lines
 		return undef
 
-	# ..........................................................
+	# ==========================================================
 
 	isComment: (hNode) ->
 
-		if (hNode.str.indexOf('# ') == 0)
-			hNode.uobj = {
-				comment: hNode.str.substring(2).trim()
-				}
+		hInfo = isHashComment(hNode.str)
+		if defined(hInfo)
+			hNode._commentText = hInfo.text
 			return true
 		else
 			return false
@@ -137,29 +142,28 @@ export class Mapper extends Getter
 	mapComment: (hNode) ->
 
 		# --- default: remove comments
-		# --- To keep comments, simply return hNode.uobj
+		# --- To keep comments, return "# #{hNode._commentText}"
 		return undef
 
-	# ..........................................................
+	# ==========================================================
 
 	isCmd: (hNode) ->
 
 		dbgEnter "Mapper.isCmd"
-		if lMatches = hNode.str.match(///^
+		if defined(lMatches = hNode.str.match(///^
 				\#
 				([A-Za-z_]\w*)   # name of the command
 				\s*
 				(.*)             # argstr for command
-				$///)
-			hNode.uobj = {
-				cmd: lMatches[1]
-				argstr: lMatches[2]
-				}
-			dbgReturn "Mapper.isCmd", true
-			return true
+				$///))
+			[_, cmd, argstr] = lMatches
+			assert (cmd != 'include'), "#include found!"
+			hNode.uobj = {cmd, argstr}
+			result = true
 		else
-			dbgReturn "Mapper.isCmd", false
-			return false
+			result = false
+		dbgReturn "Mapper.isCmd", result
+		return result
 
 	# ..........................................................
 	# --- mapCmd returns a mapped object, or
@@ -205,36 +209,29 @@ export class Mapper extends Getter
 # --- mapper must be a subclass of Mapper or an array
 #     of subclasses of Mapper.
 
-export map = (hInput, mapperClass, hOptions={}) ->
-	# --- Valid options:
-	#        logNodes
+export map = (input, mapperClass, options=undef) ->
 
-	dbgEnter "map", hInput, mapperClass, hOptions
+	dbgEnter "map", input, mapperClass, options
 
-	if isString(hInput)
-		dbg "hInput is a string, constructing new hInput"
-		hInput = {content: hInput}
-
-	# --- An array can be provided - the input is processed
+	# --- mapperClass can be an array - the input is processed
 	#     by each array element sequentially
 	if isArray(mapperClass)
 		dbg "mapperClass is an array - using each array element"
+
+		content = input
+		dbg 'original content', content
 		for item in mapperClass
 			if defined(item)
-				hInput.content = map(hInput, item, hOptions)
-		dbgReturn "map", hInput.content
-		return hInput.content
+				content = map(content, item, options)
+				dbg 'new content', content
+		dbgReturn "map", content
+		return content
 
-	assert isHash(hInput), "hInput not a hash: #{OL(hInput)}"
-	{source, content} = hInput
-	dbg "unpacked:"
-	dbg '   source =', source
-	dbg '   content =', content
-	assert isConstructor(mapperClass), "mapper not a constructor"
+	assert isClass(mapperClass), "mapper not a constructor"
 
-	mapper = new mapperClass({source, content})
+	mapper = new mapperClass(input)
 	assert (mapper instanceof Mapper), "not a Mapper class"
-	result = mapper.getBlock(hOptions)
+	result = mapper.getBlock(options)
 
 	dbgReturn "map", result
 	return result

@@ -1,33 +1,38 @@
 # TreeMapper.test.coffee
 
 import {
-	LOG, LOGVALUE, assert, croak, setDebugging, fromTAML,
-	} from '@jdeighan/base-utils'
-import {
-	dbg, dbgEnter, dbgReturn,
-	} from '@jdeighan/base-utils/debug'
-import {UnitTester, UnitTesterNorm, utest} from '@jdeighan/unit-tester'
-import {
-	undef, pass, OL, defined,
+	undef, pass, OL, defined, toBlock, toArray,
 	isEmpty, nonEmpty, isString, isArray,
-	} from '@jdeighan/coffee-utils'
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE, dumpLog} from '@jdeighan/base-utils/log'
+import {fromTAML} from '@jdeighan/base-utils/taml'
+import {
+	dbg, dbgEnter, dbgReturn, setDebugging,
+	} from '@jdeighan/base-utils/debug'
+import {
+	UnitTester, UnitTesterNorm, utest,
+	} from '@jdeighan/unit-tester'
 import {
 	indentLevel, undented, splitLine, indented,
 	} from '@jdeighan/coffee-utils/indent'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {arrayToBlock, blockToArray} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'
-import {TreeMapper, trace} from '@jdeighan/mapper/tree'
+import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
 import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 ###
 	class TreeMapper should handle the following:
 		- remove empty lines and comments
 		- extension lines
-		- can override @mapNode()
+		- can override @getUserObj()
 		- call @walk() to walk the tree
-		- can override beginLevel(), visit(), endVisit(), endLevel()
+		- can override:
+			- beginLevel()
+			- visit()
+			- endVisit()
+			- endLevel()
 ###
 
 # ---------------------------------------------------------------------------
@@ -39,7 +44,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 			mapper = new TreeMapper(block)
 			lNodes = []
-			for hNode from mapper.all()
+			for hNode from mapper.allNodes()
 				lNodes.push hNode
 			assert isArray(lNodes), "lNodes is #{OL(lNodes)}"
 			return lNodes
@@ -50,7 +55,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# --- remove comments and blank lines
 	#     create user object from utest line
 
-	mapTester.like 53, """
+	mapTester.like 58, """
 			# --- comment, followed by blank line xxx
 
 			abc
@@ -62,7 +67,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# --- remove comments and blank lines
 	#     create user object from utest line
 
-	mapTester.like 65, """
+	mapTester.like 70, """
 			# --- comment, followed by blank line
 
 			abc
@@ -78,7 +83,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- level
 
-	mapTester.like 81, """
+	mapTester.like 86, """
 			abc
 				def
 					ghi
@@ -108,12 +113,17 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 			mapper = new TreeMapper(block)
 			lNodes = []
-			for hNode from mapper.all()
+			for hNode from mapper.allNodes()
 				lNodes.push hNode
 			if @debug
 				LOG 'lNodes', lNodes
 			assert isArray(lNodes), "lNodes is #{OL(lNodes)}"
 			return lNodes
+
+		eval_expr: (str) ->
+
+			str = str.replace(/\bundef\b/g, 'undefined')
+			return Function('"use strict";return (' + str + ')')();
 
 		getUserObj: (line) ->
 
@@ -123,16 +133,16 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			str = line.substring(pos+1).replace(/\\N/g, '\n').replace(/\\T/g, '\t')
 
 			if (str[0] == '{')
-				str = eval_expr(str)
+				str = @eval_expr(str)
 
 			return {str, level}
 
 		transformExpected: (block) ->
 
 			lExpected = []
-			for line in blockToArray(block)
+			for line in toArray(block)
 				if @debug
-					LOG 'line', line
+					LOG 'transform line', line
 				lExpected.push @getUserObj(line)
 			if @debug
 				LOG 'lExpected', lExpected
@@ -148,7 +158,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# ------------------------------------------------------------------------
 
-	mapTester.like 151, """
+	mapTester.like 161, """
 			abc
 				def
 					ghi
@@ -161,7 +171,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- const replacement
 
-	mapTester.like 164, """
+	mapTester.like 174, """
 			#define name John Deighan
 			abc
 			__name__
@@ -173,7 +183,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- extension lines
 
-	mapTester.like 176, """
+	mapTester.like 186, """
 			abc
 					&& def
 					&& ghi
@@ -186,7 +196,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (default)
 
-	mapTester.like 189, """
+	mapTester.like 199, """
 			func(<<<)
 				abc
 				def
@@ -200,7 +210,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (explicit)
 
-	mapTester.like 203, """
+	mapTester.like 213, """
 			func(<<<)
 				===
 				abc
@@ -215,7 +225,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	mapTester.like 218, """
+	mapTester.like 228, """
 			func(<<<)
 				...
 				abc
@@ -230,7 +240,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	mapTester.like 233, """
+	mapTester.like 243, """
 			func(<<<)
 				...abc
 					def
@@ -244,7 +254,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - TAML
 
-	mapTester.like 247, """
+	mapTester.like 257, """
 			func(<<<)
 				---
 				- abc
@@ -257,25 +267,9 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			"""
 
 	# ------------------------------------------------------------------------
-	# --- HEREDOC handling - function
-
-	mapTester.like 262, """
-			handleClick(<<<)
-				(event) ->
-					event.preventDefault()
-					alert 'clicked'
-					return
-
-			xyz
-			""", """
-			0 handleClick((event) ->\\N\\Tevent.preventDefault()\\N\\Talert 'clicked'\\N\\Treturn)
-			0 xyz
-			"""
-
-	# ------------------------------------------------------------------------
 	# --- using __END__
 
-	mapTester.like 278, """
+	mapTester.like 272, """
 			abc
 			def
 			__END__
@@ -290,7 +284,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value not defined
 
-	mapTester.like 293, """
+	mapTester.like 287, """
 			#ifdef mobile
 				abc
 			def
@@ -301,7 +295,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value defined
 
-	mapTester.like 304, """
+	mapTester.like 298, """
 			#define mobile anything
 			#ifdef mobile
 				abc
@@ -315,7 +309,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value not defined
 
-	mapTester.like 318, """
+	mapTester.like 312, """
 			#ifdef mobile samsung
 				abc
 			def
@@ -326,7 +320,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined, but different
 
-	mapTester.like 329, """
+	mapTester.like 323, """
 			#define mobile apple
 			#ifdef mobile samsung
 				abc
@@ -338,7 +332,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined and same
 
-	mapTester.like 341, """
+	mapTester.like 335, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -352,7 +346,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - not defined
 
-	mapTester.like 355, """
+	mapTester.like 349, """
 			#ifndef mobile
 				abc
 			def
@@ -364,7 +358,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - defined
 
-	mapTester.like 367, """
+	mapTester.like 361, """
 			#define mobile anything
 			#ifndef mobile
 				abc
@@ -377,7 +371,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - not defined
 
-	mapTester.like 380, """
+	mapTester.like 374, """
 			#ifndef mobile samsung
 				abc
 			def
@@ -389,7 +383,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined, but different
 
-	mapTester.like 392, """
+	mapTester.like 386, """
 			#define mobile apple
 			#ifndef mobile samsung
 				abc
@@ -402,7 +396,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined and same
 
-	mapTester.like 405, """
+	mapTester.like 399, """
 			#define mobile samsung
 			#ifndef mobile samsung
 				abc
@@ -415,7 +409,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 	# ------------------------------------------------------------------------
 	# --- nested commands
 
-	mapTester.like 418, """
+	mapTester.like 412, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -429,41 +423,38 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# --- nested commands
 
-	mapTester.like 432, """
+	mapTester.like 426, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
 				#ifdef large
 					abc
-			""", """
-			"""
+			""", ""
 
 	# --- nested commands
 
-	mapTester.like 443, """
+	mapTester.like 436, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
 				#ifndef large
 					abc
-			""", """
-			"""
+			""", ""
 
 	# --- nested commands
 
-	mapTester.like 454, """
+	mapTester.like 446, """
 			#define mobile samsung
 			#define large anything
 			#ifndef mobile samsung
 				#ifndef large
 					abc
-			""", """
-			"""
+			""", ""
 
 	# ----------------------------------------------------------
 	# --- nested commands - every combination
 
-	mapTester.like 466, """
+	mapTester.like 457, """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -479,7 +470,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# --- nested commands - every combination
 
-	mapTester.like 482, """
+	mapTester.like 473, """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -493,7 +484,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# --- nested commands - every combination
 
-	mapTester.like 496, """
+	mapTester.like 487, """
 			#define large anything
 			#ifdef mobile samsung
 				abc
@@ -506,7 +497,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 	# --- nested commands - every combination
 
-	mapTester.like 509, """
+	mapTester.like 500, """
 			#ifdef mobile samsung
 				abc
 				#ifdef large
@@ -530,17 +521,17 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 		transformValue: (block) ->
 
-			return trace(block)
+			return getTrace(block)
 
 	walkTester = new Tester()
 
-	walkTester.equal 537, """
-			""", """
+	walkTester.equal 528, "",
+			"""
 			BEGIN WALK
 			END WALK
 			"""
 
-	walkTester.equal 543, """
+	walkTester.equal 534, """
 			abc
 			""", """
 			BEGIN WALK
@@ -551,7 +542,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 554, """
+	walkTester.equal 545, """
 			abc
 			def
 			""", """
@@ -565,7 +556,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 568, """
+	walkTester.equal 559, """
 			abc
 				def
 			""", """
@@ -581,7 +572,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 584, """
+	walkTester.equal 575, """
 			# this is a unit test
 			abc
 
@@ -599,7 +590,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 602, """
+	walkTester.equal 593, """
 			# this is a unit test
 			abc
 			__END__
@@ -613,7 +604,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			END WALK
 			"""
 
-	walkTester.equal 616, """
+	walkTester.equal 607, """
 			# this is a unit test
 			abc
 					def
@@ -642,13 +633,13 @@ class WalkTester extends UnitTesterNorm
 
 	transformValue: (block) ->
 
-			return trace(block)
+			return getTrace(block)
 
 walkTester = new WalkTester()
 
 # ..........................................................
 
-walkTester.equal 651, """
+walkTester.equal 642, """
 		abc
 		""", """
 		BEGIN WALK
@@ -659,7 +650,7 @@ walkTester.equal 651, """
 		END WALK
 		"""
 
-walkTester.equal 662, """
+walkTester.equal 653, """
 		abc
 		def
 		""", """
@@ -673,7 +664,7 @@ walkTester.equal 662, """
 		END WALK
 		"""
 
-walkTester.equal 676, """
+walkTester.equal 667, """
 		abc
 			def
 		""", """
@@ -689,7 +680,7 @@ walkTester.equal 676, """
 		END WALK
 		"""
 
-walkTester.equal 692, """
+walkTester.equal 683, """
 		abc
 		#ifdef NOPE
 			def
@@ -702,7 +693,7 @@ walkTester.equal 692, """
 		END WALK
 		"""
 
-walkTester.equal 705, """
+walkTester.equal 696, """
 		abc
 		#ifndef NOPE
 			def
@@ -717,7 +708,7 @@ walkTester.equal 705, """
 		END WALK
 		"""
 
-walkTester.equal 720, """
+walkTester.equal 711, """
 		#define NOPE 42
 		abc
 		#ifndef NOPE
@@ -731,7 +722,7 @@ walkTester.equal 720, """
 		END WALK
 		"""
 
-walkTester.equal 734, """
+walkTester.equal 725, """
 		#define NOPE 42
 		abc
 		#ifdef NOPE
@@ -747,7 +738,7 @@ walkTester.equal 734, """
 		END WALK
 		"""
 
-walkTester.equal 750, """
+walkTester.equal 741, """
 		#define NOPE 42
 		#define name John
 		abc
@@ -782,22 +773,22 @@ walkTester.equal 750, """
 
 		line3
 		""")
-	utest.like 785, mapper.get(), {
+	utest.like 776, mapper.get(), {
 		str: 'line1'
 		level: 0
-		lineNum: 1
+		source: "<unknown>/1"
 		}
-	utest.like 790, mapper.get(), {
+	utest.like 781, mapper.get(), {
 		str: 'line2'
 		level: 0
-		lineNum: 3
+		source: "<unknown>/3"
 		}
-	utest.like 795, mapper.get(), {
+	utest.like 786, mapper.get(), {
 		str: 'line3'
 		level: 0
-		lineNum: 5
+		source: "<unknown>/5"
 		}
-	utest.equal 800, mapper.get(), undef
+	utest.equal 791, mapper.get(), undef
 
 	)()
 
@@ -813,19 +804,19 @@ walkTester.equal 750, """
 					ghi
 			""")
 
-	utest.like 816, mapper.get(), {
+	utest.like 807, mapper.get(), {
 		str:  'abc'
 		level: 0
 		}
-	utest.like 820, mapper.get(), {
+	utest.like 811, mapper.get(), {
 		str:  'def'
 		level: 1
 		}
-	utest.like 824, mapper.get(), {
+	utest.like 815, mapper.get(), {
 		str:  'ghi'
 		level: 2
 		}
-	utest.equal 828, mapper.get(), undef
+	utest.equal 819, mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -842,22 +833,22 @@ walkTester.equal 750, """
 
 	# --- get() should return {uobj, level}
 
-	utest.like 845, mapper.get(), {
+	utest.like 836, mapper.get(), {
 		str: 'abc def'
 		level: 0
 		}
-	utest.like 849, mapper.get(), {
+	utest.like 840, mapper.get(), {
 		str: 'ghi'
 		level: 1
 		}
-	utest.equal 853, mapper.get(), undef
+	utest.equal 844, mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # __END__ only works with no identation
 
 (() ->
-	utest.fails 860, () -> map("""
+	utest.fails 851, () -> map("""
 			abc
 					def
 				ghi
@@ -881,8 +872,17 @@ walkTester.equal 750, """
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	treeTester.equal 884, """
+	treeTester.equal 875, """
 			abc
+			def
+			""", """
+			abc
+			def
+			"""
+
+	treeTester.equal 883, """
+			abc
+
 			def
 			""", """
 			abc
@@ -890,15 +890,6 @@ walkTester.equal 750, """
 			"""
 
 	treeTester.equal 892, """
-			abc
-
-			def
-			""", """
-			abc
-			def
-			"""
-
-	treeTester.equal 901, """
 		# --- a comment
 		p
 			margin: 0
@@ -943,12 +934,12 @@ walkTester.equal 750, """
 			def
 			"""
 
-	utest.equal 946, map(block, MyMapper), """
+	utest.equal 937, map(block, MyMapper), """
 			abc
 			def
 			"""
 
-	treeTester.equal 951, block, """
+	treeTester.equal 942, block, """
 			abc
 			def
 			"""
@@ -991,13 +982,13 @@ walkTester.equal 750, """
 			def
 			"""
 
-	utest.equal 994, map(block, MyMapper), """
+	utest.equal 985, map(block, MyMapper), """
 			# not a comment
 			abc
 			def
 			"""
 
-	treeTester.equal 1000, block, """
+	treeTester.equal 991, block, """
 			# not a comment
 			abc
 			def
@@ -1060,7 +1051,7 @@ walkTester.equal 750, """
 			def
 			"""
 
-	treeTester.equal 1063, block, """
+	treeTester.equal 1054, block, """
 			abc
 			COMMAND: command
 			def
@@ -1073,23 +1064,23 @@ walkTester.equal 750, """
 
 (()->
 
-	# --- NOTE: mapNode() returns anything,
+	# --- NOTE: getUserObj() returns anything,
 	#           or undef to ignore the line
 
 	class MyMapper extends TreeMapper
 
 		# --- This maps all non-empty lines to the string 'x'
 		#     and removes all empty lines
-		mapNode: (hNode) ->
+		getUserObj: (hNode) ->
 
-			dbgEnter "mapNode", hNode
+			dbgEnter "MyMapper.getUserObj", hNode
 			{str, level} = hNode
 			if isEmpty(str)
-				dbgReturn "mapNode", undef
+				dbgReturn "MyMapper.getUserObj", undef
 				return undef
 			else
 				result = 'x'
-				dbgReturn "mapNode", result
+				dbgReturn "MyMapper.getUserObj", result
 				return result
 
 	# ..........................................................
@@ -1104,7 +1095,7 @@ walkTester.equal 750, """
 
 	# ..........................................................
 
-	treeTester.equal 1107, """
+	treeTester.equal 1098, """
 			abc
 				def
 
@@ -1142,7 +1133,7 @@ walkTester.equal 750, """
 
 	# ..........................................................
 
-	treeTester.equal 1145, """
+	treeTester.equal 1136, """
 			abc
 
 			def
@@ -1168,7 +1159,7 @@ walkTester.equal 750, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1171, """
+	treeTester.equal 1162, """
 			abc
 				#include title.md
 			def
@@ -1182,7 +1173,7 @@ walkTester.equal 750, """
 	)()
 
 # ---------------------------------------------------------------------------
-# --- Test getAll()
+# --- Test allNodes()
 
 (() ->
 
@@ -1193,11 +1184,11 @@ walkTester.equal 750, """
 		transformValue: (block) ->
 
 			mapper = new TreeMapper(block)
-			return Array.from(mapper.all())
+			return Array.from(mapper.allNodes())
 
 	treeTester = new MyTester()
 
-	treeTester.like 1200, """
+	treeTester.like 1191, """
 			abc
 				def
 					ghi
@@ -1233,12 +1224,12 @@ walkTester.equal 750, """
 				--x
 			""")
 
-	utest.like 1236, mapper.get(),  {level:0, str: 'if (x == 2)'}
-	utest.like 1237, mapper.get(),  {level:1, str: 'doThis'}
-	utest.like 1238, mapper.get(),  {level:1, str: 'doThat'}
-	utest.like 1239, mapper.get(),  {level:2, str: 'then this'}
-	utest.like 1240, mapper.get(),  {level:0, str: 'while (x > 2)'}
-	utest.like 1241, mapper.get(),  {level:1, str: '--x'}
+	utest.like 1227, mapper.get(),  {level:0, str: 'if (x == 2)'}
+	utest.like 1228, mapper.get(),  {level:1, str: 'doThis'}
+	utest.like 1229, mapper.get(),  {level:1, str: 'doThat'}
+	utest.like 1230, mapper.get(),  {level:2, str: 'then this'}
+	utest.like 1231, mapper.get(),  {level:0, str: 'while (x > 2)'}
+	utest.like 1232, mapper.get(),  {level:1, str: '--x'}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -1256,7 +1247,7 @@ walkTester.equal 750, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1259, """
+	treeTester.equal 1250, """
 			abc
 			if x == <<<
 				abc
@@ -1269,7 +1260,7 @@ walkTester.equal 750, """
 			def
 			"""
 
-	treeTester.equal 1272, """
+	treeTester.equal 1263, """
 			abc
 			if x == <<<
 				===
@@ -1283,7 +1274,7 @@ walkTester.equal 750, """
 			def
 			"""
 
-	treeTester.equal 1286, """
+	treeTester.equal 1277, """
 			abc
 			if x == <<<
 				...
@@ -1304,9 +1295,9 @@ walkTester.equal 750, """
 
 class HtmlMapper extends TreeMapper
 
-	mapNode: (hNode) ->
+	getUserObj: (hNode) ->
 
-		dbgEnter "MyMapper.mapNode", hNode
+		dbgEnter "HtmlMapper.getUserObj", hNode
 		{str, level} = hNode
 		lMatches = str.match(///^
 				(\S+)     # the tag
@@ -1315,9 +1306,12 @@ class HtmlMapper extends TreeMapper
 					(.*)   # everything else
 					)?     # optional
 				$///)
-		assert defined(lMatches), "missing HTML tag"
+		assert defined(lMatches), "missing HTML tag: #{OL(str)}"
 		[_, tag, text] = lMatches
-		hResult = {tag, @level}
+		hResult = {
+			tag
+			level: @level
+			}
 		switch tag
 			when 'body'
 				assert isEmpty(text), "body tag doesn't allow content"
@@ -1326,7 +1320,8 @@ class HtmlMapper extends TreeMapper
 					hResult.body = text
 			when 'div:markdown'
 				hResult.tag = 'div'
-				body = @fetchBlockAtLevel(level)
+				lLines = @fetchLinesAtLevel(level+1)
+				body = undented(toBlock(lLines))
 				dbg "body", body
 				if nonEmpty(body)
 					md = map(body, SimpleMarkDownMapper)
@@ -1335,14 +1330,14 @@ class HtmlMapper extends TreeMapper
 			else
 				croak "Unknown tag: #{OL(tag)}"
 
-		dbgReturn "MyMapper.mapNode", hResult
+		dbgReturn "HtmlMapper.getUserObj", hResult
 		return hResult
 
 	# .......................................................
 
-	visit: (hNode, hUser, lStack) ->
+	visit: (hNode) ->
 
-		dbgEnter 'visit', hNode, hUser, lStack
+		dbgEnter 'HtmlMapper.visit', hNode
 		{str, uobj, level, type} = hNode
 		switch type
 			when 'comment'
@@ -1357,19 +1352,19 @@ class HtmlMapper extends TreeMapper
 		lParts = [indented("<#{uobj.tag}>", level)]
 		if nonEmpty(uobj.body)
 			lParts.push indented(uobj.body, level+1)
-		result = arrayToBlock(lParts)
-		dbgReturn 'visit', result
+		result = toBlock(lParts)
+		dbgReturn 'HtmlMapper.visit', result
 		return result
 
 	# .......................................................
 
-	endVisit: (hNode, hUser, lStack) ->
+	endVisit: (hNode) ->
 
 		{uobj, level, type} = hNode
 		if (type == 'comment')
 			return undef
-
-		return indented("</#{uobj.tag}>", level)
+		else
+			return indented("</#{uobj.tag}>", level)
 
 # ---------------------------------------------------------------------------
 
@@ -1385,7 +1380,7 @@ class HtmlMapper extends TreeMapper
 
 	# ----------------------------------------------------------
 
-	treeTester.equal 1388, """
+	treeTester.equal 1383, """
 			body
 				# a comment
 
@@ -1426,7 +1421,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1429, """
+	treeTester.equal 1424, """
 			abc
 			#ifdef something
 				def
@@ -1465,7 +1460,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1468, """
+	treeTester.equal 1463, """
 			abc
 				def
 			""", """
@@ -1473,7 +1468,7 @@ class HtmlMapper extends TreeMapper
 				def
 			"""
 
-	utest.equal 1476, lTrace, [
+	utest.equal 1471, lTrace, [
 		"S 0"
 		"S 1"
 		"E 1"

@@ -1,23 +1,31 @@
 # Fetcher.coffee
 
 import {assert} from '@jdeighan/base-utils/exceptions'
-import {getOptions} from '@jdeighan/base-utils/utils'
+import {
+	isString, isNonEmptyString, isInteger, isHash, isIterable, isFunction,
+	isEmpty, nonEmpty, getOptions, toArray, toBlock,
+	undef, defined, notdefined, rtrim, OL,
+	} from '@jdeighan/base-utils'
 import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
 import {
-	isString, isInteger, isHash, isIterable, isFunction,
-	isEmpty, nonEmpty,
-	undef, defined, notdefined, rtrim, OL,
-	} from '@jdeighan/coffee-utils'
-import {
-	indentLevel, splitLine, getOneIndent, undented,
+	indentLevel, splitLine, getOneIndent, undented, isUndented,
 	} from '@jdeighan/coffee-utils/indent'
-import {toArray, toBlock} from '@jdeighan/coffee-utils/block'
 import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
+
 import {Node} from '@jdeighan/mapper/node'
 
 # ---------------------------------------------------------------------------
+# 1. implement fetch() and peek()
+# 2. handle extension lines
+# 3. define init() - to override
+# 4. implement fetchLinesAtLevel(level)
+# 5. define extSep(str, nextStr) - to override
+# 6. implement generator allNodes()
+# 7. define procNode() - to override
+# 8. implement getBlock(oneIndent)
+# 9. define finalizeBlock() - to override
 
 export class Fetcher
 
@@ -91,23 +99,36 @@ export class Fetcher
 		@lineNum = 0
 		@oneIndent = undef   # set from 1st line with indentation
 
-		# --- invoke iterator to fill in @lookAheadLine
-		{value, done} = @iterator.next()
-		if done
-			@lookAheadLine = undef
-		else
-			@lookAheadLine = value
-		@lookAheadNode = @fetchNextNode()
-
-		# --- This is set when a stopper func returns true
-		#     Fetch will always return this next if it's set
-		@fetchStopperNode = undef  # set
-
-		# --- NOTE: There is always a @lookAheadLine,
-		#           except when we reach EOF
+		@refill()    # sets @nextLevel and @nextStr
+		@nextNode = @fetchNextNode()
 
 		@init()   # option for additional initialization
 		dbgReturn "Fetcher"
+
+	# ..........................................................
+
+	refill: () ->
+
+		# --- invoke iterator to fill in @nextLevel & @nextStr
+		{value, done} = @iterator.next()
+		if done
+			@nextLevel = 0
+			@nextStr = undef
+		else if isString(value)
+			if (value == '__END__')
+				@nextLevel = 0
+				@nextStr = undef
+			else
+				[@nextLevel, @nextStr] = splitLine(value, @oneIndent)
+
+				# --- Try to set @oneIndent
+				if notdefined(@oneIndent) && (@nextLevel > 0)
+					# --- will return undef if no indentation
+					@oneIndent = getOneIndent(value)
+		else
+			@nextLevel = 0
+			@nextStr = value
+		return
 
 	# ..........................................................
 
@@ -118,7 +139,6 @@ export class Fetcher
 	# ..........................................................
 	# --- returns hNode with keys:
 	#        source
-	#        lineNum
 	#        str
 	#        srcLevel - level in source code
 	#        level    - includes added levels when #include'ing
@@ -128,16 +148,9 @@ export class Fetcher
 
 		dbgEnter "Fetcher.fetch"
 
-		if defined(@fetchStopperNode)
-			save = @fetchStopperNode
-			@fetchStopperNode = undef
-			dbg "return stopper node"
-			dbgReturn 'Fetcher.fetch', save
-			return save
-
-		if defined(@lookAheadNode)
-			save = @lookAheadNode
-			@lookAheadNode = @fetchNextNode()
+		if defined(@nextNode)
+			save = @nextNode
+			@nextNode = @fetchNextNode()
 			dbg "return look ahead node"
 			dbgReturn 'Fetcher.fetch', save
 			return save
@@ -151,14 +164,33 @@ export class Fetcher
 
 		dbgEnter "Fetcher.peek"
 
-		if defined(@fetchStopperNode)
-			dbgReturn 'Fetcher.peek', @fetchStopperNode
-			return @fetchStopperNode
-		if defined(@lookAheadNode)
-			dbgReturn 'Fetcher.peek', @lookAheadNode
-			return @lookAheadNode
+		if defined(@nextNode)
+			dbgReturn 'Fetcher.peek', @nextNode
+			return @nextNode
 		dbgReturn 'Fetcher.peek', undef
 		return undef
+
+	# ..........................................................
+
+	fetchLinesAtLevel: (level) ->
+
+		dbgEnter "TreeMapper.fetchLinesAtLevel", level
+		lLines = []
+		while defined(hNode = @peek()) \
+				&& (hNode.isEmptyLine() || (hNode.level >= level))
+			@fetch()
+			lLines.push hNode.str
+		dbgReturn "TreeMapper.fetchLinesAtLevel", lLines
+		return lLines
+
+	# ..........................................................
+
+	fetchBlockAtLevel: (level) ->
+
+		dbgEnter "TreeMapper.fetchBlockAtLevel", level
+		block = toBlock(undented(@fetchLinesAtLevel(level)))
+		dbgReturn "TreeMapper.fetchBlockAtLevel", block
+		return block
 
 	# ..........................................................
 	# --- Returns the next available Node
@@ -167,95 +199,47 @@ export class Fetcher
 	fetchNextNode: () ->
 
 		dbgEnter 'Fetcher.fetchNextNode'
-		next = @fetchNextStr()
-		if notdefined(next)
-			dbgReturn "Fetcher.fetchNextNode", undef
+
+		if notdefined(@nextStr)
+			# --- indicates EOF
+			dbg 'at EOF'
+			dbgReturn 'Fetcher.fetchNextNode', undef
 			return undef
 
-		# --- NOTE: str is typically a string,
-		#           but it can be an arbitrary JavaScript value
-		[level, str] = next
+		# --- Save current values, then refill
+		level = @nextLevel
+		str = @nextStr
+		@refill()
+		@lineNum += 1
+		dbg "INC lineNum to #{@lineNum}"
 
 		# --- save current line number in case there are extension lines
 		orgLineNum = @lineNum
 		dbg 'orgLineNum', orgLineNum
 
-		if isString(str)
+		if isNonEmptyString(str)
 			# --- Check for extension lines
-			while isString(@lookAheadLine) \
-					&& (indentLevel(@lookAheadLine, @oneIndent) >= level+2)
+			while isNonEmptyString(@nextStr) && (@nextLevel >= level+2)
+				str += @extSep(str, @nextStr) + @nextStr
+				@refill()
+				@lineNum += 1
+				dbg "INC lineNum to #{@lineNum}"
 
-				# --- since @lookAheadLine is defined,
-				#     we know that @fetchNextStr() won't return undef
-
-				[nextLevel, nextStr] = @fetchNextStr()
-				str += @extSep(str, nextStr) + nextStr
-			if isEmpty(str)
-				newlevel = 0
-			else
-				newlevel = level + @addLevel
-		else
-			newlevel = 0
+			if (@addLevel > 0)
+				dbg "add additional level #{@addLevel}"
+				level += @addLevel
 
 		dbg "create Node object"
 
+		assert isUndented(str), "fetchNextNode: str not undented"
 		hNode = new Node({
 			str
-			level:   newlevel
-			source:  @sourceInfoStr(orgLineNum),
-			lineNum: orgLineNum,
+			level
+			source: @sourceInfoStr(orgLineNum),
 			})
 
 		dbgReturn "Fetcher.fetchNextNode", hNode
 		return hNode
-
-	# ..........................................................
-	# --- Gets the next [level, str] (or undef), where
-	#        - undef is returned at EOF
-	#        - __END__ acts like EOF
-	#        - if @oneIndent not initially set, set it if:
-	#             - item is a string
-	#             - item has indentation
-	#        - @lineNum is incremented if not EOF
-
-	fetchNextStr: () ->
-
-		dbgEnter 'Fetcher.fetchNextStr'
-		if notdefined(@lookAheadLine)
-			# --- indicates EOF
-			dbg 'lookAhead empty'
-			dbgReturn 'Fetcher.fetchNextStr', undef
-			return undef
-
-		save = @lookAheadLine   # save for later return
-		dbg '@lookAheadLine saved', save
-
-		# --- Refill @lookAheadLine
-		{value, done} = @iterator.next()
-		if done
-			dbg "iterator returned done = true"
-			@lookAheadLine = undef   # we're at EOF
-		else if isString(value) && (value == '__END__')
-			dbg "found __END__"
-			@lookAheadLine = undef   # we're at EOF
-		else
-			dbg "GOT #{OL(value)} from iterator, put in @lookAheadLine"
-			@lookAheadLine = value
-
-			# --- Try to set @oneIndent
-			if notdefined(@oneIndent) && isString(value)
-				# --- will return undef if no indentation
-				@oneIndent = getOneIndent(value)
-
-		@lineNum += 1
-		dbg "INC lineNum to #{@lineNum}"
-
-		if isString(save)
-			result = splitLine(save, @oneIndent)
-		else
-			result = [0, save]
-		dbgReturn 'Fetcher.fetchNextStr', result
-		return result
 
 	# ..........................................................
 
@@ -266,45 +250,56 @@ export class Fetcher
 
 	# ..........................................................
 
-	sourceInfoStr: (lineNum) ->
-		# --- override in FetcherEx
+	sourceInfoStr: (lineNum=undef) ->
+		# --- override in FetcherInc
 
 		dbgEnter 'Fetcher.sourceInfoStr', lineNum
-		assert isInteger(lineNum), "Bad lineNum: #{OL(lineNum)}"
-		result = "#{@hSourceInfo.filename}/#{lineNum}"
+		if defined(lineNum)
+			assert isInteger(lineNum), "Bad lineNum: #{OL(lineNum)}"
+			result = "#{@hSourceInfo.filename}/#{lineNum}"
+		else
+			result = "#{@hSourceInfo.filename}"
 		dbgReturn 'Fetcher.sourceInfoStr', result
 		return result
 
 	# ..........................................................
 	# --- GENERATOR
 
-	all: (stopperFunc=undef) ->
-		# --- If you provide a stopper func, and you want to
-		#     skip the line that you stop on,
-		#     then you'll need to fetch it when done
+	allNodes: () ->
 
-		dbgEnter "Fetcher.all"
+		dbgEnter "Fetcher.allNodes"
 
 		while defined(hNode = @fetch())
-			if defined(stopperFunc) && stopperFunc(hNode)
-				@fetchStopperNode = hNode
-				dbgReturn 'Fetcher.all'
-				return
-			dbgYield "Fetcher.all", hNode
-			yield hNode
-			dbgResume "Fetcher.all"
-		dbgReturn "Fetcher.all"
+			dbg 'hNode', hNode
+			if @procNode(hNode)
+				dbgYield "Fetcher.allNodes", hNode
+				yield hNode
+				dbgResume "Fetcher.allNodes"
+
+		dbgReturn "Fetcher.allNodes"
 		return
 
 	# ..........................................................
 
-	getBlock: (stopperFunc=undef, oneIndent="\t") ->
+	procNode: (hNode) ->
+		# --- does nothing, but can be overridden to
+		#     add additional node processing
+		# --- return value is true to keep the node, false to discard
 
-		dbgEnter "Fetcher.getBlock", stopperFunc, oneIndent
+		assert defined(hNode), "hNode not defined"
+		return true
+
+	# ..........................................................
+
+	getBlock: (oneIndent="\t") ->
+
+		dbgEnter "Fetcher.getBlock", oneIndent
 		lLines = []
-		for hNode from @all(stopperFunc)
-			dbg 'hNode', hNode
-			lLines.push hNode.getLine({oneIndent})
+		for hNode from @allNodes()
+			dbg 'GOT hNode', hNode
+			line = hNode.getLine({oneIndent})
+			dbg "line = #{OL(line)}"
+			lLines.push line
 		result = @finalizeBlock undented(toBlock(lLines))
 		dbgReturn "Fetcher.getBlock", result
 		return result

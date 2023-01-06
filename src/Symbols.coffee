@@ -1,15 +1,14 @@
 # Symbols.coffee
 
 import {
-	LOG, LOGVALUE, assert, croak,
+	undef, defined, notdefined, isString, isArray, isEmpty, nonEmpty,
+	uniq, words, escapeStr, OL, getOptions,
 	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {
-	undef, defined, notdefined, isString, isArray, isEmpty, nonEmpty,
-	uniq, words, escapeStr, OL,
-	} from '@jdeighan/coffee-utils'
 import {
 	barf, slurp, pathTo, mkpath, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
@@ -28,6 +27,7 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	#     NOTE: items in array returned will always be unique
 
 	dbgEnter "getNeededSymbols", coffeeCode, hOptions
+	{dumpFile} = getOptions(hOptions)
 	assert isString(coffeeCode), "code not a string"
 	assert isUndented(coffeeCode), "coffeeCode has indent"
 	ast = coffeeCodeToAST(coffeeCode)
@@ -35,8 +35,8 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.walk()
-	if hOptions.dumpfile
-		barf hOptions.dumpfile, "AST:\n" + tamlStringify(ast)
+	if dumpFile
+		barf dumpFile, "AST:\n" + tamlStringify(ast)
 	result = uniq(hSymbolInfo.lMissing)
 	dbgReturn "getNeededSymbols", result
 	return result
@@ -50,17 +50,21 @@ export buildImportList = (lNeededSymbols, source) ->
 	if isEmpty(lNeededSymbols)
 		dbg 'no needed symbols'
 		dbgReturn "buildImportList", []
-		return []
+		return {lImports: [], lNotFound: []}
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
 	lImports = []
+	lNotFound = []
 
 	# --- { <sym>: {lib: <lib>, src: <name> }}
 	hAvailSymbols = getAvailSymbols(source)
+	dbg 'hAvailSymbols', hAvailSymbols
 
 	for symbol in lNeededSymbols
+		assert isString(symbol), "not a string"
 		hSymbol = hAvailSymbols[symbol]
-		if hSymbol?
+		if defined(hSymbol)
+
 			# --- symbol is available in lib
 			{lib, src, isDefault} = hSymbol
 
@@ -68,7 +72,7 @@ export buildImportList = (lNeededSymbols, source) ->
 				lImports.push "import #{symbol} from '#{lib}'"
 			else
 				# --- build the needed string
-				if src?
+				if defined(src)
 					str = "#{src} as #{symbol}"
 				else
 					str = symbol
@@ -78,13 +82,18 @@ export buildImportList = (lNeededSymbols, source) ->
 					hLibs[lib].push(str)
 				else
 					hLibs[lib] = [str]
+		else
+			lNotFound.push symbol
 
 	for lib in Object.keys(hLibs).sort()
 		strSymbols = hLibs[lib].join(',')
 		lImports.push "import {#{strSymbols}} from '#{lib}'"
 	assert isArray(lImports), "lImports is not an array!"
 	dbgReturn "buildImportList", lImports
-	return lImports
+	return {
+		lImports
+		lNotFound
+		}
 
 # ---------------------------------------------------------------------------
 # export only to allow unit testing
@@ -95,17 +104,20 @@ export getAvailSymbols = (source=undef) ->
 	dbgEnter "getAvailSymbols", source
 	if (source == undef)
 		searchDir = process.cwd()
+		dbg "searchDir is current dir: #{OL(searchDir)}"
 	else
 		hSourceInfo = parseSource(source)
 		searchDir = hSourceInfo.dir
 		assert defined(searchDir), "No directory info for #{OL(source)}"
-	dbg "search for .symbols from '#{searchDir}'"
+		dbg "searchDir is #{OL(searchDir)}"
+
 	filepath = pathTo('.symbols', searchDir, {direction: 'up'})
 	if notdefined(filepath)
 		dbg 'no symbols file found'
 		dbgReturn "getAvailSymbols", {}
 		return {}
 
+	dbg ".symbols file is #{OL(filepath)}"
 	hSymbols = getAvailSymbolsFrom(filepath)
 	dbgReturn "getAvailSymbols", hSymbols
 	return hSymbols
@@ -117,9 +129,7 @@ getAvailSymbolsFrom = (filepath) ->
 
 	dbgEnter "getAvailSymbolsFrom", filepath
 
-	contents = slurp(filepath)
-	dbg 'Contents of .symbols', contents
-	parser = new SymbolParser(filepath, contents)
+	parser = new SymbolParser({source: filepath})
 	hAvailSymbols = parser.getAvailSymbols()
 	dbgReturn "getAvailSymbolsFrom", hAvailSymbols
 	return hAvailSymbols
@@ -136,9 +146,9 @@ class SymbolParser extends TreeMapper
 
 	# ..........................................................
 
-	mapNode: (hLine) ->
+	getUserObj: (hLine) ->
 
-		dbgEnter "SymbolParser.mapNode", hLine
+		dbgEnter "SymbolParser.getUserObj", hLine
 
 		{str, level} = hLine
 		if level==0
@@ -173,7 +183,7 @@ class SymbolParser extends TreeMapper
 				@hSymbols[symbol] = hDesc
 		else
 			croak "Bad .symbols file - level = #{level}"
-		dbgReturn "SymbolParser.mapNode", undef
+		dbgReturn "SymbolParser.getUserObj", undef
 		return undef   # doesn't matter what we return
 
 	# ..........................................................

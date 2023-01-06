@@ -1,6 +1,6 @@
 # UtilMappers.coffee
 
-import {undef, defined} from '@jdeighan/coffee-utils'
+import {undef, defined} from '@jdeighan/base-utils'
 import {fromTAML} from '@jdeighan/base-utils/taml'
 
 import {Mapper} from '@jdeighan/mapper'
@@ -25,7 +25,7 @@ export class TamlMapper extends Mapper
 
 export class StoryMapper extends TreeMapper
 
-	mapNode: (hNode) ->
+	getUserObj: (hNode) ->
 
 		if lMatches = hNode.str.match(///
 				([A-Za-z_][A-Za-z0-9_]*)  # identifier
@@ -51,9 +51,3 @@ export class StoryMapper extends TreeMapper
 				return "#{key}: #{value}"
 		else
 			return hNode.str
-
-	# ..........................................................
-
-	finalizeBlock: (block) ->
-
-		return fromTAML(block)

@@ -3,7 +3,7 @@
 import {
   undef,
   defined
-} from '@jdeighan/coffee-utils';
+} from '@jdeighan/base-utils';
 
 import {
   fromTAML
@@ -34,7 +34,7 @@ export var TamlMapper = class TamlMapper extends Mapper {
 //    unless <string> is a number
 // ---------------------------------------------------------------------------
 export var StoryMapper = class StoryMapper extends TreeMapper {
-  mapNode(hNode) {
+  getUserObj(hNode) {
     var _, key, lMatches, value;
     if (lMatches = hNode.str.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
       // colon
@@ -53,11 +53,6 @@ export var StoryMapper = class StoryMapper extends TreeMapper {
     } else {
       return hNode.str;
     }
-  }
-
-  // ..........................................................
-  finalizeBlock(block) {
-    return fromTAML(block);
   }
 
 };

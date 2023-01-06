@@ -1,7 +1,7 @@
 # Scope.coffee
 
-import {LOG} from '@jdeighan/base-utils'
-import {undef, deepCopy} from '@jdeighan/coffee-utils'
+import {undef, deepCopy} from '@jdeighan/base-utils'
+import {LOG} from '@jdeighan/base-utils/log'
 
 # ---------------------------------------------------------------------------
 

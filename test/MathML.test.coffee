@@ -1,12 +1,14 @@
 # MathML.test.coffee
 
-import {LOG, assert, croak, setDebugging} from '@jdeighan/base-utils'
-import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 import {
 	undef, pass, isEmpty, isArray, isString,
-	} from '@jdeighan/coffee-utils'
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG} from '@jdeighan/base-utils/log'
+import {setDebugging} from '@jdeighan/base-utils/debug'
+import {UnitTesterNorm, UnitTester} from '@jdeighan/unit-tester'
 
-import {mapMath} from '@jdeighan/mapper/math'
+import {mapMath} from '@jdeighan/mapper/mathml'
 
 # ---------------------------------------------------------------------------
 

@@ -1,13 +1,14 @@
 # MathML.coffee
 
-import {LOG, assert, croak} from '@jdeighan/base-utils'
+import {
+	undef, defined, pass, escapeStr, OL,
+	isEmpty, isArray, isNumber, isString, isIdentifier,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {
-	undef, defined, pass, escapeStr, OL,
-	isEmpty, isArray, isNumber, isString,
-	} from '@jdeighan/coffee-utils'
 import {
 	isSimpleFileName, fileExt, isFile, isDir, slurp, pathTo,
 	} from '@jdeighan/coffee-utils/fs'
@@ -277,18 +278,6 @@ isIntegerStr = (str) ->
 	if lMatches = str.match(///^ \d+ (.*) $///)
 		[_, tail] = lMatches
 		assert !tail || tail.length==0, "Invalid number"
-		return true
-	else
-		return false
-
-# ---------------------------------------------------------------------------
-
-isIdentifier = (str) ->
-
-	assert isString(str), "isIdentifier(): not a string"
-	if lMatches = str.match(///^ [A-Za-z_] [A-Za-z0-9_]* (.*) $///)
-		[_, tail] = lMatches
-		assert !tail, "Invalid identifier"
 		return true
 	else
 		return false

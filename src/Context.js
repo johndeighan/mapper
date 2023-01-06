@@ -3,22 +3,25 @@
 var lBuiltins;
 
 import {
-  assert,
-  LOG
+  undef,
+  deepCopy,
+  words,
+  OL
 } from '@jdeighan/base-utils';
+
+import {
+  assert
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG
+} from '@jdeighan/base-utils/log';
 
 import {
   dbg,
   dbgEnter,
   dbgReturn
 } from '@jdeighan/base-utils/debug';
-
-import {
-  undef,
-  deepCopy,
-  words,
-  OL
-} from '@jdeighan/coffee-utils';
 
 import {
   Scope

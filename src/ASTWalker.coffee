@@ -1,16 +1,17 @@
 # ASTWalker.coffee
 
-import {assert, croak, LOG, LOGVALUE} from '@jdeighan/base-utils'
+import {
+	undef, pass, defined, notdefined, OL, words, deepCopy,
+	isString, nonEmpty, isArray, isHash, isArrayOfHashes,
+	toBlock, getOptions,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
 import {fromTAML, toTAML} from '@jdeighan/base-utils/taml'
-import {
-	undef, pass, defined, notdefined, OL, words, deepCopy, getOptions,
-	isString, nonEmpty, isArray, isHash, isArrayOfHashes, removeKeys,
-	} from '@jdeighan/coffee-utils'
 import {indented} from '@jdeighan/coffee-utils/indent'
-import {toBlock} from '@jdeighan/coffee-utils/block'
 import {barf} from '@jdeighan/coffee-utils/fs'
 
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
@@ -90,11 +91,28 @@ hAllHandlers = fromTAML('''
 	''')
 
 # ---------------------------------------------------------------------------
+
+removeKeys = (h, lKeys) =>
+
+	for key in lKeys
+		delete h[key]
+	for own key,value of h
+		if defined(value)
+			if isArray(value)
+				for item in value
+					if isHash(item)
+						removeKeys(item, lKeys)
+			else if (typeof value == 'object')
+				removeKeys value, lKeys
+	return
+
+# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 export class ASTWalker
 
 	constructor: (from) ->
+		# --- from can be an AST or CoffeeScript code
 
 		dbgEnter "ASTWalker", from
 

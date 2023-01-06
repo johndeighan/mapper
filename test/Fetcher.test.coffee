@@ -1,10 +1,11 @@
 # Fetcher.test.coffee
 
-import {spaces} from '@jdeighan/base-utils/utils'
+import {
+	undef, defined, spaces, toArray, toBlock,
+	} from '@jdeighan/base-utils'
 import {setDebugging} from '@jdeighan/base-utils/debug'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {undef, defined} from '@jdeighan/coffee-utils'
-import {toArray, toBlock} from '@jdeighan/coffee-utils/block'
+
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 # ---------------------------------------------------------------------------
@@ -15,8 +16,8 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 #        ✓ stop at __END__
 #        ✓ implement @sourceInfoStr()
 #        ✓ handle either spaces or TABs as indentation
-#        ✓ implement generator all(stopperFunc)
-#        ✓ implement getBlock(stopperFunc)
+#        ✓ implement generator allNodes()
+#        ✓ implement getBlock()
 #        ✓ allow override of extSep()
 #        ✓ allow override of finalizeBlock()
 # ---------------------------------------------------------------------------
@@ -135,21 +136,48 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		""")
 
 	node1 = fetcher.fetch()
-	utest.like 141, node1, {
+	utest.like 139, node1, {
 		str: 'abc def ghi'
-		lineNum: 1
 		source: "<unknown>/1"
 		}
 
 	node2 = fetcher.fetch()
-	utest.like 150, node2, {
+	utest.like 145, node2, {
 		str: 'jkl'
-		lineNum: 4
 		source: "<unknown>/4"
 		}
 
 	node3 = fetcher.fetch()
-	utest.equal 157, node3, undef
+	utest.equal 151, node3, undef
+
+	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+	fetcher = new Fetcher({
+		source: 'test.coffee',
+		content: """
+			abc
+					def
+					ghi
+			jkl
+			"""})
+
+	node1 = fetcher.fetch()
+	utest.like 168, node1, {
+		str: 'abc def ghi'
+		source: "test.coffee/1"
+		}
+
+	node2 = fetcher.fetch()
+	utest.like 174, node2, {
+		str: 'jkl'
+		source: "test.coffee/4"
+		}
+
+	node3 = fetcher.fetch()
+	utest.equal 180, node3, undef
 
 	)()
 
@@ -167,15 +195,14 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		})
 
 	node1 = fetcher.fetch()
-	utest.like 175, node1, {
+	utest.like 198, node1, {
 		str: 'abc def ghi'
-		lineNum: 1
 		source: "file.coffee/1"
 		}
 	)()
 
 # ---------------------------------------------------------------------------
-# --- test all()
+# --- test allNodes()
 
 (() ->
 	class MyTester extends UnitTester
@@ -183,13 +210,13 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		transformValue: (hInput) ->
 
 			fetcher = new Fetcher(hInput)
-			return Array.from(fetcher.all())
+			return Array.from(fetcher.allNodes())
 
 	tester = new MyTester()
 
 	# ----------------------------------------------------------
 
-	tester.like 197, """
+	tester.like 219, """
 		abc
 		def
 		""", [
@@ -199,7 +226,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.like 207, """
+	tester.like 229, """
 		abc
 			def
 		ghi
@@ -211,62 +238,13 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.like 219, """
+	tester.like 241, """
 		abc
 				def
 		ghi
 		""", [
 			{str: 'abc def', level: 0}
 			{str: 'ghi', level: 0}
-			]
-
-	)()
-
-# ---------------------------------------------------------------------------
-# --- test all() with a stopper func
-
-(() ->
-	class MyTester extends UnitTester
-
-		transformValue: (hInput) ->
-
-			fetcher = new Fetcher(hInput)
-			stopperFunc = (h) => return (h.str == 'STOP')
-			return Array.from(fetcher.all(stopperFunc))
-
-	tester = new MyTester()
-
-	# ----------------------------------------------------------
-
-	tester.like 246, """
-		abc
-		STOP
-		def
-		""", [
-			{str: 'abc', level: 0}
-			]
-
-	# ----------------------------------------------------------
-
-	tester.like 256, """
-		abc
-			def
-		STOP
-		ghi
-		""", [
-			{str: 'abc', level: 0}
-			{str: 'def', level: 1}
-			]
-
-	# ----------------------------------------------------------
-
-	tester.like 268, """
-		abc
-				def
-		STOP
-		ghi
-		""", [
-			{str: 'abc def', level: 0}
 			]
 
 	)()
@@ -286,7 +264,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 294, """
+	tester.equal 267, """
 		abc
 		def
 		""", """
@@ -296,7 +274,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 304, """
+	tester.equal 277, """
 		abc
 			def
 		ghi
@@ -308,62 +286,13 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 316, """
+	tester.equal 289, """
 		abc
 				def
 		ghi
 		""", """
 		abc def
 		ghi
-		"""
-
-	)()
-
-# ---------------------------------------------------------------------------
-# --- test getBlock() with a stopper func
-
-(() ->
-	class MyTester extends UnitTester
-
-		transformValue: (hInput) ->
-
-			fetcher = new Fetcher(hInput)
-			stopperFunc = (h) => return (h.str == 'STOP')
-			return fetcher.getBlock(stopperFunc)
-
-	tester = new MyTester()
-
-	# ----------------------------------------------------------
-
-	tester.equal 343, """
-		abc
-		def
-		""", """
-		abc
-		def
-		"""
-
-	# ----------------------------------------------------------
-
-	tester.equal 353, """
-		abc
-			def
-		STOP
-		ghi
-		""", """
-		abc
-			def
-		"""
-
-	# ----------------------------------------------------------
-
-	tester.equal 365, """
-		abc
-				def
-		STOP
-		ghi
-		""", """
-		abc def
 		"""
 
 	)()
@@ -383,20 +312,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		transformValue: (hInput) ->
 
 			fetcher = new ZhFetcher(hInput)
-			stopperFunc = (h) => return (h.str == 'STOP')
-			return fetcher.getBlock(stopperFunc)
+			return fetcher.getBlock()
 
 	tester = new MyTester()
 
 	# ----------------------------------------------------------
 
-	tester.equal 398, """
+	tester.equal 321, """
 		你好
 				约翰
-		STOP
 		我在这里
 		""", """
 		你好约翰
+		我在这里
 		"""
 
 	)()
@@ -416,20 +344,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		transformValue: (hInput) ->
 
 			fetcher = new CapFetcher(hInput)
-			stopperFunc = (h) => return (h.str == 'STOP')
-			return fetcher.getBlock(stopperFunc)
+			return fetcher.getBlock()
 
 	tester = new MyTester()
 
 	# ----------------------------------------------------------
 
-	tester.equal 431, """
+	tester.equal 353, """
 		abc
 				def
-		STOP
 		ghi
 		""", """
 		ABC DEF
+		GHI
 		"""
 
 	)()

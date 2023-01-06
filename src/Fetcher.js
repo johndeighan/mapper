@@ -5,8 +5,23 @@ import {
 } from '@jdeighan/base-utils/exceptions';
 
 import {
-  getOptions
-} from '@jdeighan/base-utils/utils';
+  isString,
+  isNonEmptyString,
+  isInteger,
+  isHash,
+  isIterable,
+  isFunction,
+  isEmpty,
+  nonEmpty,
+  getOptions,
+  toArray,
+  toBlock,
+  undef,
+  defined,
+  notdefined,
+  rtrim,
+  OL
+} from '@jdeighan/base-utils';
 
 import {
   dbg,
@@ -17,31 +32,12 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  isString,
-  isInteger,
-  isHash,
-  isIterable,
-  isFunction,
-  isEmpty,
-  nonEmpty,
-  undef,
-  defined,
-  notdefined,
-  rtrim,
-  OL
-} from '@jdeighan/coffee-utils';
-
-import {
   indentLevel,
   splitLine,
   getOneIndent,
-  undented
+  undented,
+  isUndented
 } from '@jdeighan/coffee-utils/indent';
-
-import {
-  toArray,
-  toBlock
-} from '@jdeighan/coffee-utils/block';
 
 import {
   parseSource,
@@ -53,9 +49,18 @@ import {
 } from '@jdeighan/mapper/node';
 
 // ---------------------------------------------------------------------------
+// 1. implement fetch() and peek()
+// 2. handle extension lines
+// 3. define init() - to override
+// 4. implement fetchLinesAtLevel(level)
+// 5. define extSep(str, nextStr) - to override
+// 6. implement generator allNodes()
+// 7. define procNode() - to override
+// 8. implement getBlock(oneIndent)
+// 9. define finalizeBlock() - to override
 export var Fetcher = class Fetcher {
   constructor(hInput, options = {}) {
-    var addLevel, content, done, fullpath, source, value;
+    var addLevel, content, fullpath, source;
     // --- Valid options:
     //        addLevel - num of levels to add to each line
     //                   unless the line is empty
@@ -125,23 +130,36 @@ export var Fetcher = class Fetcher {
     assert(nonEmpty(this.hSourceInfo.filename), "parseSource returned no filename");
     this.lineNum = 0;
     this.oneIndent = undef; // set from 1st line with indentation
-    
-      // --- invoke iterator to fill in @lookAheadLine
-    ({value, done} = this.iterator.next());
-    if (done) {
-      this.lookAheadLine = undef;
-    } else {
-      this.lookAheadLine = value;
-    }
-    this.lookAheadNode = this.fetchNextNode();
-    // --- This is set when a stopper func returns true
-    //     Fetch will always return this next if it's set
-    this.fetchStopperNode = undef; // set
-    
-    // --- NOTE: There is always a @lookAheadLine,
-    //           except when we reach EOF
+    this.refill(); // sets @nextLevel and @nextStr
+    this.nextNode = this.fetchNextNode();
     this.init(); // option for additional initialization
     dbgReturn("Fetcher");
+  }
+
+  // ..........................................................
+  refill() {
+    var done, value;
+    // --- invoke iterator to fill in @nextLevel & @nextStr
+    ({value, done} = this.iterator.next());
+    if (done) {
+      this.nextLevel = 0;
+      this.nextStr = undef;
+    } else if (isString(value)) {
+      if (value === '__END__') {
+        this.nextLevel = 0;
+        this.nextStr = undef;
+      } else {
+        [this.nextLevel, this.nextStr] = splitLine(value, this.oneIndent);
+        // --- Try to set @oneIndent
+        if (notdefined(this.oneIndent) && (this.nextLevel > 0)) {
+          // --- will return undef if no indentation
+          this.oneIndent = getOneIndent(value);
+        }
+      }
+    } else {
+      this.nextLevel = 0;
+      this.nextStr = value;
+    }
   }
 
   // ..........................................................
@@ -150,7 +168,6 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   // --- returns hNode with keys:
   //        source
-  //        lineNum
   //        str
   //        srcLevel - level in source code
   //        level    - includes added levels when #include'ing
@@ -158,16 +175,9 @@ export var Fetcher = class Fetcher {
   fetch() {
     var save;
     dbgEnter("Fetcher.fetch");
-    if (defined(this.fetchStopperNode)) {
-      save = this.fetchStopperNode;
-      this.fetchStopperNode = undef;
-      dbg("return stopper node");
-      dbgReturn('Fetcher.fetch', save);
-      return save;
-    }
-    if (defined(this.lookAheadNode)) {
-      save = this.lookAheadNode;
-      this.lookAheadNode = this.fetchNextNode();
+    if (defined(this.nextNode)) {
+      save = this.nextNode;
+      this.nextNode = this.fetchNextNode();
       dbg("return look ahead node");
       dbgReturn('Fetcher.fetch', save);
       return save;
@@ -179,107 +189,79 @@ export var Fetcher = class Fetcher {
   // ..........................................................
   peek() {
     dbgEnter("Fetcher.peek");
-    if (defined(this.fetchStopperNode)) {
-      dbgReturn('Fetcher.peek', this.fetchStopperNode);
-      return this.fetchStopperNode;
-    }
-    if (defined(this.lookAheadNode)) {
-      dbgReturn('Fetcher.peek', this.lookAheadNode);
-      return this.lookAheadNode;
+    if (defined(this.nextNode)) {
+      dbgReturn('Fetcher.peek', this.nextNode);
+      return this.nextNode;
     }
     dbgReturn('Fetcher.peek', undef);
     return undef;
   }
 
   // ..........................................................
-  // --- Returns the next available Node
-  //        - hNode.str includes any extension lines
-  fetchNextNode() {
-    var hNode, level, newlevel, next, nextLevel, nextStr, orgLineNum, str;
-    dbgEnter('Fetcher.fetchNextNode');
-    next = this.fetchNextStr();
-    if (notdefined(next)) {
-      dbgReturn("Fetcher.fetchNextNode", undef);
-      return undef;
+  fetchLinesAtLevel(level) {
+    var hNode, lLines;
+    dbgEnter("TreeMapper.fetchLinesAtLevel", level);
+    lLines = [];
+    while (defined(hNode = this.peek()) && (hNode.isEmptyLine() || (hNode.level >= level))) {
+      this.fetch();
+      lLines.push(hNode.str);
     }
-    // --- NOTE: str is typically a string,
-    //           but it can be an arbitrary JavaScript value
-    [level, str] = next;
-    // --- save current line number in case there are extension lines
-    orgLineNum = this.lineNum;
-    dbg('orgLineNum', orgLineNum);
-    if (isString(str)) {
-      // --- Check for extension lines
-      while (isString(this.lookAheadLine) && (indentLevel(this.lookAheadLine, this.oneIndent) >= level + 2)) {
-        // --- since @lookAheadLine is defined,
-        //     we know that @fetchNextStr() won't return undef
-        [nextLevel, nextStr] = this.fetchNextStr();
-        str += this.extSep(str, nextStr) + nextStr;
-      }
-      if (isEmpty(str)) {
-        newlevel = 0;
-      } else {
-        newlevel = level + this.addLevel;
-      }
-    } else {
-      newlevel = 0;
-    }
-    dbg("create Node object");
-    hNode = new Node({
-      str,
-      level: newlevel,
-      source: this.sourceInfoStr(orgLineNum),
-      lineNum: orgLineNum
-    });
-    dbgReturn("Fetcher.fetchNextNode", hNode);
-    return hNode;
+    dbgReturn("TreeMapper.fetchLinesAtLevel", lLines);
+    return lLines;
   }
 
   // ..........................................................
-  // --- Gets the next [level, str] (or undef), where
-  //        - undef is returned at EOF
-  //        - __END__ acts like EOF
-  //        - if @oneIndent not initially set, set it if:
-  //             - item is a string
-  //             - item has indentation
-  //        - @lineNum is incremented if not EOF
-  fetchNextStr() {
-    var done, result, save, value;
-    dbgEnter('Fetcher.fetchNextStr');
-    if (notdefined(this.lookAheadLine)) {
+  fetchBlockAtLevel(level) {
+    var block;
+    dbgEnter("TreeMapper.fetchBlockAtLevel", level);
+    block = toBlock(undented(this.fetchLinesAtLevel(level)));
+    dbgReturn("TreeMapper.fetchBlockAtLevel", block);
+    return block;
+  }
+
+  // ..........................................................
+  // --- Returns the next available Node
+  //        - hNode.str includes any extension lines
+  fetchNextNode() {
+    var hNode, level, orgLineNum, str;
+    dbgEnter('Fetcher.fetchNextNode');
+    if (notdefined(this.nextStr)) {
       // --- indicates EOF
-      dbg('lookAhead empty');
-      dbgReturn('Fetcher.fetchNextStr', undef);
+      dbg('at EOF');
+      dbgReturn('Fetcher.fetchNextNode', undef);
       return undef;
     }
-    save = this.lookAheadLine; // save for later return
-    dbg('@lookAheadLine saved', save);
-    // --- Refill @lookAheadLine
-    ({value, done} = this.iterator.next());
-    if (done) {
-      dbg("iterator returned done = true");
-      this.lookAheadLine = undef; // we're at EOF
-    } else if (isString(value) && (value === '__END__')) {
-      dbg("found __END__");
-      this.lookAheadLine = undef; // we're at EOF
-    } else {
-      dbg(`GOT ${OL(value)} from iterator, put in @lookAheadLine`);
-      this.lookAheadLine = value;
-      // --- Try to set @oneIndent
-      if (notdefined(this.oneIndent) && isString(value)) {
-        // --- will return undef if no indentation
-        this.oneIndent = getOneIndent(value);
-      }
-    }
+    // --- Save current values, then refill
+    level = this.nextLevel;
+    str = this.nextStr;
+    this.refill();
     this.lineNum += 1;
     dbg(`INC lineNum to ${this.lineNum}`);
-    if (isString(save)) {
-      result = splitLine(save, this.oneIndent);
-    } else {
-      result = [0, save];
+    // --- save current line number in case there are extension lines
+    orgLineNum = this.lineNum;
+    dbg('orgLineNum', orgLineNum);
+    if (isNonEmptyString(str)) {
+      // --- Check for extension lines
+      while (isNonEmptyString(this.nextStr) && (this.nextLevel >= level + 2)) {
+        str += this.extSep(str, this.nextStr) + this.nextStr;
+        this.refill();
+        this.lineNum += 1;
+        dbg(`INC lineNum to ${this.lineNum}`);
+      }
+      if (this.addLevel > 0) {
+        dbg(`add additional level ${this.addLevel}`);
+        level += this.addLevel;
+      }
     }
-    dbgReturn('Fetcher.fetchNextStr', result);
-    return result;
+    dbg("create Node object");
+    assert(isUndented(str), "fetchNextNode: str not undented");
+    hNode = new Node({
+      str,
+      level,
+      source: this.sourceInfoStr(orgLineNum)
+    });
+    dbgReturn("Fetcher.fetchNextNode", hNode);
+    return hNode;
   }
 
   // ..........................................................
@@ -289,46 +271,56 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
-  sourceInfoStr(lineNum) {
+  sourceInfoStr(lineNum = undef) {
     var result;
-    // --- override in FetcherEx
+    // --- override in FetcherInc
     dbgEnter('Fetcher.sourceInfoStr', lineNum);
-    assert(isInteger(lineNum), `Bad lineNum: ${OL(lineNum)}`);
-    result = `${this.hSourceInfo.filename}/${lineNum}`;
+    if (defined(lineNum)) {
+      assert(isInteger(lineNum), `Bad lineNum: ${OL(lineNum)}`);
+      result = `${this.hSourceInfo.filename}/${lineNum}`;
+    } else {
+      result = `${this.hSourceInfo.filename}`;
+    }
     dbgReturn('Fetcher.sourceInfoStr', result);
     return result;
   }
 
   // ..........................................................
   // --- GENERATOR
-  * all(stopperFunc = undef) {
+  * allNodes() {
     var hNode;
-    // --- If you provide a stopper func, and you want to
-    //     skip the line that you stop on,
-    //     then you'll need to fetch it when done
-    dbgEnter("Fetcher.all");
+    dbgEnter("Fetcher.allNodes");
     while (defined(hNode = this.fetch())) {
-      if (defined(stopperFunc) && stopperFunc(hNode)) {
-        this.fetchStopperNode = hNode;
-        dbgReturn('Fetcher.all');
-        return;
+      dbg('hNode', hNode);
+      if (this.procNode(hNode)) {
+        dbgYield("Fetcher.allNodes", hNode);
+        yield hNode;
+        dbgResume("Fetcher.allNodes");
       }
-      dbgYield("Fetcher.all", hNode);
-      yield hNode;
-      dbgResume("Fetcher.all");
     }
-    dbgReturn("Fetcher.all");
+    dbgReturn("Fetcher.allNodes");
   }
 
   // ..........................................................
-  getBlock(stopperFunc = undef, oneIndent = "\t") {
-    var hNode, lLines, ref, result;
-    dbgEnter("Fetcher.getBlock", stopperFunc, oneIndent);
+  procNode(hNode) {
+    // --- does nothing, but can be overridden to
+    //     add additional node processing
+    // --- return value is true to keep the node, false to discard
+    assert(defined(hNode), "hNode not defined");
+    return true;
+  }
+
+  // ..........................................................
+  getBlock(oneIndent = "\t") {
+    var hNode, lLines, line, ref, result;
+    dbgEnter("Fetcher.getBlock", oneIndent);
     lLines = [];
-    ref = this.all(stopperFunc);
+    ref = this.allNodes();
     for (hNode of ref) {
-      dbg('hNode', hNode);
-      lLines.push(hNode.getLine({oneIndent}));
+      dbg('GOT hNode', hNode);
+      line = hNode.getLine({oneIndent});
+      dbg(`line = ${OL(line)}`);
+      lLines.push(line);
     }
     result = this.finalizeBlock(undented(toBlock(lLines)));
     dbgReturn("Fetcher.getBlock", result);

@@ -3,24 +3,30 @@
 var SymbolsTester, dumpfile, hSymbols, symTester;
 
 import {
-  LOG,
-  assert,
-  croak,
-  setDebugging
+  undef,
+  OL,
+  words,
+  isEmpty
 } from '@jdeighan/base-utils';
+
+import {
+  assert,
+  croak
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG
+} from '@jdeighan/base-utils/log';
+
+import {
+  setDebugging
+} from '@jdeighan/base-utils/debug';
 
 import {
   UnitTesterNorm,
   UnitTester,
   utest
 } from '@jdeighan/unit-tester';
-
-import {
-  undef,
-  OL,
-  words,
-  isEmpty
-} from '@jdeighan/coffee-utils';
 
 import {
   mydir,
@@ -178,7 +184,13 @@ say "Answer is 42"`);
 // ----------------------------------------------------------------------------
 (function() {
   var lMissing;
-  utest.equal(158, buildImportList([]), []);
+  utest.equal(158, buildImportList([]), {
+    lImports: [],
+    lNotFound: []
+  });
   lMissing = words('say undef logger slurp barf fs');
-  return utest.equal(161, buildImportList(lMissing, import.meta.url), ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"]);
+  return utest.equal(161, buildImportList(lMissing, import.meta.url), {
+    lImports: ["import fs from 'fs'", "import {say,undef} from '@jdeighan/coffee-utils'", "import {slurp,barf} from '@jdeighan/coffee-utils/fs'", "import {log as logger} from '@jdeighan/coffee-utils/log'"],
+    lNotFound: []
+  });
 })();

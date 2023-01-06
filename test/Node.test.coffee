@@ -1,10 +1,10 @@
 # Node.test.coffee
 
-import {
-	assert, croak, setDebugging, LOG,
-	} from '@jdeighan/base-utils'
+import {OL} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {setDebugging} from '@jdeighan/base-utils/debug'
 import {utest} from '@jdeighan/unit-tester'
-import {OL} from '@jdeighan/coffee-utils'
 
 import {Node} from '@jdeighan/mapper/node'
 

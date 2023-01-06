@@ -2,18 +2,18 @@
 
 import {marked} from 'marked'
 
-import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
+import {
+	undef, defined, OL, isEmpty, nonEmpty, isString, toArray,
+	isHashComment,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {
-	undef, defined, OL, isEmpty, nonEmpty, isString,
-	} from '@jdeighan/coffee-utils'
-import {blockToArray} from '@jdeighan/coffee-utils/block'
 import {undented} from '@jdeighan/coffee-utils/indent'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 
-import {isHashComment} from '@jdeighan/mapper/utils'
 import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ import {TreeMapper} from '@jdeighan/mapper/tree'
 stripComments = (block) ->
 
 	lLines = []
-	for line in blockToArray(block)
+	for line in toArray(block)
 		if nonEmpty(line) && ! isHashComment(line)
 			lLines.push line
 	return lLines.join("\n")

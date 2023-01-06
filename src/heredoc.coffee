@@ -1,23 +1,57 @@
 # heredoc.coffee
 
 import {
-	LOG, assert, croak, isTAML, fromTAML,
+	undef, defined, notdefined, pass, escapeStr, OL, CWS, className,
+	isString, isNonEmptyString, isHash, isEmpty, nonEmpty, isObject,
+	toBlock,
 	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {
-	undef, defined, notdefined, pass,
-	isString, isHash, isEmpty, nonEmpty,
-	escapeStr, CWS, OL, className,
-	} from '@jdeighan/coffee-utils'
+import {isTAML, fromTAML} from '@jdeighan/base-utils/taml'
 import {
 	firstLine, remainingLines, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
-import {indented} from '@jdeighan/coffee-utils/indent'
+import {indented, undented} from '@jdeighan/coffee-utils/indent'
+import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 lHereDocs = []   # checked in this order - list of type names
 hHereDocs = {}   # {type: obj}
+
+# ---------------------------------------------------------------------------
+
+export replaceHereDocs = (line, fetcher) =>
+
+	dbgEnter "replaceHereDocs", line
+	assert isString(line), "not a string"
+	assert (fetcher instanceof Fetcher), "not a Fetcher"
+
+	lParts = lineToParts(line)
+	dbg 'lParts', lParts
+	lNewParts = []    # to be joined to form new line
+	for part in lParts
+		if part == '<<<'
+			dbg "get HEREDOC lines until blank line"
+
+			lLines = []
+			while defined(hNode = fetcher.fetch()) && ! hNode.isEmptyLine()
+				lLines.push indented(hNode.str, hNode.level)
+
+			block = undented(toBlock(lLines))
+			dbg 'block', block
+
+			str = mapHereDoc(block)
+			assert isString(str), "str is #{OL(str)}"
+			dbg 'mapped block', str
+			lNewParts.push str
+		else
+			lNewParts.push part    # keep as is
+
+	result = lNewParts.join('')
+	dbgReturn "replaceHereDocs", result
+	return result
 
 # ---------------------------------------------------------------------------
 
@@ -35,19 +69,6 @@ export lineToParts = (line) ->
 	return lParts
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# --- To extend,
-#        define map(block) that:
-#           returns undef if it's not your HEREDOC type
-#           else returns a CieloScript expression
-
-export class BaseHereDoc
-
-	map: (block) ->
-
-		return undef
-
-# ---------------------------------------------------------------------------
 # Returns a CieloScript expression or undef
 
 export mapHereDoc = (block) ->
@@ -55,12 +76,14 @@ export mapHereDoc = (block) ->
 	dbgEnter "mapHereDoc", block
 	assert isString(block), "not a string"
 	for type in lHereDocs
-		dbg "CHECK FOR #{type} HEREDOC"
-		heredoc = hHereDocs[type]
-		if defined(str = heredoc.map(block))
+		dbg "TRY #{type} HEREDOC"
+		heredocObj = hHereDocs[type]
+		result = heredocObj.mapToCielo(block)
+		if defined(result)
+			assert isString(result), "result not a string"
 			dbg "   - FOUND #{type} HEREDOC"
-			dbgReturn "mapHereDoc", str
-			return str
+			dbgReturn "mapHereDoc", result
+			return result
 		else
 			dbg "   - NOT A #{type} HEREDOC"
 
@@ -71,40 +94,42 @@ export mapHereDoc = (block) ->
 
 # ---------------------------------------------------------------------------
 
-export isHereDocType = (type) ->
+export addHereDocType = (type, obj) ->
 
-	return defined(hHereDocs[type])
-
-# ---------------------------------------------------------------------------
-
-export addHereDocType = (type, inputClass) ->
-
-	dbgEnter "addHereDocType", type, inputClass
-	assert inputClass?, "Missing input class"
-	name = className(inputClass)
-	if defined(hHereDocs[type])
-		# --- Already installed, but OK if it's the same class
-		installed = className(hHereDocs[type])
-		if (installed != name)
-			croak "type #{OL(type)}: add #{name}, installed is #{installed}"
-		dbg "already installed"
-		dbgReturn "addHereDocType"
-		return
-
-	oHereDoc = new inputClass()
-	assert oHereDoc instanceof BaseHereDoc,
-		"addHereDocType() requires a BaseHereDoc subclass"
-
+	dbgEnter "addHereDocType", type, obj
+	assert isNonEmptyString(type), "type is #{OL(type)}"
+	if ! isObject(obj, 'mapToCielo')
+		[type, subtype] = jsType(obj)
+		console.log "type = #{OL(type)}"
+		console.log "subtype = #{OL(subtype)}"
+	assert isObject(obj, 'mapToCielo'), "Bad input object: #{OL(obj)}"
+	assert (obj instanceof BaseHereDoc), "not a BaseHereDoc"
+	assert notdefined(hHereDocs[type]), "Heredoc type #{type} already installed"
 	lHereDocs.push type
-	hHereDocs[type]  = oHereDoc
+	hHereDocs[type] = obj
 	dbgReturn "addHereDocType"
 	return
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# --- To extend,
+#        define mapToCielo(block) that:
+#           returns undef if it's not your HEREDOC type
+#           else returns a CieloScript expression
+
+export class BaseHereDoc
+
+	mapToCielo: (block) ->
+
+		return undef
+
+# ---------------------------------------------------------------------------
 
 export class ExplicitBlockHereDoc extends BaseHereDoc
+	# --- First line must be '==='
+	#     Return value is quoted string of remaining lines
 
-	map: (block) ->
+	mapToCielo: (block) ->
 
 		if firstLine(block) != '==='
 			return undef
@@ -113,8 +138,11 @@ export class ExplicitBlockHereDoc extends BaseHereDoc
 # ---------------------------------------------------------------------------
 
 export class OneLineHereDoc extends BaseHereDoc
+	# --- First line must begin with '...'
+	#     Return value is single line string after '...' with
+	#        runs of whitespace replaced with a single space char
 
-	map: (block) ->
+	mapToCielo: (block) ->
 
 		if (block.indexOf('...') != 0)
 			return undef
@@ -123,61 +151,21 @@ export class OneLineHereDoc extends BaseHereDoc
 # ---------------------------------------------------------------------------
 
 export class TAMLHereDoc extends BaseHereDoc
+	# --- First line must be '---'
 
-	map: (block) ->
+	mapToCielo: (block) ->
 
-		if ! isTAML(block)
+		dbgEnter 'TAMLHereDoc.mapToCielo', block
+		if firstLine(block) != '---'
+			dbgReturn 'TAMLHereDoc.mapToCielo', undef
 			return undef
-		result = fromTAML(block)
-		return JSON.stringify(result)
-
-# ---------------------------------------------------------------------------
-
-export class FuncHereDoc extends BaseHereDoc
-
-	map: (block) ->
-		if ! @isFunctionDef(block)
-			return undef
-		return block
-
-	# ........................................................................
-
-	isFunctionDef: (block) ->
-
-		dbgEnter "isFunctionDef", block
-		lMatches = block.match(///^
-				\(
-				\s*
-				(                            # optional parameters
-					[A-Za-z_][A-Za-z0-9_]*
-					(?:
-						,
-						\s*
-						[A-Za-z_][A-Za-z0-9_]*
-						)*
-					)?
-				\s*
-				\)
-				\s*
-				->
-				[\ \t]*
-				\n?
-				(.*)
-				$///s)
-		if lMatches
-			# --- HERE, we should check if it compiles
-			[_, strParms, strBody] = lMatches
-
-			dbgReturn "isFunctionDef", true
-			return true
-		else
-			dbgReturn "isFunctionDef", false
-			return false
+		result = JSON.stringify(fromTAML(block))
+		dbgReturn 'TAMLHereDoc.mapToCielo', result
+		return result
 
 # ---------------------------------------------------------------------------
 
 # --- Add the standard HEREDOC types
-addHereDocType 'one line', OneLineHereDoc
-addHereDocType 'block', ExplicitBlockHereDoc
-addHereDocType 'taml', TAMLHereDoc
-addHereDocType 'func', FuncHereDoc
+addHereDocType 'one line', new OneLineHereDoc()
+addHereDocType 'block', new ExplicitBlockHereDoc()
+addHereDocType 'taml', new TAMLHereDoc()

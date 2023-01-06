@@ -1,15 +1,15 @@
-# FetcherEx.coffee
+# FetcherInc.coffee
 
 import fs from 'fs'
 
-import {assert, croak} from '@jdeighan/base-utils'
-import {
-	dbg, dbgEnter, dbgReturn,
-	} from '@jdeighan/base-utils/debug'
 import {
 	undef, OL, defined, notdefined,
 	isString, isInteger, isEmpty, nonEmpty,
-	} from '@jdeighan/coffee-utils'
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {
+	dbg, dbgEnter, dbgReturn,
+	} from '@jdeighan/base-utils/debug'
 import {
 	isSimpleFileName, isDir, pathTo,
 	} from '@jdeighan/coffee-utils/fs'
@@ -18,26 +18,23 @@ import {Node} from '@jdeighan/mapper/node'
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 # ---------------------------------------------------------------------------
-#   class FetcherEx
-#      - handles '#include'
-#      - overrides fetch()
-#      - overrides sourceInfoStr()
+# 1. handle '#include' - implemented using @altInput, overriding fetch()
 
-export class FetcherEx extends Fetcher
+export class FetcherInc extends Fetcher
 
 	constructor: (hInput, options={}) ->
 
-		dbgEnter "FetcherEx", hInput, options
+		dbgEnter "FetcherInc", hInput, options
 		super hInput, options
 		@altInput = undef      # implements #include
-		dbgReturn "FetcherEx"
+		dbgReturn "FetcherInc"
 
 	# ..........................................................
 	# --- override to handle '#include'
 
 	fetch: () ->
 
-		dbgEnter "FetcherEx.fetch"
+		dbgEnter "FetcherInc.fetch"
 
 		# --- Check if data available from @altInput
 
@@ -52,8 +49,13 @@ export class FetcherEx extends Fetcher
 				# --- NOTE: altInput was created knowing how many levels
 				#           to add due to indentation in #include statement
 				assert hNode instanceof Node, "Not a Node: #{OL(hNode)}"
-				dbg "from alt"
-				dbgReturn "FetcherEx.fetch", hNode
+				dbg "from alt, update source"
+
+				# --- Update 'source'
+				{filename} = @hSourceInfo
+				hNode.source = "#{filename}/#{@includeLineNum} #{hNode.source}"
+
+				dbgReturn "FetcherInc.fetch", hNode
 				return hNode
 
 			# --- alternate input is exhausted
@@ -62,9 +64,12 @@ export class FetcherEx extends Fetcher
 		else
 			dbg "there is no altInput"
 
+		# --- If we find a #include, this is the line it's on
+		saveLineNum = @lineNum
+
 		hNode = super()      # call Fetcher.fetch()
 		if notdefined(hNode)
-			dbgReturn 'FetcherEx.fetch', undef
+			dbgReturn 'FetcherInc.fetch', undef
 			return undef
 
 		{str, level} = hNode
@@ -77,23 +82,24 @@ export class FetcherEx extends Fetcher
 				(.*)
 				$///)
 			[_, fname] = lMatches
+			@includeLineNum = saveLineNum
 			dbg "#include #{fname}"
 			assert nonEmpty(fname), "missing file name in #include"
 			@createAltInput fname, level
 			hNode = @fetch()    # recursive call to this function
-			dbgReturn "FetcherEx.fetch", hNode
+			dbgReturn "FetcherInc.fetch", hNode
 			return hNode
 		else
 			dbg "no #include"
 
-		dbgReturn "FetcherEx.fetch", hNode
+		dbgReturn "FetcherInc.fetch", hNode
 		return hNode
 
 	# ..........................................................
 
 	createAltInput: (fname, level) ->
 
-		dbgEnter "FetcherEx.createAltInput", fname, level
+		dbgEnter "FetcherInc.createAltInput", fname, level
 
 		# --- Make sure we have a simple file name
 		assert isString(fname), "not a string: #{OL(fname)}"
@@ -113,26 +119,6 @@ export class FetcherEx extends Fetcher
 			croak "Can't find include file #{fname} in dir #{dir}"
 		assert fs.existsSync(fullpath), "#{fullpath} does not exist"
 
-		@altInput = new FetcherEx({source: fullpath}, {addLevel: level})
-		dbgReturn "FetcherEx.createAltInput"
+		@altInput = new FetcherInc({source: fullpath}, {addLevel: level})
+		dbgReturn "FetcherInc.createAltInput"
 		return
-
-	# ..........................................................
-
-	sourceInfoStr: (lineNum) ->
-
-		dbgEnter 'FetcherEx.sourceInfoStr', lineNum
-		if defined(lineNum)
-			assert isInteger(lineNum), "Bad lineNum: #{OL(lineNum)}"
-		else
-			croak 'No lineNum given'
-
-		lParts = []
-		lParts.push "#{@hSourceInfo.filename}/#{lineNum}"
-		if defined(@altInput)
-			lParts.push @altInput.sourceInfoStr()
-		else
-			dbg "no altInput"
-		result = lParts.join(' ')
-		dbgReturn 'FetcherEx.sourceInfoStr', result
-		return result

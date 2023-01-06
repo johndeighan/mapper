@@ -1,15 +1,14 @@
 # Node.coffee
 
+import {
+	undef, pass, defined, notdefined, OL, isEmpty, nonEmpty,
+	isString, isBoolean, isInteger, getOptions,
+	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
-import {getOptions} from '@jdeighan/base-utils/utils'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {
-	undef, pass, defined, notdefined, OL, isEmpty, nonEmpty,
-	isString, isBoolean, isInteger,
-	} from '@jdeighan/coffee-utils'
 import {
 	indented, indentLevel, splitPrefix,
 	} from '@jdeighan/coffee-utils/indent'
@@ -29,11 +28,18 @@ export class Node
 			"level #{OL(@level)} not an integer"
 		if defined(@source)
 			assert isString(@source), "source not a string"
-		if defined(@ineNum)
-			assert isInteger(@lineNum, {min: 1}), "lineNum not an int"
 
 		# --- level may later be adjusted, but srcLevel should be const
 		@srcLevel = @level
+
+	# ..........................................................
+
+	desc: () ->
+
+		str = "[#{@level}] #{OL(@str)}"
+		if defined(@uobj) && (@uobj != @str)
+			str += " #{OL(@uobj)}"
+		return str
 
 	# ..........................................................
 
@@ -86,7 +92,7 @@ export class Node
 		# --- If Node has key 'uobj', use that to build the line
 		#     else use key 'str'
 		str = @uobj || @str
-		assert isString(str), "not a string"
+		assert isString(str), "not a string: #{OL(str)}"
 		assert (@level >= undent), "undent = #{undent}, level = #{@level}"
 		result = indented(str, @level - undent, oneIndent)
 		dbgReturn 'Node.getLine', result

@@ -3,11 +3,25 @@
 var MathTester, mathTester;
 
 import {
-  LOG,
-  assert,
-  croak,
-  setDebugging
+  undef,
+  pass,
+  isEmpty,
+  isArray,
+  isString
 } from '@jdeighan/base-utils';
+
+import {
+  assert,
+  croak
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG
+} from '@jdeighan/base-utils/log';
+
+import {
+  setDebugging
+} from '@jdeighan/base-utils/debug';
 
 import {
   UnitTesterNorm,
@@ -15,16 +29,8 @@ import {
 } from '@jdeighan/unit-tester';
 
 import {
-  undef,
-  pass,
-  isEmpty,
-  isArray,
-  isString
-} from '@jdeighan/coffee-utils';
-
-import {
   mapMath
-} from '@jdeighan/mapper/math';
+} from '@jdeighan/mapper/mathml';
 
 // ---------------------------------------------------------------------------
 MathTester = class MathTester extends UnitTester {

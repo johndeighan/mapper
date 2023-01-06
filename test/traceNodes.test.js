@@ -3,36 +3,35 @@
 var TraceTester, tester;
 
 import {
-  assert,
-  croak,
-  setDebugging
+  untabify
 } from '@jdeighan/base-utils';
+
+import {
+  assert,
+  croak
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  toBlock
+} from '@jdeighan/base-utils';
+
+import {
+  setDebugging
+} from '@jdeighan/base-utils/debug';
 
 import {
   UnitTester
 } from '@jdeighan/unit-tester';
 
 import {
-  untabify
-} from '@jdeighan/coffee-utils/indent';
-
-import {
-  toBlock
-} from '@jdeighan/coffee-utils/block';
-
-import {
-  TreeMapper
+  TreeMapper,
+  getTrace
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
 TraceTester = class TraceTester extends UnitTester {
   transformValue(block) {
-    var walker;
-    walker = new TreeMapper(import.meta.url, block);
-    walker.walk({
-      logNodes: true
-    });
-    return walker.getLog();
+    return getTrace(block);
   }
 
   transformExpected(block) {

@@ -1,11 +1,12 @@
 # traceNodes.test.coffee
 
-import {assert, croak, setDebugging} from '@jdeighan/base-utils'
+import {untabify} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {toBlock} from '@jdeighan/base-utils'
+import {setDebugging} from '@jdeighan/base-utils/debug'
 import {UnitTester} from '@jdeighan/unit-tester'
-import {untabify} from '@jdeighan/coffee-utils/indent'
-import {toBlock} from '@jdeighan/coffee-utils/block'
 
-import {TreeMapper} from '@jdeighan/mapper/tree'
+import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
@@ -13,9 +14,7 @@ class TraceTester extends UnitTester
 
 	transformValue: (block) ->
 
-		walker = new TreeMapper(import.meta.url, block)
-		walker.walk({logNodes: true})
-		return walker.getLog()
+		return getTrace(block)
 
 	transformExpected: (block) ->
 

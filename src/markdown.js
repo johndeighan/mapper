@@ -7,30 +7,31 @@ import {
 } from 'marked';
 
 import {
-  LOG,
-  LOGVALUE,
+  undef,
+  defined,
+  OL,
+  isEmpty,
+  nonEmpty,
+  isString,
+  toArray,
+  isHashComment
+} from '@jdeighan/base-utils';
+
+import {
   assert,
   croak
-} from '@jdeighan/base-utils';
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG,
+  LOGVALUE
+} from '@jdeighan/base-utils/log';
 
 import {
   dbg,
   dbgEnter,
   dbgReturn
 } from '@jdeighan/base-utils/debug';
-
-import {
-  undef,
-  defined,
-  OL,
-  isEmpty,
-  nonEmpty,
-  isString
-} from '@jdeighan/coffee-utils';
-
-import {
-  blockToArray
-} from '@jdeighan/coffee-utils/block';
 
 import {
   undented
@@ -41,10 +42,6 @@ import {
 } from '@jdeighan/coffee-utils/svelte';
 
 import {
-  isHashComment
-} from '@jdeighan/mapper/utils';
-
-import {
   TreeMapper
 } from '@jdeighan/mapper/tree';
 
@@ -52,7 +49,7 @@ import {
 stripComments = function(block) {
   var i, lLines, len, line, ref;
   lLines = [];
-  ref = blockToArray(block);
+  ref = toArray(block);
   for (i = 0, len = ref.length; i < len; i++) {
     line = ref[i];
     if (nonEmpty(line) && !isHashComment(line)) {

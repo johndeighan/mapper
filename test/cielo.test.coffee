@@ -1,15 +1,19 @@
 # cielo.test.coffee
 
-import {assert, LOG, LOGVALUE, setDebugging} from '@jdeighan/base-utils'
-import {UnitTesterNorm, UnitTester, utest} from '@jdeighan/unit-tester'
-
-import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
-import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
-import {joinBlocks} from '@jdeighan/coffee-utils/block'
+import {undef, isEmpty, nonEmpty} from '@jdeighan/base-utils'
+import {assert} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {setDebugging} from '@jdeighan/base-utils/debug'
+import {
+	UnitTesterNorm, UnitTester, utest,
+	} from '@jdeighan/unit-tester'
 
 import {map} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
-import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
+import {
+	CieloToJSCodeMapper, CieloToJSExprMapper,
+	cieloToJSCode, cieloToJSExpr,
+	} from '@jdeighan/mapper/cielo'
 
 # ---------------------------------------------------------------------------
 # --- Features:
@@ -27,18 +31,15 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			hInput = {
-				source: import.meta.url
-				content: code
-				}
-			return map(hInput, TreeMapper)
+			hSource = {content: code, source: 'cielo.test.js'}
+			return map(hSource, TreeMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 	# --- test removing comments
 
-	cieloTester.equal 41, """
+	cieloTester.equal 44, """
 			# --- a comment
 			y = x
 			""", """
@@ -48,7 +49,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	cieloTester.equal 51, """
+	cieloTester.equal 54, """
 			y = x
 
 			""", """
@@ -61,7 +62,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# for i in range(5)
 	#    y *= i
 
-	cieloTester.equal 64, """
+	cieloTester.equal 67, """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -74,7 +75,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	cieloTester.equal 77, """
+	cieloTester.equal 80, """
 			x = 23
 			y = x
 					+ 5
@@ -86,7 +87,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	cieloTester.equal 89, """
+	cieloTester.equal 92, """
 			x = 23
 			y = x \
 			+ 5
@@ -99,7 +100,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	cieloTester.equal 102, """
+	cieloTester.equal 105, """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -109,7 +110,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			+ 5
 			"""
 
-	cieloTester.equal 112, """
+	cieloTester.equal 115, """
 			str = <<<
 				abc
 				def
@@ -120,7 +121,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = 42
 			"""
 
-	cieloTester.equal 123, """
+	cieloTester.equal 126, """
 			str = <<<
 				===
 				abc
@@ -132,7 +133,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = 42
 			"""
 
-	cieloTester.equal 135, """
+	cieloTester.equal 138, """
 			str = <<<
 				...this is a
 					long line
@@ -140,7 +141,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			str = "this is a long line"
 			"""
 
-	cieloTester.equal 143, """
+	cieloTester.equal 146, """
 			lItems = <<<
 				---
 				- a
@@ -149,7 +150,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			lItems = ["a","b"]
 			"""
 
-	cieloTester.equal 152, """
+	cieloTester.equal 155, """
 			hItems = <<<
 				---
 				a: 13
@@ -158,7 +159,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			hItems = {"a":13,"b":42}
 			"""
 
-	cieloTester.equal 161, """
+	cieloTester.equal 164, """
 			lItems = <<<
 				---
 				-
@@ -171,7 +172,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	cieloTester.equal 174, """
+	cieloTester.equal 177, """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -187,7 +188,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	cieloTester.equal 190, """
+	cieloTester.equal 193, """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -200,7 +201,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 203, """
+	cieloTester.equal 206, """
 			str = \"\"\"
 				this is a
 				long string
@@ -214,7 +215,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 217, '''
+	cieloTester.equal 220, '''
 			str = """
 				this is a
 				long string
@@ -228,7 +229,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 231, """
+	cieloTester.equal 234, """
 			str = '''
 				this is a
 				long string
@@ -240,45 +241,24 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 				'''
 			"""
 
-	# ------------------------------------------------------------------------
-	# Test function HEREDOC types
-
-	cieloTester.equal 246, """
-			handler = <<<
-				() ->
-					return 42
-			""", """
-			handler = () ->
-				return 42
-			"""
-
-	cieloTester.equal 255, """
-			handler = <<<
-				(x, y) ->
-					return 42
-			""", """
-			handler = (x, y) ->
-				return 42
-			"""
 
 	)()
 
 # ----------------------------------------------------------------------------
 
 (() ->
-	cieloCode = """
+	hInput = {
+		# --- must supply source, else wrong .symbols file is used
+		source: import.meta.url
+		content: """
 			# --- temp.cielo
 			if fs.existsSync('file.txt')
 				logger "file exists"
 			"""
-
-	hInput = {
-		source: import.meta.url
-		content: cieloCode
 		}
-	jsCode = map(hInput, CieloToJSMapper)
+	jsCode = cieloToJSCode(hInput)
 
-	utest.equal 281, jsCode, """
+	utest.equal 266, jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
@@ -297,16 +277,18 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 		transformValue: (code) ->
 
 			hInput = {
+				# --- must supply source, else wrong .symbols file is used
 				source: import.meta.url
 				content: code
 				}
-			return map(hInput, CieloToJSMapper)
+#			return map(hInput, CieloToJSCodeMapper)
+			return cieloToJSCode(hInput)
 
 	cieloTester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	cieloTester.equal 309, """
+	cieloTester.equal 295, """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -318,7 +300,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 	# --- But not if we're already importing them
 
-	cieloTester.equal 321, """
+	cieloTester.equal 307, """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
@@ -332,7 +314,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	cieloTester.equal 335, """
+	cieloTester.equal 321, """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -340,7 +322,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 			x = undef;
 			"""
 
-	cieloTester.equal 343, """
+	cieloTester.equal 329, """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -355,7 +337,7 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 				});
 			"""
 
-	cieloTester.equal 358, """
+	cieloTester.equal 344, """
 			x = 23
 			logger x
 			""", """
@@ -376,9 +358,8 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		mapComment: (hNode) ->
 
-			{str, uobj} = hNode
-			{comment} = uobj
-			if (comment.indexOf('||||') == 0)
+			{str, _commentText} = hNode
+			if (_commentText.indexOf('||||') == 0)
 				return str
 			else
 				return undef
@@ -387,17 +368,13 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			hInput = {
-				source: import.meta.url
-				content: code
-				}
-			return map(hInput, MyMapper)
+			return map(code, MyMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 400, """
+	cieloTester.equal 381, """
 			# --- a comment
 			# |||| stuff
 			y = x
@@ -408,17 +385,16 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 	)()
 
 # ---------------------------------------------------------------------------
-# --- test subclassing CieloToJSMapper
+# --- test subclassing CieloToJSCodeMapper
 #     retain '# ||||' style comments
 
 (() ->
-	class MyMapper extends CieloToJSMapper
+	class MyMapper extends CieloToJSCodeMapper
 
 		mapComment: (hNode) ->
 
-			{str, uobj} = hNode
-			{comment} = uobj
-			if (comment.indexOf('||||') == 0)
+			{str, _commentText} = hNode
+			if (_commentText.indexOf('||||') == 0)
 				return str
 			else
 				return undef
@@ -427,17 +403,13 @@ import {CieloToJSMapper} from '@jdeighan/mapper/cielo'
 
 		transformValue: (code) ->
 
-			hInput = {
-				source: import.meta.url
-				content: code
-				}
-			return map(hInput, MyMapper)
+			return map(code, MyMapper)
 
 	cieloTester = new CieloTester(import.meta.url)
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 440, """
+	cieloTester.equal 416, """
 			# --- a comment
 			# |||| stuff
 			y = x

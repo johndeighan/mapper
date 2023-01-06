@@ -3,12 +3,31 @@
 var hHereDocs, lHereDocs;
 
 import {
-  LOG,
-  assert,
-  croak,
-  isTAML,
-  fromTAML
+  undef,
+  defined,
+  notdefined,
+  pass,
+  escapeStr,
+  OL,
+  CWS,
+  className,
+  isString,
+  isNonEmptyString,
+  isHash,
+  isEmpty,
+  nonEmpty,
+  isObject,
+  toBlock
 } from '@jdeighan/base-utils';
+
+import {
+  assert,
+  croak
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG
+} from '@jdeighan/base-utils/log';
 
 import {
   dbg,
@@ -17,19 +36,9 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  undef,
-  defined,
-  notdefined,
-  pass,
-  isString,
-  isHash,
-  isEmpty,
-  nonEmpty,
-  escapeStr,
-  CWS,
-  OL,
-  className
-} from '@jdeighan/coffee-utils';
+  isTAML,
+  fromTAML
+} from '@jdeighan/base-utils/taml';
 
 import {
   firstLine,
@@ -38,13 +47,50 @@ import {
 } from '@jdeighan/coffee-utils/block';
 
 import {
-  indented
+  indented,
+  undented
 } from '@jdeighan/coffee-utils/indent';
+
+import {
+  Fetcher
+} from '@jdeighan/mapper/fetcher';
 
 lHereDocs = []; // checked in this order - list of type names
 
 hHereDocs = {}; // {type: obj}
 
+
+// ---------------------------------------------------------------------------
+export var replaceHereDocs = (line, fetcher) => {
+  var block, hNode, i, lLines, lNewParts, lParts, len, part, result, str;
+  dbgEnter("replaceHereDocs", line);
+  assert(isString(line), "not a string");
+  assert(fetcher instanceof Fetcher, "not a Fetcher");
+  lParts = lineToParts(line);
+  dbg('lParts', lParts);
+  lNewParts = []; // to be joined to form new line
+  for (i = 0, len = lParts.length; i < len; i++) {
+    part = lParts[i];
+    if (part === '<<<') {
+      dbg("get HEREDOC lines until blank line");
+      lLines = [];
+      while (defined(hNode = fetcher.fetch()) && !hNode.isEmptyLine()) {
+        lLines.push(indented(hNode.str, hNode.level));
+      }
+      block = undented(toBlock(lLines));
+      dbg('block', block);
+      str = mapHereDoc(block);
+      assert(isString(str), `str is ${OL(str)}`);
+      dbg('mapped block', str);
+      lNewParts.push(str);
+    } else {
+      lNewParts.push(part); // keep as is
+    }
+  }
+  result = lNewParts.join('');
+  dbgReturn("replaceHereDocs", result);
+  return result;
+};
 
 // ---------------------------------------------------------------------------
 export var lineToParts = function(line) {
@@ -63,32 +109,21 @@ export var lineToParts = function(line) {
 };
 
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// --- To extend,
-//        define map(block) that:
-//           returns undef if it's not your HEREDOC type
-//           else returns a CieloScript expression
-export var BaseHereDoc = class BaseHereDoc {
-  map(block) {
-    return undef;
-  }
-
-};
-
-// ---------------------------------------------------------------------------
 // Returns a CieloScript expression or undef
 export var mapHereDoc = function(block) {
-  var heredoc, i, len, result, str, type;
+  var heredocObj, i, len, result, type;
   dbgEnter("mapHereDoc", block);
   assert(isString(block), "not a string");
   for (i = 0, len = lHereDocs.length; i < len; i++) {
     type = lHereDocs[i];
-    dbg(`CHECK FOR ${type} HEREDOC`);
-    heredoc = hHereDocs[type];
-    if (defined(str = heredoc.map(block))) {
+    dbg(`TRY ${type} HEREDOC`);
+    heredocObj = hHereDocs[type];
+    result = heredocObj.mapToCielo(block);
+    if (defined(result)) {
+      assert(isString(result), "result not a string");
       dbg(`   - FOUND ${type} HEREDOC`);
-      dbgReturn("mapHereDoc", str);
-      return str;
+      dbgReturn("mapHereDoc", result);
+      return result;
     } else {
       dbg(`   - NOT A ${type} HEREDOC`);
     }
@@ -100,36 +135,41 @@ export var mapHereDoc = function(block) {
 };
 
 // ---------------------------------------------------------------------------
-export var isHereDocType = function(type) {
-  return defined(hHereDocs[type]);
-};
-
-// ---------------------------------------------------------------------------
-export var addHereDocType = function(type, inputClass) {
-  var installed, name, oHereDoc;
-  dbgEnter("addHereDocType", type, inputClass);
-  assert(inputClass != null, "Missing input class");
-  name = className(inputClass);
-  if (defined(hHereDocs[type])) {
-    // --- Already installed, but OK if it's the same class
-    installed = className(hHereDocs[type]);
-    if (installed !== name) {
-      croak(`type ${OL(type)}: add ${name}, installed is ${installed}`);
-    }
-    dbg("already installed");
-    dbgReturn("addHereDocType");
-    return;
+export var addHereDocType = function(type, obj) {
+  var subtype;
+  dbgEnter("addHereDocType", type, obj);
+  assert(isNonEmptyString(type), `type is ${OL(type)}`);
+  if (!isObject(obj, 'mapToCielo')) {
+    [type, subtype] = jsType(obj);
+    console.log(`type = ${OL(type)}`);
+    console.log(`subtype = ${OL(subtype)}`);
   }
-  oHereDoc = new inputClass();
-  assert(oHereDoc instanceof BaseHereDoc, "addHereDocType() requires a BaseHereDoc subclass");
+  assert(isObject(obj, 'mapToCielo'), `Bad input object: ${OL(obj)}`);
+  assert(obj instanceof BaseHereDoc, "not a BaseHereDoc");
+  assert(notdefined(hHereDocs[type]), `Heredoc type ${type} already installed`);
   lHereDocs.push(type);
-  hHereDocs[type] = oHereDoc;
+  hHereDocs[type] = obj;
   dbgReturn("addHereDocType");
 };
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// --- To extend,
+//        define mapToCielo(block) that:
+//           returns undef if it's not your HEREDOC type
+//           else returns a CieloScript expression
+export var BaseHereDoc = class BaseHereDoc {
+  mapToCielo(block) {
+    return undef;
+  }
+
+};
+
+// ---------------------------------------------------------------------------
 export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc {
-  map(block) {
+  // --- First line must be '==='
+  //     Return value is quoted string of remaining lines
+  mapToCielo(block) {
     if (firstLine(block) !== '===') {
       return undef;
     }
@@ -140,7 +180,10 @@ export var ExplicitBlockHereDoc = class ExplicitBlockHereDoc extends BaseHereDoc
 
 // ---------------------------------------------------------------------------
 export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
-  map(block) {
+  // --- First line must begin with '...'
+  //     Return value is single line string after '...' with
+  //        runs of whitespace replaced with a single space char
+  mapToCielo(block) {
     if (block.indexOf('...') !== 0) {
       return undef;
     }
@@ -151,40 +194,17 @@ export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
 
 // ---------------------------------------------------------------------------
 export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
-  map(block) {
+  // --- First line must be '---'
+  mapToCielo(block) {
     var result;
-    if (!isTAML(block)) {
+    dbgEnter('TAMLHereDoc.mapToCielo', block);
+    if (firstLine(block) !== '---') {
+      dbgReturn('TAMLHereDoc.mapToCielo', undef);
       return undef;
     }
-    result = fromTAML(block);
-    return JSON.stringify(result);
-  }
-
-};
-
-// ---------------------------------------------------------------------------
-export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
-  map(block) {
-    if (!this.isFunctionDef(block)) {
-      return undef;
-    }
-    return block;
-  }
-
-  // ........................................................................
-  isFunctionDef(block) {
-    var _, lMatches, strBody, strParms;
-    dbgEnter("isFunctionDef", block);
-    lMatches = block.match(/^\(\s*([A-Za-z_][A-Za-z0-9_]*(?:,\s*[A-Za-z_][A-Za-z0-9_]*)*)?\s*\)\s*->[ \t]*\n?(.*)$/s); // optional parameters
-    if (lMatches) {
-      // --- HERE, we should check if it compiles
-      [_, strParms, strBody] = lMatches;
-      dbgReturn("isFunctionDef", true);
-      return true;
-    } else {
-      dbgReturn("isFunctionDef", false);
-      return false;
-    }
+    result = JSON.stringify(fromTAML(block));
+    dbgReturn('TAMLHereDoc.mapToCielo', result);
+    return result;
   }
 
 };
@@ -192,10 +212,8 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
 // ---------------------------------------------------------------------------
 
 // --- Add the standard HEREDOC types
-addHereDocType('one line', OneLineHereDoc);
+addHereDocType('one line', new OneLineHereDoc());
 
-addHereDocType('block', ExplicitBlockHereDoc);
+addHereDocType('block', new ExplicitBlockHereDoc());
 
-addHereDocType('taml', TAMLHereDoc);
-
-addHereDocType('func', FuncHereDoc);
+addHereDocType('taml', new TAMLHereDoc());

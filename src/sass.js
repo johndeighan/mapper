@@ -3,24 +3,24 @@
 import sass from 'sass';
 
 import {
-  LOG,
+  undef,
+  isHashComment
+} from '@jdeighan/base-utils';
+
+import {
   assert,
   croak
-} from '@jdeighan/base-utils';
+} from '@jdeighan/base-utils/exceptions';
+
+import {
+  LOG
+} from '@jdeighan/base-utils/log';
 
 import {
   dbg,
   dbgEnter,
   dbgReturn
 } from '@jdeighan/base-utils/debug';
-
-import {
-  undef
-} from '@jdeighan/coffee-utils';
-
-import {
-  isHashComment
-} from '@jdeighan/mapper/utils';
 
 import {
   Mapper,

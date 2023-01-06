@@ -1,14 +1,15 @@
-# FetcherEx.test.coffee
+# FetcherInc.test.coffee
 
-import {assert, croak} from '@jdeighan/base-utils'
+import {undef, defined} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {undef, defined} from '@jdeighan/coffee-utils'
-import {FetcherEx} from '@jdeighan/mapper/fetcherex'
+
+import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 
 # ---------------------------------------------------------------------------
-# --- FetcherEx should:
+# --- FetcherInc should:
 #        - handle #include
 #        - override sourceInfoStr() to include include files
 # ---------------------------------------------------------------------------
@@ -18,7 +19,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 
 		transformValue: (hInput) ->
 
-			fetcher = new FetcherEx(hInput)
+			fetcher = new FetcherInc(hInput)
 			return fetcher.getBlock()
 
 	tester = new MyTester()
@@ -52,7 +53,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 	# ------------------------------------------------------------------------
 
 	tester.equal 54, {
-		source: 'FetcherEx.test.coffee'
+		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
 			#include include.md
@@ -67,7 +68,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 		"""
 
 	tester.like 69, {
-		source: 'FetcherEx.test.coffee'
+		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
 					#include include.md
@@ -78,7 +79,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 		"""
 
 	tester.like 80, {
-		source: 'FetcherEx.test.coffee'
+		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
 			#include include2.md
@@ -103,7 +104,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 
 		transformValue: (hInput) ->
 
-			fetcher = new FetcherEx(hInput)
+			fetcher = new FetcherInc(hInput)
 			lNodes = []
 			while defined(hNode = fetcher.fetch())
 				lNodes.push hNode
@@ -114,7 +115,7 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 	# ----------------------------------------------------------
 
 	tester.like 120, {
-		source: 'FetcherEx.test.coffee'
+		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
 			#include include2.md
@@ -123,35 +124,35 @@ import {FetcherEx} from '@jdeighan/mapper/fetcherex'
 			{
 				level: 0,
 				str: 'abc',
-				source: 'FetcherEx.test.coffee/1'}
+				source: 'FetcherInc.test.coffee/1'}
 			{
 				level: 0,
 				str: 'top',
-				source: 'FetcherEx.test.coffee/2 include2.md/1'}
+				source: 'FetcherInc.test.coffee/2 include2.md/1'}
 			{
 				level: 0,
 				str: '===',
-				source: 'FetcherEx.test.coffee/2 include2.md/2'}
+				source: 'FetcherInc.test.coffee/2 include2.md/2'}
 			{
 				level: 1,
 				str: 'title',
-				source: 'FetcherEx.test.coffee/2 include2.md/3 title.md/1'}
+				source: 'FetcherInc.test.coffee/2 include2.md/3 title.md/1'}
 			{
 				level: 1,
 				str: '=====',
-				source: 'FetcherEx.test.coffee/2 include2.md/3 title.md/2'}
+				source: 'FetcherInc.test.coffee/2 include2.md/3 title.md/2'}
 			{
 				level: 0,
 				str: '',
-				source: 'FetcherEx.test.coffee/2 include2.md/3 title.md/3'}
+				source: 'FetcherInc.test.coffee/2 include2.md/3 title.md/3'}
 			{
 				level: 0,
 				str: '',
-				source: 'FetcherEx.test.coffee/2 include2.md/4'}
+				source: 'FetcherInc.test.coffee/2 include2.md/4'}
 			{
 				level: 0,
 				str: 'ghi',
-				source: 'FetcherEx.test.coffee/3'}
+				source: 'FetcherInc.test.coffee/3'}
 			]
 
 	)()

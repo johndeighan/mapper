@@ -1,9 +1,11 @@
 # RunTimeStack.coffee
 
-import {LOG, LOGVALUE, assert, croak} from '@jdeighan/base-utils'
 import {
-	undef, pass, defined, notdefined, OL, isString, isInteger, isHash,
-	} from '@jdeighan/coffee-utils'
+	undef, defined, notdefined, OL, isHash, toBlock,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+
 import {Node} from '@jdeighan/mapper/node'
 
 # ---------------------------------------------------------------------------
@@ -69,11 +71,19 @@ export class RunTimeStack
 
 	# ..........................................................
 
+	desc: () ->
+
+		lLines = []
+		for hNode in @lStack
+			lLines.push hNode.desc()
+		return toBlock(lLines)
+
+	# ..........................................................
+
 	checkNode: (hNode) ->
 		# --- Each node should have a key named hUser - a hash
 		#     hUser should have a key named _parent - a hash
 
 		assert (hNode instanceof Node), "not a Node"
-		assert isHash(hNode.hUser), "missing hUser key"
-		assert isHash(hNode.hUser._parent), "missing _parent key"
+		assert isHash(hNode._hEnv), "missing _hEnv key in #{OL(hNode)}"
 		return

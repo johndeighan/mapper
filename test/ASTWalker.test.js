@@ -3,30 +3,29 @@
 var ASTTester, coffeeCode, rootDir, tester;
 
 import {
-  setDebugging,
-  resetDebugging,
-  getDebugLog
-} from '@jdeighan/base-utils/debug';
+  defined,
+  nonEmpty,
+  toBlock,
+  OL
+} from '@jdeighan/base-utils';
 
 import {
   LOG,
   LOGVALUE,
-  clearAllLogs
+  clearMyLogs,
+  getMyLog,
+  dumpLog
 } from '@jdeighan/base-utils/log';
+
+import {
+  setDebugging,
+  getDebugLog
+} from '@jdeighan/base-utils/debug';
 
 import {
   utest,
   UnitTester
 } from '@jdeighan/unit-tester';
-
-import {
-  defined,
-  nonEmpty
-} from '@jdeighan/coffee-utils';
-
-import {
-  toBlock
-} from '@jdeighan/coffee-utils/block';
 
 import {
   indented
@@ -425,7 +424,7 @@ export timestamp = () ->
 lMissing: croak`);
 
 // ---------------------------------------------------------------------------
-tester.equal(664, slurp(mkpath(rootDir, 'src', 'utils.coffee')), `lExported: isHashComment`);
+tester.equal(664, slurp(mkpath(rootDir, 'test', 'utils_utest.coffee')), `lExported: isHashComment`);
 
 // ---------------------------------------------------------------------------
 coffeeCode = `export mapMath = (line) ->
@@ -468,11 +467,25 @@ export removeKeys = (h, lKeys) =>
 // This tester includes debugging info
 (function() {
   var ASTTester2, tester2;
-  setDebugging('ASTWalker.visit beginScope endScope', 'Context.add Context.addGlobal', {
-    returnFrom: function() {
+  setDebugging(['ASTWalker.visit', 'beginScope', 'endScope', 'Context.add', 'Context.addGlobal'], {
+    noecho: true,
+    returnFrom: () => {
       return true;
     },
-    enter: function(funcName, lArgs, level) {
+    yield: () => {
+      return true;
+    },
+    resume: () => {
+      return true;
+    },
+    string: () => {
+      return true;
+    },
+    value: () => {
+      return true;
+    },
+    // --- set a custom logger for dbgEnter()
+    enter: function(level, funcName, lArgs) {
       switch (funcName) {
         case 'ASTWalker.visit':
           return LOG(indented(lArgs[0].type, level));
@@ -485,18 +498,19 @@ export removeKeys = (h, lKeys) =>
         case 'Context.addGlobal':
           return LOG(indented(`ADDGLOBAL ${lArgs[0]}`, level));
         default:
-          return false;
+          console.log(`ERROR: UNKNOWN funcName ${OL(funcName)}`);
+          return true;
       }
     }
   });
   ASTTester2 = class ASTTester2 extends UnitTester {
     transformValue(coffeeCode) {
       var result, walker;
-      clearAllLogs();
+      clearMyLogs();
       walker = new ASTWalker(coffeeCode);
-      result = walker.walk('asText');
-      //			walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
-      return getDebugLog();
+      result = walker.walk('logCalls');
+      // walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
+      return getMyLog();
     }
 
   };

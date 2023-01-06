@@ -1,39 +1,40 @@
 # TreeMapper.coffee
 
 import {
-	LOG, LOGVALUE, assert, croak, toTAML,
-	} from '@jdeighan/base-utils'
-import {setLogger, clearMyLogs, getMyLog} from '@jdeighan/base-utils/log'
-import {
-	dbg, dbgEnter, dbgReturn,
-	} from '@jdeighan/base-utils/debug'
-import {unescapeStr, getOptions} from '@jdeighan/base-utils/utils'
-import {
 	undef, pass, defined, notdefined, OL, rtrim, words,
 	isString, isNumber, isFunction, isArray, isHash, isInteger,
-	isEmpty, nonEmpty, isArrayOfStrings,
-	} from '@jdeighan/coffee-utils'
-import {toBlock} from '@jdeighan/coffee-utils/block'
+	isEmpty, nonEmpty, getOptions, toBlock, isArrayOfStrings,
+	} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {
-	splitLine, indentLevel, indented, undented,
+	LOG, LOGVALUE, clearMyLogs, getMyLog, echoMyLogs,
+	} from '@jdeighan/base-utils/log'
+import {
+	dbg, dbgEnter, dbgReturn, clearDebugLog, getDebugLog, callStack,
+	} from '@jdeighan/base-utils/debug'
+import {toTAML} from '@jdeighan/base-utils/taml'
+import {
+	splitLine, indentLevel, indented, undented, isUndented,
 	} from '@jdeighan/coffee-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
-import {lineToParts, mapHereDoc} from '@jdeighan/mapper/heredoc'
+import {replaceHereDocs} from '@jdeighan/mapper/heredoc'
 import {RunTimeStack} from '@jdeighan/mapper/stack'
 
 threeSpaces = "   "
 
 # ===========================================================================
 #   class TreeMapper
-#      - mapNonSpecial() returns mapped item (i.e. uobj) or undef
 #   to use, override:
-#      mapNode(hNode) - returns user object, def: returns hNode.str
+#      getUserObj(hNode) - returns user object
+#         default: returns hNode.str
 #      mapCmd(hNode)
-#      beginLevel(hUser, level)
-#      visit(hNode, hUser, hParent, stack)
-#      endVisit(hNode, hUser, hParent, stack)
-#      endLevel(hUser, level) -
+#      beginLevel(hEnv, level)
+#      visit(hNode)
+#      endVisit(hNode)
+#      visitSpecial(hNode)
+#      endVisitSpecial(hNode)
+#      endLevel(hEnv, level) -
 
 export class TreeMapper extends Mapper
 
@@ -51,11 +52,12 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	registerVisitType: (type, visiter, endVisiter) ->
+	registerVisitType: (type, visitor, endVisitor) ->
 
+		assert @isValidType(type), "Unknown type: #{type}"
 		@hSpecialVisitTypes[type] = {
-			visiter
-			endVisiter
+			visitor
+			endVisitor
 			}
 		return
 
@@ -63,89 +65,53 @@ export class TreeMapper extends Mapper
 	# --- Will only receive non-special lines
 	#        - adjust level if #ifdef or #ifndef was encountered
 	#        - replace HEREDOCs
-	#        - call mapNode() - returns str by default
+	#        - call getUserObj() - returns str by default
 
-	mapNonSpecial: (hNode) ->
+	mapToUserObj: (hNode) ->
 
-		dbgEnter "TreeMapper.mapNode", hNode
-		assert notdefined(hNode.type), "hNode is #{OL(hNode)}"
-
-		{str, level, srcLevel} = hNode
-		assert nonEmpty(str), "empty str in #{OL(hNode)}"
-		assert isInteger(srcLevel, {min: 0}), "Bad srcLevel in #{OL(hNode)}"
-		assert isInteger(level, {min: 0}), "Bad level in #{OL(hNode)}"
-		assert (level == srcLevel), "levels not equal in #{OL(hNode)}"
+		dbgEnter "TreeMapper.mapToUserObj", hNode
+		@checkNonSpecial hNode
 
 		if @adjustLevel(hNode)
-			dbg "hNode.level adjusted #{level} => #{hNode.level}"
+			dbg "hNode.level adjusted #{hNode.srcLevel} => #{hNode.level}"
 		else
 			dbg "no level adjustment"
 
+		{str, srcLevel} = hNode
 		dbg "check for HEREDOC"
 		if (str.indexOf('<<<') >= 0)
-			newStr = @handleHereDocsInLine(str, srcLevel)
+			newStr = replaceHereDocs(str, this)
 			dbg "=> #{OL(newStr)}"
+			assert isUndented(newStr),
+				"after heredoc handling, str has indentation"
 			hNode.str = newStr
 		else
 			dbg "no HEREDOCs"
 
-		# --- NOTE: mapNode() may return undef, meaning to ignore
-		#     We must pass srcLevel since mapNode() may use fetch()
-		uobj = @mapNode(hNode)
-		dbgReturn "TreeMapper.mapNode", uobj
+		# --- NOTE: getUserObj() may return undef, meaning to ignore
+		#     We must pass srcLevel since getUserObj() may use fetch()
+		uobj = @getUserObj(hNode)
+		dbgReturn "TreeMapper.mapToUserObj", uobj
 		return uobj
 
 	# ..........................................................
 
-	mapNode: (hNode) ->
-		# --- returns str by default
-		#     designed to override
+	getUserObj: (hNode) ->
 
 		return hNode.str
 
 	# ..........................................................
 
-	handleHereDocsInLine: (line, srcLevel) ->
-		# --- Indentation has been removed from line
-		# --- Find each '<<<' and replace with result of mapHereDoc()
+	checkNonSpecial: (hNode) ->
 
-		dbgEnter "handleHereDocsInLine", line
-		assert isString(line), "not a string"
-		lParts = lineToParts(line)
-		dbg 'lParts', lParts
-		lNewParts = []    # to be joined to form new line
-		for part in lParts
-			if part == '<<<'
-				dbg "get HEREDOC lines until blank line"
-
-				# --- block will be undented, blank line will be discarded
-				stopperFunc = (hNode) ->
-					return isEmpty(hNode.str)
-
-				# --- block will use TABs for indentation
-				block = undented @getBlock(stopperFunc)
-				@fetch()             # skip the terminating line
-				dbg 'block', block
-
-				uobj = mapHereDoc(block)
-				assert defined(uobj), "mapHereDoc returned undef"
-				dbg 'mapped block', uobj
-
-				str = @handleHereDoc(uobj, block)
-				assert isString(str), "str is #{OL(str)}"
-				lNewParts.push str
-			else
-				lNewParts.push part    # keep as is
-
-		result = lNewParts.join('')
-		dbgReturn "handleHereDocsInLine", result
-		return result
-
-	# ..........................................................
-
-	handleHereDoc: (uobj, block) ->
-
-		return uobj
+		{type, str, srcLevel, level} = hNode
+		assert notdefined(hNode.type), "hNode is #{OL(hNode)}"
+		assert nonEmpty(str), "empty str in #{OL(hNode)}"
+		assert isUndented(str), "str has indentation"
+		assert isInteger(srcLevel, {min: 0}), "Bad srcLevel in #{OL(hNode)}"
+		assert isInteger(level, {min: 0}), "Bad level in #{OL(hNode)}"
+		assert (level == srcLevel), "levels not equal in #{OL(hNode)}"
+		return
 
 	# ..........................................................
 
@@ -172,13 +138,16 @@ export class TreeMapper extends Mapper
 				assert defined(name), "Invalid #{cmd}, argstr=#{OL(argstr)}"
 				ok = @isDefined(name, value, isEnv)
 				dbg "ok = #{OL(ok)}"
-				keep = if (cmd == 'ifdef') then ok else ! ok
+				if (cmd == 'ifdef')
+					keep = ok
+				else
+					keep = ! ok
 				dbg "keep = #{OL(keep)}"
 				if keep
 					dbg "add #{srcLevel} to lMinuses"
 					@lMinuses.push srcLevel
 				else
-					lSkipLines = @skipLinesAtLevel(srcLevel)
+					lSkipLines = @fetchLinesAtLevel(srcLevel+1)
 					dbg "Skip #{lSkipLines.length} lines"
 				dbgReturn "TreeMapper.mapCmd", undef
 				return undef
@@ -187,32 +156,6 @@ export class TreeMapper extends Mapper
 		uobj = super(hNode)
 		dbgReturn "TreeMapper.mapCmd", uobj
 		return uobj
-
-	# ..........................................................
-
-	skipLinesAtLevel: (srcLevel) ->
-		# --- srcLevel is the level of #ifdef or #ifndef
-		#     don't discard the end line
-
-		dbgEnter "TreeMapper.skipLinesAtLevel", srcLevel
-		stopperFunc = (hNode) =>
-			return (hNode.srcLevel <= srcLevel)
-		block = @getBlock(stopperFunc)
-		dbgReturn "TreeMapper.skipLinesAtLevel", block
-		return block
-
-	# ..........................................................
-
-	fetchBlockAtLevel: (srcLevel) ->
-		# --- srcLevel is the level of enclosing cmd/tag
-		#     don't discard the end line
-
-		dbgEnter "TreeMapper.fetchBlockAtLevel", srcLevel
-		stopperFunc = (hNode) =>
-			return (hNode.srcLevel <= srcLevel) && nonEmpty(hNode.str)
-		block = undented @getBlock(stopperFunc)
-		dbgReturn "TreeMapper.fetchBlockAtLevel", block
-		return block
 
 	# ..........................................................
 
@@ -294,202 +237,253 @@ export class TreeMapper extends Mapper
 		return undef
 
 	# ..........................................................
+	# ..........................................................
 
 	walk: (hOptions={}) ->
-		# --- Valid options:
+		# --- returns an array, normally strings
+		#     Valid options:
 		#        logNodes
-		#        includeUserHash - include user hash in the logged nodes
-		#     returns an array, normally strings
+		#        logCalls
+		#        logLines
+		#        logHash
+		#        logStack
+		#        echo
 
-		dbgEnter "TreeMapper.walk", hOptions
+		dbgEnter "TreeMapper.walk"
 
-		# --- These are needed by local functions
-		{logNodes, includeUserHash} = getOptions(hOptions)
-		lLines = []                  # --- resulting output
+		hOptions = getOptions(hOptions)
+		if hOptions.echo
+			echoMyLogs()
+		{logNodes,logCalls,logLines,logHash,logStack} = hOptions
+		lDebugs = []
+		for key in Object.keys(hOptions)
+			if hOptions[key]
+				lDebugs.push key
+		if nonEmpty(lDebugs)
+			dbg "DEBUG: #{lDebugs.join(',')}"
+
+		hGlobalEnv = {}            # --- hParent for level 0 nodes
+		lLines = []                # --- resulting output
+		stack = new RunTimeStack() # --- a stack of Node objects
 
 		# .......................................................
 		#     Local Functions
+		#     these MUST use fat-arrow syntax, to preserve 'this'
 		# .......................................................
 
-		log = (level, text, hUser) =>
+		logstr = (block, level=undef) =>
+
+			dbgEnter 'logstr', block, level
+			if defined(level)
+				result = indented(block, level, threeSpaces)
+			else
+				result = block
+			dbgReturn 'logstr', result
+			return result
+
+		# .......................................................
+
+		doLogNode = (hNode, level) =>
 
 			if ! logNodes
 				return
+			LOG logstr("----- NODE -----")
+			LOG logstr(indented(toTAML(hNode)))
+			LOG logstr("----------------")
+			return
 
-			dbgEnter "log", level, text, hUser
-			LOG toBlock(indented([text], level, threeSpaces))
-			if includeUserHash && defined(hUser)
-				if isEmpty(hUser)
-					LOG "hUser = {}"
-				else
-					LOGVALUE 'hUser', hUser
-					LOG ""
-			dbgReturn "log"
+		# .......................................................
+
+		doLogCall = (call, level) =>
+
+			if ! logCalls
+				return
+			if defined(level)
+				str = logstr(call, level)
+			else
+				str = logstr(call)
+			LOG str
+			return
+
+		# .......................................................
+
+		doLogLines = (level) =>
+
+			if ! logLines
+				return
+			LOG logstr("----- LINES -----", level)
+			for line in lLines
+				LOG logstr(indented(line), level)
+			return
+
+		# .......................................................
+
+		doLogHash = (h, level) =>
+
+			if ! logHash
+				return
+			if isEmpty(h)
+				LOG logstr("----- EMPTY HASH -----", level)
+			else
+				LOG logstr("----- HASH -----", level)
+				LOG logstr(toTAML(h), level)
+			LOG logstr("----------------", level)
+			return
+
+		# .......................................................
+
+		doLogStack = (level) =>
+
+			if ! logStack
+				return
+			LOG logstr("----- STACK -----", level)
+			LOG logstr(stack.desc(), level)
+			LOG logstr("-----------------", level)
 			return
 
 		# .......................................................
 
 		add = (item) =>
 			# --- item can be any type of object
+			#     returns true iff something was added
 
 			dbgEnter "add", item
-			assert defined(item), "item is undef"
-			if isArray(item)
-				dbg "item is an array"
-				for subitem in item
-					if defined(subitem)
-						lLines.push subitem
-			else
+			if isString(item)
 				dbg "add item #{OL(item)}"
 				lLines.push item
-			dbgReturn "add"
-			return
-
-		# .......................................................
-
-		addItem = (item, level) =>
-
-			assert !isArray(item), "item is an array"
-			if isString(item)
-				lLines.push indented(item, level)
+				result = true
+			else if isArray(item)
+				dbg "item is an array"
+				result = false
+				for subitem in item
+					if add subitem
+						result = true
+			else if notdefined(item)
+				result = false
 			else
-				lLines.push item
+				croak "Bad item: #{OL(item)}"
+			dbgReturn "add", result
+			return result
 
 		# .......................................................
 
-		doBeginWalk = (hUser) =>
+		doVisitNode = (hNode) =>
 
-			dbgEnter "doBeginWalk"
-			log 0, "BEGIN WALK", hGlobalUser
-			text = @beginWalk hUser
-			if defined(text)
-				add text
-			dbgReturn "doBeginWalk"
-			return
+			dbgEnter 'doVisitNode'
+			{type, level, uobj} = hNode
 
-		# .......................................................
-
-		doEndWalk = (hUser) =>
-
-			dbgEnter "doEndWalk"
-			log 0, "END WALK", hGlobalUser
-			text = @endWalk hUser
-			if defined(text)
-				add text
-			dbgReturn "doEndWalk"
-			return
-
-		# .......................................................
-
-		doBeginLevel = (hUser, level) =>
-
-			dbgEnter "doBeginLevel"
-			log level, "BEGIN LEVEL #{level}", hUser
-			text = @beginLevel hUser, level
-			if defined(text)
-				add text
-			dbgReturn "doBeginLevel"
-			return
-
-		# .......................................................
-
-		doEndLevel = (hUser, level) =>
-
-			dbgEnter "doEndLevel"
-			log level, "END LEVEL #{level}", hUser
-			text = @endLevel hUser, level
-			if defined(text)
-				add text
-			dbgReturn "doEndLevel"
-			return
-
-		# .......................................................
-
-		doVisit = (hNode) =>
-
-			# --- visit the node
-			{type, hUser, level, str, uobj} = hNode
-			log level, "VISIT #{level} #{OL(str)}", hUser
-
+			doLogCall "VISIT #{level} #{OL(uobj)}", level
 			if defined(type)
-				dbg "type = #{type}"
-				text = @visitSpecial(type, hNode, hUser, stack)
+				added = add @visitSpecial(hNode)
 			else
-				dbg "no type"
-				text = @visit(hNode, hUser, hUser._parent, stack)
-			if defined(text)
-				add text
+				added = add @visit(hNode)
+			if added
+				doLogLines level
+			doLogHash hNode._hEnv, level
+			dbgReturn 'doVisitNode'
 			return
 
 		# .......................................................
 
-		doEndVisit = (hNode) =>
+		doEndVisitNode = (hNode) =>
 
-			# --- end visit the node
-			{type, hUser, level, str, uobj} = hNode
-			log level, "END VISIT #{level} #{OL(str)}", hUser
-
+			dbgEnter 'doEndVisitNode'
+			{type, level, _hEnv, uobj} = hNode
+			doLogCall "END VISIT #{level} #{OL(uobj)}", level
 			if defined(type)
-				dbg "type = #{type}"
-				text = @endVisitSpecial type, hNode, hUser, stack
+				added = add @endVisitSpecial(hNode)
 			else
-				dbg "no type"
-				text = @endVisit hNode, hUser, hUser._parent, stack
-			if defined(text)
-				add text
+				added = add @endVisit(hNode)
+			if added
+				doLogLines level
+			doLogHash _hEnv, level
+			dbgReturn 'doEndVisitNode'
+			return
+
+		# .......................................................
+
+		doEndLevel = (hNode) =>
+
+			dbgEnter 'doEndLevel', level
+			{level, _hEnv} = hNode
+
+			doLogCall "END LEVEL #{level}", level
+			added = add @endLevel(_hEnv, level)
+			if added
+				doLogLines level
+			doLogHash _hEnv, level
+			dbgReturn 'doEndLevel'
 			return
 
 		# .......................................................
 		#     main body of walk()
 		# .......................................................
 
-		# --- Initialize local state
+		doLogCall "BEGIN WALK", 0
+		added = add @beginWalk(hGlobalEnv)
+		if added
+			doLogLines 0
+		doLogHash hGlobalEnv, 0
 
-		stack = new RunTimeStack()   # --- a stack of Node objects
-		hGlobalUser = {}             # --- hParent for level 0 nodes
+		# === Begin First Node ===
 
-		doBeginWalk hGlobalUser
+		hNode = @get()
 
-		# --- Iterate over all input lines
+		if notdefined(hNode)
+			dbg "first node is not defined"
+			doLogCall "END WALK"
+			added = add @endWalk(hGlobalEnv)
+			if added
+				doLogLines 0
+			doLogHash hGlobalEnv
+			dbgReturn "TreeMapper.walk", lLines
+			return lLines
 
-		dbg "getting lines"
-		i = 0
-		for hNode from @all()
+		{level, uobj} = hNode     # unpack node
+		assert (level == 0), "1st node at level #{level}"
+		dbg "FIRST: [#{OL(level)} #{OL(uobj)}]"
+		doLogNode hNode, 0
 
-			# --- Log input lines for debugging
+		hNode._hEnv = {
+			_hParent: hGlobalEnv
+			}
 
-			dbg "hNode[#{i}]", hNode
+		doLogCall "BEGIN LEVEL 0", 0
+		added = add @beginLevel(hGlobalEnv, 0)
+		if added
+			doLogLines 0
+		doLogHash hGlobalEnv, 0
 
-			{level, str} = hNode     # unpack node
+		doVisitNode hNode
 
-			if (i==0)
-				# --- The first node is a special case because
-				#        - it must be at level 0
-				#        - its parent is the global user hash
-				#     handle it, then continue to the 2nd node (if any)
+		dbg "push hNode onto stack"
+		stack.push hNode
+		doLogStack 0
 
-				assert (level == 0), "first node at level #{level}, not 0"
-				hNode.hUser = {_parent: hGlobalUser}
-				doBeginLevel hGlobalUser, 0
-				doVisit hNode
-				stack.push hNode
-				dbg 'stack', stack
-				i = 1
-				continue    # restart the loop
+		# === End First Node ===
 
-			# --- add user hash
+		for hNode from @allNodes()
+			{level, uobj} = hNode     # unpack node
+			dbg "GOT: [#{OL(level)} #{OL(uobj)}]"
+			doLogNode hNode, level
 
-			hUser = hNode.hUser = {_parent: stack.TOS().hUser}
+			# --- Add env to node
 
-			# --- At this point, the previous node is on top of stack
+			if stack.isEmpty()
+				hNode._hEnv = {
+					_hParent: hGlobalEnv
+					}
+			else
+				hNode._hEnv = {
+					_hParent: stack.TOS()._hEnv
+					}
+
 			# --- End any levels > level
-
-			while (stack.TOS().level > level)
-				hPrevNode = stack.pop()
-				dbg "pop node", hPrevNode
-
-				doEndVisit hPrevNode
-				doEndLevel hPrevNode.hUser, hPrevNode.level
+			while defined(hTOS = stack.TOS()) && (hTOS.level > level)
+				hPopNode = stack.pop()
+				dbg "POP: [#{OL(hPopNode.level)} #{OL(hPopNode.uobj)}]"
+				doEndVisitNode hPopNode
+				doEndLevel hPopNode
 
 			diff = level - stack.TOS().level
 
@@ -500,24 +494,35 @@ export class TreeMapper extends Mapper
 			assert (diff < 2), "Shouldn't happen"
 
 			if (diff == 0)
+				dbg "end prev node, visit new node, replace TOS"
 				hPrevNode = stack.TOS()
-				doEndVisit hPrevNode
-				doVisit hNode
+				doEndVisitNode hPrevNode
+				doVisitNode hNode
 				stack.replaceTOS hNode
+				doLogStack level
 			else if (diff == 1)
-				doBeginLevel hUser, level
-				doVisit hNode
+				dbg "begin level #{level}"
+				doLogCall "BEGIN LEVEL #{level}", level
+				added = add @beginLevel(hNode._hEnv._hParentEnv, level)
+				if added
+					doLogLines level
+				doLogHash hNode._hEnv, level
+
+				dbg "visit node, push onto stack"
+				doVisitNode hNode
 				stack.push hNode
-			i += 1
 
 		while (stack.size() > 0)
-			hPrevNode = stack.pop()
-			dbg "pop node", hPrevNode
+			hNode = stack.pop()
+			dbg "pop node", hNode
+			doEndVisitNode hNode
+			doEndLevel(hNode)
 
-			doEndVisit hPrevNode
-			doEndLevel hUser, hPrevNode.level
-
-		doEndWalk hGlobalUser
+		doLogCall "END WALK"
+		added = add @endWalk hGlobalEnv
+		if added
+			doLogLines 0
+		doLogHash hGlobalEnv
 
 		dbgReturn "TreeMapper.walk", lLines
 		return lLines
@@ -526,72 +531,72 @@ export class TreeMapper extends Mapper
 	# These are designed to override
 	# ..........................................................
 
-	beginWalk: (hUser) ->
+	beginWalk: (hEnv) ->
 
 		return undef
 
 	# ..........................................................
 
-	beginLevel: (hUser, level) ->
+	beginLevel: (hEnv, level) ->
 
 		return undef
 
 	# ..........................................................
 
-	startLevel: (hUser, level) ->
+	startLevel: (hEnv, level) ->
 
 		croak "There is no startLevel() method - use beginLevel()"
 
 	# ..........................................................
 
-	endLevel: (hUser, level) ->
+	endLevel: (hEnv, level) ->
 
 		return undef
 
 	# ..........................................................
 
-	endWalk: (hUser) ->
+	endWalk: (hEnv) ->
 
 		return undef
 
 	# ..........................................................
 
-	visit: (hNode, hUser, hParent, stack) ->
+	visit: (hNode) ->
 
-		dbgEnter "visit", hNode, hUser
+		dbgEnter "TreeMapper.visit", hNode
 		{uobj, level} = hNode
 		if isString(uobj) && (level > 0)
 			uobj = indented(uobj, level, @oneIndent)
-		dbgReturn "visit", uobj
+		dbgReturn "TreeMapper.visit", uobj
 		return uobj
 
 	# ..........................................................
 
-	endVisit:  (hNode, hUser, hParent, stack) ->
+	endVisit:  (hNode) ->
 
-		dbgEnter "endVisit", hNode, hUser
-		dbgReturn "endVisit", undef
+		dbgEnter "TreeMapper.endVisit", hNode
+		dbgReturn "TreeMapper.endVisit", undef
 		return undef
 
 	# ..........................................................
 
-	visitEmptyLine: (hNode, hUser, hParent, stack) ->
+	visitEmptyLine: (hNode) ->
 
 		dbg "in TreeMapper.visitEmptyLine()"
 		return ''
 
 	# ..........................................................
 
-	endVisitEmptyLine: (hNode, hUser, hParent) ->
+	endVisitEmptyLine: (hNode) ->
 
 		dbg "in TreeMapper.endVisitEmptyLine()"
 		return undef
 
 	# ..........................................................
 
-	visitComment: (hNode, hUser, hParent) ->
+	visitComment: (hNode) ->
 
-		dbgEnter "visitComment", hNode, hUser, hParent
+		dbgEnter "visitComment", hNode
 		{uobj, level} = hNode
 		assert isString(uobj), "uobj not a string"
 		result = indented(uobj, level, @oneIndent)
@@ -600,16 +605,17 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	endVisitComment: (hNode, hUser, hParent) ->
+	endVisitComment: (hNode) ->
 
 		dbg "in TreeMapper.endVisitComment()"
 		return undef
 
 	# ..........................................................
 
-	visitCmd: (hNode, hUser, hParent) ->
+	visitCmd: (hNode) ->
 
 		dbg "in TreeMapper.visitCmd() - ERROR"
+		{uobj} = hNode
 		{cmd, argstr, level} = hNode.uobj
 
 		# --- NOTE: built in commands, e.g. #ifdef
@@ -618,44 +624,46 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	endVisitCmd: (hNode, hUser, hParent) ->
+	endVisitCmd: (hNode) ->
 
 		dbg "in TreeMapper.endVisitCmd()"
 		return undef
 
 	# ..........................................................
 
-	visitSpecial: (type, hNode, hUser, stack) ->
+	visitSpecial: (hNode) ->
 
-		dbgEnter "TreeMapper.visitSpecial", type, hNode, hUser
-		visiter = @hSpecialVisitTypes[type].visiter
-		assert defined(visiter), "No such type: #{OL(type)}"
-		func = visiter.bind(this)
+		dbgEnter "TreeMapper.visitSpecial", hNode
+		{type} = hNode
+		visitor = @hSpecialVisitTypes[type].visitor
+		assert defined(visitor), "No such type: #{OL(type)}"
+		func = visitor.bind(this)
 		assert isFunction(func), "not a function"
-		result = func(hNode, hUser, hUser._parent, stack)
+		result = func(hNode)
 		dbgReturn "TreeMapper.visitSpecial", result
 		return result
 
 	# ..........................................................
 
-	endVisitSpecial: (type, hNode, hUser, stack) ->
+	endVisitSpecial: (hNode) ->
 
-		func = @hSpecialVisitTypes[type].endVisiter.bind(this)
-		return func(hNode, hUser, hUser._parent, stack)
+		dbgEnter "TreeMapper.endVisitSpecial", hNode
+		{type} = hNode
+		endVisitor = @hSpecialVisitTypes[type].endVisitor
+		assert defined(endVisitor), "No such type: #{OL(type)}"
+		func = endVisitor.bind(this)
+		result = func(hNode)
+		dbgReturn "TreeMapper.endVisitSpecial", result
+		return result
 
 	# ..........................................................
 
-	getBlock: (hOptions={}) ->
-		# --- Valid options:
-		#        logNodes
-		#        includeUserHash
+	getBlock: (hOptions=undef) ->
 
 		dbgEnter "getBlock"
 		lLines = @walk(hOptions)
-		if isArrayOfStrings(lLines)
-			block = toBlock(lLines)
-		else
-			block = lLines
+		dbg 'lLines', lLines
+		block = toBlock(lLines)
 		dbg 'block', block
 		result = @finalizeBlock(block)
 		dbgReturn "getBlock", result
@@ -665,27 +673,12 @@ export class TreeMapper extends Mapper
 # UTILITIES
 # ---------------------------------------------------------------------------
 
-export trace = (hInput) ->
+export getTrace = (hInput, hOptions='logCalls') ->
 
-	dbgEnter "trace", hInput
+	dbgEnter "getTrace", hInput
 	mapper = new TreeMapper(hInput)
 	clearMyLogs()
-	mapper.walk({logNodes: true})
+	mapper.walk(hOptions)
 	result = getMyLog()
-	dbgReturn "trace", result
+	dbgReturn "getTrace", result
 	return result
-
-# ---------------------------------------------------------------------------
-
-hstr = (h) ->
-	# --- Don't include the _parent pointer
-	#     if an object has a toDebugStr() method, use that
-
-	hNew = {}
-	for own key,value of h
-		if (key != '_parent')
-			hNew[key] = value
-	if isEmpty(hNew)
-		return ''
-	else
-		return OL(hNew)

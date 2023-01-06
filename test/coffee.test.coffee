@@ -1,10 +1,10 @@
 # coffee.test.coffee
 
-import {
-	LOG, LOGVALUE, assert, croak, setDebugging,
-	} from '@jdeighan/base-utils'
+import {undef, isEmpty, nonEmpty} from '@jdeighan/base-utils'
+import {assert, croak} from '@jdeighan/base-utils/exceptions'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {setDebugging} from '@jdeighan/base-utils/debug'
 import {UnitTester, utest} from '@jdeighan/unit-tester'
-import {undef, isEmpty, nonEmpty} from '@jdeighan/coffee-utils'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'

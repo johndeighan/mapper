@@ -12,7 +12,6 @@ import {
 } from '@jdeighan/mapper';
 
 import {
-  TamlMapper,
   StoryMapper
 } from '@jdeighan/mapper/util-mappers';
 

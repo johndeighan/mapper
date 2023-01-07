@@ -3,7 +3,7 @@
 import {UnitTester, utest} from '@jdeighan/unit-tester'
 
 import {map} from '@jdeighan/mapper'
-import {TamlMapper, StoryMapper} from '@jdeighan/mapper/util-mappers'
+import {StoryMapper} from '@jdeighan/mapper/util-mappers'
 
 # ---------------------------------------------------------------------------
 

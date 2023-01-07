@@ -18,14 +18,6 @@ import {
 } from '@jdeighan/mapper/tree';
 
 // ---------------------------------------------------------------------------
-export var TamlMapper = class TamlMapper extends Mapper {
-  finalizeBlock(block) {
-    return fromTAML(block);
-  }
-
-};
-
-// ---------------------------------------------------------------------------
 //    Convert lines like:
 //       key: <string>
 //    to

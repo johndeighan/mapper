@@ -7,14 +7,6 @@ import {Mapper} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
-
-export class TamlMapper extends Mapper
-
-	finalizeBlock: (block) ->
-
-		return fromTAML(block)
-
-# ---------------------------------------------------------------------------
 #    Convert lines like:
 #       key: <string>
 #    to

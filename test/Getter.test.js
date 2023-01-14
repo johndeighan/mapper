@@ -156,8 +156,10 @@ my name is John Deighan`);
   var VarGetter, getter, result;
   // --- Pre-declare all variables that are assigned to
   VarGetter = class VarGetter extends Getter {
-    init() {
+    constructor(hInput, options) {
+      super(hInput, options);
       this.lVars = [];
+      return;
     }
 
     // .......................................................

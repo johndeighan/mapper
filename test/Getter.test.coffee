@@ -129,8 +129,9 @@ import {Getter} from '@jdeighan/mapper/getter'
 
 	class VarGetter extends Getter
 
-		init: () ->
+		constructor: (hInput, options) ->
 
+			super hInput, options
 			@lVars = []
 			return
 

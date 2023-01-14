@@ -139,8 +139,9 @@ getAvailSymbolsFrom = (filepath) ->
 class SymbolParser extends TreeMapper
 	# --- Parse a .symbols file
 
-	init: () ->
+	constructor: (hInput, options) ->
 
+		super hInput, options
 		@curLib = undef
 		@hSymbols = {}
 

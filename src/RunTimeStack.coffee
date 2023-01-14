@@ -73,9 +73,11 @@ export class RunTimeStack
 
 	desc: () ->
 
-		lLines = []
+		lLines = ["--- STACK (#{@lStack.length} items) ---"]
 		for hNode in @lStack
-			lLines.push hNode.desc()
+			item = JSON.stringify(hNode, undef, 3)
+			lLines.push item
+		lLines.push "-----------------------"
 		return toBlock(lLines)
 
 	# ..........................................................
@@ -85,5 +87,5 @@ export class RunTimeStack
 		#     hUser should have a key named _parent - a hash
 
 		assert (hNode instanceof Node), "not a Node"
-		assert isHash(hNode._hEnv), "missing _hEnv key in #{OL(hNode)}"
+		assert isHash(hNode.hEnv), "missing hEnv key in #{OL(hNode)}"
 		return

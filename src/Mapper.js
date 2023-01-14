@@ -257,7 +257,7 @@ export var map = function(input, mapperClass, options = undef) {
   }
   assert(isClass(mapperClass), "mapper not a constructor");
   mapper = new mapperClass(input);
-  assert(mapper instanceof Mapper, "not a Mapper class");
+  assert(mapper instanceof Mapper, "not a Mapper instance");
   result = mapper.getBlock(options);
   dbgReturn("map", result);
   return result;

@@ -7,9 +7,7 @@ import {setDebugging} from '@jdeighan/base-utils/debug'
 import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 
-import {
-	markdownify, SimpleMarkDownMapper,
-	} from '@jdeighan/mapper/markdown'
+import {markdownify} from '@jdeighan/mapper/markdown'
 
 # ---------------------------------------------------------------------------
 
@@ -80,71 +78,6 @@ import {
 		fallback: null,
 		&rbrace;)
 		</code></pre>
-		"""
-
-	)()
-
-# ---------------------------------------------------------------------------
-# Test SimpleMarkDownMapper
-
-(() ->
-
-	class MarkdownTester extends UnitTester
-
-		transformValue: (block) ->
-
-			getter = new SimpleMarkDownMapper(block)
-			return getter.getBlock()
-
-	mdTester = new MarkdownTester()
-
-	# ..........................................................
-
-	mdTester.equal 101, """
-		A title
-		=======
-
-		some text
-
-		""", """
-		<h1>A title</h1>
-		<p>some text</p>
-		"""
-
-	mdTester.equal 112, """
-		A title
-		=======
-
-		A subtitle
-		----------
-
-		some text
-
-		""", """
-		<h1>A title</h1>
-		<h2>A subtitle</h2>
-		<p>some text</p>
-		"""
-
-	mdTester.equal 127, """
-		=======
-
-		some text
-
-		""", """
-		<p>=======</p>
-		<p>some text</p>
-		"""
-
-	mdTester.equal 137, """
-		A title
-		=======
-		# this is a comment
-		some text
-
-		""", """
-		<h1>A title</h1>
-		<p>some text</p>
 		"""
 
 	)()

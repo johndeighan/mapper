@@ -113,6 +113,7 @@ export var Getter = class Getter extends FetcherInc {
       assert(isString(str), "str is not a string");
       assert(notdefined(str.match(/^\s/)), "str has leading whitespace");
       assert(str !== '__END__', "__END__ encountered");
+      dbg('str', str);
       // --- Replace any constants
       newstr = this.replaceConsts(str, hNode);
       if (newstr !== str) {

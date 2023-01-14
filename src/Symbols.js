@@ -185,9 +185,10 @@ getAvailSymbolsFrom = function(filepath) {
 // ---------------------------------------------------------------------------
 SymbolParser = class SymbolParser extends TreeMapper {
   // --- Parse a .symbols file
-  init() {
+  constructor(hInput, options) {
+    super(hInput, options);
     this.curLib = undef;
-    return this.hSymbols = {};
+    this.hSymbols = {};
   }
 
   // ..........................................................

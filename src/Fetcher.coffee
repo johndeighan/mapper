@@ -19,13 +19,12 @@ import {Node} from '@jdeighan/mapper/node'
 # ---------------------------------------------------------------------------
 # 1. implement fetch() and peek()
 # 2. handle extension lines
-# 3. define init() - to override
-# 4. implement fetchLinesAtLevel(level)
-# 5. define extSep(str, nextStr) - to override
-# 6. implement generator allNodes()
-# 7. define procNode() - to override
-# 8. implement getBlock(oneIndent)
-# 9. define finalizeBlock() - to override
+# 3. implement fetchLinesAtLevel(level)
+# 4. define extSep(str, nextStr) - to override
+# 5. implement generator allNodes()
+# 6. define procNode() - to override
+# 7. implement getBlock(oneIndent)
+# 8. define finalizeBlock() - to override
 
 export class Fetcher
 
@@ -101,8 +100,6 @@ export class Fetcher
 
 		@refill()    # sets @nextLevel and @nextStr
 		@nextNode = @fetchNextNode()
-
-		@init()   # option for additional initialization
 		dbgReturn "Fetcher"
 
 	# ..........................................................
@@ -128,12 +125,6 @@ export class Fetcher
 		else
 			@nextLevel = 0
 			@nextStr = value
-		return
-
-	# ..........................................................
-
-	init: () ->
-
 		return
 
 	# ..........................................................

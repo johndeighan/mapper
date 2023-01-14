@@ -79,13 +79,15 @@ export var RunTimeStack = class RunTimeStack {
 
   // ..........................................................
   desc() {
-    var hNode, i, lLines, len, ref;
-    lLines = [];
+    var hNode, i, item, lLines, len, ref;
+    lLines = [`--- STACK (${this.lStack.length} items) ---`];
     ref = this.lStack;
     for (i = 0, len = ref.length; i < len; i++) {
       hNode = ref[i];
-      lLines.push(hNode.desc());
+      item = JSON.stringify(hNode, undef, 3);
+      lLines.push(item);
     }
+    lLines.push("-----------------------");
     return toBlock(lLines);
   }
 
@@ -94,7 +96,7 @@ export var RunTimeStack = class RunTimeStack {
     // --- Each node should have a key named hUser - a hash
     //     hUser should have a key named _parent - a hash
     assert(hNode instanceof Node, "not a Node");
-    assert(isHash(hNode._hEnv), `missing _hEnv key in ${OL(hNode)}`);
+    assert(isHash(hNode.hEnv), `missing hEnv key in ${OL(hNode)}`);
   }
 
 };

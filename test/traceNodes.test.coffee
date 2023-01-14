@@ -16,10 +16,6 @@ class TraceTester extends UnitTester
 
 		return getTrace(block)
 
-	transformExpected: (block) ->
-
-		return untabify(block)
-
 tester = new TraceTester()
 
 # ..........................................................

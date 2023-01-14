@@ -29,12 +29,17 @@ threeSpaces = "   "
 #      getUserObj(hNode) - returns user object
 #         default: returns hNode.str
 #      mapCmd(hNode)
-#      beginLevel(hEnv, level)
-#      visit(hNode)
-#      endVisit(hNode)
-#      visitSpecial(hNode)
-#      endVisitSpecial(hNode)
-#      endLevel(hEnv, level) -
+#
+#      beginLevel(hEnv, hNode)
+#      endLevel(hEnv, hNode)
+#
+#      visit(hNode, hEnv, hParentEnv)
+#      endVisit(hNode, hEnv, hParentEnv)
+#
+#      visitSpecial(hNode, hEnv, hParentEnv)
+#      endVisitSpecial(hNode, hEnv, hParentEnv)
+#   the call one of:
+#      .getBlock() - to get a block of text
 
 export class TreeMapper extends Mapper
 
@@ -262,9 +267,13 @@ export class TreeMapper extends Mapper
 		if nonEmpty(lDebugs)
 			dbg "DEBUG: #{lDebugs.join(',')}"
 
-		hGlobalEnv = {}            # --- hParent for level 0 nodes
-		lLines = []                # --- resulting output
-		stack = new RunTimeStack() # --- a stack of Node objects
+		# --- hParent for level 0 nodes
+		hGlobalEnv = {
+			_global_: true   # marker, for help debugging
+			}
+
+		lLines = []                   # --- resulting output
+		stack = new RunTimeStack()    # --- a stack of Node objects
 
 		# .......................................................
 		#     Local Functions
@@ -275,7 +284,7 @@ export class TreeMapper extends Mapper
 
 			dbgEnter 'logstr', block, level
 			if defined(level)
-				result = indented(block, level, threeSpaces)
+				result = indented(block, level)
 			else
 				result = block
 			dbgReturn 'logstr', result
@@ -283,13 +292,16 @@ export class TreeMapper extends Mapper
 
 		# .......................................................
 
-		doLogNode = (hNode, level) =>
+		doLogNode = (hNode) =>
 
-			if ! logNodes
-				return
-			LOG logstr("----- NODE -----")
-			LOG logstr(indented(toTAML(hNode)))
-			LOG logstr("----------------")
+			if logNodes
+				LOG logstr("----- NODE -----")
+				LOG logstr(indented(toTAML(hNode)))
+				LOG logstr("----------------")
+			else
+				# --- This works when debugging is set to 'walk'
+				#     because we don't have dbgEnter/dbgReturn in here
+				dbg "NODE: #{OL(hNode.level)} #{OL(hNode.uobj)}"
 			return
 
 		# .......................................................
@@ -367,19 +379,76 @@ export class TreeMapper extends Mapper
 
 		# .......................................................
 
+		doAddEnv = (hNode) =>
+
+			if (hNode.level == 0)
+				hNode.hEnv = {
+					_hParEnv: hGlobalEnv
+					}
+			else
+				hNode.hEnv = {
+					_hParEnv: stack.TOS().hEnv
+					}
+			# --- This logs when debugging is set to 'walk'
+			#     because we don't have dbgEnter/dbgReturn in here
+			dbg "ADD ENV: #{OL(hNode.hEnv)}"
+			return
+
+		# .......................................................
+
+		doBeginLevel = (hNode) =>
+
+			dbgEnter 'doBeginLevel', level
+			{level, hEnv} = hNode
+			assert isHash(hEnv), "node has no env"
+			_hParEnv = hEnv._hParEnv
+			assert isHash(_hParEnv), "node's env has no parent env"
+
+			doLogCall "BEGIN LEVEL #{level}", level
+			added = add @beginLevel(_hParEnv, hNode)
+			if added
+				doLogLines level
+			doLogHash hEnv, level
+			dbgReturn 'doBeginLevel'
+			return
+
+		# .......................................................
+
+		doEndLevel = (hNode) =>
+
+			dbgEnter 'doEndLevel', level
+			{level, hEnv} = hNode
+			assert isHash(hEnv), "node has no env"
+			_hParEnv = hEnv._hParEnv
+			assert isHash(_hParEnv), "node's env has no parent env"
+
+			doLogCall "END LEVEL #{level}", level
+			added = add @endLevel(_hParEnv, hNode)
+			if added
+				doLogLines level
+			doLogHash hEnv, level
+			dbgReturn 'doEndLevel'
+			return
+
+		# .......................................................
+
 		doVisitNode = (hNode) =>
 
 			dbgEnter 'doVisitNode'
-			{type, level, uobj} = hNode
-
+			{type, level, uobj, hEnv} = hNode
+			assert isHash(hEnv), "node has no env"
+			_hParEnv = hEnv._hParEnv
+			assert isHash(_hParEnv), "node's env has no parent env"
 			doLogCall "VISIT #{level} #{OL(uobj)}", level
+
 			if defined(type)
-				added = add @visitSpecial(hNode)
+				added = add @visitSpecial(hNode, hEnv, _hParEnv)
 			else
-				added = add @visit(hNode)
+				added = add @visit(hNode, hEnv, _hParEnv)
 			if added
 				doLogLines level
-			doLogHash hNode._hEnv, level
+
+			doLogHash hEnv, level
 			dbgReturn 'doVisitNode'
 			return
 
@@ -388,31 +457,18 @@ export class TreeMapper extends Mapper
 		doEndVisitNode = (hNode) =>
 
 			dbgEnter 'doEndVisitNode'
-			{type, level, _hEnv, uobj} = hNode
+			{type, level, uobj, hEnv} = hNode
 			doLogCall "END VISIT #{level} #{OL(uobj)}", level
+
 			if defined(type)
-				added = add @endVisitSpecial(hNode)
+				added = add @endVisitSpecial(hNode, hEnv, hEnv._hParEnv)
 			else
-				added = add @endVisit(hNode)
+				added = add @endVisit(hNode, hEnv, hEnv._hParEnv)
 			if added
 				doLogLines level
-			doLogHash _hEnv, level
+
+			doLogHash hEnv, level
 			dbgReturn 'doEndVisitNode'
-			return
-
-		# .......................................................
-
-		doEndLevel = (hNode) =>
-
-			dbgEnter 'doEndLevel', level
-			{level, _hEnv} = hNode
-
-			doLogCall "END LEVEL #{level}", level
-			added = add @endLevel(_hEnv, level)
-			if added
-				doLogLines level
-			doLogHash _hEnv, level
-			dbgReturn 'doEndLevel'
 			return
 
 		# .......................................................
@@ -439,78 +495,51 @@ export class TreeMapper extends Mapper
 			dbgReturn "TreeMapper.walk", lLines
 			return lLines
 
-		{level, uobj} = hNode     # unpack node
-		assert (level == 0), "1st node at level #{level}"
-		dbg "FIRST: [#{OL(level)} #{OL(uobj)}]"
-		doLogNode hNode, 0
+		assert (hNode.level == 0), "1st node at level #{hNode.level}"
+		doLogNode hNode
 
-		hNode._hEnv = {
-			_hParent: hGlobalEnv
-			}
-
-		doLogCall "BEGIN LEVEL 0", 0
-		added = add @beginLevel(hGlobalEnv, 0)
-		if added
-			doLogLines 0
-		doLogHash hGlobalEnv, 0
-
+		doAddEnv hNode
+		doBeginLevel hNode
 		doVisitNode hNode
 
-		dbg "push hNode onto stack"
+		dbg "push onto stack", hNode
 		stack.push hNode
 		doLogStack 0
 
+		# --- From now on, there's always something on the stack
+		#     Until the very end, where everything is popped off
+
 		# === End First Node ===
 
-		for hNode from @allNodes()
-			{level, uobj} = hNode     # unpack node
-			dbg "GOT: [#{OL(level)} #{OL(uobj)}]"
-			doLogNode hNode, level
+		while defined(hNode = @get())
+			doLogNode hNode
 
-			# --- Add env to node
-
-			if stack.isEmpty()
-				hNode._hEnv = {
-					_hParent: hGlobalEnv
-					}
-			else
-				hNode._hEnv = {
-					_hParent: stack.TOS()._hEnv
-					}
-
-			# --- End any levels > level
-			while defined(hTOS = stack.TOS()) && (hTOS.level > level)
+			# --- End any levels > hNode.level
+			while (stack.TOS().level > hNode.level)
 				hPopNode = stack.pop()
 				dbg "POP: [#{OL(hPopNode.level)} #{OL(hPopNode.uobj)}]"
 				doEndVisitNode hPopNode
 				doEndLevel hPopNode
 
-			diff = level - stack.TOS().level
+			# --- Now, there are 2 cases:
+			#        1. TOS level = current node's level
+			#        2. TOS level < current node's level
 
-			# --- This is a consequence of the while loop condition
-			assert (diff >= 0), "Can't happen"
+			if (stack.TOS().level == hNode.level)
+				hPopNode = stack.pop()
+				dbg "POP: [#{OL(hPopNode.level)} #{OL(hPopNode.uobj)}]"
+				doEndVisitNode hPopNode
+				newLevel = false
+			else
+				newLevel = true
+				assert (stack.TOS().level < hNode.level), "Can't happen"
 
-			# --- This shouldn't happen because it would be an extension line
-			assert (diff < 2), "Shouldn't happen"
-
-			if (diff == 0)
-				dbg "end prev node, visit new node, replace TOS"
-				hPrevNode = stack.TOS()
-				doEndVisitNode hPrevNode
-				doVisitNode hNode
-				stack.replaceTOS hNode
-				doLogStack level
-			else if (diff == 1)
-				dbg "begin level #{level}"
-				doLogCall "BEGIN LEVEL #{level}", level
-				added = add @beginLevel(hNode._hEnv._hParentEnv, level)
-				if added
-					doLogLines level
-				doLogHash hNode._hEnv, level
-
-				dbg "visit node, push onto stack"
-				doVisitNode hNode
-				stack.push hNode
+			doAddEnv hNode
+			if newLevel
+				doBeginLevel hNode
+			doVisitNode hNode
+			dbg "push onto stack", hNode
+			stack.push hNode
 
 		while (stack.size() > 0)
 			hNode = stack.pop()
@@ -531,13 +560,13 @@ export class TreeMapper extends Mapper
 	# These are designed to override
 	# ..........................................................
 
-	beginWalk: (hEnv) ->
+	beginWalk: (hGlobalEnv) ->
 
 		return undef
 
 	# ..........................................................
 
-	beginLevel: (hEnv, level) ->
+	beginLevel: (hEnv, hNode) ->
 
 		return undef
 
@@ -549,7 +578,7 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	endLevel: (hEnv, level) ->
+	endLevel: (hEnv, hNode) ->
 
 		return undef
 
@@ -561,7 +590,7 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	visit: (hNode) ->
+	visit: (hNode, hEnv, hParentEnv) ->
 
 		dbgEnter "TreeMapper.visit", hNode
 		{uobj, level} = hNode
@@ -572,7 +601,7 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	endVisit:  (hNode) ->
+	endVisit:  (hNode, hEnv, hParentEnv) ->
 
 		dbgEnter "TreeMapper.endVisit", hNode
 		dbgReturn "TreeMapper.endVisit", undef
@@ -580,39 +609,44 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	visitEmptyLine: (hNode) ->
+	visitEmptyLine: (hNode, hEnv, hParentEnv) ->
 
 		dbg "in TreeMapper.visitEmptyLine()"
 		return ''
 
 	# ..........................................................
 
-	endVisitEmptyLine: (hNode) ->
+	endVisitEmptyLine: (hNode, hEnv, hParentEnv) ->
 
 		dbg "in TreeMapper.endVisitEmptyLine()"
 		return undef
 
 	# ..........................................................
 
-	visitComment: (hNode) ->
+	visitComment: (hNode, hEnv, hParentEnv) ->
 
-		dbgEnter "visitComment", hNode
-		{uobj, level} = hNode
+		dbgEnter "TreeMapper.visitComment", hNode
+
+		# --- NOTE: in Mapper.isComment(), the comment text
+		#           is placed in hNode._commentText
+
+		{uobj, level, _commentText} = hNode
 		assert isString(uobj), "uobj not a string"
 		result = indented(uobj, level, @oneIndent)
-		dbgReturn "visitComment", result
+		hEnv.commentText = _commentText
+		dbgReturn "TreeMapper.visitComment", result
 		return result
 
 	# ..........................................................
 
-	endVisitComment: (hNode) ->
+	endVisitComment: (hNode, hEnv, hParentEnv) ->
 
 		dbg "in TreeMapper.endVisitComment()"
 		return undef
 
 	# ..........................................................
 
-	visitCmd: (hNode) ->
+	visitCmd: (hNode, hEnv, hParentEnv) ->
 
 		dbg "in TreeMapper.visitCmd() - ERROR"
 		{uobj} = hNode
@@ -624,14 +658,14 @@ export class TreeMapper extends Mapper
 
 	# ..........................................................
 
-	endVisitCmd: (hNode) ->
+	endVisitCmd: (hNode, hEnv, hParentEnv) ->
 
 		dbg "in TreeMapper.endVisitCmd()"
 		return undef
 
 	# ..........................................................
 
-	visitSpecial: (hNode) ->
+	visitSpecial: (hNode, hEnv, hParentEnv) ->
 
 		dbgEnter "TreeMapper.visitSpecial", hNode
 		{type} = hNode
@@ -639,20 +673,20 @@ export class TreeMapper extends Mapper
 		assert defined(visitor), "No such type: #{OL(type)}"
 		func = visitor.bind(this)
 		assert isFunction(func), "not a function"
-		result = func(hNode)
+		result = func(hNode, hEnv, hParentEnv)
 		dbgReturn "TreeMapper.visitSpecial", result
 		return result
 
 	# ..........................................................
 
-	endVisitSpecial: (hNode) ->
+	endVisitSpecial: (hNode, hEnv, hParentEnv) ->
 
 		dbgEnter "TreeMapper.endVisitSpecial", hNode
 		{type} = hNode
 		endVisitor = @hSpecialVisitTypes[type].endVisitor
 		assert defined(endVisitor), "No such type: #{OL(type)}"
 		func = endVisitor.bind(this)
-		result = func(hNode)
+		result = func(hNode, hEnv, hParentEnv)
 		dbgReturn "TreeMapper.endVisitSpecial", result
 		return result
 

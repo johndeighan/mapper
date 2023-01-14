@@ -23,7 +23,7 @@ utest.equal(10, stack.size(), 0);
 stack.push(new Node({
   str: 'abc',
   level: 0,
-  _hEnv: {}
+  hEnv: {}
 }));
 
 utest.equal(17, stack.size(), 1);
@@ -35,7 +35,7 @@ utest.like(18, stack.TOS(), {
 stack.push(new Node({
   str: 'def',
   level: 0,
-  _hEnv: {}
+  hEnv: {}
 }));
 
 utest.equal(25, stack.size(), 2);

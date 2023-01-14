@@ -77,12 +77,17 @@ threeSpaces = "   ";
 //      getUserObj(hNode) - returns user object
 //         default: returns hNode.str
 //      mapCmd(hNode)
-//      beginLevel(hEnv, level)
-//      visit(hNode)
-//      endVisit(hNode)
-//      visitSpecial(hNode)
-//      endVisitSpecial(hNode)
-//      endLevel(hEnv, level) -
+
+//      beginLevel(hEnv, hNode)
+//      endLevel(hEnv, hNode)
+
+//      visit(hNode, hEnv, hParentEnv)
+//      endVisit(hNode, hEnv, hParentEnv)
+
+//      visitSpecial(hNode, hEnv, hParentEnv)
+//      endVisitSpecial(hNode, hEnv, hParentEnv)
+//   the call one of:
+//      .getBlock() - to get a block of text
 export var TreeMapper = class TreeMapper extends Mapper {
   constructor(hInput, hOptions = {}) {
     super(hInput, hOptions);
@@ -278,7 +283,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
   // ..........................................................
   // ..........................................................
   walk(hOptions = {}) {
-    var add, added, diff, doEndLevel, doEndVisitNode, doLogCall, doLogHash, doLogLines, doLogNode, doLogStack, doVisitNode, hGlobalEnv, hNode, hPopNode, hPrevNode, hTOS, j, key, lDebugs, lLines, len, level, logCalls, logHash, logLines, logNodes, logStack, logstr, ref, ref1, stack, uobj;
+    var add, added, doAddEnv, doBeginLevel, doEndLevel, doEndVisitNode, doLogCall, doLogHash, doLogLines, doLogNode, doLogStack, doVisitNode, hGlobalEnv, hNode, hPopNode, j, key, lDebugs, lLines, len, logCalls, logHash, logLines, logNodes, logStack, logstr, newLevel, ref, stack;
     // --- returns an array, normally strings
     //     Valid options:
     //        logNodes
@@ -304,7 +309,10 @@ export var TreeMapper = class TreeMapper extends Mapper {
     if (nonEmpty(lDebugs)) {
       dbg(`DEBUG: ${lDebugs.join(',')}`);
     }
-    hGlobalEnv = {}; // --- hParent for level 0 nodes
+    // --- hParent for level 0 nodes
+    hGlobalEnv = {
+      _global_: true // marker, for help debugging
+    };
     lLines = []; // --- resulting output
     stack = new RunTimeStack(); // --- a stack of Node objects
     
@@ -316,7 +324,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
       var result;
       dbgEnter('logstr', block, level);
       if (defined(level)) {
-        result = indented(block, level, threeSpaces);
+        result = indented(block, level);
       } else {
         result = block;
       }
@@ -324,13 +332,16 @@ export var TreeMapper = class TreeMapper extends Mapper {
       return result;
     };
     // .......................................................
-    doLogNode = (hNode, level) => {
-      if (!logNodes) {
-        return;
+    doLogNode = (hNode) => {
+      if (logNodes) {
+        LOG(logstr("----- NODE -----"));
+        LOG(logstr(indented(toTAML(hNode))));
+        LOG(logstr("----------------"));
+      } else {
+        // --- This works when debugging is set to 'walk'
+        //     because we don't have dbgEnter/dbgReturn in here
+        dbg(`NODE: ${OL(hNode.level)} ${OL(hNode.uobj)}`);
       }
-      LOG(logstr("----- NODE -----"));
-      LOG(logstr(indented(toTAML(hNode))));
-      LOG(logstr("----------------"));
     };
     // .......................................................
     doLogCall = (call, level) => {
@@ -407,51 +418,88 @@ export var TreeMapper = class TreeMapper extends Mapper {
       return result;
     };
     // .......................................................
+    doAddEnv = (hNode) => {
+      if (hNode.level === 0) {
+        hNode.hEnv = {
+          _hParEnv: hGlobalEnv
+        };
+      } else {
+        hNode.hEnv = {
+          _hParEnv: stack.TOS().hEnv
+        };
+      }
+      // --- This logs when debugging is set to 'walk'
+      //     because we don't have dbgEnter/dbgReturn in here
+      dbg(`ADD ENV: ${OL(hNode.hEnv)}`);
+    };
+    // .......................................................
+    doBeginLevel = (hNode) => {
+      var _hParEnv, added, hEnv, level;
+      dbgEnter('doBeginLevel', level);
+      ({level, hEnv} = hNode);
+      assert(isHash(hEnv), "node has no env");
+      _hParEnv = hEnv._hParEnv;
+      assert(isHash(_hParEnv), "node's env has no parent env");
+      doLogCall(`BEGIN LEVEL ${level}`, level);
+      added = add(this.beginLevel(_hParEnv, hNode));
+      if (added) {
+        doLogLines(level);
+      }
+      doLogHash(hEnv, level);
+      dbgReturn('doBeginLevel');
+    };
+    // .......................................................
+    doEndLevel = (hNode) => {
+      var _hParEnv, added, hEnv, level;
+      dbgEnter('doEndLevel', level);
+      ({level, hEnv} = hNode);
+      assert(isHash(hEnv), "node has no env");
+      _hParEnv = hEnv._hParEnv;
+      assert(isHash(_hParEnv), "node's env has no parent env");
+      doLogCall(`END LEVEL ${level}`, level);
+      added = add(this.endLevel(_hParEnv, hNode));
+      if (added) {
+        doLogLines(level);
+      }
+      doLogHash(hEnv, level);
+      dbgReturn('doEndLevel');
+    };
+    // .......................................................
     doVisitNode = (hNode) => {
-      var added, level, type, uobj;
+      var _hParEnv, added, hEnv, level, type, uobj;
       dbgEnter('doVisitNode');
-      ({type, level, uobj} = hNode);
+      ({type, level, uobj, hEnv} = hNode);
+      assert(isHash(hEnv), "node has no env");
+      _hParEnv = hEnv._hParEnv;
+      assert(isHash(_hParEnv), "node's env has no parent env");
       doLogCall(`VISIT ${level} ${OL(uobj)}`, level);
       if (defined(type)) {
-        added = add(this.visitSpecial(hNode));
+        added = add(this.visitSpecial(hNode, hEnv, _hParEnv));
       } else {
-        added = add(this.visit(hNode));
+        added = add(this.visit(hNode, hEnv, _hParEnv));
       }
       if (added) {
         doLogLines(level);
       }
-      doLogHash(hNode._hEnv, level);
+      doLogHash(hEnv, level);
       dbgReturn('doVisitNode');
     };
     // .......................................................
     doEndVisitNode = (hNode) => {
-      var _hEnv, added, level, type, uobj;
+      var added, hEnv, level, type, uobj;
       dbgEnter('doEndVisitNode');
-      ({type, level, _hEnv, uobj} = hNode);
+      ({type, level, uobj, hEnv} = hNode);
       doLogCall(`END VISIT ${level} ${OL(uobj)}`, level);
       if (defined(type)) {
-        added = add(this.endVisitSpecial(hNode));
+        added = add(this.endVisitSpecial(hNode, hEnv, hEnv._hParEnv));
       } else {
-        added = add(this.endVisit(hNode));
+        added = add(this.endVisit(hNode, hEnv, hEnv._hParEnv));
       }
       if (added) {
         doLogLines(level);
       }
-      doLogHash(_hEnv, level);
+      doLogHash(hEnv, level);
       dbgReturn('doEndVisitNode');
-    };
-    // .......................................................
-    doEndLevel = (hNode) => {
-      var _hEnv, added, level;
-      dbgEnter('doEndLevel', level);
-      ({level, _hEnv} = hNode);
-      doLogCall(`END LEVEL ${level}`, level);
-      added = add(this.endLevel(_hEnv, level));
-      if (added) {
-        doLogLines(level);
-      }
-      doLogHash(_hEnv, level);
-      dbgReturn('doEndLevel');
     };
     // .......................................................
     //     main body of walk()
@@ -475,70 +523,46 @@ export var TreeMapper = class TreeMapper extends Mapper {
       dbgReturn("TreeMapper.walk", lLines);
       return lLines;
     }
-    ({level, uobj} = hNode); // unpack node
-    assert(level === 0, `1st node at level ${level}`);
-    dbg(`FIRST: [${OL(level)} ${OL(uobj)}]`);
-    doLogNode(hNode, 0);
-    hNode._hEnv = {
-      _hParent: hGlobalEnv
-    };
-    doLogCall("BEGIN LEVEL 0", 0);
-    added = add(this.beginLevel(hGlobalEnv, 0));
-    if (added) {
-      doLogLines(0);
-    }
-    doLogHash(hGlobalEnv, 0);
+    assert(hNode.level === 0, `1st node at level ${hNode.level}`);
+    doLogNode(hNode);
+    doAddEnv(hNode);
+    doBeginLevel(hNode);
     doVisitNode(hNode);
-    dbg("push hNode onto stack");
+    dbg("push onto stack", hNode);
     stack.push(hNode);
     doLogStack(0);
-    ref1 = this.allNodes();
-    // === End First Node ===
-    for (hNode of ref1) {
-      ({level, uobj} = hNode); // unpack node
-      dbg(`GOT: [${OL(level)} ${OL(uobj)}]`);
-      doLogNode(hNode, level);
-      // --- Add env to node
-      if (stack.isEmpty()) {
-        hNode._hEnv = {
-          _hParent: hGlobalEnv
-        };
-      } else {
-        hNode._hEnv = {
-          _hParent: stack.TOS()._hEnv
-        };
-      }
-      // --- End any levels > level
-      while (defined(hTOS = stack.TOS()) && (hTOS.level > level)) {
+    // --- From now on, there's always something on the stack
+    //     Until the very end, where everything is popped off
+
+      // === End First Node ===
+    while (defined(hNode = this.get())) {
+      doLogNode(hNode);
+      // --- End any levels > hNode.level
+      while (stack.TOS().level > hNode.level) {
         hPopNode = stack.pop();
         dbg(`POP: [${OL(hPopNode.level)} ${OL(hPopNode.uobj)}]`);
         doEndVisitNode(hPopNode);
         doEndLevel(hPopNode);
       }
-      diff = level - stack.TOS().level;
-      // --- This is a consequence of the while loop condition
-      assert(diff >= 0, "Can't happen");
-      // --- This shouldn't happen because it would be an extension line
-      assert(diff < 2, "Shouldn't happen");
-      if (diff === 0) {
-        dbg("end prev node, visit new node, replace TOS");
-        hPrevNode = stack.TOS();
-        doEndVisitNode(hPrevNode);
-        doVisitNode(hNode);
-        stack.replaceTOS(hNode);
-        doLogStack(level);
-      } else if (diff === 1) {
-        dbg(`begin level ${level}`);
-        doLogCall(`BEGIN LEVEL ${level}`, level);
-        added = add(this.beginLevel(hNode._hEnv._hParentEnv, level));
-        if (added) {
-          doLogLines(level);
-        }
-        doLogHash(hNode._hEnv, level);
-        dbg("visit node, push onto stack");
-        doVisitNode(hNode);
-        stack.push(hNode);
+      // --- Now, there are 2 cases:
+      //        1. TOS level = current node's level
+      //        2. TOS level < current node's level
+      if (stack.TOS().level === hNode.level) {
+        hPopNode = stack.pop();
+        dbg(`POP: [${OL(hPopNode.level)} ${OL(hPopNode.uobj)}]`);
+        doEndVisitNode(hPopNode);
+        newLevel = false;
+      } else {
+        newLevel = true;
+        assert(stack.TOS().level < hNode.level, "Can't happen");
       }
+      doAddEnv(hNode);
+      if (newLevel) {
+        doBeginLevel(hNode);
+      }
+      doVisitNode(hNode);
+      dbg("push onto stack", hNode);
+      stack.push(hNode);
     }
     while (stack.size() > 0) {
       hNode = stack.pop();
@@ -559,12 +583,12 @@ export var TreeMapper = class TreeMapper extends Mapper {
   // ..........................................................
   // These are designed to override
   // ..........................................................
-  beginWalk(hEnv) {
+  beginWalk(hGlobalEnv) {
     return undef;
   }
 
   // ..........................................................
-  beginLevel(hEnv, level) {
+  beginLevel(hEnv, hNode) {
     return undef;
   }
 
@@ -574,7 +598,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  endLevel(hEnv, level) {
+  endLevel(hEnv, hNode) {
     return undef;
   }
 
@@ -584,7 +608,7 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  visit(hNode) {
+  visit(hNode, hEnv, hParentEnv) {
     var level, uobj;
     dbgEnter("TreeMapper.visit", hNode);
     ({uobj, level} = hNode);
@@ -596,43 +620,46 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  endVisit(hNode) {
+  endVisit(hNode, hEnv, hParentEnv) {
     dbgEnter("TreeMapper.endVisit", hNode);
     dbgReturn("TreeMapper.endVisit", undef);
     return undef;
   }
 
   // ..........................................................
-  visitEmptyLine(hNode) {
+  visitEmptyLine(hNode, hEnv, hParentEnv) {
     dbg("in TreeMapper.visitEmptyLine()");
     return '';
   }
 
   // ..........................................................
-  endVisitEmptyLine(hNode) {
+  endVisitEmptyLine(hNode, hEnv, hParentEnv) {
     dbg("in TreeMapper.endVisitEmptyLine()");
     return undef;
   }
 
   // ..........................................................
-  visitComment(hNode) {
-    var level, result, uobj;
-    dbgEnter("visitComment", hNode);
-    ({uobj, level} = hNode);
+  visitComment(hNode, hEnv, hParentEnv) {
+    var _commentText, level, result, uobj;
+    dbgEnter("TreeMapper.visitComment", hNode);
+    // --- NOTE: in Mapper.isComment(), the comment text
+    //           is placed in hNode._commentText
+    ({uobj, level, _commentText} = hNode);
     assert(isString(uobj), "uobj not a string");
     result = indented(uobj, level, this.oneIndent);
-    dbgReturn("visitComment", result);
+    hEnv.commentText = _commentText;
+    dbgReturn("TreeMapper.visitComment", result);
     return result;
   }
 
   // ..........................................................
-  endVisitComment(hNode) {
+  endVisitComment(hNode, hEnv, hParentEnv) {
     dbg("in TreeMapper.endVisitComment()");
     return undef;
   }
 
   // ..........................................................
-  visitCmd(hNode) {
+  visitCmd(hNode, hEnv, hParentEnv) {
     var argstr, cmd, level, uobj;
     dbg("in TreeMapper.visitCmd() - ERROR");
     ({uobj} = hNode);
@@ -643,13 +670,13 @@ export var TreeMapper = class TreeMapper extends Mapper {
   }
 
   // ..........................................................
-  endVisitCmd(hNode) {
+  endVisitCmd(hNode, hEnv, hParentEnv) {
     dbg("in TreeMapper.endVisitCmd()");
     return undef;
   }
 
   // ..........................................................
-  visitSpecial(hNode) {
+  visitSpecial(hNode, hEnv, hParentEnv) {
     var func, result, type, visitor;
     dbgEnter("TreeMapper.visitSpecial", hNode);
     ({type} = hNode);
@@ -657,20 +684,20 @@ export var TreeMapper = class TreeMapper extends Mapper {
     assert(defined(visitor), `No such type: ${OL(type)}`);
     func = visitor.bind(this);
     assert(isFunction(func), "not a function");
-    result = func(hNode);
+    result = func(hNode, hEnv, hParentEnv);
     dbgReturn("TreeMapper.visitSpecial", result);
     return result;
   }
 
   // ..........................................................
-  endVisitSpecial(hNode) {
+  endVisitSpecial(hNode, hEnv, hParentEnv) {
     var endVisitor, func, result, type;
     dbgEnter("TreeMapper.endVisitSpecial", hNode);
     ({type} = hNode);
     endVisitor = this.hSpecialVisitTypes[type].endVisitor;
     assert(defined(endVisitor), `No such type: ${OL(type)}`);
     func = endVisitor.bind(this);
-    result = func(hNode);
+    result = func(hNode, hEnv, hParentEnv);
     dbgReturn("TreeMapper.endVisitSpecial", result);
     return result;
   }

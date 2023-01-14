@@ -2,7 +2,7 @@
 
 import {
 	undef, pass, OL, defined, toBlock, toArray,
-	isEmpty, nonEmpty, isString, isArray,
+	isEmpty, nonEmpty, isString, isArray, DUMP,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE, dumpLog} from '@jdeighan/base-utils/log'
@@ -11,7 +11,7 @@ import {
 	dbg, dbgEnter, dbgReturn, setDebugging,
 	} from '@jdeighan/base-utils/debug'
 import {
-	UnitTester, UnitTesterNorm, utest,
+	UnitTester, utest,
 	} from '@jdeighan/unit-tester'
 import {
 	indentLevel, undented, splitLine, indented,
@@ -20,7 +20,7 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 
 import {map} from '@jdeighan/mapper'
 import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
-import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
+import {markdownify} from '@jdeighan/mapper/markdown'
 
 ###
 	class TreeMapper should handle the following:
@@ -517,7 +517,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 # Test TreeMapper.walk()
 
 (() ->
-	class Tester extends UnitTesterNorm
+	class Tester extends UnitTester
 
 		transformValue: (block) ->
 
@@ -536,7 +536,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc'
+			VISIT 0 'abc'
 			END VISIT 0 'abc'
 			END LEVEL 0
 			END WALK
@@ -548,9 +548,9 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc'
+			VISIT 0 'abc'
 			END VISIT 0 'abc'
-			VISIT     0 'def'
+			VISIT 0 'def'
 			END VISIT 0 'def'
 			END LEVEL 0
 			END WALK
@@ -562,11 +562,11 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc'
-			BEGIN LEVEL 1
-			VISIT     1 'def'
-			END VISIT 1 'def'
-			END LEVEL 1
+			VISIT 0 'abc'
+				BEGIN LEVEL 1
+				VISIT 1 'def'
+				END VISIT 1 'def'
+				END LEVEL 1
 			END VISIT 0 'abc'
 			END LEVEL 0
 			END WALK
@@ -580,11 +580,11 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc'
-			BEGIN LEVEL 1
-			VISIT     1 'def'
-			END VISIT 1 'def'
-			END LEVEL 1
+			VISIT 0 'abc'
+				BEGIN LEVEL 1
+				VISIT 1 'def'
+				END VISIT 1 'def'
+				END LEVEL 1
 			END VISIT 0 'abc'
 			END LEVEL 0
 			END WALK
@@ -598,7 +598,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc'
+			VISIT 0 'abc'
 			END VISIT 0 'abc'
 			END LEVEL 0
 			END WALK
@@ -611,7 +611,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 			""", """
 			BEGIN WALK
 			BEGIN LEVEL 0
-			VISIT     0 'abc˳def'
+			VISIT 0 'abc˳def'
 			END VISIT 0 'abc˳def'
 			END LEVEL 0
 			END WALK
@@ -629,7 +629,7 @@ import {SimpleMarkDownMapper} from '@jdeighan/mapper/markdown'
 
 # ---------------------------------------------------------------------------
 
-class WalkTester extends UnitTesterNorm
+class WalkTester extends UnitTester
 
 	transformValue: (block) ->
 
@@ -644,9 +644,9 @@ walkTester.equal 642, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT       0 'abc'
-		END VISIT   0 'abc'
-		END LEVEL   0
+		VISIT 0 'abc'
+		END VISIT 0 'abc'
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -656,9 +656,9 @@ walkTester.equal 653, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		VISIT     0 'def'
+		VISIT 0 'def'
 		END VISIT 0 'def'
 		END LEVEL 0
 		END WALK
@@ -670,11 +670,11 @@ walkTester.equal 667, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
-		BEGIN LEVEL 1
-		VISIT     1 'def'
-		END VISIT 1 'def'
-		END LEVEL 1
+		VISIT 0 'abc'
+			BEGIN LEVEL 1
+			VISIT 1 'def'
+			END VISIT 1 'def'
+			END LEVEL 1
 		END VISIT 0 'abc'
 		END LEVEL 0
 		END WALK
@@ -687,9 +687,9 @@ walkTester.equal 683, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		END LEVEL   0
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -700,11 +700,11 @@ walkTester.equal 696, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		VISIT     0 'def'
+		VISIT 0 'def'
 		END VISIT 0 'def'
-		END LEVEL   0
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -716,9 +716,9 @@ walkTester.equal 711, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		END LEVEL   0
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -730,11 +730,11 @@ walkTester.equal 725, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		VISIT     0 'def'
+		VISIT 0 'def'
 		END VISIT 0 'def'
-		END LEVEL   0
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -749,13 +749,13 @@ walkTester.equal 741, """
 		""", """
 		BEGIN WALK
 		BEGIN LEVEL 0
-		VISIT     0 'abc'
+		VISIT 0 'abc'
 		END VISIT 0 'abc'
-		VISIT     0 'def'
+		VISIT 0 'def'
 		END VISIT 0 'def'
-		VISIT     0 'ghi'
+		VISIT 0 'ghi'
 		END VISIT 0 'ghi'
-		END LEVEL   0
+		END LEVEL 0
 		END WALK
 		"""
 
@@ -1320,11 +1320,10 @@ class HtmlMapper extends TreeMapper
 					hResult.body = text
 			when 'div:markdown'
 				hResult.tag = 'div'
-				lLines = @fetchLinesAtLevel(level+1)
-				body = undented(toBlock(lLines))
+				body = @fetchBlockAtLevel(level+1)
 				dbg "body", body
 				if nonEmpty(body)
-					md = map(body, SimpleMarkDownMapper)
+					md = markdownify(body)
 					dbg "md", md
 					hResult.body = md
 			else
@@ -1335,20 +1334,10 @@ class HtmlMapper extends TreeMapper
 
 	# .......................................................
 
-	visit: (hNode) ->
+	visit: (hNode, hEnv, hParentEnv) ->
 
 		dbgEnter 'HtmlMapper.visit', hNode
-		{str, uobj, level, type} = hNode
-		switch type
-			when 'comment'
-				if lMatches = str.match(///^
-						\#
-						(.*)
-						$///)
-					[_, str] = lMatches
-					return indented("<!-- #{str.trim()} -->", level)
-				else
-					return undef
+		{str, uobj, level} = hNode
 		lParts = [indented("<#{uobj.tag}>", level)]
 		if nonEmpty(uobj.body)
 			lParts.push indented(uobj.body, level+1)
@@ -1360,11 +1349,25 @@ class HtmlMapper extends TreeMapper
 
 	endVisit: (hNode) ->
 
-		{uobj, level, type} = hNode
-		if (type == 'comment')
-			return undef
-		else
-			return indented("</#{uobj.tag}>", level)
+		dbgEnter 'HtmlMapper.endVisit', hNode
+		{uobj, level} = hNode
+		result = indented("</#{uobj.tag}>", level)
+		dbgReturn 'HtmlMapper.endVisit', result
+		return result
+
+	# .......................................................
+
+	mapComment: (hNode) ->
+
+		dbgEnter 'HtmlMapper.mapComment', hNode
+
+		# --- NOTE: in Mapper.isComment(), the comment text
+		#           is placed in hNode._commentText
+
+		{level, _commentText} = hNode
+		result = "<!-- #{_commentText} -->"
+		dbgReturn 'HtmlMapper.mapComment', result
+		return result
 
 # ---------------------------------------------------------------------------
 
@@ -1380,7 +1383,7 @@ class HtmlMapper extends TreeMapper
 
 	# ----------------------------------------------------------
 
-	treeTester.equal 1383, """
+	treeTester.equal 1386, """
 			body
 				# a comment
 
@@ -1394,6 +1397,7 @@ class HtmlMapper extends TreeMapper
 					p more text
 			""", """
 			<body>
+				<!-- a comment -->
 				<div>
 					<h1>A title</h1>
 					<p>some text</p>
@@ -1421,7 +1425,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1424, """
+	treeTester.equal 1428, """
 			abc
 			#ifdef something
 				def
@@ -1444,12 +1448,12 @@ class HtmlMapper extends TreeMapper
 
 	class MyMapper extends TreeMapper
 
-		beginLevel: (hUser, level) ->
-			lTrace.push "S #{level}"
+		beginLevel: (hEnv, hNode) ->
+			lTrace.push "B #{hNode.level}"
 			return
 
-		endLevel: (hUser, level) ->
-			lTrace.push "E #{level}"
+		endLevel: (hEnv, hNode) ->
+			lTrace.push "E #{hNode.level}"
 			return
 
 	class MyTester extends UnitTester
@@ -1460,7 +1464,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1463, """
+	treeTester.equal 1467, """
 			abc
 				def
 			""", """
@@ -1468,11 +1472,13 @@ class HtmlMapper extends TreeMapper
 				def
 			"""
 
-	utest.equal 1471, lTrace, [
-		"S 0"
-		"S 1"
+	utest.equal 1475, lTrace, [
+		"B 0"
+		"B 1"
 		"E 1"
 		"E 0"
 		]
 
 	)()
+
+# ---------------------------------------------------------------------------

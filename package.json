@@ -54,12 +54,12 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^3.0.28",
+		"@jdeighan/unit-tester": "^3.0.29",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/base-utils": "^4.0.10",
-		"@jdeighan/coffee-utils": "^14.0.16",
+		"@jdeighan/base-utils": "^4.0.11",
+		"@jdeighan/coffee-utils": "^14.0.17",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
 		"marked": "^4.2.12",

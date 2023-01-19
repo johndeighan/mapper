@@ -59,7 +59,7 @@
 	},
 	"dependencies": {
 		"@jdeighan/base-utils": "^4.0.11",
-		"@jdeighan/coffee-utils": "^14.0.17",
+		"@jdeighan/coffee-utils": "^14.0.18",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
 		"marked": "^4.2.12",

@@ -35,9 +35,8 @@
 	},
 	"scripts": {
 		"build": "cls && coffee -c .",
-		"pretest": "cls && coffee -c .",
+		"test": "npm run build && npx ava ./test/*.test.js && git status",
 		"ast": "npm run build && node ./bin/dumpAST.js ./bin/ast.coffee",
-		"test": "npm run build && ava ./test/*.test.js && git status",
 		"mysql": "coffee -c test/mysql.coffee && node test/mysql.js"
 	},
 	"keywords": [
@@ -54,12 +53,13 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^3.0.39",
+		"@jdeighan/unit-tester": "^3.0.40",
+		"ava": "^5.1.1",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/base-utils": "^4.0.14",
-		"@jdeighan/coffee-utils": "^14.0.29",
+		"@jdeighan/base-utils": "^4.0.15",
+		"@jdeighan/coffee-utils": "^14.0.31",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
 		"marked": "^4.2.12",

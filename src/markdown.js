@@ -38,10 +38,6 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  svelteHtmlEsc
-} from '@jdeighan/coffee-utils/svelte';
-
-import {
   TreeMapper
 } from '@jdeighan/mapper/tree';
 
@@ -69,7 +65,7 @@ export var markdownify = function(block) {
     headerIds: false
   });
   dbg("marked returned", html);
-  result = svelteHtmlEsc(html);
+  result = html.replace(/\{/g, '&lbrace;').replace(/\}/g, '&rbrace;').replace(/\$/g, '&dollar;');
   dbgReturn("markdownify", result);
   return result;
 };

@@ -53,18 +53,18 @@
 	},
 	"homepage": "https://github.com/johndeighan/mapper#readme",
 	"devDependencies": {
-		"@jdeighan/unit-tester": "^3.0.41",
+		"@jdeighan/unit-tester": "^3.0.42",
 		"ava": "^5.2.0",
 		"coffeescript": "^2.7.0"
 	},
 	"dependencies": {
-		"@jdeighan/base-utils": "^4.0.20",
-		"@jdeighan/coffee-utils": "^14.0.34",
+		"@jdeighan/base-utils": "^4.0.21",
+		"@jdeighan/coffee-utils": "^14.0.35",
 		"cross-env": "^7.0.3",
 		"exceptions": "^0.1.1",
 		"marked": "^4.2.12",
 		"mysql-await": "^2.2.3",
-		"sass": "^1.58.2",
+		"sass": "^1.58.3",
 		"uglify-js": "^3.17.4"
 	}
 }

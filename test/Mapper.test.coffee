@@ -331,7 +331,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 			abc
 			#define meaning 42
 			The meaning of life is __meaning__
-			""", Mapper)
+			""")
 
 	utest.equal 348, result, """
 			abc

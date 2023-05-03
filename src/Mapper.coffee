@@ -209,7 +209,7 @@ export class Mapper extends Getter
 # --- mapper must be a subclass of Mapper or an array
 #     of subclasses of Mapper.
 
-export map = (input, mapperClass, options=undef) ->
+export map = (input, mapperClass=Mapper, options=undef) ->
 
 	dbgEnter "map", input, mapperClass, options
 

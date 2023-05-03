@@ -236,7 +236,7 @@ export var Mapper = class Mapper extends Getter {
 // ===========================================================================
 // --- mapper must be a subclass of Mapper or an array
 //     of subclasses of Mapper.
-export var map = function(input, mapperClass, options = undef) {
+export var map = function(input, mapperClass = Mapper, options = undef) {
   var content, i, item, len, mapper, result;
   dbgEnter("map", input, mapperClass, options);
   // --- mapperClass can be an array - the input is processed

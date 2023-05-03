@@ -299,7 +299,7 @@ meaning is 42`);
 
 abc
 #define meaning 42
-The meaning of life is __meaning__`, Mapper);
+The meaning of life is __meaning__`);
   utest.equal(348, result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:

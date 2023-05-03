@@ -323,7 +323,26 @@ export var Fetcher = class Fetcher {
   }
 
   // ..........................................................
+  getLines(oneIndent = "\t") {
+    var hNode, lLines, line, ref, result;
+    dbgEnter("Fetcher.getLines", oneIndent);
+    lLines = [];
+    ref = this.allNodes();
+    for (hNode of ref) {
+      dbg('GOT hNode', hNode);
+      line = hNode.getLine({oneIndent});
+      dbg(`line = ${OL(line)}`);
+      lLines.push(line);
+    }
+    result = this.finalizeBlock(undented(toArray(lLines)));
+    dbgReturn("Fetcher.getLines", result);
+    return result;
+  }
+
+  // ..........................................................
   finalizeBlock(block) {
+    // --- block may, in fact, be either a string or an array of strings
+    //     override should check
     return block;
   }
 

@@ -245,6 +245,32 @@ ghi`);
 })();
 
 // ---------------------------------------------------------------------------
+// --- test getLines()
+(function() {
+  var MyTester, tester;
+  MyTester = class MyTester extends UnitTester {
+    transformValue(hInput) {
+      var fetcher;
+      fetcher = new Fetcher(hInput);
+      return fetcher.getLines();
+    }
+
+  };
+  tester = new MyTester();
+  // ----------------------------------------------------------
+  tester.equal(315, `abc
+def`, ['abc', 'def']);
+  // ----------------------------------------------------------
+  tester.equal(325, `abc
+	def
+ghi`, ['abc', '	def', 'ghi']);
+  // ----------------------------------------------------------
+  return tester.equal(337, `abc
+		def
+ghi`, ['abc def', 'ghi']);
+})();
+
+// ---------------------------------------------------------------------------
 (function() {
   var MyTester, ZhFetcher, tester;
   // --- Don't include a space char when adding extension lines
@@ -264,7 +290,7 @@ ghi`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(321, `你好
+  return tester.equal(369, `你好
 		约翰
 我在这里`, `你好约翰
 我在这里`);
@@ -290,7 +316,7 @@ ghi`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(353, `abc
+  return tester.equal(401, `abc
 		def
 ghi`, `ABC DEF
 GHI`);

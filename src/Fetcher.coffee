@@ -297,6 +297,23 @@ export class Fetcher
 
 	# ..........................................................
 
+	getLines: (oneIndent="\t") ->
+
+		dbgEnter "Fetcher.getLines", oneIndent
+		lLines = []
+		for hNode from @allNodes()
+			dbg 'GOT hNode', hNode
+			line = hNode.getLine({oneIndent})
+			dbg "line = #{OL(line)}"
+			lLines.push line
+		result = @finalizeBlock undented(toArray(lLines))
+		dbgReturn "Fetcher.getLines", result
+		return result
+
+	# ..........................................................
+
 	finalizeBlock: (block) ->
+		# --- block may, in fact, be either a string or an array of strings
+		#     override should check
 
 		return block

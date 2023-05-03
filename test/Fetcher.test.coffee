@@ -298,6 +298,54 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	)()
 
 # ---------------------------------------------------------------------------
+# --- test getLines()
+
+(() ->
+	class MyTester extends UnitTester
+
+		transformValue: (hInput) ->
+
+			fetcher = new Fetcher(hInput)
+			return fetcher.getLines()
+
+	tester = new MyTester()
+
+	# ----------------------------------------------------------
+
+	tester.equal 315, """
+		abc
+		def
+		""", [
+		'abc'
+		'def'
+		]
+
+	# ----------------------------------------------------------
+
+	tester.equal 325, """
+		abc
+			def
+		ghi
+		""", [
+		'abc'
+		'	def'
+		'ghi'
+		]
+
+	# ----------------------------------------------------------
+
+	tester.equal 337, """
+		abc
+				def
+		ghi
+		""", [
+		'abc def'
+		'ghi'
+		]
+
+	)()
+
+# ---------------------------------------------------------------------------
 
 (() ->
 	# --- Don't include a space char when adding extension lines
@@ -318,7 +366,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 321, """
+	tester.equal 369, """
 		你好
 				约翰
 		我在这里
@@ -350,7 +398,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 353, """
+	tester.equal 401, """
 		abc
 				def
 		ghi

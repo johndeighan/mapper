@@ -2,7 +2,7 @@
 
 import {
 	undef, pass, OL, rtrim, defined, notdefined,
-	escapeStr, isHashComment,
+	escapeStr, isHashComment, getOptions,
 	isString, isHash, isArray, isFunction, isIterable, isObject,
 	isEmpty, nonEmpty, isClass, className,
 	} from '@jdeighan/base-utils'
@@ -213,6 +213,11 @@ export map = (input, mapperClass=Mapper, options=undef) ->
 
 	dbgEnter "map", input, mapperClass, options
 
+	hOptions = getOptions(options, {as: 'block', oneIndent: '\t'})
+	# --- Valid options:
+	#        as: ('block' | 'lines')
+	#        oneIndent: <string>  default: TAB
+
 	# --- mapperClass can be an array - the input is processed
 	#     by each array element sequentially
 	if isArray(mapperClass)
@@ -231,7 +236,12 @@ export map = (input, mapperClass=Mapper, options=undef) ->
 
 	mapper = new mapperClass(input)
 	assert (mapper instanceof Mapper), "not a Mapper instance"
-	result = mapper.getBlock(options)
-
+	switch hOptions.as
+		when 'block'
+			result = mapper.getBlock(options)
+		when 'lines'
+			result = mapper.getLines(options)
+		else
+			croak "option 'as' must be 'block' or 'lines'"
 	dbgReturn "map", result
 	return result

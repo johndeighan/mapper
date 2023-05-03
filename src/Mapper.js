@@ -9,6 +9,7 @@ import {
   notdefined,
   escapeStr,
   isHashComment,
+  getOptions,
   isString,
   isHash,
   isArray,
@@ -237,8 +238,16 @@ export var Mapper = class Mapper extends Getter {
 // --- mapper must be a subclass of Mapper or an array
 //     of subclasses of Mapper.
 export var map = function(input, mapperClass = Mapper, options = undef) {
-  var content, i, item, len, mapper, result;
+  var content, hOptions, i, item, len, mapper, result;
   dbgEnter("map", input, mapperClass, options);
+  hOptions = getOptions(options, {
+    as: 'block',
+    oneIndent: '\t'
+  });
+  // --- Valid options:
+  //        as: ('block' | 'lines')
+  //        oneIndent: <string>  default: TAB
+
   // --- mapperClass can be an array - the input is processed
   //     by each array element sequentially
   if (isArray(mapperClass)) {
@@ -258,7 +267,16 @@ export var map = function(input, mapperClass = Mapper, options = undef) {
   assert(isClass(mapperClass), "mapper not a constructor");
   mapper = new mapperClass(input);
   assert(mapper instanceof Mapper, "not a Mapper instance");
-  result = mapper.getBlock(options);
+  switch (hOptions.as) {
+    case 'block':
+      result = mapper.getBlock(options);
+      break;
+    case 'lines':
+      result = mapper.getLines(options);
+      break;
+    default:
+      croak("option 'as' must be 'block' or 'lines'");
+  }
   dbgReturn("map", result);
   return result;
 };

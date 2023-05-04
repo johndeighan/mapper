@@ -237,7 +237,7 @@ export var Fetcher = class Fetcher {
     dbg('orgLineNum', orgLineNum);
     if (isNonEmptyString(str)) {
       // --- Check for extension lines
-      while (isNonEmptyString(this.nextStr) && (this.nextLevel >= level + 2)) {
+      while (this.isExtLine(level, str, this.nextLevel, this.nextStr)) {
         str += this.extSep(str, this.nextStr) + this.nextStr;
         this.refill();
         this.lineNum += 1;
@@ -257,6 +257,11 @@ export var Fetcher = class Fetcher {
     });
     dbgReturn("Fetcher.fetchNextNode", hNode);
     return hNode;
+  }
+
+  // ..........................................................
+  isExtLine(curLevel, curStr, nextLevel, nextStr) {
+    return isNonEmptyString(nextStr) && (nextLevel >= curLevel + 2);
   }
 
   // ..........................................................

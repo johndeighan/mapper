@@ -210,7 +210,7 @@ export class Fetcher
 
 		if isNonEmptyString(str)
 			# --- Check for extension lines
-			while isNonEmptyString(@nextStr) && (@nextLevel >= level+2)
+			while @isExtLine(level, str, @nextLevel, @nextStr)
 				str += @extSep(str, @nextStr) + @nextStr
 				@refill()
 				@lineNum += 1
@@ -231,6 +231,12 @@ export class Fetcher
 
 		dbgReturn "Fetcher.fetchNextNode", hNode
 		return hNode
+
+	# ..........................................................
+
+	isExtLine: (curLevel, curStr, nextLevel, nextStr) ->
+
+		return isNonEmptyString(nextStr) && (nextLevel >= curLevel+2)
 
 	# ..........................................................
 

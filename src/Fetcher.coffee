@@ -10,7 +10,8 @@ import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
 import {
-	indentLevel, splitLine, getOneIndent, undented, isUndented,
+	indentLevel, splitLine, splitPrefix,
+	getOneIndent, undented, isUndented,
 	} from '@jdeighan/coffee-utils/indent'
 import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
 
@@ -32,6 +33,7 @@ export class Fetcher
 		# --- Valid options:
 		#        addLevel - num of levels to add to each line
 		#                   unless the line is empty
+		#        noLevels - any line with indentation is continuation line
 
 		dbgEnter "Fetcher", hInput, options
 
@@ -45,8 +47,9 @@ export class Fetcher
 		#        @iterator    - must be an iterator
 
 		# --- Handle options
-		{addLevel} = getOptions(options)
+		{addLevel, noLevels} = getOptions(options)
 		@addLevel = addLevel || 0
+		@noLevels = !!noLevels
 		if (@addLevel > 0)
 			dbg "add #{@addLevel} levels"
 
@@ -109,12 +112,16 @@ export class Fetcher
 		# --- invoke iterator to fill in @nextLevel & @nextStr
 		{value, done} = @iterator.next()
 		if done
-			@nextLevel = 0
 			@nextStr = undef
 		else if isString(value)
 			if (value == '__END__')
-				@nextLevel = 0
 				@nextStr = undef
+			else if @noLevels
+				[prefix, @nextStr] = splitPrefix(value)
+				if (prefix.length > 0)
+					@nextLevel = 2  # continuation line
+				else
+					@nextLevel = 0
 			else
 				[@nextLevel, @nextStr] = splitLine(value, @oneIndent)
 

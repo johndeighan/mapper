@@ -50,7 +50,7 @@ text`, `<h1>title</h1>
 -----
 text`, `<h2>title</h2>
 <p>text</p>`);
-  // --- Comments and blank lines are stripped
+  // --- Comments are stripped
   mdTester.equal(46, `# title
 text`, `<p>text</p>`);
   mdTester.equal(53, `# title
@@ -63,8 +63,8 @@ text`, `<p>text</p>`);
 			fallback: null,
 			})
 \`\`\``, `<pre><code class="language-javascript"> adapter: adapter(&lbrace;
-pages: &#39;build&#39;,
-assets: &#39;build&#39;,
+pages: 'build',
+assets: 'build',
 fallback: null,
 &rbrace;)
 </code></pre>`);

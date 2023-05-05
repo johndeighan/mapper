@@ -1,10 +1,11 @@
 # markdown.coffee
 
 import {marked} from 'marked'
+import sanitizeHtml from 'sanitize-html'
 
 import {
-	undef, defined, OL, isEmpty, nonEmpty, isString, toArray,
-	isHashComment,
+	undef, defined, notdefined, OL, isEmpty, nonEmpty, isString,
+	toArray, toBlock, isHashComment,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
@@ -17,23 +18,28 @@ import {TreeMapper} from '@jdeighan/mapper/tree'
 
 # ---------------------------------------------------------------------------
 
-stripComments = (block) ->
-
-	lLines = []
-	for line in toArray(block)
-		if nonEmpty(line) && ! isHashComment(line)
-			lLines.push line
-	return lLines.join("\n")
-
-# ---------------------------------------------------------------------------
-
 export markdownify = (block) ->
 
 	dbgEnter "markdownify", block
 	assert isString(block), "block is not a string"
-	html = marked.parse(undented(stripComments(block)), {
-		grm: true,
-		headerIds: false,
+
+	# --- Remove leading zero-width characters
+	block = block.replace(/^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, '')
+
+	# --- get array of lines
+	lLines = toArray(block)
+
+	# --- remove hash comments
+	lLines = lLines.filter((line) => ! isHashComment(line));
+
+	# --- unindent
+	lLines = undented(lLines)
+
+	html = marked.parse(toBlock(lLines), {headerIds: false})
+	html = sanitizeHtml(html, {
+		allowedAttributes: {
+			'*': [ 'class']
+			}
 		})
 	dbg "marked returned", html
 	result = html \

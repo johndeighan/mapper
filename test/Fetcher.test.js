@@ -321,3 +321,29 @@ ghi`, ['abc def', 'ghi']);
 ghi`, `ABC DEF
 GHI`);
 })();
+
+// ---------------------------------------------------------------------------
+(function() {
+  var MyTester, tester;
+  // --- test option 'noLevels'
+  MyTester = class MyTester extends UnitTester {
+    transformValue(hInput) {
+      var fetcher;
+      fetcher = new Fetcher(hInput, {
+        noLevels: true
+      });
+      return fetcher.getBlock();
+    }
+
+  };
+  tester = new MyTester();
+  // ----------------------------------------------------------
+  tester.equal(428, `abc
+	def
+ghi`, `abc def
+ghi`);
+  return tester.equal(437, `abc
+   def
+ghi`, `abc def
+ghi`);
+})();

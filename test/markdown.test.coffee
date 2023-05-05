@@ -41,7 +41,7 @@ import {markdownify} from '@jdeighan/mapper/markdown'
 			<p>text</p>
 			"""
 
-	# --- Comments and blank lines are stripped
+	# --- Comments are stripped
 
 	mdTester.equal 46, """
 			# title
@@ -73,8 +73,8 @@ import {markdownify} from '@jdeighan/mapper/markdown'
 		```
 		""", """
 		<pre><code class="language-javascript"> adapter: adapter(&lbrace;
-		pages: &#39;build&#39;,
-		assets: &#39;build&#39;,
+		pages: 'build',
+		assets: 'build',
 		fallback: null,
 		&rbrace;)
 		</code></pre>

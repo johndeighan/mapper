@@ -408,3 +408,39 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		"""
 
 	)()
+
+# ---------------------------------------------------------------------------
+
+(() ->
+	# --- test option 'noLevels'
+
+	class MyTester extends UnitTester
+
+		transformValue: (hInput) ->
+
+			fetcher = new Fetcher(hInput, {noLevels: true})
+			return fetcher.getBlock()
+
+	tester = new MyTester()
+
+	# ----------------------------------------------------------
+
+	tester.equal 428, """
+		abc
+			def
+		ghi
+		""", """
+		abc def
+		ghi
+		"""
+
+	tester.equal 437, """
+		abc
+		   def
+		ghi
+		""", """
+		abc def
+		ghi
+		"""
+
+	)()

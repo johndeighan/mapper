@@ -34,6 +34,7 @@ import {
 import {
   indentLevel,
   splitLine,
+  splitPrefix,
   getOneIndent,
   undented,
   isUndented
@@ -59,10 +60,11 @@ import {
 // 8. define finalizeBlock() - to override
 export var Fetcher = class Fetcher {
   constructor(hInput, options = {}) {
-    var addLevel, content, fullpath, source;
+    var addLevel, content, fullpath, noLevels, source;
     // --- Valid options:
     //        addLevel - num of levels to add to each line
     //                   unless the line is empty
+    //        noLevels - any line with indentation is continuation line
     dbgEnter("Fetcher", hInput, options);
     // --- hInput can be:
     //        1. a plain string
@@ -74,8 +76,9 @@ export var Fetcher = class Fetcher {
     //        @iterator    - must be an iterator
 
       // --- Handle options
-    ({addLevel} = getOptions(options));
+    ({addLevel, noLevels} = getOptions(options));
     this.addLevel = addLevel || 0;
+    this.noLevels = !!noLevels;
     if (this.addLevel > 0) {
       dbg(`add ${this.addLevel} levels`);
     }
@@ -136,16 +139,21 @@ export var Fetcher = class Fetcher {
 
   // ..........................................................
   refill() {
-    var done, value;
+    var done, prefix, value;
     // --- invoke iterator to fill in @nextLevel & @nextStr
     ({value, done} = this.iterator.next());
     if (done) {
-      this.nextLevel = 0;
       this.nextStr = undef;
     } else if (isString(value)) {
       if (value === '__END__') {
-        this.nextLevel = 0;
         this.nextStr = undef;
+      } else if (this.noLevels) {
+        [prefix, this.nextStr] = splitPrefix(value);
+        if (prefix.length > 0) {
+          this.nextLevel = 2; // continuation line
+        } else {
+          this.nextLevel = 0;
+        }
       } else {
         [this.nextLevel, this.nextStr] = splitLine(value, this.oneIndent);
         // --- Try to set @oneIndent

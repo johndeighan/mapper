@@ -58,7 +58,8 @@ export var markdownify = function(block) {
   });
   lLines = undented(lLines);
   html = marked.parse(toBlock(lLines), {
-    headerIds: false
+    headerIds: false,
+    mangle: false
   });
   html = sanitizeHtml(html, {
     allowedAttributes: {

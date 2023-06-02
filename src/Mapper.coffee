@@ -13,7 +13,7 @@ import {
 	} from '@jdeighan/base-utils/debug'
 import {fromTAML} from '@jdeighan/base-utils/taml'
 import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
-import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
+import {parseSource} from '@jdeighan/coffee-utils/fs'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'

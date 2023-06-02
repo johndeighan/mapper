@@ -9,8 +9,9 @@ import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {slurp} from '@jdeighan/base-utils/fs'
 import {
-	isSimpleFileName, fileExt, isFile, isDir, slurp, pathTo,
+	isSimpleFileName, fileExt, isFile, isDir, pathTo,
 	} from '@jdeighan/coffee-utils/fs'
 
 import {TreeMapper} from '@jdeighan/mapper/tree'

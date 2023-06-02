@@ -2,7 +2,8 @@
 
 import {undef, isNumber, DUMP} from '@jdeighan/base-utils'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {slurp, mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+import {slurp, mkpath} from '@jdeighan/base-utils/fs'
+import {mydir} from '@jdeighan/coffee-utils/fs'
 import {map} from '@jdeighan/mapper'
 import {parseValue, TamlMapper} from '@jdeighan/mapper/taml'
 
@@ -206,7 +207,6 @@ tester.equal 156, """
 
 utest.succeeds 207, () =>
 	dir = mydir(import.meta.url)
-	filepath = mkpath(dir, 'beauty_and_the_beast.taml')
-	block = slurp(filepath)
+	block = slurp(dir, 'beauty_and_the_beast.taml')
 	mapper = new TamlMapper(block)
 	result = mapper.getResult()

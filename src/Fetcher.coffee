@@ -9,11 +9,12 @@ import {
 import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
+import {slurp} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, splitLine, splitPrefix,
 	getOneIndent, undented, isUndented,
 	} from '@jdeighan/coffee-utils/indent'
-import {parseSource, slurp} from '@jdeighan/coffee-utils/fs'
+import {parseSource} from '@jdeighan/coffee-utils/fs'
 
 import {Node} from '@jdeighan/mapper/node'
 

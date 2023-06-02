@@ -30,15 +30,16 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  mkpath,
+  slurp,
+  barf
+} from '@jdeighan/base-utils/fs';
+
+import {
   indentLevel,
   isUndented,
   indented
 } from '@jdeighan/coffee-utils/indent';
-
-import {
-  mkpath,
-  barf
-} from '@jdeighan/coffee-utils/fs';
 
 import {
   Mapper,
@@ -134,7 +135,7 @@ export var coffeeFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
       }
     }
     jsCode = coffeeCodeToJS(coffeeCode);
-    barf(destPath, jsCode);
+    barf(jsCode, destPath);
   }
 };
 
@@ -143,14 +144,14 @@ export var coffeeCodeToAST = function(coffeeCode) {
   var ast, err, mapped;
   assert(isUndented(coffeeCode), "has indentation");
   dbgEnter("coffeeCodeToAST", coffeeCode);
-  barf(mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode);
+  barf(coffeeCode, projRoot, 'test', 'ast.coffee');
   try {
     mapped = map(coffeeCode, CoffeePreProcessor);
     assert(defined(mapped), "mapped is undef");
-    barf(mkpath(projRoot, 'test', 'ast.cielo'), mapped);
+    barf(mapped, projRoot, 'test', 'ast.cielo');
   } catch (error) {
     err = error;
-    barf(mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode);
+    barf(coffeeCode, projRoot, 'test', 'ast.coffee');
     croak(`ERROR in CoffeePreProcessor: ${err.message}`);
   }
   try {

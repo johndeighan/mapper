@@ -37,6 +37,10 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  barf
+} from '@jdeighan/base-utils/fs';
+
+import {
   fromTAML,
   toTAML
 } from '@jdeighan/base-utils/taml';
@@ -44,10 +48,6 @@ import {
 import {
   indented
 } from '@jdeighan/coffee-utils/indent';
-
-import {
-  barf
-} from '@jdeighan/coffee-utils/fs';
 
 import {
   coffeeCodeToAST
@@ -510,15 +510,15 @@ export var ASTWalker = class ASTWalker {
     ({full} = getOptions(hOptions));
     lSortBy = words("type params body left right");
     if (full) {
-      return barf(filePath, toTAML(this.ast, {
+      return barf(toTAML(this.ast, {
         sortKeys: lSortBy
-      }));
+      }), filepath);
     } else {
       astCopy = deepCopy(this.ast);
       removeKeys(astCopy, words('start end extra declarations loc range tokens comments', 'assertions implicit optional async generato hasIndentedBody'));
-      return barf(filePath, toTAML(astCopy, {
+      return barf(toTAML(astCopy, {
         sortKeys: lSortBy
-      }));
+      }), filepath);
     }
   }
 

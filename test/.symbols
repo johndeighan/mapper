@@ -1,11 +1,14 @@
 fs
 	*fs exists readFile
 
+@jdeighan/base-utils/fs
+	mkpath slurp barf
+
 @jdeighan/coffee-utils
 	say undef
 
 @jdeighan/coffee-utils/fs
-	mydir mkpath slurp barf
+	mydir
 
 @jdeighan/coffee-utils/log
 	log/logger

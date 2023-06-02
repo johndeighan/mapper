@@ -11,6 +11,10 @@ import {
 } from '@jdeighan/base-utils';
 
 import {
+  slurp
+} from '@jdeighan/base-utils/fs';
+
+import {
   undef,
   defined,
   notdefined,

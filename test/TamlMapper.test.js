@@ -15,8 +15,11 @@ import {
 
 import {
   slurp,
-  mydir,
   mkpath
+} from '@jdeighan/base-utils/fs';
+
+import {
+  mydir
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -281,10 +284,9 @@ lParagraphs:
 
 // ---------------------------------------------------------------------------
 utest.succeeds(207, () => {
-  var block, dir, filepath, mapper, result;
+  var block, dir, mapper, result;
   dir = mydir(import.meta.url);
-  filepath = mkpath(dir, 'beauty_and_the_beast.taml');
-  block = slurp(filepath);
+  block = slurp(dir, 'beauty_and_the_beast.taml');
   mapper = new TamlMapper(block);
   return result = mapper.getResult();
 });

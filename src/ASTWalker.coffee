@@ -10,9 +10,9 @@ import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {barf} from '@jdeighan/base-utils/fs'
 import {fromTAML, toTAML} from '@jdeighan/base-utils/taml'
 import {indented} from '@jdeighan/coffee-utils/indent'
-import {barf} from '@jdeighan/coffee-utils/fs'
 
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {Context} from '@jdeighan/mapper/context'
@@ -424,11 +424,11 @@ export class ASTWalker
 		{full} = getOptions(hOptions)
 		lSortBy = words("type params body left right")
 		if full
-			barf filePath, toTAML(@ast, {sortKeys: lSortBy})
+			barf toTAML(@ast, {sortKeys: lSortBy}), filepath
 		else
 			astCopy = deepCopy @ast
 			removeKeys astCopy, words(
 				'start end extra declarations loc range tokens comments',
 				'assertions implicit optional async generato hasIndentedBody'
 				)
-			barf filePath, toTAML(astCopy, {sortKeys: lSortBy})
+			barf toTAML(astCopy, {sortKeys: lSortBy}), filepath

@@ -7,9 +7,10 @@ import {
 import {
 	setDebugging, getDebugLog,
 	} from '@jdeighan/base-utils/debug'
+import {slurp} from '@jdeighan/base-utils/fs'
 import {utest, UnitTester} from '@jdeighan/unit-tester'
 import {indented} from '@jdeighan/coffee-utils/indent'
-import {mkpath, slurp, projRoot} from '@jdeighan/coffee-utils/fs'
+import {projRoot} from '@jdeighan/coffee-utils/fs'
 
 import {ASTWalker} from '@jdeighan/mapper/ast'
 
@@ -23,7 +24,6 @@ class ASTTester extends UnitTester
 
 		walker = new ASTWalker(coffeeCode)
 		result = walker.walk('asText')
-#		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
 		return result
 
 tester = new ASTTester()
@@ -667,7 +667,7 @@ tester.equal 640, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 664, slurp(mkpath(rootDir, 'test', 'utils_utest.coffee')),
+tester.equal 664, slurp(rootDir, 'test', 'utils_utest.coffee'),
 
 	'''
 	lExported: isHashComment
@@ -770,7 +770,6 @@ tester.equal 709, '''
 			clearMyLogs()
 			walker = new ASTWalker(coffeeCode)
 			result = walker.walk('logCalls')
-			# walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
 			return getMyLog()
 
 	tester2 = new ASTTester2()

@@ -10,10 +10,10 @@ import {LOG, LOGVALUE, sep_dash} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {mkpath, slurp, barf} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, isUndented, indented,
 	} from '@jdeighan/coffee-utils/indent'
-import {mkpath, barf} from '@jdeighan/coffee-utils/fs'
 
 import {Mapper, map} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -102,7 +102,7 @@ export coffeeFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				for sym in lNeeded
 					dbg "   - #{sym}"
 		jsCode = coffeeCodeToJS(coffeeCode)
-		barf destPath, jsCode
+		barf jsCode, destPath
 	return
 
 # ---------------------------------------------------------------------------
@@ -111,14 +111,14 @@ export coffeeCodeToAST = (coffeeCode) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	dbgEnter "coffeeCodeToAST", coffeeCode
-	barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
+	barf coffeeCode, projRoot, 'test', 'ast.coffee'
 
 	try
 		mapped = map(coffeeCode, CoffeePreProcessor)
 		assert defined(mapped), "mapped is undef"
-		barf mkpath(projRoot, 'test', 'ast.cielo'), mapped
+		barf mapped, projRoot, 'test', 'ast.cielo'
 	catch err
-		barf mkpath(projRoot, 'test', 'ast.coffee'), coffeeCode
+		barf coffeeCode, projRoot, 'test', 'ast.coffee'
 		croak "ERROR in CoffeePreProcessor: #{err.message}"
 
 	try

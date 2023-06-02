@@ -34,10 +34,11 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  barf,
-  slurp,
+  barf
+} from '@jdeighan/base-utils/fs';
+
+import {
   pathTo,
-  mkpath,
   parseSource
 } from '@jdeighan/coffee-utils/fs';
 
@@ -77,7 +78,7 @@ export var getNeededSymbols = function(coffeeCode, hOptions = {}) {
   walker = new ASTWalker(ast);
   hSymbolInfo = walker.walk();
   if (dumpFile) {
-    barf(dumpFile, "AST:\n" + tamlStringify(ast));
+    barf(`AST:\n${tamlStringify(ast)}`, dumpFile);
   }
   result = uniq(hSymbolInfo.lMissing);
   dbgReturn("getNeededSymbols", result);

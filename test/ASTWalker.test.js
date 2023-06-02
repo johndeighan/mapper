@@ -23,6 +23,10 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  slurp
+} from '@jdeighan/base-utils/fs';
+
+import {
   utest,
   UnitTester
 } from '@jdeighan/unit-tester';
@@ -32,8 +36,6 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  mkpath,
-  slurp,
   projRoot
 } from '@jdeighan/coffee-utils/fs';
 
@@ -49,7 +51,6 @@ ASTTester = class ASTTester extends UnitTester {
     var result, walker;
     walker = new ASTWalker(coffeeCode);
     result = walker.walk('asText');
-    //		walker.barfAST mkpath(rootDir, 'test', 'ast.txt'), 'full'
     return result;
   }
 
@@ -424,7 +425,7 @@ export timestamp = () ->
 lMissing: croak`);
 
 // ---------------------------------------------------------------------------
-tester.equal(664, slurp(mkpath(rootDir, 'test', 'utils_utest.coffee')), `lExported: isHashComment`);
+tester.equal(664, slurp(rootDir, 'test', 'utils_utest.coffee'), `lExported: isHashComment`);
 
 // ---------------------------------------------------------------------------
 coffeeCode = `export mapMath = (line) ->
@@ -509,7 +510,6 @@ export removeKeys = (h, lKeys) =>
       clearMyLogs();
       walker = new ASTWalker(coffeeCode);
       result = walker.walk('logCalls');
-      // walker.barfAST mkpath(rootDir, 'test', 'ast.txt')
       return getMyLog();
     }
 

@@ -31,11 +31,14 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  slurp
+} from '@jdeighan/base-utils/fs';
+
+import {
   isSimpleFileName,
   fileExt,
   isFile,
   isDir,
-  slurp,
   pathTo
 } from '@jdeighan/coffee-utils/fs';
 

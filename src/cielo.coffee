@@ -9,12 +9,13 @@ import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {slurp, barf} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, indented, isUndented, splitLine,
 	} from '@jdeighan/coffee-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
-	withExt, slurp, barf, newerDestFileExists, shortenPath,
+	withExt, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -199,5 +200,5 @@ export cieloFileToJS = (srcPath, destPath=undef, hOptions={}) ->
 				for sym in lNeeded
 					dbg "   - #{sym}"
 		jsCode = cieloToJSCode({content: cieloCode, source: srcPath})
-		barf destPath, jsCode
+		barf jsCode, destPath
 	return

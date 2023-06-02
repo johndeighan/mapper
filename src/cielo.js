@@ -30,6 +30,11 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  slurp,
+  barf
+} from '@jdeighan/base-utils/fs';
+
+import {
   indentLevel,
   indented,
   isUndented,
@@ -42,8 +47,6 @@ import {
 
 import {
   withExt,
-  slurp,
-  barf,
   newerDestFileExists,
   shortenPath
 } from '@jdeighan/coffee-utils/fs';
@@ -247,6 +250,6 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
       content: cieloCode,
       source: srcPath
     });
-    barf(destPath, jsCode);
+    barf(jsCode, destPath);
   }
 };

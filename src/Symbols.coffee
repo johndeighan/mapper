@@ -9,8 +9,9 @@ import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+import {barf} from '@jdeighan/base-utils/fs'
 import {
-	barf, slurp, pathTo, mkpath, parseSource,
+	pathTo, parseSource,
 	} from '@jdeighan/coffee-utils/fs'
 import {splitLine, isUndented} from '@jdeighan/coffee-utils/indent'
 
@@ -36,7 +37,7 @@ export getNeededSymbols = (coffeeCode, hOptions={}) ->
 	walker = new ASTWalker(ast)
 	hSymbolInfo = walker.walk()
 	if dumpFile
-		barf dumpFile, "AST:\n" + tamlStringify(ast)
+		barf "AST:\n#{tamlStringify(ast)}", dumpFile
 	result = uniq(hSymbolInfo.lMissing)
 	dbgReturn "getNeededSymbols", result
 	return result

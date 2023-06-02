@@ -47,8 +47,7 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  parseSource,
-  slurp
+  parseSource
 } from '@jdeighan/coffee-utils/fs';
 
 import {

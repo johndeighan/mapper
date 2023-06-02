@@ -32,6 +32,10 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
+  slurp
+} from '@jdeighan/base-utils/fs';
+
+import {
   indentLevel,
   splitLine,
   splitPrefix,
@@ -41,8 +45,7 @@ import {
 } from '@jdeighan/coffee-utils/indent';
 
 import {
-  parseSource,
-  slurp
+  parseSource
 } from '@jdeighan/coffee-utils/fs';
 
 import {

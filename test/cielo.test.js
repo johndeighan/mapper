@@ -213,7 +213,8 @@ if (fs.existsSync('file.txt')) {
   cieloTester = new CieloTester('cielo.test');
   // --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
   cieloTester.equal(295, `dir = mydir(import.meta.url)
-filepath = mkpath(dir, 'test.txt')`, `import {mydir,mkpath} from '@jdeighan/coffee-utils/fs';
+filepath = mkpath(dir, 'test.txt')`, `import {mkpath} from '@jdeighan/base-utils/fs';
+import {mydir} from '@jdeighan/coffee-utils/fs';
 var dir, filepath;
 dir = mydir(import.meta.url);
 filepath = mkpath(dir, 'test.txt');`);

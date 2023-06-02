@@ -1,5 +1,3 @@
-export charCount = () ->
-	return
-export removeKeys = (h, lKeys) =>
-	removeKeys(lKeys)
-	return
+import {myfunc} from 'somewhere'
+x = myfunc(4)
+y = x + 5

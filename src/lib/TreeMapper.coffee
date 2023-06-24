@@ -7,7 +7,7 @@ import {
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {
-	LOG, LOGVALUE, clearMyLogs, getMyLog, echoMyLogs,
+	LOG, LOGVALUE, clearMyLogs, getMyLogs, echoMyLogs,
 	} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn, clearDebugLog, getDebugLog, callStack,
@@ -713,6 +713,6 @@ export getTrace = (hInput, hOptions='logCalls') ->
 	mapper = new TreeMapper(hInput)
 	clearMyLogs()
 	mapper.walk(hOptions)
-	result = getMyLog()
+	result = getMyLogs()
 	dbgReturn "getTrace", result
 	return result

@@ -16,6 +16,10 @@ import {
 } from '@jdeighan/base-utils';
 
 import {
+  echoLogsByDefault
+} from '@jdeighan/base-utils/log';
+
+import {
   setDebugging
 } from '@jdeighan/base-utils/debug';
 
@@ -27,6 +31,8 @@ import {
   TreeMapper,
   getTrace
 } from '@jdeighan/mapper/tree';
+
+echoLogsByDefault(false);
 
 // ---------------------------------------------------------------------------
 TraceTester = class TraceTester extends UnitTester {

@@ -3,10 +3,13 @@
 import {untabify} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {toBlock} from '@jdeighan/base-utils'
+import {echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
 import {UnitTester} from '@jdeighan/unit-tester'
 
 import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
+
+echoLogsByDefault false
 
 # ---------------------------------------------------------------------------
 

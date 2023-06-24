@@ -32,7 +32,7 @@ import {
   LOG,
   LOGVALUE,
   clearMyLogs,
-  getMyLog,
+  getMyLogs,
   echoMyLogs
 } from '@jdeighan/base-utils/log';
 
@@ -726,7 +726,7 @@ export var getTrace = function(hInput, hOptions = 'logCalls') {
   mapper = new TreeMapper(hInput);
   clearMyLogs();
   mapper.walk(hOptions);
-  result = getMyLog();
+  result = getMyLogs();
   dbgReturn("getTrace", result);
   return result;
 };

@@ -5,7 +5,7 @@ import {
 	isEmpty, nonEmpty, isString, isArray, DUMP,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
-import {LOG, LOGVALUE, dumpLog} from '@jdeighan/base-utils/log'
+import {LOG, LOGVALUE, echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {fromTAML} from '@jdeighan/base-utils/taml'
 import {
 	dbg, dbgEnter, dbgReturn, setDebugging,
@@ -21,6 +21,8 @@ import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {map} from '@jdeighan/mapper'
 import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
 import {markdownify} from '@jdeighan/mapper/markdown'
+
+echoLogsByDefault false
 
 ###
 	class TreeMapper should handle the following:

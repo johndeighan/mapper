@@ -4,7 +4,7 @@ import {
 	undef, defined, notdefined, rtrim, toBlock,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
-import {LOG, LOGVALUE, dumpLog} from '@jdeighan/base-utils/log'
+import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn, setDebugging,
 	} from '@jdeighan/base-utils/debug'

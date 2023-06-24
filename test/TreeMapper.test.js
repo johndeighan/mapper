@@ -24,7 +24,7 @@ import {
 import {
   LOG,
   LOGVALUE,
-  dumpLog
+  echoLogsByDefault
 } from '@jdeighan/base-utils/log';
 
 import {
@@ -67,6 +67,8 @@ import {
 import {
   markdownify
 } from '@jdeighan/mapper/markdown';
+
+echoLogsByDefault(false);
 
 /*
 	class TreeMapper should handle the following:

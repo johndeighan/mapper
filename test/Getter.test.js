@@ -13,8 +13,7 @@ import {
 } from '@jdeighan/base-utils/exceptions';
 
 import {
-  LOG,
-  dumpLog
+  LOG
 } from '@jdeighan/base-utils/log';
 
 import {

@@ -27,7 +27,8 @@ import {
 
 import {
   LOG,
-  LOGVALUE
+  LOGVALUE,
+  echoLogsByDefault
 } from '@jdeighan/base-utils/log';
 
 import {
@@ -56,6 +57,8 @@ import {
 import {
   Context
 } from '@jdeighan/mapper/context';
+
+echoLogsByDefault(false);
 
 hAllHandlers = fromTAML(`---
 File:

@@ -13,8 +13,7 @@ import {
   LOG,
   LOGVALUE,
   clearMyLogs,
-  getMyLog,
-  dumpLog
+  getMyLogs
 } from '@jdeighan/base-utils/log';
 
 import {
@@ -510,7 +509,7 @@ export removeKeys = (h, lKeys) =>
       clearMyLogs();
       walker = new ASTWalker(coffeeCode);
       result = walker.walk('logCalls');
-      return getMyLog();
+      return getMyLogs();
     }
 
   };

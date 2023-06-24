@@ -6,7 +6,7 @@ import {
 	toBlock, getOptions,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
-import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
+import {LOG, LOGVALUE, echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
@@ -16,6 +16,8 @@ import {indented} from '@jdeighan/coffee-utils/indent'
 
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {Context} from '@jdeighan/mapper/context'
+
+echoLogsByDefault false
 
 hAllHandlers = fromTAML('''
 	---

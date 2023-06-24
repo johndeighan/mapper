@@ -2,7 +2,7 @@
 
 import {defined, nonEmpty, toBlock, OL} from '@jdeighan/base-utils'
 import {
-	LOG, LOGVALUE, clearMyLogs, getMyLog, dumpLog,
+	LOG, LOGVALUE, clearMyLogs, getMyLogs,
 	} from '@jdeighan/base-utils/log'
 import {
 	setDebugging, getDebugLog,
@@ -770,7 +770,7 @@ tester.equal 709, '''
 			clearMyLogs()
 			walker = new ASTWalker(coffeeCode)
 			result = walker.walk('logCalls')
-			return getMyLog()
+			return getMyLogs()
 
 	tester2 = new ASTTester2()
 

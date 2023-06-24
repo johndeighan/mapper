@@ -17,8 +17,7 @@ import {
 
 import {
   LOG,
-  LOGVALUE,
-  dumpLog
+  LOGVALUE
 } from '@jdeighan/base-utils/log';
 
 import {

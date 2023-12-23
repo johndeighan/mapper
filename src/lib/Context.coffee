@@ -6,6 +6,7 @@ import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
+	
 import {Scope} from '@jdeighan/mapper/scope'
 
 lBuiltins = words "parseInt process JSON import console",

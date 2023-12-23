@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "myfsa.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\myfsa.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAc;AAAA,IAAA;;AAEd,OAAA;EAAQ,KAAR;EAAe,OAAf;EAAwB,UAAxB;CAAA,MAAA;;AACA,OAAA;EAAQ,GAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,YAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,GAAR;CAAA,MAAA,uBALc;;;AASR,QAAN,MAAA,MAAA,QAAoB,IAApB,CAAA;;AAGA,OAAA,IAAO,MAAA,GAAS,QAAA,CAAA,CAAA;AAEf,SAAO,IAAI,GAAJ,CAAQ,CAAA;;;;;;;;;gCAAA,CAAR;AAFQ",
+  "sourcesContent": [
+    "# myfsa.coffee\r\n\r\nimport {undef, defined, notdefined} from '@jdeighan/coffee-utils'\r\nimport {LOG} from '@jdeighan/coffee-utils/log'\r\nimport {setDebugging} from '@jdeighan/coffee-utils/debug'\r\nimport {FSA} from '@jdeighan/mapper/fsa'\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nclass MyFSA extends FSA\r\n\r\n\r\nexport getFSA = () ->\r\n\r\n\treturn new FSA(\"\"\"\r\n\t\tstart   'tag'      start\r\n\t\tstart   'if'       if1\r\n\t\tstart   EOF        end\r\n\t\tif1     'tag'      start   {/if}\r\n\t\tif1     'elsif'    if1\r\n\t\tif1     EOF        end     {/if}\r\n\t\tif1     'else'     if2\r\n\t\tif2     'tag'      start   {/if}\r\n\t\tif2     'if'       if1     {/if}\r\n\t\tif2     EOF        end     {/if}\r\n\t\t\"\"\")\r\n"
+  ]
+}

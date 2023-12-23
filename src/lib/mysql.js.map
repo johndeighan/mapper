@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "mysql.js",
+  "sourceRoot": "..\\..\\",
+  "sources": [
+    "src\\lib\\mysql.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAc;AAEd,OAAO,IAAP,MAAA;;AACA,OAAO,KAAP,MAAA;;AACA,OAAA;EAAQ,MAAR;CAAA,MAAA;;AACA,OAAA;EACC,KADD;EACQ,OADR;EACiB,UADjB;EAC6B,GAD7B;EACkC,QADlC;CAAA,MAAA;;AAIA,OAAA,IAAO,OAAA,GAAU;EAChB,IAAA,EAAM,6BADU;EAEhB,IAAA,EAAM,gBAFU;EAGhB,QAAA,EAAU,UAHM;EAIhB,QAAA,EAAU;AAJM,EATH;;;AAkBd,OAAA,IAAO,MAAA,GAAS,QAAA,CAAA,CAAA;AAEhB,MAAA,EAAA,EAAA;AAAC;IACC,EAAA,GAAK,KAAK,CAAC,gBAAN,CAAuB,OAAvB,EADN;GAEA,aAAA;IAAM;IACL,GAAA,CAAI,kBAAJ;IACA,GAAA,CAAI,GAAG,CAAC,OAAR;IACA,OAAO,CAAC,IAAR,CAAA,EAHD;;EAIA,EAAE,CAAC,KAAH,GAAW,EAAE,CAAC;AACd,SAAO;AATQ,EAlBF;;;AA+Bd,OAAA,IAAO,OAAA,GAAU,QAAA,CAAC,EAAD,CAAA;EAEhB,EAAE,CAAC,GAAH,CAAA;AAFgB",
+  "sourcesContent": [
+    "# mysql.coffee\r\n\r\nimport util from 'util'\r\nimport mysql from 'mysql-await'\r\nimport {assert} from '@jdeighan/base-utils'\r\nimport {\r\n\tundef, defined, notdefined, LOG, LOGVALUE,\r\n\t} from '@jdeighan/coffee-utils'\r\n\r\nexport hConfig = {\r\n\thost: 'us-cdbr-east-06.cleardb.net'\r\n\tuser: 'b86ea6769cf568'\r\n\tpassword: '773b2402'\r\n\tdatabase: 'heroku_faa14f8802eb5e7'\r\n\t}\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nexport openDB = () ->\r\n\r\n\ttry\r\n\t\tdb = mysql.createConnection(hConfig)\r\n\tcatch err\r\n\t\tLOG \"ERROR CONNECTING\"\r\n\t\tLOG err.message\r\n\t\tprocess.exit()\r\n\tdb.query = db.awaitQuery\r\n\treturn db\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nexport closeDB = (db) ->\r\n\r\n\tdb.end()\r\n\treturn\r\n"
+  ]
+}

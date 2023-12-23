@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "ast.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\ast.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;EAAA,GAAA,CAAI,UAAJ;AAAA",
+  "sourcesContent": [
+    "LOG someSymbol"
+  ]
+}

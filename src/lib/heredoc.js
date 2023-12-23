@@ -196,13 +196,14 @@ export var OneLineHereDoc = class OneLineHereDoc extends BaseHereDoc {
 export var TAMLHereDoc = class TAMLHereDoc extends BaseHereDoc {
   // --- First line must be '---'
   mapToCielo(block) {
-    var result;
+    var obj, result;
     dbgEnter('TAMLHereDoc.mapToCielo', block);
     if (firstLine(block) !== '---') {
       dbgReturn('TAMLHereDoc.mapToCielo', undef);
       return undef;
     }
-    result = JSON.stringify(fromTAML(block));
+    obj = fromTAML(block);
+    result = JSON.stringify(obj);
     dbgReturn('TAMLHereDoc.mapToCielo', result);
     return result;
   }

@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "utils_utest.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\utils_utest.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAoB;AAEpB,OAAA,IAAO,aAAA,GAAgB,QAAA,CAAC,IAAD,CAAA;AAEtB,SAAO,IAAI,CAAC,KAAL,CAAW,OAAX;AAFe",
+  "sourcesContent": [
+    "# utils_utest.coffee\r\n\r\nexport isHashComment = (text) ->\r\n\r\n\treturn text.match(/^\\s*#/)\r\n"
+  ]
+}

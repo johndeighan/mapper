@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "Node.test.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\Node.test.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAkB;AAAA,IAAA;;AAElB,OAAA;EAAQ,EAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,MAAR;EAAgB,KAAhB;CAAA,MAAA;;AACA,OAAA;EAAQ,GAAR;EAAa,QAAb;CAAA,MAAA;;AACA,OAAA;EAAQ,YAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,KAAR;CAAA,MAAA;;AAEA,OAAA;EAAQ,IAAR;CAAA,MAAA,wBARkB;;;AAYlB,IAAA,GAAO,IAAI,IAAJ,CAAS;EACf,GAAA,EAAK,KADU;EAEf,KAAA,EAAO,CAFQ;EAGf,MAAA,EAAQ,MAAO,CAAA,IAAI,CAAC,GAHL;EAIf,OAAA,EAAS;AAJM,CAAT;;AAMP,IAAI,CAAC,QAAL,CAAA;;AAEA,KAAK,CAAC,IAAN,CAAW,EAAX,EAAe,IAAf,EAAqB;EACpB,GAAA,EAAK,KADe;EAEpB,KAAA,EAAO,CAFa;EAGpB,MAAA,EAAQ,MAAO,CAAA,IAAI,CAAC,GAHA;EAIpB,OAAA,EAAS,CAJW;EAKpB,QAAA,EAAU;AALU,CAArB;;AAOA,KAAK,CAAC,KAAN,CAAY,EAAZ,EAAgB,IAAI,CAAC,OAAL,CAAa;EAAC,SAAA,EAAW;AAAZ,CAAb,CAAhB,EAAkD,QAAlD;;AAEA,KAAK,CAAC,KAAN,CAAY,EAAZ,EAAgB,IAAI,IAAJ,CAAS;EAAC,GAAA,EAAK,KAAN;EAAa,KAAA,EAAM;AAAnB,CAAT,CAA+B,CAAC,OAAhC,CAAA,CAAhB,EACC,OADD;;AAEA,KAAK,CAAC,KAAN,CAAY,EAAZ,EAAgB,IAAI,IAAJ,CAAS;EAAC,GAAA,EAAK,KAAN;EAAa,KAAA,EAAM;AAAnB,CAAT,CAA+B,CAAC,OAAhC,CAAwC;EAAC,SAAA,EAAU;AAAX,CAAxC,CAAhB,EACC,SADD;;AAEA,KAAK,CAAC,KAAN,CAAY,EAAZ,EAAgB,IAAI,IAAJ,CAAS;EAAC,GAAA,EAAK,KAAN;EAAa,KAAA,EAAM;AAAnB,CAAT,CAA+B,CAAC,OAAhC,CAAA,CAAhB,EACC,KADD;;AAEA,KAAK,CAAC,KAAN,CAAY,EAAZ,EAAgB,IAAI,IAAJ,CAAS;EAAC,GAAA,EAAK,KAAN;EAAa,KAAA,EAAM;AAAnB,CAAT,CAA+B,CAAC,OAAhC,CAAA,CAAhB,EACC,WADD",
+  "sourcesContent": [
+    "# Node.test.coffee\r\n\r\nimport {OL} from '@jdeighan/base-utils'\r\nimport {assert, croak} from '@jdeighan/base-utils/exceptions'\r\nimport {LOG, LOGVALUE} from '@jdeighan/base-utils/log'\r\nimport {setDebugging} from '@jdeighan/base-utils/debug'\r\nimport {utest} from '@jdeighan/unit-tester'\r\n\r\nimport {Node} from '@jdeighan/mapper/node'\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nnode = new Node({\r\n\tstr: 'div'\r\n\tlevel: 0\r\n\tsource: import.meta.url\r\n\tlineNum: 1\r\n\t})\r\nnode.incLevel()\r\n\r\nutest.like 21, node, {\r\n\tstr: 'div'\r\n\tlevel: 1\r\n\tsource: import.meta.url\r\n\tlineNum: 1\r\n\tsrcLevel: 0\r\n\t}\r\nutest.equal 28, node.getLine({oneIndent: \"=> \"}), \"=> div\"\r\n\r\nutest.equal 30, new Node({str: 'abc', level:1}).getLine(),\r\n\t\"\\tabc\"\r\nutest.equal 32, new Node({str: 'abc', level:2}).getLine({oneIndent:'  '}),\r\n\t\"    abc\"\r\nutest.equal 34, new Node({str: 'abc', level:0}).getLine(),\r\n\t\"abc\"\r\nutest.equal 36, new Node({str: 'abc', level:3}).getLine(),\r\n\t\"\\t\\t\\tabc\"\r\n"
+  ]
+}

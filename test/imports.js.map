@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "imports.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\imports.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA,OAAA,IAAO,SAAA,GAAY,QAAA,CAAA,CAAA,EAAA;;AAEnB,OAAA,IAAO,UAAA,GAAa,QAAA,CAAC,CAAD,EAAI,KAAJ,CAAA;EACnB,UAAA,CAAW,KAAX;AADmB",
+  "sourcesContent": [
+    "export charCount = () ->\r\n\treturn\r\nexport removeKeys = (h, lKeys) ->\r\n\tremoveKeys(lKeys)\r\n\treturn\r\n"
+  ]
+}

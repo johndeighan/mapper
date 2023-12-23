@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "Context.test.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\Context.test.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAqB;AAAA,IAAA;;AAErB,OAAA;EAAQ,KAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,OAAR;CAAA,MAAA;;AAEA,OAAA,GAAU,IAAI,OAAJ,CAAY,CAAC,MAAD,CAAZ;;AACV,OAAO,CAAC,GAAR,CAAY,QAAZ,EAAsB,MAAtB;;AACA,OAAO,CAAC,UAAR,CAAA;;AACA,OAAO,CAAC,GAAR,CAAY,SAAZ,EAAuB,OAAvB;;AAEA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,MAAZ,CAAjB;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,MAAZ,CAAjB;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,OAAZ,CAAjB;;AACA,KAAK,CAAC,KAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,UAAZ,CAAjB;;AAEA,OAAO,CAAC,QAAR,CAAA;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,MAAZ,CAAjB;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,MAAZ,CAAjB;;AACA,KAAK,CAAC,KAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,OAAZ,CAAjB;;AACA,KAAK,CAAC,KAAN,CAAa,EAAb,EAAiB,OAAO,CAAC,GAAR,CAAY,UAAZ,CAAjB",
+  "sourcesContent": [
+    "# Context.test.coffee\n\nimport {utest} from '@jdeighan/unit-tester'\nimport {Context} from '@jdeighan/mapper/context'\n\ncontext = new Context(['main'])\ncontext.add('myfunc', 'func')\ncontext.beginScope()\ncontext.add('myfunc2', 'func2')\n\nutest.truthy 11, context.has('main')\nutest.truthy 12, context.has('func')\nutest.truthy 13, context.has('func2')\nutest.falsy  14, context.has('notthere')\n\ncontext.endScope()\nutest.truthy 17, context.has('main')\nutest.truthy 18, context.has('func')\nutest.falsy  19, context.has('func2')\nutest.falsy  20, context.has('notthere')\n"
+  ]
+}

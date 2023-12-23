@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "UtilMappers.js",
+  "sourceRoot": "..\\..\\",
+  "sources": [
+    "src\\lib\\UtilMappers.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAoB;AAEpB,OAAA;EAAQ,KAAR;EAAe,OAAf;CAAA,MAAA;;AACA,OAAA;EAAQ,QAAR;CAAA,MAAA;;AAEA,OAAA;EAAQ,MAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,UAAR;CAAA,MAAA,wBANoB;;;;;;;;;;AAiBpB,OAAA,IAAa,cAAN,MAAA,YAAA,QAA0B,WAA1B;EAEN,UAAY,CAAC,KAAD,CAAA;AAEb,QAAA,CAAA,EAAA,GAAA,EAAA,QAAA,EAAA;IAAE,IAAG,QAAA,GAAW,KAAK,CAAC,GAAG,CAAC,KAAV,CAAgB,oCAAhB,CAAd;;;;MAMC,CAAC,CAAD,EAAI,GAAJ,EAAS,KAAT,CAAA,GAAkB;MAElB,IAAG,KAAK,CAAC,KAAN,CAAY,gBAAZ,CAAH;;AAQC,eAAO,CAAA,CAAA,CAAG,GAAH,CAAA,EAAA,CAAA,CAAW,KAAX,CAAA,EARR;OAAA,MAAA;;;QAYC,KAAA,GAAQ,GAAA,GAAM,KAAK,CAAC,OAAN,CAAc,KAAd,EAAqB,IAArB,CAAN,GAAmC;AAC3C,eAAO,CAAA,CAAA,CAAG,GAAH,CAAA,EAAA,CAAA,CAAW,KAAX,CAAA,EAbR;OARD;KAAA,MAAA;AAuBC,aAAO,KAAK,CAAC,IAvBd;;EAFW;;AAFN",
+  "sourcesContent": [
+    "# UtilMappers.coffee\r\n\r\nimport {undef, defined} from '@jdeighan/base-utils'\r\nimport {fromTAML} from '@jdeighan/base-utils/taml'\r\n\r\nimport {Mapper} from '@jdeighan/mapper'\r\nimport {TreeMapper} from '@jdeighan/mapper/tree'\r\n\r\n# ---------------------------------------------------------------------------\r\n#    Convert lines like:\r\n#       key: <string>\r\n#    to\r\n#       key: '<string>'\r\n#    while doubling internal single-quote characters\r\n#    unless <string> is a number\r\n# ---------------------------------------------------------------------------\r\n\r\nexport class StoryMapper extends TreeMapper\r\n\r\n\tgetUserObj: (hNode) ->\r\n\r\n\t\tif lMatches = hNode.str.match(///\r\n\t\t\t\t([A-Za-z_][A-Za-z0-9_]*)  # identifier\r\n\t\t\t\t\\:                        # colon\r\n\t\t\t\t\\s*                       # optional whitespace\r\n\t\t\t\t(.+)                      # a non-empty string\r\n\t\t\t\t$///)\r\n\t\t\t[_, key, value] = lMatches\r\n\r\n\t\t\tif value.match(///\r\n\t\t\t\t\t\\d+\r\n\t\t\t\t\t(?:\r\n\t\t\t\t\t\t\\.\r\n\t\t\t\t\t\t\\d*\r\n\t\t\t\t\t\t)?\r\n\t\t\t\t\t$///)\r\n\t\t\t\t# --- don't mess with numbers\r\n\t\t\t\treturn \"#{key}: #{value}\"\r\n\t\t\telse\r\n\t\t\t\t# --- surround with single quotes,\r\n\t\t\t\t#     double internal single quotes\r\n\t\t\t\tvalue = \"'\" + value.replace(/\\'/g, \"''\") + \"'\"\r\n\t\t\t\treturn \"#{key}: #{value}\"\r\n\t\telse\r\n\t\t\treturn hNode.str\r\n"
+  ]
+}

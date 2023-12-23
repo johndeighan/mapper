@@ -15,6 +15,7 @@ import {
 	firstLine, remainingLines, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
 import {indented, undented} from '@jdeighan/coffee-utils/indent'
+
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 lHereDocs = []   # checked in this order - list of type names
@@ -159,7 +160,8 @@ export class TAMLHereDoc extends BaseHereDoc
 		if firstLine(block) != '---'
 			dbgReturn 'TAMLHereDoc.mapToCielo', undef
 			return undef
-		result = JSON.stringify(fromTAML(block))
+		obj = fromTAML(block)
+		result = JSON.stringify(obj)
 		dbgReturn 'TAMLHereDoc.mapToCielo', result
 		return result
 

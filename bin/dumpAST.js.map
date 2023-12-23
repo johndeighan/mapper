@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "dumpAST.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "bin\\dumpAST.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAgB;AAAA,IAAA,UAAA,EAAA,QAAA,EAAA,IAAA,EAAA;;AAEhB,OAAA;EACC,MADD;EACS,KADT;EACgB,YADhB;EAC8B,GAD9B;EACmC,QADnC;CAAA,MAAA;;AAGA,OAAA;EAAQ,KAAR;CAAA,MAAA;;AACA,OAAA;EACC,KADD;EACQ,OADR;EACiB,UADjB;EAC6B,OAD7B;CAAA,MAAA;;AAGA,OAAA;EAAQ,SAAR;CAAA,MAAA,uBATgB;;;AAahB,QAAA,GAAW;;AACX,UAAA,GAAa,KAAA,CAAM,QAAN;;AAEb,MAAA,GAAS,IAAI,SAAJ,CAAc,UAAd,EAhBO;;;AAkBhB,IAAA,GAAO,MAAM,CAAC,IAAP,CAAY,IAAZ;;AAEP,IAAG,OAAA,CAAQ,IAAR,CAAH;EACC,GAAA,CAAI,4BAAJ,EADD;CAAA,MAAA;EAGC,GAAA,CAAI,IAAJ,EAHD;;;AAKA,MAAM,CAAC,OAAP,CAAe,gBAAf",
+  "sourcesContent": [
+    "# dumpAST.coffee\r\n\r\nimport {\r\n\tassert, croak, setDebugging, LOG, LOGVALUE,\r\n\t} from '@jdeighan/base-utils'\r\nimport {slurp} from '@jdeighan/base-utils/fs'\r\nimport {\r\n\tundef, defined, notdefined, isEmpty,\r\n\t} from '@jdeighan/coffee-utils'\r\nimport {ASTWalker} from '@jdeighan/mapper/ast'\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nfilepath = \"c:\\\\Users\\\\johnd\\\\mapper\\\\test\\\\ast.coffee\"\r\ncoffeeCode = slurp(filepath)\r\n\r\nwalker = new ASTWalker(coffeeCode)\r\n# setDebugging 'getSymbols'\r\ninfo = walker.walk(true)\r\n\r\nif isEmpty(info)\r\n\tLOG \"Nothing needed or exported\"\r\nelse\r\n\tLOG info\r\n\r\nwalker.barfAST(\"./test/ast.txt\")\r\n"
+  ]
+}

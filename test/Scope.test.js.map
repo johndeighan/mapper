@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "Scope.test.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\Scope.test.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAmB;AAAA,IAAA;;AAEnB,OAAA;EAAQ,KAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,KAAR;CAAA,MAAA;;AAEA,KAAA,GAAQ,IAAI,KAAJ,CAAU,CAAC,MAAD,CAAV;;AACR,KAAK,CAAC,GAAN,CAAU,MAAV;;AAEA,KAAK,CAAC,MAAN,CAAc,CAAd,EAAiB,KAAK,CAAC,GAAN,CAAU,MAAV,CAAjB;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,KAAK,CAAC,GAAN,CAAU,MAAV,CAAjB;;AACA,KAAK,CAAC,KAAN,CAAa,EAAb,EAAiB,KAAK,CAAC,GAAN,CAAU,UAAV,CAAjB",
+  "sourcesContent": [
+    "# Scope.test.coffee\r\n\r\nimport {utest} from '@jdeighan/unit-tester'\r\nimport {Scope} from '@jdeighan/mapper/scope'\r\n\r\nscope = new Scope(['main'])\r\nscope.add('func')\r\n\r\nutest.truthy  9, scope.has('main')\r\nutest.truthy 10, scope.has('func')\r\nutest.falsy  11, scope.has('notthere')\r\n\r\n"
+  ]
+}

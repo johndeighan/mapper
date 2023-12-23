@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "UtilMappers.test.js",
+  "sourceRoot": "..\\",
+  "sources": [
+    "test\\UtilMappers.test.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAyB;AAAA,IAAA,WAAA,EAAA;;AAEzB,OAAA;EAAQ,UAAR;EAAoB,KAApB;CAAA,MAAA;;AAEA,OAAA;EAAQ,GAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,WAAR;CAAA,MAAA,gCALyB;;;AASnB,cAAN,MAAA,YAAA,QAA0B,WAA1B;EAEC,cAAgB,CAAC,KAAD,CAAA;AAEf,WAAO,GAAA,CAAI,KAAJ,EAAW,WAAX;EAFQ;;AAFjB;;AAMA,WAAA,GAAc,IAAI,WAAJ,CAAA;;AAEd,WAAW,CAAC,KAAZ,CAAkB,EAAlB,EAAsB,SAAtB,EAAiC,SAAjC;;AACA,WAAW,CAAC,KAAZ,CAAkB,EAAlB,EAAsB,cAAtB,EAAsC,cAAtC;;AACA,WAAW,CAAC,KAAZ,CAAkB,EAAlB,EAAsB,mBAAtB,EAA2C,uBAA3C;;AACA,WAAW,CAAC,KAAZ,CAAkB,EAAlB,EAAsB,mBAAtB,EAA2C,uBAA3C",
+  "sourcesContent": [
+    "# UtilMappers.test.coffee\r\n\r\nimport {UnitTester, utest} from '@jdeighan/unit-tester'\r\n\r\nimport {map} from '@jdeighan/mapper'\r\nimport {StoryMapper} from '@jdeighan/mapper/util-mappers'\r\n\r\n# ---------------------------------------------------------------------------\r\n\r\nclass StoryTester extends UnitTester\r\n\r\n\ttransformValue: (block) ->\r\n\r\n\t\treturn map(block, StoryMapper)\r\n\r\nstoryTester = new StoryTester()\r\n\r\nstoryTester.equal 15, 'key: 53', 'key: 53'\r\nstoryTester.equal 16, '\"hey, there\"', '\"hey, there\"'\r\nstoryTester.equal 17, 'eng: \"hey, there\"', 'eng: \\'\"hey, there\"\\''\r\nstoryTester.equal 18, \"eng: 'hey, there'\", \"eng: '''hey, there'''\"\r\n"
+  ]
+}

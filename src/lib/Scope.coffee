@@ -7,7 +7,7 @@ import {LOG} from '@jdeighan/base-utils/log'
 
 export class Scope
 
-	constructor: (@name=undef, lSymbols=undef) ->
+	constructor: (@name, lSymbols=undef) ->
 
 		if (lSymbols == undef)
 			@lSymbols = []

@@ -10,7 +10,7 @@ import {
   Scope
 } from '@jdeighan/mapper/scope';
 
-scope = new Scope(['main']);
+scope = new Scope('global', ['main']);
 
 scope.add('func');
 

@@ -6,7 +6,8 @@ import {
   undef,
   deepCopy,
   words,
-  OL
+  OL,
+  isString
 } from '@jdeighan/base-utils';
 
 import {
@@ -50,9 +51,14 @@ export var Context = class Context {
   }
 
   // ..........................................................
-  add(symbol) {
-    dbgEnter("Context.add", symbol);
-    this.currentScope.add(symbol);
+  add(...lSymbols) {
+    var i, len, symbol;
+    dbgEnter("Context.add", lSymbols);
+    for (i = 0, len = lSymbols.length; i < len; i++) {
+      symbol = lSymbols[i];
+      assert(isString(symbol), `Not a string: ${symbol}`);
+      this.currentScope.add(symbol);
+    }
     dbgReturn("Context.add");
   }
 

@@ -6,8 +6,8 @@
     "test\\ast.coffee"
   ],
   "names": [],
-  "mappings": ";AAAA;EAAA,GAAA,CAAI,UAAJ;AAAA",
+  "mappings": ";AAAY;EAAA;AAAA,MAAA;;EACZ,CAAA,GAAI;AADQ",
   "sourcesContent": [
-    "LOG someSymbol"
+    "# |||| stuff\ny = x"
   ]
 }

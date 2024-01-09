@@ -9,20 +9,21 @@ import {parseValue, TamlMapper} from '@jdeighan/mapper/taml'
 
 # ---------------------------------------------------------------------------
 
-utest.equal  11, parseValue('undef'), undef
-utest.equal 12, parseValue("null"), null
-utest.equal 13, parseValue("true"), true
-utest.equal 14, parseValue("false"), false
+utest.equal 12, parseValue('undef'), undef
+utest.equal 13, parseValue("null"), null
+utest.equal 14, parseValue("true"), true
+utest.equal 15, parseValue("false"), false
 
-utest.truthy 16, isNumber(parseValue('2'))
-utest.truthy 17, isNumber(parseValue('2.5'))
-utest.falsy  18, isNumber(parseValue('2a'))
-utest.falsy  19, isNumber(parseValue('a2'))
+utest.truthy 17, isNumber(parseValue('2'))
+utest.truthy 18, isNumber(parseValue('2.5'))
+utest.truthy 19, isNumber(parseValue('2a'))
+utest.falsy  20, isNumber('2a')
+utest.falsy  21, isNumber(parseValue('a2'))
 
-utest.equal 21, parseValue("«undef»"), 'undef'
-utest.equal 22, parseValue("«null»"),  'null'
-utest.equal 23, parseValue("«true»"),  'true'
-utest.equal 24, parseValue("«false»"), 'false'
+utest.equal 23, parseValue("«undef»"), 'undef'
+utest.equal 24, parseValue("«null»"),  'null'
+utest.equal 25, parseValue("«true»"),  'true'
+utest.equal 26, parseValue("«false»"), 'false'
 
 # ---------------------------------------------------------------------------
 # --- Test that the correct user objects are created
@@ -41,7 +42,7 @@ obj_tester = new ObjTester()
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 43, """
+obj_tester.equal 45, """
 	---
 	- undef
 	- null
@@ -60,7 +61,7 @@ obj_tester.equal 43, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 62, """
+obj_tester.equal 64, """
 	---
 	- «undef»
 	- «null»
@@ -79,7 +80,7 @@ obj_tester.equal 62, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 81, """
+obj_tester.equal 83, """
 	---
 	- abc
 	-
@@ -94,7 +95,7 @@ obj_tester.equal 81, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 96, """
+obj_tester.equal 98, """
 	---
 	fName: John
 	lName: Deighan
@@ -121,13 +122,13 @@ tester = new ResultTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 123, """
+tester.equal 125, """
 	---
 	- abc
 	- def
 	""", ['abc', 'def']
 
-tester.equal 129, """
+tester.equal 131, """
 	---
 	fName: John
 	lName: Deighan
@@ -138,7 +139,7 @@ tester.equal 129, """
 		fullName: 'John Deighan'
 		}
 
-tester.equal 140, """
+tester.equal 142, """
 	---
 	-
 		- a
@@ -146,7 +147,7 @@ tester.equal 140, """
 	- def
 	""", [['a','b'], 'def']
 
-tester.equal 148, """
+tester.equal 150, """
 	---
 	-
 		x: 1
@@ -154,7 +155,7 @@ tester.equal 148, """
 	- def
 	""", [{x:1, y:2}, 'def']
 
-tester.equal 156, """
+tester.equal 158, """
 	---
 	title:
 		en: Aladdin and the magic lamp
@@ -205,7 +206,7 @@ tester.equal 156, """
 
 # ---------------------------------------------------------------------------
 
-utest.succeeds 207, () =>
+utest.succeeds 209, () =>
 	dir = mydir(import.meta.url)
 	block = slurp(dir, 'beauty_and_the_beast.taml')
 	mapper = new TamlMapper(block)

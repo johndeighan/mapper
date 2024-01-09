@@ -3,7 +3,7 @@
 import {utest} from '@jdeighan/unit-tester'
 import {Scope} from '@jdeighan/mapper/scope'
 
-scope = new Scope(['main'])
+scope = new Scope('global', ['main'])
 scope.add('func')
 
 utest.truthy  9, scope.has('main')

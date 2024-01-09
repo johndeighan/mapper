@@ -1,12 +1,14 @@
 # Context.coffee
 
-import {undef, deepCopy, words, OL} from '@jdeighan/base-utils'
+import {
+	undef, deepCopy, words, OL, isString,
+	} from '@jdeighan/base-utils'
 import {assert} from '@jdeighan/base-utils/exceptions'
 import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-	
+
 import {Scope} from '@jdeighan/mapper/scope'
 
 lBuiltins = words "parseInt process JSON import console",
@@ -36,10 +38,12 @@ export class Context
 
 	# ..........................................................
 
-	add: (symbol) ->
+	add: (lSymbols...) ->
 
-		dbgEnter "Context.add", symbol
-		@currentScope.add(symbol)
+		dbgEnter "Context.add", lSymbols
+		for symbol in lSymbols
+			assert isString(symbol), "Not a string: #{symbol}"
+			@currentScope.add(symbol)
 		dbgReturn "Context.add"
 		return
 

@@ -11,7 +11,7 @@ import {
 
 // ---------------------------------------------------------------------------
 export var Scope = class Scope {
-  constructor(name = undef, lSymbols = undef) {
+  constructor(name, lSymbols = undef) {
     this.name = name;
     if (lSymbols === undef) {
       this.lSymbols = [];

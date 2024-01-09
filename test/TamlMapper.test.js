@@ -32,29 +32,31 @@ import {
 } from '@jdeighan/mapper/taml';
 
 // ---------------------------------------------------------------------------
-utest.equal(11, parseValue('undef'), undef);
+utest.equal(12, parseValue('undef'), undef);
 
-utest.equal(12, parseValue("null"), null);
+utest.equal(13, parseValue("null"), null);
 
-utest.equal(13, parseValue("true"), true);
+utest.equal(14, parseValue("true"), true);
 
-utest.equal(14, parseValue("false"), false);
+utest.equal(15, parseValue("false"), false);
 
-utest.truthy(16, isNumber(parseValue('2')));
+utest.truthy(17, isNumber(parseValue('2')));
 
-utest.truthy(17, isNumber(parseValue('2.5')));
+utest.truthy(18, isNumber(parseValue('2.5')));
 
-utest.falsy(18, isNumber(parseValue('2a')));
+utest.truthy(19, isNumber(parseValue('2a')));
 
-utest.falsy(19, isNumber(parseValue('a2')));
+utest.falsy(20, isNumber('2a'));
 
-utest.equal(21, parseValue("«undef»"), 'undef');
+utest.falsy(21, isNumber(parseValue('a2')));
 
-utest.equal(22, parseValue("«null»"), 'null');
+utest.equal(23, parseValue("«undef»"), 'undef');
 
-utest.equal(23, parseValue("«true»"), 'true');
+utest.equal(24, parseValue("«null»"), 'null');
 
-utest.equal(24, parseValue("«false»"), 'false');
+utest.equal(25, parseValue("«true»"), 'true');
+
+utest.equal(26, parseValue("«false»"), 'false');
 
 // ---------------------------------------------------------------------------
 // --- Test that the correct user objects are created
@@ -74,7 +76,7 @@ ObjTester = class ObjTester extends UnitTester {
 obj_tester = new ObjTester();
 
 // ---------------------------------------------------------------------------
-obj_tester.equal(43, `---
+obj_tester.equal(45, `---
 - undef
 - null
 - true
@@ -108,7 +110,7 @@ obj_tester.equal(43, `---
 ]);
 
 // ---------------------------------------------------------------------------
-obj_tester.equal(62, `---
+obj_tester.equal(64, `---
 - «undef»
 - «null»
 - «true»
@@ -142,7 +144,7 @@ obj_tester.equal(62, `---
 ]);
 
 // ---------------------------------------------------------------------------
-obj_tester.equal(81, `---
+obj_tester.equal(83, `---
 - abc
 -
 	- a
@@ -165,7 +167,7 @@ obj_tester.equal(81, `---
 ]);
 
 // ---------------------------------------------------------------------------
-obj_tester.equal(96, `---
+obj_tester.equal(98, `---
 fName: John
 lName: Deighan
 fullName:
@@ -204,11 +206,11 @@ ResultTester = class ResultTester extends UnitTester {
 tester = new ResultTester();
 
 // ---------------------------------------------------------------------------
-tester.equal(123, `---
+tester.equal(125, `---
 - abc
 - def`, ['abc', 'def']);
 
-tester.equal(129, `---
+tester.equal(131, `---
 fName: John
 lName: Deighan
 fullName: John Deighan`, {
@@ -217,13 +219,13 @@ fullName: John Deighan`, {
   fullName: 'John Deighan'
 });
 
-tester.equal(140, `---
+tester.equal(142, `---
 -
 	- a
 	- b
 - def`, [['a', 'b'], 'def']);
 
-tester.equal(148, `---
+tester.equal(150, `---
 -
 	x: 1
 	y: 2
@@ -235,7 +237,7 @@ tester.equal(148, `---
   'def'
 ]);
 
-tester.equal(156, `---
+tester.equal(158, `---
 title:
 	en: Aladdin and the magic lamp
 	zh: 阿拉丁和神灯
@@ -283,7 +285,7 @@ lParagraphs:
 });
 
 // ---------------------------------------------------------------------------
-utest.succeeds(207, () => {
+utest.succeeds(209, () => {
   var block, dir, mapper, result;
   dir = mydir(import.meta.url);
   block = slurp(dir, 'beauty_and_the_beast.taml');

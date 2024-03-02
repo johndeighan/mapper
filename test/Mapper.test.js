@@ -29,12 +29,13 @@ import {
 
 import {
   UnitTester,
-  utest
-} from '@jdeighan/unit-tester';
+  equal,
+  like
+} from '@jdeighan/base-utils/utest';
 
 import {
   indented
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   Mapper,
@@ -50,22 +51,22 @@ import {
 line2
 
 line3`);
-  utest.like(27, mapper.get(), {
+  like(mapper.get(), {
     str: 'line1',
     level: 0,
     source: "<unknown>/1"
   });
-  utest.like(32, mapper.get(), {
+  like(mapper.get(), {
     str: 'line2',
     level: 0,
     source: "<unknown>/3"
   });
-  utest.like(37, mapper.get(), {
+  like(mapper.get(), {
     str: 'line3',
     level: 0,
     source: "<unknown>/5"
   });
-  return utest.equal(42, mapper.get(), undef);
+  return equal(mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -81,7 +82,7 @@ ghi`);
   for (item of ref) {
     lStrings.push(item.str);
   }
-  return utest.equal(66, lStrings, ['abc', 'def', 'ghi']);
+  return equal(lStrings, ['abc', 'def', 'ghi']);
 })();
 
 // ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@ ghi`);
   for (item of ref) {
     lStrings.push(item.str);
   }
-  return utest.equal(89, lStrings, ['abc', 'def', 'ghi']);
+  return equal(lStrings, ['abc', 'def', 'ghi']);
 })();
 
 // ---------------------------------------------------------------------------
@@ -112,7 +113,7 @@ ghi`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(110, `abc
+  return tester.equal(`abc
 
 def
 # --- a comment`, `abc
@@ -140,7 +141,7 @@ def`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(145, `abc
+  return tester.equal(`abc
 
 def
 # --- a comment
@@ -163,16 +164,16 @@ def
   };
   // --- You can pass any iterator to the Mapper() constructor
   mapper = new Mapper(generator());
-  utest.like(177, mapper.fetch(), {
+  like(mapper.fetch(), {
     str: 'line1'
   });
-  utest.like(178, mapper.fetch(), {
+  like(mapper.fetch(), {
     str: 'line2'
   });
-  utest.like(179, mapper.fetch(), {
+  like(mapper.fetch(), {
     str: 'line3'
   });
-  return utest.equal(180, mapper.fetch(), undef);
+  return equal(mapper.fetch(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -182,27 +183,17 @@ def
 // ---------------------------------------------------------------------------
 // --- Test #include
 (function() {
-  var MyTester, myTester, numLines;
-  numLines = undef;
-  MyTester = class MyTester extends UnitTester {
-    transformValue(block) {
-      var mapper;
-      mapper = new Mapper(block);
-      block = mapper.getBlock();
-      numLines = mapper.lineNum; // set variable numLines
-      return block;
-    }
-
-  };
-  // ..........................................................
-  myTester = new MyTester();
-  myTester.equal(207, `abc
+  var block, contents, mapper;
+  contents = `abc
 	#include title.md
-def`, `abc
+def`;
+  mapper = new Mapper(contents);
+  block = mapper.getBlock();
+  equal(block, `abc
 	title
 	=====
 def`);
-  return utest.equal(218, numLines, 3);
+  return equal(mapper.lineNum, 3);
 })();
 
 // ---------------------------------------------------------------------------
@@ -211,7 +202,7 @@ def`);
   mapper = new Mapper(`abc
 	#include title.md
 def`);
-  return utest.equal(231, mapper.getBlock(), `abc
+  return equal(mapper.getBlock(), `abc
 	title
 	=====
 def`);
@@ -219,28 +210,18 @@ def`);
 
 // ---------------------------------------------------------------------------
 // --- Test __END__
-(function() {
-  var MyTester, myTester, numLines;
-  numLines = undef;
-  MyTester = class MyTester extends UnitTester {
-    transformValue(block) {
-      var mapper;
-      mapper = new Mapper(block);
-      block = mapper.getBlock();
-      numLines = mapper.lineNum; // set variable numLines
-      return block;
-    }
-
-  };
-  // ..........................................................
-  myTester = new MyTester();
-  myTester.equal(259, `abc
+(() => {
+  var block, contents, mapper;
+  contents = `abc
 def
 __END__
 ghi
-jkl`, `abc
+jkl`;
+  mapper = new Mapper(contents);
+  block = mapper.getBlock();
+  equal(block, `abc
 def`);
-  return utest.equal(270, numLines, 2);
+  return equal(mapper.lineNum, 2);
 })();
 
 // ---------------------------------------------------------------------------
@@ -258,7 +239,7 @@ def`);
   };
   // ..........................................................
   myTester = new MyTester();
-  return myTester.equal(290, `abc
+  return myTester.equal(`abc
 	#include ended.md
 def`, `abc
 	ghi
@@ -280,7 +261,7 @@ def`);
   };
   // ..........................................................
   myTester = new MyTester();
-  return myTester.equal(319, `abc
+  return myTester.equal(`abc
 #define meaning 42
 meaning is __meaning__`, `abc
 meaning is 42`);
@@ -299,7 +280,7 @@ meaning is 42`);
 abc
 #define meaning 42
 The meaning of life is __meaning__`);
-  utest.equal(348, result, `abc
+  equal(result, `abc
 The meaning of life is 42`);
   // --- Now, create a subclass that:
   //        1. recognizes '//' style comments and removes them
@@ -326,7 +307,7 @@ abc
 #define meaning 42
 The meaning of life is __meaning__
 #for x in lItems`, MyMapper);
-  return utest.equal(377, result, `abc
+  return equal(result, `abc
 The meaning of life is 42
 {#for x in lItems}`);
 })();
@@ -359,7 +340,7 @@ The meaning of life is 42
 abc
 
 defghi`, MyMapper);
-  return utest.equal(406, result, `3
+  return equal(result, `3
 6`);
 })();
 
@@ -392,11 +373,11 @@ JSMapper = class JSMapper extends Mapper {
 
   };
   mapTester = new JSTester();
-  // --- some utest tests of JSMapper
-  mapTester.equal(444, `# |||| $:
+  // --- some tests of JSMapper
+  mapTester.equal(`# |||| $:
 y = 2*x`, `# |||| $:
 y = 2*x;`);
-  return mapTester.equal(452, `# |||| $: {
+  return mapTester.equal(`# |||| $: {
 y = 2*x
 console.log "OK"
 # |||| }`, `# |||| $: {
@@ -456,8 +437,8 @@ export var BarMapper = class BarMapper extends Mapper {
   };
   mapTester = new BarTester();
   // ..........................................................
-  // --- some utest tests of BarMapper
-  mapTester.equal(530, `# --- a comment (should remove)
+  // --- some tests of BarMapper
+  mapTester.equal(`# --- a comment (should remove)
 
 <h1>title</h1>
 <script>
@@ -467,7 +448,7 @@ export var BarMapper = class BarMapper extends Mapper {
 	# |||| $:
 	y = 2*x;
 </script>`);
-  return mapTester.equal(545, `# --- a comment (should remove)
+  return mapTester.equal(`# --- a comment (should remove)
 
 <h1>title</h1>
 <script>
@@ -512,8 +493,8 @@ export var DebarMapper = class DebarMapper extends Mapper {
   };
   mapTester = new DebarTester();
   // ..........................................................
-  // --- some utest tests of DebarMapper
-  mapTester.equal(600, `<h1>title</h1>
+  // --- some tests of DebarMapper
+  mapTester.equal(`<h1>title</h1>
 <script>
 	# |||| $:
 	y = 2*x
@@ -522,7 +503,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
 	$:
 	y = 2*x
 </script>`);
-  return mapTester.equal(614, `<h1>title</h1>
+  return mapTester.equal(`<h1>title</h1>
 <script>
 	# |||| $: {
 	y = 2*x
@@ -548,8 +529,8 @@ export var DebarMapper = class DebarMapper extends Mapper {
   };
   mapTester = new MultiTester();
   // ..........................................................
-  // --- some utest tests of multiple mapping
-  mapTester.equal(649, `# --- a comment (should remove)
+  // --- some tests of multiple mapping
+  mapTester.equal(`# --- a comment (should remove)
 
 <h1>title</h1>
 <script>
@@ -559,7 +540,7 @@ export var DebarMapper = class DebarMapper extends Mapper {
 	$:
 	y = 2*x;
 </script>`);
-  return mapTester.equal(664, `# --- a comment (should remove)
+  return mapTester.equal(`# --- a comment (should remove)
 
 <h1>title</h1>
 <script>
@@ -574,3 +555,5 @@ export var DebarMapper = class DebarMapper extends Mapper {
 	}
 </script>`);
 })();
+
+//# sourceMappingURL=Mapper.test.js.map

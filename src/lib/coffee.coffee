@@ -13,12 +13,10 @@ import {
 import {mkpath, slurp, barf} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, isUndented, indented,
-	} from '@jdeighan/coffee-utils/indent'
+	} from '@jdeighan/base-utils/indent'
 
 import {Mapper, map} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
-
-projRoot = mkpath('c:', 'Users', 'johnd', 'mapper')
 
 # ---------------------------------------------------------------------------
 
@@ -111,14 +109,11 @@ export coffeeCodeToAST = (coffeeCode) ->
 
 	assert isUndented(coffeeCode), "has indentation"
 	dbgEnter "coffeeCodeToAST", coffeeCode
-	barf coffeeCode, projRoot, 'test', 'ast.coffee'
 
 	try
 		mapped = map(coffeeCode, CoffeePreProcessor)
 		assert defined(mapped), "mapped is undef"
-		barf mapped, projRoot, 'test', 'ast.cielo'
 	catch err
-		barf coffeeCode, projRoot, 'test', 'ast.coffee'
 		croak "ERROR in CoffeePreProcessor: #{err.message}"
 
 	try

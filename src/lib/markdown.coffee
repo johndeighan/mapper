@@ -12,7 +12,7 @@ import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {undented} from '@jdeighan/coffee-utils/indent'
+import {undented} from '@jdeighan/base-utils/indent'
 
 import {TreeMapper} from '@jdeighan/mapper/tree'
 

@@ -9,11 +9,9 @@ import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {barf} from '@jdeighan/base-utils/fs'
-import {
-	pathTo, parseSource,
-	} from '@jdeighan/coffee-utils/fs'
-import {splitLine, isUndented} from '@jdeighan/coffee-utils/indent'
+import {barf, parsePath} from '@jdeighan/base-utils/fs'
+import {pathTo} from '@jdeighan/coffee-utils/fs'
+import {splitLine, isUndented} from '@jdeighan/base-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -51,10 +49,10 @@ export buildImportList = (lNeededSymbols, source) ->
 	if isEmpty(lNeededSymbols)
 		dbg 'no needed symbols'
 		dbgReturn "buildImportList", []
-		return {lImports: [], lNotFound: []}
+		return {lImportStmts: [], lNotFound: []}
 
 	hLibs = {}   # { <lib>: [<symbol>, ... ], ... }
-	lImports = []
+	lImportStmts = []
 	lNotFound = []
 
 	# --- { <sym>: {lib: <lib>, src: <name> }}
@@ -70,7 +68,7 @@ export buildImportList = (lNeededSymbols, source) ->
 			{lib, src, isDefault} = hSymbol
 
 			if isDefault
-				lImports.push "import #{symbol} from '#{lib}'"
+				lImportStmts.push "import #{symbol} from '#{lib}'"
 			else
 				# --- build the needed string
 				if defined(src)
@@ -88,44 +86,50 @@ export buildImportList = (lNeededSymbols, source) ->
 
 	for lib in Object.keys(hLibs).sort()
 		strSymbols = hLibs[lib].join(',')
-		lImports.push "import {#{strSymbols}} from '#{lib}'"
-	assert isArray(lImports), "lImports is not an array!"
-	dbgReturn "buildImportList", lImports
-	return {
-		lImports
+		lImportStmts.push "import {#{strSymbols}} from '#{lib}'"
+	assert isArray(lImportStmts), "lImportStmts is not an array!"
+	result = {
 		lNotFound
+		lImportStmts
 		}
+	dbgReturn "buildImportList", result
+	return result
 
 # ---------------------------------------------------------------------------
 # export only to allow unit testing
 
-export getAvailSymbols = (source=undef) ->
-	# --- returns { <symbol> -> {lib: <lib>, src: <name>, default: true},...}
+export getAvailSymbols = (sourceFile=undef) ->
+	# --- returns { <symbol>: {
+	#                  lib: <lib>,
+	#                  src: <name>,
+	#                  default: true
+	#                  },...
+	#                }
 
-	dbgEnter "getAvailSymbols", source
-	if (source == undef)
+	dbgEnter "getAvailSymbols", sourceFile
+	if notdefined(sourceFile)
 		searchDir = process.cwd()
 		dbg "searchDir is current dir: #{OL(searchDir)}"
 	else
-		hSourceInfo = parseSource(source)
+		hSourceInfo = parsePath(sourceFile)
 		searchDir = hSourceInfo.dir
-		assert defined(searchDir), "No directory info for #{OL(source)}"
+		assert defined(searchDir), "No directory info for #{OL(sourceFile)}"
 		dbg "searchDir is #{OL(searchDir)}"
 
-	filepath = pathTo('.symbols', searchDir, {direction: 'up'})
-	if notdefined(filepath)
-		dbg 'no symbols file found'
-		dbgReturn "getAvailSymbols", {}
-		return {}
-
-	dbg ".symbols file is #{OL(filepath)}"
-	hSymbols = getAvailSymbolsFrom(filepath)
+	filePath = pathTo('.symbols', searchDir, {direction: 'up'})
+	if defined(filePath)
+		dbg ".symbols file is #{OL(filePath)}"
+		hSymbols = getAvailSymbolsFrom(filePath)
+	else
+		dbg 'no .symbols file found'
+		hSymbols = {}
 	dbgReturn "getAvailSymbols", hSymbols
 	return hSymbols
 
 # ---------------------------------------------------------------------------
+# export only to allow unit testing
 
-getAvailSymbolsFrom = (filepath) ->
+export getAvailSymbolsFrom = (filepath) ->
 	# --- returns { <symbol> -> {lib: <lib>, src: <name>}, ... }
 
 	dbgEnter "getAvailSymbolsFrom", filepath

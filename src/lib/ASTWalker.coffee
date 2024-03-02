@@ -10,9 +10,9 @@ import {LOG, LOGVALUE, echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
-import {barf} from '@jdeighan/base-utils/fs'
+import {barf, isDir} from '@jdeighan/base-utils/fs'
 import {fromTAML, toTAML} from '@jdeighan/base-utils/taml'
-import {indented} from '@jdeighan/coffee-utils/indent'
+import {indented} from '@jdeighan/base-utils/indent'
 
 import {coffeeCodeToAST} from '@jdeighan/mapper/coffee'
 import {Context} from '@jdeighan/mapper/context'

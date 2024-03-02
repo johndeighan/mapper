@@ -6,8 +6,10 @@ import {
 } from '@jdeighan/base-utils';
 
 import {
-  fromTAML
-} from '@jdeighan/base-utils/taml';
+  dbgEnter,
+  dbgReturn,
+  dbg
+} from '@jdeighan/base-utils/debug';
 
 import {
   Mapper
@@ -27,24 +29,35 @@ import {
 // ---------------------------------------------------------------------------
 export var StoryMapper = class StoryMapper extends TreeMapper {
   getUserObj(hNode) {
-    var _, key, lMatches, value;
+    var _, key, lMatches, result, value;
+    dbgEnter('getUserObj', hNode);
     if (lMatches = hNode.str.match(/([A-Za-z_][A-Za-z0-9_]*)\:\s*(.+)$/)) { // identifier
       // colon
       // optional whitespace
       // a non-empty string
+      dbg("is <key>: <value>");
       [_, key, value] = lMatches;
+      dbg('key', key);
+      dbg('value', value);
       if (value.match(/\d+(?:\.\d*)?$/)) {
         // --- don't mess with numbers
-        return `${key}: ${value}`;
+        dbg("<value> is a number, return <key>: <value>");
+        result = `${key}: ${value}`;
       } else {
+        dbg("<value> is not a number");
         // --- surround with single quotes,
         //     double internal single quotes
         value = "'" + value.replace(/\'/g, "''") + "'";
-        return `${key}: ${value}`;
+        result = `${key}: ${value}`;
       }
     } else {
-      return hNode.str;
+      dbg("not <key>: <value>, return hNode.str");
+      result = hNode.str;
     }
+    dbgReturn('getUserObj', result);
+    return result;
   }
 
 };
+
+//# sourceMappingURL=UtilMappers.js.map

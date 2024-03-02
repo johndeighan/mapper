@@ -1,34 +1,22 @@
 # traceNodes.test.coffee
 
-import {untabify} from '@jdeighan/base-utils'
-import {assert, croak} from '@jdeighan/base-utils/exceptions'
-import {toBlock} from '@jdeighan/base-utils'
-import {echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {UnitTester} from '@jdeighan/unit-tester'
-
-import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
+import {echoLogsByDefault} from '@jdeighan/base-utils/log'
+import {u, equal} from '@jdeighan/base-utils/utest'
+import {getTrace} from '@jdeighan/mapper/tree'
 
 echoLogsByDefault false
 
 # ---------------------------------------------------------------------------
 
-class TraceTester extends UnitTester
+u.transformValue = (block) => return getTrace(block)
 
-	transformValue: (block) ->
-
-		return getTrace(block)
-
-tester = new TraceTester()
-
-# ..........................................................
-
-tester.equal 24, "", """
+equal "", """
 		BEGIN WALK
 		END WALK
 		"""
 
-tester.equal 29, """
+equal """
 		abc
 		""", """
 		BEGIN WALK
@@ -39,7 +27,7 @@ tester.equal 29, """
 		END WALK
 		"""
 
-tester.equal 40, """
+equal """
 		abc
 		def
 		""", """
@@ -53,7 +41,7 @@ tester.equal 40, """
 		END WALK
 		"""
 
-tester.equal 54, """
+equal """
 		abc
 			def
 		""", """
@@ -69,7 +57,7 @@ tester.equal 54, """
 		END WALK
 		"""
 
-tester.equal 70, """
+equal """
 		abc
 			def
 			ghi
@@ -88,7 +76,7 @@ tester.equal 70, """
 		END WALK
 		"""
 
-tester.equal 89, """
+equal """
 		abc
 			def
 			ghi

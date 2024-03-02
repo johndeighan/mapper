@@ -31,12 +31,12 @@ import {
 
 import {
   UnitTester,
-  utest
-} from '@jdeighan/unit-tester';
+  equal
+} from '@jdeighan/base-utils/utest';
 
 import {
   undented
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   firstLine,
@@ -51,19 +51,19 @@ import {
 } from '@jdeighan/mapper/heredoc';
 
 // ---------------------------------------------------------------------------
-utest.equal(24, lineToParts('this is not a heredoc'), ['this is not a heredoc']);
+equal(lineToParts('this is not a heredoc'), ['this is not a heredoc']);
 
-utest.equal(28, lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
+equal(lineToParts('this <<< is <<< heredoc'), ['this ', '<<<', ' is ', '<<<', ' heredoc']);
 
-utest.equal(36, lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
+equal(lineToParts('<<< is <<< heredoc'), ['', '<<<', ' is ', '<<<', ' heredoc']);
 
-utest.equal(44, lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
+equal(lineToParts('this <<< is <<<'), ['this ', '<<<', ' is ', '<<<', '']);
 
-utest.equal(52, lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
+equal(lineToParts('<<< is <<<'), ['', '<<<', ' is ', '<<<', '']);
 
-utest.equal(60, lineToParts('<<<'), ['', '<<<', '']);
+equal(lineToParts('<<<'), ['', '<<<', '']);
 
-utest.equal(66, lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
+equal(lineToParts('<<<<<<'), ['', '<<<', '', '<<<', '']);
 
 // ---------------------------------------------------------------------------
 HereDocTester = class HereDocTester extends UnitTester {
@@ -76,48 +76,48 @@ HereDocTester = class HereDocTester extends UnitTester {
 tester = new HereDocTester();
 
 // ---------------------------------------------------------------------------
-utest.equal(86, mapHereDoc(`abc
+equal(mapHereDoc(`abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-utest.equal(94, mapHereDoc(`===
+equal(mapHereDoc(`===
 abc
 def`), '"abc\\ndef"');
 
 // ---------------------------------------------------------------------------
-utest.equal(103, mapHereDoc(`...
+equal(mapHereDoc(`...
 abc
 def`), '"abc def"');
 
 // ---------------------------------------------------------------------------
-utest.equal(112, mapHereDoc(`---
+equal(mapHereDoc(`---
 a: 1
 b: 2`), '{"a":1,"b":2}');
 
 // ---------------------------------------------------------------------------
-utest.equal(121, mapHereDoc(`---
+equal(mapHereDoc(`---
 - a
 - b`), '["a","b"]');
 
 // ------------------------------------------------------------------------
 // Default heredoc type is a block
-tester.equal(131, `this is a
+tester.equal(`this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ------------------------------------------------------------------------
 // Make explicit that the heredoc type is a block
-tester.equal(140, `===
+tester.equal(`===
 this is a
 block of text`, '"this is a\\nblock of text"');
 
 // ------------------------------------------------------------------------
 // One Line block
-tester.equal(150, `...this is a
+tester.equal(`...this is a
 line of text`, '"this is a line of text"');
 
 // ------------------------------------------------------------------------
 // One Line block
-tester.equal(159, `...
+tester.equal(`...
 this is a
 line of text`, '"this is a line of text"');
 
@@ -147,7 +147,7 @@ MatrixHereDoc = class MatrixHereDoc extends BaseHereDoc {
 
 addHereDocType('matrix', new MatrixHereDoc());
 
-tester.equal(186, `1 2 3
+tester.equal(`1 2 3
 2 4 6`, '[[1,2,3],[2,4,6]]');
 
 // ------------------------------------------------------------------------
@@ -171,7 +171,7 @@ UCHereDoc = class UCHereDoc extends BaseHereDoc {
 
 addHereDocType('upper case', new UCHereDoc());
 
-tester.equal(212, `^^^
+tester.equal(`^^^
 This is a
 block of text`, '"THIS IS A\\nBLOCK OF TEXT"');
 
@@ -200,26 +200,26 @@ UCHereDoc2 = class UCHereDoc2 extends BaseHereDoc {
 addHereDocType('upper case 2', new UCHereDoc2());
 
 // ---------------------------------------------------------------------------
-tester.equal(244, `***
+tester.equal(`***
 select ID,Name
 from Users`, '"SELECT ID,NAME FROM USERS"');
 
 // ---------------------------------------------------------------------------
 // TAML block
-tester.equal(254, `---
+tester.equal(`---
 - abc
 - def`, '["abc","def"]');
 
 // ---------------------------------------------------------------------------
 // TAML-like block, but actually a block
-tester.equal(264, `===
+tester.equal(`===
 ---
 - abc
 - def`, '"---\\n- abc\\n- def"');
 
 // ---------------------------------------------------------------------------
 // TAML block 2
-tester.equal(275, `---
+tester.equal(`---
 -
 	label: Help
 	url: /help
@@ -254,7 +254,7 @@ HereDocReplacer = class HereDocReplacer extends UnitTester {
 replacer = new HereDocReplacer();
 
 // ---------------------------------------------------------------------------
-replacer.equal(304, `TopMenu lItems={<<<}
+replacer.equal(`TopMenu lItems={<<<}
 	---
 	-
 		label: Help
@@ -264,7 +264,7 @@ replacer.equal(304, `TopMenu lItems={<<<}
 		url: /books`, `TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}`);
 
 // ---------------------------------------------------------------------------
-replacer.equal(319, `<TopMenu lItems={<<<}>
+replacer.equal(`<TopMenu lItems={<<<}>
 	---
 	-
 		label: Help
@@ -272,3 +272,5 @@ replacer.equal(319, `<TopMenu lItems={<<<}>
 	-
 		label: Books
 		url: /books`, `<TopMenu lItems={[{"label":"Help","url":"/help"},{"label":"Books","url":"/books"}]}>`);
+
+//# sourceMappingURL=heredoc.test.js.map

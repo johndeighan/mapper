@@ -49,7 +49,7 @@ import {
 import {
   indented,
   undented
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   Fetcher
@@ -80,7 +80,7 @@ export var replaceHereDocs = (line, fetcher) => {
       block = undented(toBlock(lLines));
       dbg('block', block);
       str = mapHereDoc(block);
-      assert(isString(str), `str is ${OL(str)}`);
+      assert(isString(str), `Not a string: ${OL(str)}`);
       dbg('mapped block', str);
       lNewParts.push(str);
     } else {
@@ -113,7 +113,7 @@ export var lineToParts = function(line) {
 export var mapHereDoc = function(block) {
   var heredocObj, i, len, result, type;
   dbgEnter("mapHereDoc", block);
-  assert(isString(block), "not a string");
+  assert(isString(block), `not a string: ${OL(block)}`);
   for (i = 0, len = lHereDocs.length; i < len; i++) {
     type = lHereDocs[i];
     dbg(`TRY ${type} HEREDOC`);
@@ -218,3 +218,5 @@ addHereDocType('one line', new OneLineHereDoc());
 addHereDocType('block', new ExplicitBlockHereDoc());
 
 addHereDocType('taml', new TAMLHereDoc());
+
+//# sourceMappingURL=heredoc.js.map

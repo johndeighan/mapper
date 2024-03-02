@@ -8,8 +8,8 @@ import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn, setDebugging,
 	} from '@jdeighan/base-utils/debug'
-import {UnitTester, utest} from '@jdeighan/unit-tester'
-import {indented} from '@jdeighan/coffee-utils/indent'
+import {UnitTester, equal, like} from '@jdeighan/base-utils/utest'
+import {indented} from '@jdeighan/base-utils/indent'
 
 import {Mapper, map} from '@jdeighan/mapper'
 
@@ -24,22 +24,22 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 		line3
 		""")
-	utest.like 27, mapper.get(), {
+	like mapper.get(), {
 		str: 'line1'
 		level: 0
 		source: "<unknown>/1"
 		}
-	utest.like 32, mapper.get(), {
+	like mapper.get(), {
 		str: 'line2'
 		level: 0
 		source: "<unknown>/3"
 		}
-	utest.like 37, mapper.get(), {
+	like mapper.get(), {
 		str: 'line3'
 		level: 0
 		source: "<unknown>/5"
 		}
-	utest.equal 42, mapper.get(), undef
+	equal mapper.get(), undef
 
 	)()
 
@@ -60,7 +60,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 	for item from mapper.allNodes()
 		lStrings.push item.str
 
-	utest.equal 66, lStrings, ['abc','def','ghi']
+	equal lStrings, ['abc','def','ghi']
 	)()
 
 # ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 	for item from mapper.allNodes()
 		lStrings.push item.str
 
-	utest.equal 89, lStrings, ['abc','def','ghi']
+	equal lStrings, ['abc','def','ghi']
 	)()
 
 # ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 	# ----------------------------------------------------------
 
-	tester.equal 110, """
+	tester.equal """
 		abc
 
 		def
@@ -130,7 +130,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 	# ----------------------------------------------------------
 
-	tester.equal 145, """
+	tester.equal """
 		abc
 
 		def
@@ -162,10 +162,10 @@ import {Mapper, map} from '@jdeighan/mapper'
 	# --- You can pass any iterator to the Mapper() constructor
 	mapper = new Mapper(generator())
 
-	utest.like  177, mapper.fetch(), {str: 'line1'}
-	utest.like  178, mapper.fetch(), {str: 'line2'}
-	utest.like  179, mapper.fetch(), {str: 'line3'}
-	utest.equal 180, mapper.fetch(), undef
+	like  mapper.fetch(), {str: 'line1'}
+	like  mapper.fetch(), {str: 'line2'}
+	like  mapper.fetch(), {str: 'line3'}
+	equal mapper.fetch(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -176,34 +176,23 @@ import {Mapper, map} from '@jdeighan/mapper'
 # --- Test #include
 
 (() ->
+	contents = """
+		abc
+			#include title.md
+		def
+		"""
 
-	numLines = undef
+	mapper = new Mapper(contents)
+	block = mapper.getBlock()
 
-	class MyTester extends UnitTester
+	equal block, """
+		abc
+			title
+			=====
+		def
+		"""
 
-		transformValue: (block) ->
-
-			mapper = new Mapper(block)
-			block = mapper.getBlock()
-			numLines = mapper.lineNum   # set variable numLines
-			return block
-
-	# ..........................................................
-
-	myTester = new MyTester()
-
-	myTester.equal 207, """
-			abc
-				#include title.md
-			def
-			""", """
-			abc
-				title
-				=====
-			def
-			"""
-
-	utest.equal 218, numLines, 3
+	equal mapper.lineNum, 3
 	)()
 
 # ---------------------------------------------------------------------------
@@ -216,7 +205,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 			def
 			""")
 
-	utest.equal 231, mapper.getBlock(), """
+	equal mapper.getBlock(), """
 			abc
 				title
 				=====
@@ -227,35 +216,24 @@ import {Mapper, map} from '@jdeighan/mapper'
 # ---------------------------------------------------------------------------
 # --- Test __END__
 
-(() ->
-
-	numLines = undef
-
-	class MyTester extends UnitTester
-
-		transformValue: (block) ->
-
-			mapper = new Mapper(block)
-			block = mapper.getBlock()
-			numLines = mapper.lineNum   # set variable numLines
-			return block
-
-	# ..........................................................
-
-	myTester = new MyTester()
-
-	myTester.equal 259, """
+(() =>
+	contents = """
 			abc
 			def
 			__END__
 			ghi
 			jkl
-			""", """
-			abc
-			def
 			"""
 
-	utest.equal 270, numLines, 2
+	mapper = new Mapper(contents)
+	block = mapper.getBlock()
+
+	equal block, """
+		abc
+		def
+		"""
+
+	equal mapper.lineNum, 2
 	)()
 
 # ---------------------------------------------------------------------------
@@ -275,7 +253,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 290, """
+	myTester.equal """
 			abc
 				#include ended.md
 			def
@@ -304,7 +282,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 	myTester = new MyTester()
 
-	myTester.equal 319, """
+	myTester.equal """
 			abc
 			#define meaning 42
 			meaning is __meaning__
@@ -333,7 +311,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 			The meaning of life is __meaning__
 			""")
 
-	utest.equal 348, result, """
+	equal result, """
 			abc
 			The meaning of life is 42
 			"""
@@ -362,7 +340,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 			#for x in lItems
 			""", MyMapper)
 
-	utest.equal 377, result, """
+	equal result, """
 			abc
 			The meaning of life is 42
 			{#for x in lItems}
@@ -396,7 +374,7 @@ import {Mapper, map} from '@jdeighan/mapper'
 
 			defghi
 			""", MyMapper)
-	utest.equal 406, result, """
+	equal result, """
 			3
 			6
 			"""
@@ -431,9 +409,9 @@ class JSMapper extends Mapper
 
 	mapTester = new JSTester()
 
-	# --- some utest tests of JSMapper
+	# --- some tests of JSMapper
 
-	mapTester.equal 444, """
+	mapTester.equal """
 			# |||| $:
 			y = 2*x
 			""", """
@@ -441,7 +419,7 @@ class JSMapper extends Mapper
 			y = 2*x;
 			"""
 
-	mapTester.equal 452, """
+	mapTester.equal """
 			# |||| $: {
 			y = 2*x
 			console.log "OK"
@@ -516,9 +494,9 @@ export class BarMapper extends Mapper
 	mapTester = new BarTester()
 
 	# ..........................................................
-	# --- some utest tests of BarMapper
+	# --- some tests of BarMapper
 
-	mapTester.equal 530, """
+	mapTester.equal """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -533,7 +511,7 @@ export class BarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 545, """
+	mapTester.equal """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -585,9 +563,9 @@ export class DebarMapper extends Mapper
 	mapTester = new DebarTester()
 
 	# ..........................................................
-	# --- some utest tests of DebarMapper
+	# --- some tests of DebarMapper
 
-	mapTester.equal 600, """
+	mapTester.equal """
 			<h1>title</h1>
 			<script>
 				# |||| $:
@@ -601,7 +579,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 614, """
+	mapTester.equal """
 			<h1>title</h1>
 			<script>
 				# |||| $: {
@@ -634,9 +612,9 @@ export class DebarMapper extends Mapper
 	mapTester = new MultiTester()
 
 	# ..........................................................
-	# --- some utest tests of multiple mapping
+	# --- some tests of multiple mapping
 
-	mapTester.equal 649, """
+	mapTester.equal """
 			# --- a comment (should remove)
 
 			<h1>title</h1>
@@ -651,7 +629,7 @@ export class DebarMapper extends Mapper
 			</script>
 			"""
 
-	mapTester.equal 664, """
+	mapTester.equal """
 			# --- a comment (should remove)
 
 			<h1>title</h1>

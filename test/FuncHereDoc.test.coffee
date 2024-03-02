@@ -1,7 +1,8 @@
 # FuncHereDoc.test.coffee
 
-import {undef} from '@jdeighan/base-utils'
-import {utest, UnitTester} from '@jdeighan/unit-tester'
+import {undef, isString, OL} from '@jdeighan/base-utils'
+import {assert} from '@jdeighan/base-utils/exceptions'
+import {UnitTester, equal} from '@jdeighan/base-utils/utest'
 import {map} from '@jdeighan/mapper'
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -15,13 +16,14 @@ import '@jdeighan/mapper/funcheredoc'
 
 		transformValue: (block) ->
 
+			assert isString(block), "not a string: #{OL(block)}"
 			return mapHereDoc(block)
 
 	tester = new HereDocTester()
 
 	# ------------------------------------------------------------------------
 
-	tester.equal 23, """
+	tester.equal """
 			() =>
 				count += 1
 			""",
@@ -30,7 +32,7 @@ import '@jdeighan/mapper/funcheredoc'
 	# ------------------------------------------------------------------------
 	# Function block, with no name or parameters
 
-	tester.equal 32, """
+	tester.equal """
 			() =>
 				return true
 			""",
@@ -39,7 +41,7 @@ import '@jdeighan/mapper/funcheredoc'
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 41, """
+	tester.equal """
 			(evt) =>
 				console.log evt.name
 			""",
@@ -48,7 +50,7 @@ import '@jdeighan/mapper/funcheredoc'
 	# ------------------------------------------------------------------------
 	# Function block, with no name but one parameter
 
-	tester.equal 50, """
+	tester.equal """
 			(  evt  )     =>
 				LOG evt.name
 			""",
@@ -56,7 +58,7 @@ import '@jdeighan/mapper/funcheredoc'
 
 	# ---------------------------------------------------------------------------
 
-	tester.equal 58, """
+	tester.equal """
 			(evt) =>
 				LOG 'click'
 			""",
@@ -76,7 +78,7 @@ import '@jdeighan/mapper/funcheredoc'
 
 			""")
 
-	utest.equal 79, replaceHereDocs("on:click={<<<}", fetcher),
+	equal replaceHereDocs("on:click={<<<}", fetcher),
 			'on:click={`e=>{e.preventDefault(),alert("clicked")}`}'
 
 	)()
@@ -89,6 +91,7 @@ import '@jdeighan/mapper/funcheredoc'
 
 		transformValue: (content) ->
 
+			assert isString(content), "not a string: #{OL(content)}"
 			hSource = {content, source: 'cielo.test.js'}
 			return map(hSource, TreeMapper)
 
@@ -96,7 +99,7 @@ import '@jdeighan/mapper/funcheredoc'
 
 	# ..........................................................
 
-	cieloTester.equal 93, """
+	cieloTester.equal """
 			handler = {<<<}
 				() =>
 					return 42
@@ -104,7 +107,7 @@ import '@jdeighan/mapper/funcheredoc'
 			handler = {`()=>42`}
 			"""
 
-	cieloTester.equal 101, """
+	cieloTester.equal """
 			handler = {<<<}
 				(x, y) =>
 					return 42

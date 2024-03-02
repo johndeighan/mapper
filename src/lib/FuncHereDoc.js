@@ -61,3 +61,5 @@ export var FuncHereDoc = class FuncHereDoc extends BaseHereDoc {
 
 // ---------------------------------------------------------------------------
 addHereDocType('func', new FuncHereDoc());
+
+//# sourceMappingURL=FuncHereDoc.js.map

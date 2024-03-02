@@ -21,9 +21,8 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  UnitTester,
-  utest
-} from '@jdeighan/unit-tester';
+  UnitTester
+} from '@jdeighan/base-utils/utest';
 
 import {
   joinBlocks
@@ -56,12 +55,12 @@ import {
   };
   preprocTester = new PreProcessTester();
   // ------------------------------------------------------------------------
-  preprocTester.equal(31, `# --- a comment
+  preprocTester.equal(`# --- a comment
 
 y = x`, `# --- a comment
 y = x`);
-  preprocTester.equal(40, `LOG "x is $x"`, `LOG "x is \#{OL(x)}"`);
-  return preprocTester.equal(46, `x = 3
+  preprocTester.equal(`LOG "x is $x"`, `LOG "x is \#{OL(x)}"`);
+  return preprocTester.equal(`x = 3
 debug "word is $word, not $this"`, `x = 3
 debug "word is \#{OL(word)}, not \#{OL(this)}"`);
 })();
@@ -77,12 +76,12 @@ debug "word is \#{OL(word)}, not \#{OL(this)}"`);
   };
   preprocTester = new CoffeeTester();
   // ------------------------------------------------------------------------
-  preprocTester.equal(68, `# --- a comment
+  preprocTester.equal(`# --- a comment
 
 y = x`, `// --- a comment
 var y;
 y = x;`);
-  return preprocTester.equal(78, `# --- a comment
+  return preprocTester.equal(`# --- a comment
 
 x = 3
 callme 'a', 3, [1,2,3]
@@ -94,3 +93,5 @@ y = x === 3 ? 'OK' : 'Bad';`);
 })();
 
 // ---------------------------------------------------------------------------
+
+//# sourceMappingURL=coffee.test.js.map

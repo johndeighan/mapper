@@ -6,8 +6,8 @@
     "test\\ast.coffee"
   ],
   "names": [],
-  "mappings": ";AAAY;EAAA;AAAA,MAAA;;EACZ,CAAA,GAAI;AADQ",
+  "mappings": ";AAAA,OAAA,IAAO,SAAA,GAAY,QAAA,CAAA,CAAA,EAAA;;AAEnB,OAAA,IAAO,UAAA,GAAa,CAAC,CAAD,EAAI,KAAJ,CAAA,GAAA;EACnB,UAAA,CAAW,KAAX;AADmB",
   "sourcesContent": [
-    "# |||| stuff\ny = x"
+    "export charCount = () ->\n\treturn\nexport removeKeys = (h, lKeys) =>\n\tremoveKeys(lKeys)\n\treturn"
   ]
 }

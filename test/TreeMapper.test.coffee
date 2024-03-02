@@ -1,22 +1,19 @@
 # TreeMapper.test.coffee
 
 import {
-	undef, pass, OL, defined, toBlock, toArray,
-	isEmpty, nonEmpty, isString, isArray, DUMP,
+	undef, OL, defined, toBlock, toArray,
+	isEmpty, nonEmpty, isArray,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
-import {LOG, LOGVALUE, echoLogsByDefault} from '@jdeighan/base-utils/log'
+import {LOG, echoLogsByDefault} from '@jdeighan/base-utils/log'
 import {fromTAML} from '@jdeighan/base-utils/taml'
 import {
-	dbg, dbgEnter, dbgReturn, setDebugging,
+	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
 import {
-	UnitTester, utest,
-	} from '@jdeighan/unit-tester'
-import {
-	indentLevel, undented, splitLine, indented,
-	} from '@jdeighan/coffee-utils/indent'
-import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+	UnitTester, equal, like, throws,
+	} from '@jdeighan/base-utils/utest'
+import {indented} from '@jdeighan/base-utils/indent'
 
 import {map} from '@jdeighan/mapper'
 import {TreeMapper, getTrace} from '@jdeighan/mapper/tree'
@@ -57,7 +54,7 @@ echoLogsByDefault false
 	# --- remove comments and blank lines
 	#     create user object from utest line
 
-	mapTester.like 58, """
+	mapTester.like """
 			# --- comment, followed by blank line xxx
 
 			abc
@@ -69,7 +66,7 @@ echoLogsByDefault false
 	# --- remove comments and blank lines
 	#     create user object from utest line
 
-	mapTester.like 70, """
+	mapTester.like """
 			# --- comment, followed by blank line
 
 			abc
@@ -85,7 +82,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- level
 
-	mapTester.like 86, """
+	mapTester.like """
 			abc
 				def
 					ghi
@@ -160,7 +157,7 @@ echoLogsByDefault false
 
 	# ------------------------------------------------------------------------
 
-	mapTester.like 161, """
+	mapTester.like """
 			abc
 				def
 					ghi
@@ -173,7 +170,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- const replacement
 
-	mapTester.like 174, """
+	mapTester.like """
 			#define name John Deighan
 			abc
 			__name__
@@ -185,7 +182,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- extension lines
 
-	mapTester.like 186, """
+	mapTester.like """
 			abc
 					&& def
 					&& ghi
@@ -198,7 +195,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (default)
 
-	mapTester.like 199, """
+	mapTester.like """
 			func(<<<)
 				abc
 				def
@@ -212,7 +209,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - block (explicit)
 
-	mapTester.like 213, """
+	mapTester.like """
 			func(<<<)
 				===
 				abc
@@ -227,7 +224,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	mapTester.like 228, """
+	mapTester.like """
 			func(<<<)
 				...
 				abc
@@ -242,7 +239,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - oneline
 
-	mapTester.like 243, """
+	mapTester.like """
 			func(<<<)
 				...abc
 					def
@@ -256,7 +253,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- HEREDOC handling - TAML
 
-	mapTester.like 257, """
+	mapTester.like """
 			func(<<<)
 				---
 				- abc
@@ -271,7 +268,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- using __END__
 
-	mapTester.like 272, """
+	mapTester.like """
 			abc
 			def
 			__END__
@@ -286,7 +283,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value not defined
 
-	mapTester.like 287, """
+	mapTester.like """
 			#ifdef mobile
 				abc
 			def
@@ -297,7 +294,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with no value - value defined
 
-	mapTester.like 298, """
+	mapTester.like """
 			#define mobile anything
 			#ifdef mobile
 				abc
@@ -311,7 +308,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value not defined
 
-	mapTester.like 312, """
+	mapTester.like """
 			#ifdef mobile samsung
 				abc
 			def
@@ -322,7 +319,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined, but different
 
-	mapTester.like 323, """
+	mapTester.like """
 			#define mobile apple
 			#ifdef mobile samsung
 				abc
@@ -334,7 +331,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifdef with a value - value defined and same
 
-	mapTester.like 335, """
+	mapTester.like """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -348,7 +345,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - not defined
 
-	mapTester.like 349, """
+	mapTester.like """
 			#ifndef mobile
 				abc
 			def
@@ -360,7 +357,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with no value - defined
 
-	mapTester.like 361, """
+	mapTester.like """
 			#define mobile anything
 			#ifndef mobile
 				abc
@@ -373,7 +370,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - not defined
 
-	mapTester.like 374, """
+	mapTester.like """
 			#ifndef mobile samsung
 				abc
 			def
@@ -385,7 +382,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined, but different
 
-	mapTester.like 386, """
+	mapTester.like """
 			#define mobile apple
 			#ifndef mobile samsung
 				abc
@@ -398,7 +395,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- test #ifndef with a value - defined and same
 
-	mapTester.like 399, """
+	mapTester.like """
 			#define mobile samsung
 			#ifndef mobile samsung
 				abc
@@ -411,7 +408,7 @@ echoLogsByDefault false
 	# ------------------------------------------------------------------------
 	# --- nested commands
 
-	mapTester.like 412, """
+	mapTester.like """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -423,40 +420,10 @@ echoLogsByDefault false
 			1 def
 			"""
 
-	# --- nested commands
-
-	mapTester.like 426, """
-			#define mobile samsung
-			#define large anything
-			#ifndef mobile samsung
-				#ifdef large
-					abc
-			""", ""
-
-	# --- nested commands
-
-	mapTester.like 436, """
-			#define mobile samsung
-			#define large anything
-			#ifdef mobile samsung
-				#ifndef large
-					abc
-			""", ""
-
-	# --- nested commands
-
-	mapTester.like 446, """
-			#define mobile samsung
-			#define large anything
-			#ifndef mobile samsung
-				#ifndef large
-					abc
-			""", ""
-
 	# ----------------------------------------------------------
 	# --- nested commands - every combination
 
-	mapTester.like 457, """
+	mapTester.like """
 			#define mobile samsung
 			#define large anything
 			#ifdef mobile samsung
@@ -472,7 +439,7 @@ echoLogsByDefault false
 
 	# --- nested commands - every combination
 
-	mapTester.like 473, """
+	mapTester.like """
 			#define mobile samsung
 			#ifdef mobile samsung
 				abc
@@ -486,7 +453,7 @@ echoLogsByDefault false
 
 	# --- nested commands - every combination
 
-	mapTester.like 487, """
+	mapTester.like """
 			#define large anything
 			#ifdef mobile samsung
 				abc
@@ -499,7 +466,7 @@ echoLogsByDefault false
 
 	# --- nested commands - every combination
 
-	mapTester.like 500, """
+	mapTester.like """
 			#ifdef mobile samsung
 				abc
 				#ifdef large
@@ -527,13 +494,13 @@ echoLogsByDefault false
 
 	walkTester = new Tester()
 
-	walkTester.equal 528, "",
+	walkTester.equal "",
 			"""
 			BEGIN WALK
 			END WALK
 			"""
 
-	walkTester.equal 534, """
+	walkTester.equal """
 			abc
 			""", """
 			BEGIN WALK
@@ -544,7 +511,7 @@ echoLogsByDefault false
 			END WALK
 			"""
 
-	walkTester.equal 545, """
+	walkTester.equal """
 			abc
 			def
 			""", """
@@ -558,7 +525,7 @@ echoLogsByDefault false
 			END WALK
 			"""
 
-	walkTester.equal 559, """
+	walkTester.equal """
 			abc
 				def
 			""", """
@@ -574,7 +541,7 @@ echoLogsByDefault false
 			END WALK
 			"""
 
-	walkTester.equal 575, """
+	walkTester.equal """
 			# this is a unit test
 			abc
 
@@ -592,7 +559,7 @@ echoLogsByDefault false
 			END WALK
 			"""
 
-	walkTester.equal 593, """
+	walkTester.equal """
 			# this is a unit test
 			abc
 			__END__
@@ -606,7 +573,7 @@ echoLogsByDefault false
 			END WALK
 			"""
 
-	walkTester.equal 607, """
+	walkTester.equal """
 			# this is a unit test
 			abc
 					def
@@ -641,7 +608,7 @@ walkTester = new WalkTester()
 
 # ..........................................................
 
-walkTester.equal 642, """
+walkTester.equal """
 		abc
 		""", """
 		BEGIN WALK
@@ -652,7 +619,7 @@ walkTester.equal 642, """
 		END WALK
 		"""
 
-walkTester.equal 653, """
+walkTester.equal """
 		abc
 		def
 		""", """
@@ -666,7 +633,7 @@ walkTester.equal 653, """
 		END WALK
 		"""
 
-walkTester.equal 667, """
+walkTester.equal """
 		abc
 			def
 		""", """
@@ -682,7 +649,7 @@ walkTester.equal 667, """
 		END WALK
 		"""
 
-walkTester.equal 683, """
+walkTester.equal """
 		abc
 		#ifdef NOPE
 			def
@@ -695,7 +662,7 @@ walkTester.equal 683, """
 		END WALK
 		"""
 
-walkTester.equal 696, """
+walkTester.equal """
 		abc
 		#ifndef NOPE
 			def
@@ -710,7 +677,7 @@ walkTester.equal 696, """
 		END WALK
 		"""
 
-walkTester.equal 711, """
+walkTester.equal """
 		#define NOPE 42
 		abc
 		#ifndef NOPE
@@ -724,7 +691,7 @@ walkTester.equal 711, """
 		END WALK
 		"""
 
-walkTester.equal 725, """
+walkTester.equal """
 		#define NOPE 42
 		abc
 		#ifdef NOPE
@@ -740,7 +707,7 @@ walkTester.equal 725, """
 		END WALK
 		"""
 
-walkTester.equal 741, """
+walkTester.equal """
 		#define NOPE 42
 		#define name John
 		abc
@@ -775,22 +742,22 @@ walkTester.equal 741, """
 
 		line3
 		""")
-	utest.like 776, mapper.get(), {
+	like mapper.get(), {
 		str: 'line1'
 		level: 0
 		source: "<unknown>/1"
 		}
-	utest.like 781, mapper.get(), {
+	like mapper.get(), {
 		str: 'line2'
 		level: 0
 		source: "<unknown>/3"
 		}
-	utest.like 786, mapper.get(), {
+	like mapper.get(), {
 		str: 'line3'
 		level: 0
 		source: "<unknown>/5"
 		}
-	utest.equal 791, mapper.get(), undef
+	equal mapper.get(), undef
 
 	)()
 
@@ -806,19 +773,19 @@ walkTester.equal 741, """
 					ghi
 			""")
 
-	utest.like 807, mapper.get(), {
+	like mapper.get(), {
 		str:  'abc'
 		level: 0
 		}
-	utest.like 811, mapper.get(), {
+	like mapper.get(), {
 		str:  'def'
 		level: 1
 		}
-	utest.like 815, mapper.get(), {
+	like mapper.get(), {
 		str:  'ghi'
 		level: 2
 		}
-	utest.equal 819, mapper.get(), undef
+	equal mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -835,22 +802,22 @@ walkTester.equal 741, """
 
 	# --- get() should return {uobj, level}
 
-	utest.like 836, mapper.get(), {
+	like mapper.get(), {
 		str: 'abc def'
 		level: 0
 		}
-	utest.like 840, mapper.get(), {
+	like mapper.get(), {
 		str: 'ghi'
 		level: 1
 		}
-	utest.equal 844, mapper.get(), undef
+	equal mapper.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
 # __END__ only works with no identation
 
 (() ->
-	utest.fails 851, () -> map("""
+	throws () -> map("""
 			abc
 					def
 				ghi
@@ -874,7 +841,7 @@ walkTester.equal 741, """
 	# ---------------------------------------------------------------------------
 	# --- Test basic reading till EOF
 
-	treeTester.equal 875, """
+	treeTester.equal """
 			abc
 			def
 			""", """
@@ -882,7 +849,7 @@ walkTester.equal 741, """
 			def
 			"""
 
-	treeTester.equal 883, """
+	treeTester.equal """
 			abc
 
 			def
@@ -891,7 +858,7 @@ walkTester.equal 741, """
 			def
 			"""
 
-	treeTester.equal 892, """
+	treeTester.equal """
 		# --- a comment
 		p
 			margin: 0
@@ -936,12 +903,12 @@ walkTester.equal 741, """
 			def
 			"""
 
-	utest.equal 937, map(block, MyMapper), """
+	equal map(block, MyMapper), """
 			abc
 			def
 			"""
 
-	treeTester.equal 942, block, """
+	treeTester.equal block, """
 			abc
 			def
 			"""
@@ -984,13 +951,13 @@ walkTester.equal 741, """
 			def
 			"""
 
-	utest.equal 985, map(block, MyMapper), """
+	equal map(block, MyMapper), """
 			# not a comment
 			abc
 			def
 			"""
 
-	treeTester.equal 991, block, """
+	treeTester.equal block, """
 			# not a comment
 			abc
 			def
@@ -1053,7 +1020,7 @@ walkTester.equal 741, """
 			def
 			"""
 
-	treeTester.equal 1054, block, """
+	treeTester.equal block, """
 			abc
 			COMMAND: command
 			def
@@ -1097,7 +1064,7 @@ walkTester.equal 741, """
 
 	# ..........................................................
 
-	treeTester.equal 1098, """
+	treeTester.equal """
 			abc
 				def
 
@@ -1135,7 +1102,7 @@ walkTester.equal 741, """
 
 	# ..........................................................
 
-	treeTester.equal 1136, """
+	treeTester.equal """
 			abc
 
 			def
@@ -1161,7 +1128,7 @@ walkTester.equal 741, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1162, """
+	treeTester.equal """
 			abc
 				#include title.md
 			def
@@ -1190,7 +1157,7 @@ walkTester.equal 741, """
 
 	treeTester = new MyTester()
 
-	treeTester.like 1191, """
+	treeTester.like """
 			abc
 				def
 					ghi
@@ -1226,12 +1193,12 @@ walkTester.equal 741, """
 				--x
 			""")
 
-	utest.like 1227, mapper.get(),  {level:0, str: 'if (x == 2)'}
-	utest.like 1228, mapper.get(),  {level:1, str: 'doThis'}
-	utest.like 1229, mapper.get(),  {level:1, str: 'doThat'}
-	utest.like 1230, mapper.get(),  {level:2, str: 'then this'}
-	utest.like 1231, mapper.get(),  {level:0, str: 'while (x > 2)'}
-	utest.like 1232, mapper.get(),  {level:1, str: '--x'}
+	like mapper.get(),  {level:0, str: 'if (x == 2)'}
+	like mapper.get(),  {level:1, str: 'doThis'}
+	like mapper.get(),  {level:1, str: 'doThat'}
+	like mapper.get(),  {level:2, str: 'then this'}
+	like mapper.get(),  {level:0, str: 'while (x > 2)'}
+	like mapper.get(),  {level:1, str: '--x'}
 	)()
 
 # ---------------------------------------------------------------------------
@@ -1249,7 +1216,7 @@ walkTester.equal 741, """
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1250, """
+	treeTester.equal """
 			abc
 			if x == <<<
 				abc
@@ -1262,7 +1229,7 @@ walkTester.equal 741, """
 			def
 			"""
 
-	treeTester.equal 1263, """
+	treeTester.equal """
 			abc
 			if x == <<<
 				===
@@ -1276,7 +1243,7 @@ walkTester.equal 741, """
 			def
 			"""
 
-	treeTester.equal 1277, """
+	treeTester.equal """
 			abc
 			if x == <<<
 				...
@@ -1385,7 +1352,7 @@ class HtmlMapper extends TreeMapper
 
 	# ----------------------------------------------------------
 
-	treeTester.equal 1386, """
+	treeTester.equal """
 			body
 				# a comment
 
@@ -1427,7 +1394,7 @@ class HtmlMapper extends TreeMapper
 
 	treeTester = new MyTester()
 
-	treeTester.equal 1428, """
+	treeTester.equal """
 			abc
 			#ifdef something
 				def
@@ -1446,41 +1413,28 @@ class HtmlMapper extends TreeMapper
 
 (() ->
 
-	lTrace = []
-
 	class MyMapper extends TreeMapper
 
+		constructor: (hInput) ->
+			super hInput
+			@lMyTrace = []
+
 		beginLevel: (hEnv, hNode) ->
-			lTrace.push "B #{hNode.level}"
+			@lMyTrace.push "B #{hNode.level}"
 			return
 
 		endLevel: (hEnv, hNode) ->
-			lTrace.push "E #{hNode.level}"
+			@lMyTrace.push "E #{hNode.level}"
 			return
 
-	class MyTester extends UnitTester
+	block = """
+		abc
+			def
+		"""
 
-		transformValue: (block) ->
-
-			return map(block, MyMapper)
-
-	treeTester = new MyTester()
-
-	treeTester.equal 1467, """
-			abc
-				def
-			""", """
-			abc
-				def
-			"""
-
-	utest.equal 1475, lTrace, [
-		"B 0"
-		"B 1"
-		"E 1"
-		"E 0"
-		]
-
+	mapped = map(block, MyMapper)
+	equal mapped, """
+		abc
+			def
+		"""
 	)()
-
-# ---------------------------------------------------------------------------

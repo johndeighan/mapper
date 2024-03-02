@@ -13,9 +13,10 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  utest,
+  equal,
+  like,
   UnitTester
-} from '@jdeighan/unit-tester';
+} from '@jdeighan/base-utils/utest';
 
 import {
   Fetcher
@@ -50,7 +51,7 @@ import {
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.equal(41, `abc
+  tester.equal(`abc
 def`, `0 abc
 0 def`);
   // ----------------------------------------------------------
@@ -58,39 +59,39 @@ def`, `0 abc
     yield 'abc';
     yield 'def';
   };
-  tester.equal(56, gen(), `0 abc
+  tester.equal(gen(), `0 abc
 0 def`);
   // ----------------------------------------------------------
-  tester.equal(63, ['abc  ', 'def\t\t'], "0 abc\n0 def");
+  tester.equal(['abc  ', 'def\t\t'], "0 abc\n0 def");
   // ----------------------------------------------------------
   // NOTE: Our output does not take level into account
-  tester.equal(68, `abc
+  tester.equal(`abc
 	def
 ghi`, `0 abc
 1 def
 0 ghi`);
   // ----------------------------------------------------------
-  tester.equal(80, `abc
+  tester.equal(`abc
 		def
 ghi`, `0 abc def
 0 ghi`);
   // ----------------------------------------------------------
-  tester.equal(91, `abc
+  tester.equal(`abc
 def
 __END__
 ghi`, `0 abc
 0 def`);
   // ----------------------------------------------------------
-  tester.equal(103, ["abc", "def"], `0 abc
+  tester.equal(["abc", "def"], `0 abc
 0 def`);
   // ----------------------------------------------------------
   // --- test TABs
-  tester.equal(111, ["abc", "\tdef", "\t\tghi"], `0 abc
+  tester.equal(["abc", "\tdef", "\t\tghi"], `0 abc
 1 def
 2 ghi`);
   // ----------------------------------------------------------
   // --- test spaces
-  return tester.equal(120, ["abc", spaces(3) + "def", spaces(6) + "ghi"], `0 abc
+  return tester.equal(["abc", spaces(3) + "def", spaces(6) + "ghi"], `0 abc
 1 def
 2 ghi`);
 })();
@@ -103,17 +104,17 @@ ghi`, `0 abc
 		ghi
 jkl`);
   node1 = fetcher.fetch();
-  utest.like(139, node1, {
+  like(node1, {
     str: 'abc def ghi',
     source: "<unknown>/1"
   });
   node2 = fetcher.fetch();
-  utest.like(145, node2, {
+  like(node2, {
     str: 'jkl',
     source: "<unknown>/4"
   });
   node3 = fetcher.fetch();
-  return utest.equal(151, node3, undef);
+  return equal(node3, undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -127,17 +128,17 @@ jkl`);
 jkl`
   });
   node1 = fetcher.fetch();
-  utest.like(168, node1, {
+  like(node1, {
     str: 'abc def ghi',
     source: "test.coffee/1"
   });
   node2 = fetcher.fetch();
-  utest.like(174, node2, {
+  like(node2, {
     str: 'jkl',
     source: "test.coffee/4"
   });
   node3 = fetcher.fetch();
-  return utest.equal(180, node3, undef);
+  return equal(node3, undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -151,7 +152,7 @@ jkl`
 jkl`
   });
   node1 = fetcher.fetch();
-  return utest.like(198, node1, {
+  return like(node1, {
     str: 'abc def ghi',
     source: "file.coffee/1"
   });
@@ -171,7 +172,7 @@ jkl`
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.like(219, `abc
+  tester.like(`abc
 def`, [
     {
       str: 'abc',
@@ -183,7 +184,7 @@ def`, [
     }
   ]);
   // ----------------------------------------------------------
-  tester.like(229, `abc
+  tester.like(`abc
 	def
 ghi`, [
     {
@@ -200,7 +201,7 @@ ghi`, [
     }
   ]);
   // ----------------------------------------------------------
-  return tester.like(241, `abc
+  return tester.like(`abc
 		def
 ghi`, [
     {
@@ -228,17 +229,17 @@ ghi`, [
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.equal(267, `abc
+  tester.equal(`abc
 def`, `abc
 def`);
   // ----------------------------------------------------------
-  tester.equal(277, `abc
+  tester.equal(`abc
 	def
 ghi`, `abc
 	def
 ghi`);
   // ----------------------------------------------------------
-  return tester.equal(289, `abc
+  return tester.equal(`abc
 		def
 ghi`, `abc def
 ghi`);
@@ -258,14 +259,14 @@ ghi`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.equal(315, `abc
+  tester.equal(`abc
 def`, ['abc', 'def']);
   // ----------------------------------------------------------
-  tester.equal(325, `abc
+  tester.equal(`abc
 	def
 ghi`, ['abc', '	def', 'ghi']);
   // ----------------------------------------------------------
-  return tester.equal(337, `abc
+  return tester.equal(`abc
 		def
 ghi`, ['abc def', 'ghi']);
 })();
@@ -290,7 +291,7 @@ ghi`, ['abc def', 'ghi']);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(369, `你好
+  return tester.equal(`你好
 		约翰
 我在这里`, `你好约翰
 我在这里`);
@@ -316,7 +317,7 @@ ghi`, ['abc def', 'ghi']);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.equal(401, `abc
+  return tester.equal(`abc
 		def
 ghi`, `ABC DEF
 GHI`);
@@ -338,12 +339,14 @@ GHI`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.equal(428, `abc
+  tester.equal(`abc
 	def
 ghi`, `abc def
 ghi`);
-  return tester.equal(437, `abc
+  return tester.equal(`abc
    def
 ghi`, `abc def
 ghi`);
 })();
+
+//# sourceMappingURL=Fetcher.test.js.map

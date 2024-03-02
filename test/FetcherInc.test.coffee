@@ -4,7 +4,7 @@ import {undef, defined} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {utest, UnitTester} from '@jdeighan/unit-tester'
+import {UnitTester} from '@jdeighan/base-utils/utest'
 
 import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 
@@ -26,7 +26,7 @@ import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 
 	# ----------------------------------------------------------
 
-	tester.equal 28, """
+	tester.equal """
 		abc
 		def
 		""", """
@@ -52,7 +52,7 @@ import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 	# =====
 	# ------------------------------------------------------------------------
 
-	tester.equal 54, {
+	tester.equal {
 		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
@@ -67,7 +67,7 @@ import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 		ghi
 		"""
 
-	tester.like 69, {
+	tester.equal {
 		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
@@ -78,7 +78,7 @@ import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 		ghi
 		"""
 
-	tester.like 80, {
+	tester.equal {
 		source: 'FetcherInc.test.coffee'
 		content: """
 			abc
@@ -114,7 +114,7 @@ import {FetcherInc} from '@jdeighan/mapper/fetcherinc'
 
 	# ----------------------------------------------------------
 
-	tester.like 120, {
+	tester.like {
 		source: 'FetcherInc.test.coffee'
 		content: """
 			abc

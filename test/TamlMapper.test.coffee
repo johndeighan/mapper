@@ -1,29 +1,30 @@
 # TamlMapper.test.coffee
 
 import {undef, isNumber, DUMP} from '@jdeighan/base-utils'
-import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {slurp, mkpath} from '@jdeighan/base-utils/fs'
-import {mydir} from '@jdeighan/coffee-utils/fs'
+import {
+	UnitTester, equal, truthy, falsy, succeeds,
+	} from '@jdeighan/base-utils/utest'
+import {slurp, mkpath, mydir} from '@jdeighan/base-utils/fs'
 import {map} from '@jdeighan/mapper'
 import {parseValue, TamlMapper} from '@jdeighan/mapper/taml'
 
 # ---------------------------------------------------------------------------
 
-utest.equal 12, parseValue('undef'), undef
-utest.equal 13, parseValue("null"), null
-utest.equal 14, parseValue("true"), true
-utest.equal 15, parseValue("false"), false
+equal parseValue('undef'), undef
+equal parseValue("null"), null
+equal parseValue("true"), true
+equal parseValue("false"), false
 
-utest.truthy 17, isNumber(parseValue('2'))
-utest.truthy 18, isNumber(parseValue('2.5'))
-utest.truthy 19, isNumber(parseValue('2a'))
-utest.falsy  20, isNumber('2a')
-utest.falsy  21, isNumber(parseValue('a2'))
+truthy isNumber(parseValue('2'))
+truthy isNumber(parseValue('2.5'))
+truthy isNumber(parseValue('2a'))
+falsy  isNumber('2a')
+falsy  isNumber(parseValue('a2'))
 
-utest.equal 23, parseValue("«undef»"), 'undef'
-utest.equal 24, parseValue("«null»"),  'null'
-utest.equal 25, parseValue("«true»"),  'true'
-utest.equal 26, parseValue("«false»"), 'false'
+equal parseValue("«undef»"), 'undef'
+equal parseValue("«null»"),  'null'
+equal parseValue("«true»"),  'true'
+equal parseValue("«false»"), 'false'
 
 # ---------------------------------------------------------------------------
 # --- Test that the correct user objects are created
@@ -42,7 +43,7 @@ obj_tester = new ObjTester()
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 45, """
+obj_tester.equal """
 	---
 	- undef
 	- null
@@ -61,7 +62,7 @@ obj_tester.equal 45, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 64, """
+obj_tester.equal """
 	---
 	- «undef»
 	- «null»
@@ -80,7 +81,7 @@ obj_tester.equal 64, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 83, """
+obj_tester.equal """
 	---
 	- abc
 	-
@@ -95,7 +96,7 @@ obj_tester.equal 83, """
 
 # ---------------------------------------------------------------------------
 
-obj_tester.equal 98, """
+obj_tester.equal """
 	---
 	fName: John
 	lName: Deighan
@@ -122,13 +123,13 @@ tester = new ResultTester()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 125, """
+tester.equal """
 	---
 	- abc
 	- def
 	""", ['abc', 'def']
 
-tester.equal 131, """
+tester.equal """
 	---
 	fName: John
 	lName: Deighan
@@ -139,7 +140,7 @@ tester.equal 131, """
 		fullName: 'John Deighan'
 		}
 
-tester.equal 142, """
+tester.equal """
 	---
 	-
 		- a
@@ -147,7 +148,7 @@ tester.equal 142, """
 	- def
 	""", [['a','b'], 'def']
 
-tester.equal 150, """
+tester.equal """
 	---
 	-
 		x: 1
@@ -155,7 +156,7 @@ tester.equal 150, """
 	- def
 	""", [{x:1, y:2}, 'def']
 
-tester.equal 158, """
+tester.equal """
 	---
 	title:
 		en: Aladdin and the magic lamp
@@ -206,8 +207,8 @@ tester.equal 158, """
 
 # ---------------------------------------------------------------------------
 
-utest.succeeds 209, () =>
+succeeds () =>
 	dir = mydir(import.meta.url)
-	block = slurp(dir, 'beauty_and_the_beast.taml')
+	block = slurp(mkpath(dir, 'beauty_and_the_beast.taml'))
 	mapper = new TamlMapper(block)
 	result = mapper.getResult()

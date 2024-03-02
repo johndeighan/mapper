@@ -7,7 +7,8 @@ import {
   pass,
   isEmpty,
   isArray,
-  isString
+  isString,
+  OL
 } from '@jdeighan/base-utils';
 
 import {
@@ -24,9 +25,8 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  UnitTesterNorm,
   UnitTester
-} from '@jdeighan/unit-tester';
+} from '@jdeighan/base-utils/utest';
 
 import {
   mapMath
@@ -35,7 +35,7 @@ import {
 // ---------------------------------------------------------------------------
 MathTester = class MathTester extends UnitTester {
   transformValue(str) {
-    assert(isString(str), "MathTester: not a string");
+    assert(isString(str), `not a string: ${OL(str)}`);
     return mapMath(str);
   }
 
@@ -44,7 +44,7 @@ MathTester = class MathTester extends UnitTester {
 mathTester = new MathTester();
 
 // ---------------------------------------------------------------------------
-mathTester.equal(25, 'expr X + 2', {
+mathTester.equal('expr X + 2', {
   cmd: 'expr',
   lAtoms: [
     {
@@ -62,19 +62,19 @@ mathTester.equal(25, 'expr X + 2', {
   ]
 });
 
-mathTester.equal(43, 'sub', {
+mathTester.equal('sub', {
   cmd: 'sub'
 });
 
-mathTester.equal(47, 'sup', {
+mathTester.equal('sup', {
   cmd: 'sup'
 });
 
-mathTester.equal(51, 'frac', {
+mathTester.equal('frac', {
   cmd: 'frac'
 });
 
-mathTester.equal(55, 'SIGMA', {
+mathTester.equal('SIGMA', {
   cmd: 'SIGMA',
   lAtoms: [
     {
@@ -84,7 +84,7 @@ mathTester.equal(55, 'SIGMA', {
   ]
 });
 
-mathTester.equal(59, 'group', {
+mathTester.equal('group', {
   cmd: 'group',
   lAtoms: [
     {
@@ -98,7 +98,7 @@ mathTester.equal(59, 'group', {
   ]
 });
 
-mathTester.equal(67, 'group {', {
+mathTester.equal('group {', {
   cmd: 'group',
   lAtoms: [
     {
@@ -112,7 +112,7 @@ mathTester.equal(67, 'group {', {
   ]
 });
 
-mathTester.equal(75, 'group { ]', {
+mathTester.equal('group { ]', {
   cmd: 'group',
   lAtoms: [
     {
@@ -125,3 +125,5 @@ mathTester.equal(75, 'group { ]', {
     }
   ]
 });
+
+//# sourceMappingURL=MathML.test.js.map

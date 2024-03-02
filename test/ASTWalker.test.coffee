@@ -1,20 +1,20 @@
 # ASTWalker.test.coffee
 
-import {defined, nonEmpty, toBlock, OL} from '@jdeighan/base-utils'
+import {
+	defined, nonEmpty, toBlock, OL,
+	} from '@jdeighan/base-utils'
 import {
 	LOG, LOGVALUE, clearMyLogs, getMyLogs,
 	} from '@jdeighan/base-utils/log'
 import {
 	setDebugging, getDebugLog,
 	} from '@jdeighan/base-utils/debug'
-import {slurp} from '@jdeighan/base-utils/fs'
-import {utest, UnitTester} from '@jdeighan/unit-tester'
-import {indented} from '@jdeighan/coffee-utils/indent'
+import {mkpath, slurp} from '@jdeighan/base-utils/fs'
+import {UnitTester} from '@jdeighan/base-utils/utest'
+import {indented} from '@jdeighan/base-utils/indent'
 import {projRoot} from '@jdeighan/coffee-utils/fs'
 
 import {ASTWalker} from '@jdeighan/mapper/ast'
-
-rootDir = projRoot import.meta.url
 
 # ---------------------------------------------------------------------------
 
@@ -31,13 +31,13 @@ tester = new ASTTester()
 # ---------------------------------------------------------------------------
 # Test keeping track of imported symbols
 
-tester.equal 28, """
+tester.equal """
 	LOG someSymbol
 	""", """
 	lMissing: LOG someSymbol
 	"""
 
-tester.equal 34, """
+tester.equal """
 	import {toArray, toBlock} from '@jdeighan/coffee-utils'
 	import {LOG} from '@jdeighan/coffee-utils/log'
 	LOG someSymbol
@@ -50,7 +50,7 @@ tester.equal 34, """
 # Test keeping track of exported symbols
 
 # --- list of symbols
-tester.equal 47, """
+tester.equal """
 	import {toArray, toBlock} from '@jdeighan/coffee-utils'
 	import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 	export {toArray, arrayToBlock}
@@ -60,7 +60,7 @@ tester.equal 47, """
 	"""
 
 # --- class
-tester.equal 57, """
+tester.equal """
 	import {toArray, toBlock} from '@jdeighan/coffee-utils'
 	import {arrayToBlock} from '@jdeighan/coffee-utils/block'
 	export class ASTWalker
@@ -73,7 +73,7 @@ tester.equal 57, """
 	"""
 
 # --- function
-tester.equal 70, """
+tester.equal """
 	export toBlock = (lItems) ->
 		return lItems.join("\n")
 	""", """
@@ -81,7 +81,7 @@ tester.equal 70, """
 	"""
 
 # --- variable
-tester.equal 78, """
+tester.equal """
 	export meaning = 42
 	""", """
 	lExported: meaning
@@ -89,20 +89,20 @@ tester.equal 78, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 86, """
+tester.equal """
 	import {undef} from '@jdeighan/coffee-utils'
 	x = undef
 	""", """
 	lImported: undef
 	"""
 
-tester.equal 93, """
+tester.equal """
 	x = undef
 	""", """
 	lMissing: undef
 	"""
 
-tester.equal 99, """
+tester.equal """
 	func = () ->
 		return undef
 	x = func()
@@ -113,7 +113,7 @@ tester.equal 99, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 110, """
+tester.equal """
 	x = toArray("abc")
 	""", """
 	lMissing: toArray
@@ -121,7 +121,7 @@ tester.equal 110, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 118, """
+tester.equal """
 	import {undef, toArray} from '@jdeighan/coffee-utils'
 	x = toArray("abc")
 	""", """
@@ -130,7 +130,7 @@ tester.equal 118, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 127, """
+tester.equal """
 	import {undef, toArray} from '@jdeighan/coffee-utils'
 	x = str + toArray("abc")
 	""", """
@@ -140,7 +140,7 @@ tester.equal 127, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 137, """
+tester.equal """
 	func = (x,y) ->
 		z = x+y
 		return z
@@ -149,7 +149,7 @@ tester.equal 137, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 146, """
+tester.equal """
 	func = (x,y) ->
 		z = sum(x+y)
 		return z
@@ -159,7 +159,7 @@ tester.equal 146, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 156, """
+tester.equal """
 	export isHashComment = (line) =>
 
 		return defined(line)
@@ -172,7 +172,7 @@ tester.equal 156, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 169, """
+tester.equal """
 	export isHashComment = (line) ->
 
 		return defined(line)
@@ -185,7 +185,7 @@ tester.equal 169, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 182, """
+tester.equal """
 	export isSubclassOf = (subClass, superClass) ->
 
 		return (subClass == superClass) \
@@ -198,7 +198,7 @@ tester.equal 182, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 195, """
+tester.equal """
 	export patchStr = (bigstr, pos, str) ->
 
 		endpos = pos + str.length
@@ -214,7 +214,7 @@ tester.equal 195, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 211, """
+tester.equal """
 	export removeKeys = (h, lKeys) =>
 
 		for key in lKeys
@@ -237,7 +237,7 @@ tester.equal 211, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 234, """
+tester.equal """
 	export isNonEmptyString = (x) ->
 
 		if typeof x != 'string' && x ! instanceof String
@@ -253,7 +253,7 @@ tester.equal 234, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 250, """
+tester.equal """
 	export isNonEmptyArray = (x) ->
 
 		return isArray(x) && (x.length > 0)
@@ -266,7 +266,7 @@ tester.equal 250, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 263, """
+tester.equal """
 	export hashHasKey = (x, key) ->
 
 		assert isHash(x), "hashHasKey(): not a hash"
@@ -281,7 +281,7 @@ tester.equal 263, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 278, """
+tester.equal """
 	export pushCond = (lItems, item, doPush=notInArray) ->
 
 		if doPush(lItems, item)
@@ -298,7 +298,7 @@ tester.equal 278, """
 
 # ---------------------------------------------------------------------------
 
-tester.equal 295, '''
+tester.equal '''
 	export isUniqueList = (lItems, func=undef) ->
 
 		if notdefined(lItems)
@@ -322,7 +322,7 @@ tester.equal 295, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 319, '''
+tester.equal '''
 	export isUniqueTree = (lItems, func=undef, hFound={}) ->
 
 		if isEmpty(lItems)
@@ -349,7 +349,7 @@ tester.equal 319, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 346, '''
+tester.equal '''
 	export uniq = (lItems) ->
 
 		return [...new Set(lItems)]
@@ -361,7 +361,7 @@ tester.equal 346, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 358, '''
+tester.equal '''
 	export test_try = (lItems) ->
 
 		try
@@ -379,7 +379,7 @@ tester.equal 358, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 376, '''
+tester.equal '''
 	x = toString(y)
 	z = a + b
 	m = 4
@@ -391,7 +391,7 @@ tester.equal 376, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 388, '''
+tester.equal '''
 	for y in blockToArray(code)
 		LOG y
 		output y
@@ -403,7 +403,7 @@ tester.equal 388, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 400, '''
+tester.equal '''
 	for y,i in blockToArray(code)
 		LOG i
 		output y
@@ -415,7 +415,7 @@ tester.equal 400, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 412, '''
+tester.equal '''
 	import {LOG} from '@jdeighan/coffee-utils/log'
 	x = 42
 	LOG "x is #{OL(x)}"
@@ -428,7 +428,7 @@ tester.equal 412, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 425, '''
+tester.equal '''
 	export say = (x) ->
 
 		if isHash(x)
@@ -448,7 +448,7 @@ tester.equal 425, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 445, '''
+tester.equal '''
 	nLeft = MMath.floor(3.5)
 	''',
 
@@ -458,7 +458,7 @@ tester.equal 445, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 455, '''
+tester.equal '''
 	nLeft = Math.floor(3.5)
 	''',
 
@@ -466,7 +466,7 @@ tester.equal 455, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 463, '''
+tester.equal '''
 	export titleLine = (title, char='=', padding=2, linelen=42) ->
 		# --- used in logger
 
@@ -488,7 +488,7 @@ tester.equal 463, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 485, '''
+tester.equal '''
 	export extractMatches = (line, regexp, convertFunc=undef) ->
 
 		lStrings = [...line.matchAll(regexp)]
@@ -509,7 +509,7 @@ tester.equal 485, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 506, '''
+tester.equal '''
 	export envVarsWithPrefix = (prefix, hOptions={}) ->
 		# --- valid options:
 		#        stripPrefix
@@ -533,7 +533,7 @@ tester.equal 506, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 530, '''
+tester.equal '''
 	export getTimeStr = (date=undef) ->
 
 		if date == undef
@@ -548,7 +548,7 @@ tester.equal 530, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 545, '''
+tester.equal '''
 	export replaceVars = (line, hVars) ->
 
 		assert isHash(hVars), "replaceVars() hVars is not a hash"
@@ -561,7 +561,7 @@ tester.equal 545, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 558, '''
+tester.equal '''
 	export replaceVars = (line, hVars, rx) ->
 
 		func = (value) =>
@@ -578,7 +578,7 @@ tester.equal 558, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 575, '''
+tester.equal '''
 	export replaceVars = (line, hVars={}, rx) ->
 
 		assert isString(line)
@@ -601,7 +601,7 @@ tester.equal 575, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 598, '''
+tester.equal '''
 	export replaceVars = (line, hVars={}, rx=/__(env\.)?([A-Za-z_]\w*)__/g) ->
 
 		assert isHash(hVars), "replaceVars() hVars is not a hash"
@@ -628,7 +628,7 @@ tester.equal 598, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 625, '''
+tester.equal '''
 	export isIterable = (obj) ->
 
 		if (obj == undef) || (obj == null)
@@ -643,7 +643,7 @@ tester.equal 625, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 640, '''
+tester.equal '''
 	export className = (aClass) ->
 
 		if lMatches = aClass.toString().match(/class\s+(\w+)/)
@@ -667,8 +667,7 @@ tester.equal 640, '''
 
 # ---------------------------------------------------------------------------
 
-tester.equal 664, slurp(rootDir, 'test', 'utils_utest.coffee'),
-
+tester.equal slurp("./test/utils_utest.coffee"),
 	'''
 	lExported: isHashComment
 	'''
@@ -703,7 +702,7 @@ coffeeCode = '''
 		return hNode
 	'''
 
-tester.equal 700, coffeeCode,
+tester.equal coffeeCode,
 
 	'''
 	lExported: mapMath
@@ -712,7 +711,7 @@ tester.equal 700, coffeeCode,
 
 # ---------------------------------------------------------------------------
 
-tester.equal 709, '''
+tester.equal '''
 	export charCount = () ->
 		return
 	export removeKeys = (h, lKeys) =>
@@ -776,7 +775,7 @@ tester.equal 709, '''
 
 	# ------------------------------------------------------------------------
 
-	tester2.equal 736, '''
+	tester2.equal '''
 		export charCount = () ->
 			return
 		export removeKeys = (h, lKeys) =>

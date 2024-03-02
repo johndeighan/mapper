@@ -4,7 +4,7 @@ import {undef, isEmpty, nonEmpty} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {UnitTester, utest} from '@jdeighan/unit-tester'
+import {UnitTester} from '@jdeighan/base-utils/utest'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {map} from '@jdeighan/mapper'
@@ -29,7 +29,7 @@ import {
 
 	# ------------------------------------------------------------------------
 
-	preprocTester.equal 31, """
+	preprocTester.equal """
 			# --- a comment
 
 			y = x
@@ -38,13 +38,13 @@ import {
 			y = x
 			"""
 
-	preprocTester.equal 40, """
+	preprocTester.equal """
 			LOG "x is $x"
 			""", """
 			LOG "x is \#{OL(x)}"
 			"""
 
-	preprocTester.equal 46, """
+	preprocTester.equal """
 			x = 3
 			debug "word is $word, not $this"
 			""", """
@@ -66,7 +66,7 @@ import {
 
 	# ------------------------------------------------------------------------
 
-	preprocTester.equal 68, """
+	preprocTester.equal """
 			# --- a comment
 
 			y = x
@@ -76,7 +76,7 @@ import {
 			y = x;
 			"""
 
-	preprocTester.equal 78, """
+	preprocTester.equal """
 			# --- a comment
 
 			x = 3

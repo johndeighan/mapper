@@ -1,7 +1,7 @@
 # cielo.coffee
 
 import {
-	undef, defined, OL, className, getOptions,
+	undef, defined, OL, className, getOptions, hasKey,
 	isEmpty, nonEmpty, isString, isHash, isArray, toBlock,
 	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
@@ -12,14 +12,16 @@ import {
 import {slurp, barf} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, indented, isUndented, splitLine,
-	} from '@jdeighan/coffee-utils/indent'
+	} from '@jdeighan/base-utils/indent'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 import {
 	withExt, newerDestFileExists, shortenPath,
 	} from '@jdeighan/coffee-utils/fs'
 
 import {TreeMapper} from '@jdeighan/mapper/tree'
-import {coffeeCodeToJS, coffeeExprToJS} from '@jdeighan/mapper/coffee'
+import {
+	coffeeCodeToJS, coffeeExprToJS,
+	} from '@jdeighan/mapper/coffee'
 import {
 	getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
@@ -33,19 +35,24 @@ export cieloToJSCode = (hInput) ->
 	mapper = new CieloToJSCodeMapper(hInput)
 	jsCode = mapper.getBlock()
 	lNeededSymbols = mapper.lNeededSymbols
+	dbg 'lNeededSymbols', lNeededSymbols
 	if defined(lNeededSymbols)
 		# --- Prepend needed imports
-		fullpath = mapper.hSourceInfo.fullpath
-		{lImports, lNotFound} = buildImportList(lNeededSymbols, fullpath)
-		dbg "lImports", lImports
+		hSourceInfo = mapper.hSourceInfo
+		assert hasKey(hSourceInfo, 'filePath'),
+				"hSourceInfo has no key 'filePath'"
+		filePath = mapper.hSourceInfo.filePath
+		dbg 'filePath', filePath
+		{lNotFound, lImportStmts} = buildImportList(lNeededSymbols, filePath)
 		dbg 'lNotFound', lNotFound
+		dbg "lImportStmts", lImportStmts
 
 		# --- append ';' to import statements
-		lImports = for stmt in lImports
+		lImportStmts = for stmt in lImportStmts
 			stmt + ';'
 
 		# --- joinBlocks() flattens all its arguments to array of strings
-		jsCode = joinBlocks(lImports, jsCode)
+		jsCode = joinBlocks(lImportStmts, jsCode)
 
 	dbgReturn 'cieloToJSCode', jsCode
 	return jsCode

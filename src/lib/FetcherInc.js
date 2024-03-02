@@ -51,7 +51,7 @@ export var FetcherInc = class FetcherInc extends Fetcher {
   // ..........................................................
   // --- override to handle '#include'
   fetch() {
-    var _, filename, fname, hNode, lMatches, level, saveLineNum, str;
+    var _, fileName, fname, hNode, lMatches, level, saveLineNum, str;
     dbgEnter("FetcherInc.fetch");
     // --- Check if data available from @altInput
     if (defined(this.altInput)) {
@@ -65,8 +65,8 @@ export var FetcherInc = class FetcherInc extends Fetcher {
         assert(hNode instanceof Node, `Not a Node: ${OL(hNode)}`);
         dbg("from alt, update source");
         // --- Update 'source'
-        ({filename} = this.hSourceInfo);
-        hNode.source = `${filename}/${this.includeLineNum} ${hNode.source}`;
+        ({fileName} = this.hSourceInfo);
+        hNode.source = `${fileName}/${this.includeLineNum} ${hNode.source}`;
         dbgReturn("FetcherInc.fetch", hNode);
         return hNode;
       }
@@ -130,3 +130,5 @@ export var FetcherInc = class FetcherInc extends Fetcher {
   }
 
 };
+
+//# sourceMappingURL=FetcherInc.js.map

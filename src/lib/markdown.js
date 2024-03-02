@@ -37,7 +37,7 @@ import {
 
 import {
   undented
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   TreeMapper
@@ -71,3 +71,5 @@ export var markdownify = function(block) {
   dbgReturn("markdownify", result);
   return result;
 };
+
+//# sourceMappingURL=markdown.js.map

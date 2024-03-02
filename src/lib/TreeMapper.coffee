@@ -10,12 +10,12 @@ import {
 	LOG, LOGVALUE, clearMyLogs, getMyLogs, echoMyLogs,
 	} from '@jdeighan/base-utils/log'
 import {
-	dbg, dbgEnter, dbgReturn, clearDebugLog, getDebugLog, callStack,
+	dbg, dbgEnter, dbgReturn, clearDebugLog, getDebugLog,
 	} from '@jdeighan/base-utils/debug'
 import {toTAML} from '@jdeighan/base-utils/taml'
 import {
 	splitLine, indentLevel, indented, undented, isUndented,
-	} from '@jdeighan/coffee-utils/indent'
+	} from '@jdeighan/base-utils/indent'
 
 import {Mapper} from '@jdeighan/mapper'
 import {replaceHereDocs} from '@jdeighan/mapper/heredoc'

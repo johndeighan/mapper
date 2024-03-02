@@ -1,12 +1,12 @@
 # Scope.test.coffee
 
-import {utest} from '@jdeighan/unit-tester'
+import {truthy, falsy} from '@jdeighan/base-utils/utest'
 import {Scope} from '@jdeighan/mapper/scope'
 
 scope = new Scope('global', ['main'])
 scope.add('func')
 
-utest.truthy  9, scope.has('main')
-utest.truthy 10, scope.has('func')
-utest.falsy  11, scope.has('notthere')
+truthy scope.has('main')
+truthy scope.has('func')
+falsy  scope.has('notthere')
 

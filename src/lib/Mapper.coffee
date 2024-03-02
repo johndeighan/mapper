@@ -12,8 +12,7 @@ import {
 	dbg, dbgEnter, dbgReturn,
 	} from '@jdeighan/base-utils/debug'
 import {fromTAML} from '@jdeighan/base-utils/taml'
-import {splitPrefix, splitLine} from '@jdeighan/coffee-utils/indent'
-import {parseSource} from '@jdeighan/coffee-utils/fs'
+import {splitPrefix, splitLine} from '@jdeighan/base-utils/indent'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
@@ -35,7 +34,7 @@ export class Mapper extends Getter
 		super hInput, options
 
 		# --- These never change
-		@setConst 'FILE', @hSourceInfo.filename
+		@setConst 'FILE', @hSourceInfo.fileName
 		@setConst 'DIR',  @hSourceInfo.dir
 		@setConst 'SRC',  @sourceInfoStr()
 
@@ -206,14 +205,18 @@ export class Mapper extends Getter
 #				return hNode.uobj
 
 # ===========================================================================
-# --- mapper must be a subclass of Mapper or an array
+# --- mapperClass must be a subclass of Mapper or an array
 #     of subclasses of Mapper.
 
-export map = (input, mapperClass=Mapper, options=undef) ->
+export map = (input, mapperClass=Mapper, hOptions={}) ->
 
-	dbgEnter "map", input, mapperClass, options
+	dbgEnter "map", input, mapperClass, hOptions
 
-	hOptions = getOptions(options, {as: 'block', oneIndent: '\t'})
+	hOptions = getOptions hOptions, {
+		as: 'block',
+		oneIndent: '\t'
+		}
+
 	# --- Valid options:
 	#        as: ('block' | 'lines')
 	#        oneIndent: <string>  default: TAB
@@ -227,7 +230,7 @@ export map = (input, mapperClass=Mapper, options=undef) ->
 		dbg 'original content', content
 		for item in mapperClass
 			if defined(item)
-				content = map(content, item, options)
+				content = map(content, item, hOptions)
 				dbg 'new content', content
 		dbgReturn "map", content
 		return content
@@ -238,9 +241,9 @@ export map = (input, mapperClass=Mapper, options=undef) ->
 	assert (mapper instanceof Mapper), "not a Mapper instance"
 	switch hOptions.as
 		when 'block'
-			result = mapper.getBlock(options)
+			result = mapper.getBlock(hOptions.oneIndent)
 		when 'lines'
-			result = mapper.getLines(options)
+			result = mapper.getLines(hOptions)
 		else
 			croak "option 'as' must be 'block' or 'lines'"
 	dbgReturn "map", result

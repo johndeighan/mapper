@@ -4,7 +4,7 @@ import {OL} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {utest} from '@jdeighan/unit-tester'
+import {equal, like} from '@jdeighan/base-utils/utest'
 
 import {Node} from '@jdeighan/mapper/node'
 
@@ -18,20 +18,20 @@ node = new Node({
 	})
 node.incLevel()
 
-utest.like 21, node, {
+like node, {
 	str: 'div'
 	level: 1
 	source: import.meta.url
 	lineNum: 1
 	srcLevel: 0
 	}
-utest.equal 28, node.getLine({oneIndent: "=> "}), "=> div"
+equal node.getLine({oneIndent: "=> "}), "=> div"
 
-utest.equal 30, new Node({str: 'abc', level:1}).getLine(),
+equal new Node({str: 'abc', level:1}).getLine(),
 	"\tabc"
-utest.equal 32, new Node({str: 'abc', level:2}).getLine({oneIndent:'  '}),
+equal new Node({str: 'abc', level:2}).getLine({oneIndent:'  '}),
 	"    abc"
-utest.equal 34, new Node({str: 'abc', level:0}).getLine(),
+equal new Node({str: 'abc', level:0}).getLine(),
 	"abc"
-utest.equal 36, new Node({str: 'abc', level:3}).getLine(),
+equal new Node({str: 'abc', level:3}).getLine(),
 	"\t\t\tabc"

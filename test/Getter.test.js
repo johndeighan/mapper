@@ -25,8 +25,9 @@ import {
 
 import {
   UnitTester,
-  utest
-} from '@jdeighan/unit-tester';
+  equal,
+  like
+} from '@jdeighan/base-utils/utest';
 
 import {
   Node
@@ -51,7 +52,7 @@ import {
   getter = new Getter(`abc
 def
 ghi`);
-  utest.like(35, getter.get(), {
+  like(getter.get(), {
     str: 'abc',
     level: 0
   });
@@ -60,7 +61,7 @@ ghi`);
   for (hNode of ref) {
     lItems.push(hNode);
   }
-  utest.like(44, lItems, [
+  like(lItems, [
     {
       str: 'def'
     },
@@ -68,7 +69,7 @@ ghi`);
       str: 'ghi'
     }
   ]);
-  return utest.equal(49, getter.get(), undef);
+  return equal(getter.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -85,17 +86,17 @@ ghi`);
   getter = new Getter({
     content: generator()
   });
-  utest.like(68, node1 = getter.get(), {
+  like(node1 = getter.get(), {
     str: 'line1',
     level: 0,
     source: "<unknown>/1"
   });
-  utest.like(73, node2 = getter.get(), {
+  like(node2 = getter.get(), {
     str: 'line2',
     level: 0,
     source: "<unknown>/2"
   });
-  return utest.like(79, node3 = getter.get(), {
+  return like(node3 = getter.get(), {
     str: 'line3',
     level: 0,
     source: "<unknown>/3"
@@ -111,27 +112,27 @@ ghi`);
 		then this
 while (x > 2)
 	--x`);
-  utest.like(99, getter.get(), {
+  like(getter.get(), {
     str: 'if (x == 2)',
     level: 0
   });
-  utest.like(100, getter.get(), {
+  like(getter.get(), {
     str: 'doThis',
     level: 1
   });
-  utest.like(101, getter.get(), {
+  like(getter.get(), {
     str: 'doThat',
     level: 1
   });
-  utest.like(102, getter.get(), {
+  like(getter.get(), {
     str: 'then this',
     level: 2
   });
-  utest.like(103, getter.get(), {
+  like(getter.get(), {
     str: 'while (x > 2)',
     level: 0
   });
-  return utest.like(104, getter.get(), {
+  return like(getter.get(), {
     str: '--x',
     level: 1
   });
@@ -145,7 +146,7 @@ meaning is __meaning__
 my name is __name__`);
   getter.setConst('meaning', '42');
   getter.setConst('name', 'John Deighan');
-  return utest.equal(118, getter.getBlock(), `abc
+  return equal(getter.getBlock(), `abc
 meaning is 42
 my name is John Deighan`);
 })();
@@ -190,7 +191,7 @@ my name is John Deighan`);
 x = 2
 y = 3`);
   result = getter.getBlock();
-  return utest.equal(172, result, `var x,y
+  return equal(result, `var x,y
 x = 2
 y = 3`);
 })();
@@ -236,8 +237,10 @@ y = 3`);
 x = 2
 y = 3`);
   result = getter.getBlock();
-  return utest.equal(227, result, `ABC
+  return equal(result, `ABC
 COMMAND docmd temp.txt
 X = 2
 Y = 3`);
 })();
+
+//# sourceMappingURL=Getter.test.js.map

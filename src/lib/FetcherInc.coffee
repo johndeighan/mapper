@@ -52,8 +52,8 @@ export class FetcherInc extends Fetcher
 				dbg "from alt, update source"
 
 				# --- Update 'source'
-				{filename} = @hSourceInfo
-				hNode.source = "#{filename}/#{@includeLineNum} #{hNode.source}"
+				{fileName} = @hSourceInfo
+				hNode.source = "#{fileName}/#{@includeLineNum} #{hNode.source}"
 
 				dbgReturn "FetcherInc.fetch", hNode
 				return hNode

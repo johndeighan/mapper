@@ -6,6 +6,7 @@ import {
   OL,
   className,
   getOptions,
+  hasKey,
   isEmpty,
   nonEmpty,
   isString,
@@ -39,7 +40,7 @@ import {
   indented,
   isUndented,
   splitLine
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   joinBlocks
@@ -72,29 +73,33 @@ import {
 
 // ---------------------------------------------------------------------------
 export var cieloToJSCode = function(hInput) {
-  var fullpath, jsCode, lImports, lNeededSymbols, lNotFound, mapper, stmt;
+  var filePath, hSourceInfo, jsCode, lImportStmts, lNeededSymbols, lNotFound, mapper, stmt;
   dbgEnter('cieloToJSCode', hInput);
   mapper = new CieloToJSCodeMapper(hInput);
   jsCode = mapper.getBlock();
   lNeededSymbols = mapper.lNeededSymbols;
+  dbg('lNeededSymbols', lNeededSymbols);
   if (defined(lNeededSymbols)) {
     // --- Prepend needed imports
-    fullpath = mapper.hSourceInfo.fullpath;
-    ({lImports, lNotFound} = buildImportList(lNeededSymbols, fullpath));
-    dbg("lImports", lImports);
+    hSourceInfo = mapper.hSourceInfo;
+    assert(hasKey(hSourceInfo, 'filePath'), "hSourceInfo has no key 'filePath'");
+    filePath = mapper.hSourceInfo.filePath;
+    dbg('filePath', filePath);
+    ({lNotFound, lImportStmts} = buildImportList(lNeededSymbols, filePath));
     dbg('lNotFound', lNotFound);
+    dbg("lImportStmts", lImportStmts);
     // --- append ';' to import statements
-    lImports = (function() {
+    lImportStmts = (function() {
       var i, len, results;
       results = [];
-      for (i = 0, len = lImports.length; i < len; i++) {
-        stmt = lImports[i];
+      for (i = 0, len = lImportStmts.length; i < len; i++) {
+        stmt = lImportStmts[i];
         results.push(stmt + ';');
       }
       return results;
     })();
     // --- joinBlocks() flattens all its arguments to array of strings
-    jsCode = joinBlocks(lImports, jsCode);
+    jsCode = joinBlocks(lImportStmts, jsCode);
   }
   dbgReturn('cieloToJSCode', jsCode);
   return jsCode;
@@ -253,3 +258,5 @@ export var cieloFileToJS = function(srcPath, destPath = undef, hOptions = {}) {
     barf(jsCode, destPath);
   }
 };
+
+//# sourceMappingURL=cielo.js.map

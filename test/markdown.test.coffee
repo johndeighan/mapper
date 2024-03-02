@@ -1,29 +1,57 @@
 # markdown.test.coffee
 
-import {undef} from '@jdeighan/base-utils'
+import {
+	undef, nonEmpty, toBlock, toArray, CWS,
+	} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {UnitTester, UnitTesterNorm} from '@jdeighan/unit-tester'
+import {UnitTester, equal} from '@jdeighan/base-utils/utest'
 import {mydir} from '@jdeighan/coffee-utils/fs'
 
 import {markdownify} from '@jdeighan/mapper/markdown'
 
 # ---------------------------------------------------------------------------
 
+normalize = (block) =>
+
+	lLines = toArray(block) \
+		.filter((line) => nonEmpty(line)) \
+		.map((line) => CWS(line))
+	return toBlock(lLines)
+
+block = """
+	simple
+		indented    more\t\t\t\twords
+
+		blank
+	"""
+
+equal normalize(block), """
+	simple
+	indented more words
+	blank
+	"""
+
+# ---------------------------------------------------------------------------
+
 (() ->
 
-	class MarkdownTester extends UnitTesterNorm
+	class MarkdownTester extends UnitTester
 
 		transformValue: (text) ->
 
-			return markdownify(text)
+			return normalize(markdownify(text))
+
+		transformExpected: (text) ->
+
+			return normalize(text)
 
 	mdTester = new MarkdownTester()
 
 	# ..........................................................
 
-	mdTester.equal 26, """
+	mdTester.equal """
 			title
 			=====
 			text
@@ -32,7 +60,7 @@ import {markdownify} from '@jdeighan/mapper/markdown'
 			<p>text</p>
 			"""
 
-	mdTester.equal 35, """
+	mdTester.equal """
 			title
 			-----
 			text
@@ -43,27 +71,27 @@ import {markdownify} from '@jdeighan/mapper/markdown'
 
 	# --- Comments are stripped
 
-	mdTester.equal 46, """
+	mdTester.equal """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	mdTester.equal 53, """
+	mdTester.equal """
 			# title
 			text
 			""", """
 			<p>text</p>
 			"""
 
-	mdTester.equal 60, """
+	mdTester.equal """
 		this is **bold** text
 		""", """
 		<p>this is <strong>bold</strong> text</p>
 		"""
 
-	mdTester.equal 66, """
+	mdTester.equal """
 		```javascript
 				adapter: adapter({
 					pages: 'build',

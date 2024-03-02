@@ -11,7 +11,7 @@ import {
 	} from '@jdeighan/base-utils/debug'
 import {
 	indented, indentLevel, splitPrefix,
-	} from '@jdeighan/coffee-utils/indent'
+	} from '@jdeighan/base-utils/indent'
 
 # ---------------------------------------------------------------------------
 
@@ -73,10 +73,11 @@ export class Node
 			dbgReturn 'Node.getLine', ''
 			return ''
 
-		{oneIndent, undent} = getOptions(hOptions, {
+		{oneIndent, undent} = getOptions hOptions, {
 			oneIndent: "\t"
 			undent: 0
-			})
+			}
+		assert isString(oneIndent), "Not a string: #{OL(oneIndent)}"
 		if (oneIndent != "\t")
 			dbg "oneIndent = #{OL(oneIndent)}"
 

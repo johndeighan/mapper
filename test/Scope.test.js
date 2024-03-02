@@ -3,8 +3,9 @@
 var scope;
 
 import {
-  utest
-} from '@jdeighan/unit-tester';
+  truthy,
+  falsy
+} from '@jdeighan/base-utils/utest';
 
 import {
   Scope
@@ -14,8 +15,10 @@ scope = new Scope('global', ['main']);
 
 scope.add('func');
 
-utest.truthy(9, scope.has('main'));
+truthy(scope.has('main'));
 
-utest.truthy(10, scope.has('func'));
+truthy(scope.has('func'));
 
-utest.falsy(11, scope.has('notthere'));
+falsy(scope.has('notthere'));
+
+//# sourceMappingURL=Scope.test.js.map

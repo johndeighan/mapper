@@ -8,7 +8,7 @@ import {LOG} from '@jdeighan/base-utils/log'
 import {
 	setDebugging, dbgEnter, dbgReturn, dbg,
 	} from '@jdeighan/base-utils/debug'
-import {UnitTester, utest} from '@jdeighan/unit-tester'
+import {UnitTester, equal, like} from '@jdeighan/base-utils/utest'
 
 import {Node} from '@jdeighan/mapper/node'
 import {Getter} from '@jdeighan/mapper/getter'
@@ -32,7 +32,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 		ghi
 		""")
 
-	utest.like 35, getter.get(), {
+	like getter.get(), {
 		str: 'abc'
 		level: 0
 		}
@@ -41,12 +41,12 @@ import {Getter} from '@jdeighan/mapper/getter'
 	for hNode from getter.allNodes()
 		lItems.push hNode
 
-	utest.like 44, lItems, [
+	like lItems, [
 		{str: 'def'}
 		{str: 'ghi'}
 		]
 
-	utest.equal 49, getter.get(), undef
+	equal getter.get(), undef
 	)()
 
 # ---------------------------------------------------------------------------
@@ -65,18 +65,18 @@ import {Getter} from '@jdeighan/mapper/getter'
 	# --- You can pass any iterator to the Getter() constructor
 	getter = new Getter({content: generator()})
 
-	utest.like 68, node1 = getter.get(), {
+	like node1 = getter.get(), {
 		str: 'line1'
 		level: 0
 		source: "<unknown>/1"
 		}
-	utest.like 73, node2 = getter.get(), {
+	like node2 = getter.get(), {
 		str: 'line2'
 		level: 0
 		source: "<unknown>/2"
 		}
 
-	utest.like 79, node3 = getter.get(), {
+	like node3 = getter.get(), {
 		str: 'line3'
 		level: 0
 		source: "<unknown>/3"
@@ -96,12 +96,12 @@ import {Getter} from '@jdeighan/mapper/getter'
 				--x
 			""")
 
-	utest.like 99, getter.get(),  {str: 'if (x == 2)', level: 0}
-	utest.like 100, getter.get(),  {str: 'doThis', level: 1}
-	utest.like 101, getter.get(),  {str: 'doThat', level: 1}
-	utest.like 102, getter.get(),  {str: 'then this', level: 2}
-	utest.like 103, getter.get(),  {str: 'while (x > 2)', level: 0}
-	utest.like 104, getter.get(),  {str: '--x', level: 1}
+	like getter.get(),  {str: 'if (x == 2)', level: 0}
+	like getter.get(),  {str: 'doThis', level: 1}
+	like getter.get(),  {str: 'doThat', level: 1}
+	like getter.get(),  {str: 'then this', level: 2}
+	like getter.get(),  {str: 'while (x > 2)', level: 0}
+	like getter.get(),  {str: '--x', level: 1}
 
 	)()
 
@@ -115,7 +115,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 		""")
 	getter.setConst 'meaning', '42'
 	getter.setConst 'name', 'John Deighan'
-	utest.equal 118, getter.getBlock(), """
+	equal getter.getBlock(), """
 		abc
 		meaning is 42
 		my name is John Deighan
@@ -170,7 +170,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 			y = 3
 			""")
 	result = getter.getBlock()
-	utest.equal 172, result, """
+	equal result, """
 			var x,y
 			x = 2
 			y = 3
@@ -226,7 +226,7 @@ import {Getter} from '@jdeighan/mapper/getter'
 			y = 3
 			""")
 	result = getter.getBlock()
-	utest.equal 227, result, """
+	equal result, """
 			ABC
 			COMMAND docmd temp.txt
 			X = 2

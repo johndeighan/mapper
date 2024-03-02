@@ -41,8 +41,7 @@ import {
   dbgEnter,
   dbgReturn,
   clearDebugLog,
-  getDebugLog,
-  callStack
+  getDebugLog
 } from '@jdeighan/base-utils/debug';
 
 import {
@@ -55,7 +54,7 @@ import {
   indented,
   undented,
   isUndented
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 import {
   Mapper
@@ -730,3 +729,5 @@ export var getTrace = function(hInput, hOptions = 'logCalls') {
   dbgReturn("getTrace", result);
   return result;
 };
+
+//# sourceMappingURL=TreeMapper.js.map

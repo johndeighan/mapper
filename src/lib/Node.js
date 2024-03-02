@@ -34,7 +34,7 @@ import {
   indented,
   indentLevel,
   splitPrefix
-} from '@jdeighan/coffee-utils/indent';
+} from '@jdeighan/base-utils/indent';
 
 // ---------------------------------------------------------------------------
 export var Node = class Node {
@@ -96,6 +96,7 @@ export var Node = class Node {
       oneIndent: "\t",
       undent: 0
     }));
+    assert(isString(oneIndent), `Not a string: ${OL(oneIndent)}`);
     if (oneIndent !== "\t") {
       dbg(`oneIndent = ${OL(oneIndent)}`);
     }
@@ -119,3 +120,5 @@ export var Node = class Node {
   }
 
 };
+
+//# sourceMappingURL=Node.js.map

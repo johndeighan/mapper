@@ -14,7 +14,7 @@ import {isTAML, fromTAML} from '@jdeighan/base-utils/taml'
 import {
 	firstLine, remainingLines, joinBlocks,
 	} from '@jdeighan/coffee-utils/block'
-import {indented, undented} from '@jdeighan/coffee-utils/indent'
+import {indented, undented} from '@jdeighan/base-utils/indent'
 
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
@@ -44,7 +44,7 @@ export replaceHereDocs = (line, fetcher) =>
 			dbg 'block', block
 
 			str = mapHereDoc(block)
-			assert isString(str), "str is #{OL(str)}"
+			assert isString(str), "Not a string: #{OL(str)}"
 			dbg 'mapped block', str
 			lNewParts.push str
 		else
@@ -75,7 +75,7 @@ export lineToParts = (line) ->
 export mapHereDoc = (block) ->
 
 	dbgEnter "mapHereDoc", block
-	assert isString(block), "not a string"
+	assert isString(block), "not a string: #{OL(block)}"
 	for type in lHereDocs
 		dbg "TRY #{type} HEREDOC"
 		heredocObj = hHereDocs[type]

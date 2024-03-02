@@ -4,16 +4,13 @@ var HtmlMapper, WalkTester, walkTester;
 
 import {
   undef,
-  pass,
   OL,
   defined,
   toBlock,
   toArray,
   isEmpty,
   nonEmpty,
-  isString,
-  isArray,
-  DUMP
+  isArray
 } from '@jdeighan/base-utils';
 
 import {
@@ -23,7 +20,6 @@ import {
 
 import {
   LOG,
-  LOGVALUE,
   echoLogsByDefault
 } from '@jdeighan/base-utils/log';
 
@@ -34,26 +30,19 @@ import {
 import {
   dbg,
   dbgEnter,
-  dbgReturn,
-  setDebugging
+  dbgReturn
 } from '@jdeighan/base-utils/debug';
 
 import {
   UnitTester,
-  utest
-} from '@jdeighan/unit-tester';
+  equal,
+  like,
+  throws
+} from '@jdeighan/base-utils/utest';
 
 import {
-  indentLevel,
-  undented,
-  splitLine,
   indented
-} from '@jdeighan/coffee-utils/indent';
-
-import {
-  mydir,
-  mkpath
-} from '@jdeighan/coffee-utils/fs';
+} from '@jdeighan/base-utils/indent';
 
 import {
   map
@@ -103,7 +92,7 @@ echoLogsByDefault(false);
   // ------------------------------------------------------------------------
   // --- remove comments and blank lines
   //     create user object from utest line
-  mapTester.like(58, `# --- comment, followed by blank line xxx
+  mapTester.like(`# --- comment, followed by blank line xxx
 
 abc`, [
     {
@@ -114,7 +103,7 @@ abc`, [
   // ------------------------------------------------------------------------
   // --- remove comments and blank lines
   //     create user object from utest line
-  mapTester.like(70, `# --- comment, followed by blank line
+  mapTester.like(`# --- comment, followed by blank line
 
 abc
 
@@ -132,7 +121,7 @@ def`, [
   ]);
   // ------------------------------------------------------------------------
   // --- level
-  return mapTester.like(86, `abc
+  return mapTester.like(`abc
 	def
 		ghi
 	uvw
@@ -227,27 +216,27 @@ xyz`, [
   };
   mapTester = new MapTester();
   // ------------------------------------------------------------------------
-  mapTester.like(161, `abc
+  mapTester.like(`abc
 	def
 		ghi`, `0 abc
 1 def
 2 ghi`);
   // ------------------------------------------------------------------------
   // --- const replacement
-  mapTester.like(174, `#define name John Deighan
+  mapTester.like(`#define name John Deighan
 abc
 __name__`, `0 abc
 0 John Deighan`);
   // ------------------------------------------------------------------------
   // --- extension lines
-  mapTester.like(186, `abc
+  mapTester.like(`abc
 		&& def
 		&& ghi
 xyz`, `0 abc && def && ghi
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (default)
-  mapTester.like(199, `func(<<<)
+  mapTester.like(`func(<<<)
 	abc
 	def
 
@@ -255,7 +244,7 @@ xyz`, `0 func("abc\\ndef")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - block (explicit)
-  mapTester.like(213, `func(<<<)
+  mapTester.like(`func(<<<)
 	===
 	abc
 	def
@@ -264,7 +253,7 @@ xyz`, `0 func("abc\\ndef")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  mapTester.like(228, `func(<<<)
+  mapTester.like(`func(<<<)
 	...
 	abc
 	def
@@ -273,7 +262,7 @@ xyz`, `0 func("abc def")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - oneline
-  mapTester.like(243, `func(<<<)
+  mapTester.like(`func(<<<)
 	...abc
 		def
 
@@ -281,7 +270,7 @@ xyz`, `0 func("abc def")
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- HEREDOC handling - TAML
-  mapTester.like(257, `func(<<<)
+  mapTester.like(`func(<<<)
 	---
 	- abc
 	- def
@@ -290,7 +279,7 @@ xyz`, `0 func(["abc","def"])
 0 xyz`);
   // ------------------------------------------------------------------------
   // --- using __END__
-  mapTester.like(272, `abc
+  mapTester.like(`abc
 def
 __END__
 ghi
@@ -299,12 +288,12 @@ jkl`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value not defined
-  mapTester.like(287, `#ifdef mobile
+  mapTester.like(`#ifdef mobile
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with no value - value defined
-  mapTester.like(298, `#define mobile anything
+  mapTester.like(`#define mobile anything
 #ifdef mobile
 	abc
 def`, `0 abc
@@ -312,18 +301,18 @@ def`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value not defined
-  mapTester.like(312, `#ifdef mobile samsung
+  mapTester.like(`#ifdef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined, but different
-  mapTester.like(323, `#define mobile apple
+  mapTester.like(`#define mobile apple
 #ifdef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifdef with a value - value defined and same
-  mapTester.like(335, `#define mobile samsung
+  mapTester.like(`#define mobile samsung
 #ifdef mobile samsung
 	abc
 def`, `0 abc
@@ -331,67 +320,49 @@ def`, `0 abc
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - not defined
-  mapTester.like(349, `#ifndef mobile
+  mapTester.like(`#ifndef mobile
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with no value - defined
-  mapTester.like(361, `#define mobile anything
+  mapTester.like(`#define mobile anything
 #ifndef mobile
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - not defined
-  mapTester.like(374, `#ifndef mobile samsung
+  mapTester.like(`#ifndef mobile samsung
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined, but different
-  mapTester.like(386, `#define mobile apple
+  mapTester.like(`#define mobile apple
 #ifndef mobile samsung
 	abc
 def`, `0 abc
 0 def`);
   // ------------------------------------------------------------------------
   // --- test #ifndef with a value - defined and same
-  mapTester.like(399, `#define mobile samsung
+  mapTester.like(`#define mobile samsung
 #ifndef mobile samsung
 	abc
 def`, `0 def`);
   // ------------------------------------------------------------------------
   // ------------------------------------------------------------------------
   // --- nested commands
-  mapTester.like(412, `#define mobile samsung
+  mapTester.like(`#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	#ifdef large
 		abc
 			def`, `0 abc
 1 def`);
-  // --- nested commands
-  mapTester.like(426, `#define mobile samsung
-#define large anything
-#ifndef mobile samsung
-	#ifdef large
-		abc`, "");
-  // --- nested commands
-  mapTester.like(436, `#define mobile samsung
-#define large anything
-#ifdef mobile samsung
-	#ifndef large
-		abc`, "");
-  // --- nested commands
-  mapTester.like(446, `#define mobile samsung
-#define large anything
-#ifndef mobile samsung
-	#ifndef large
-		abc`, "");
   // ----------------------------------------------------------
   // --- nested commands - every combination
-  mapTester.like(457, `#define mobile samsung
+  mapTester.like(`#define mobile samsung
 #define large anything
 #ifdef mobile samsung
 	abc
@@ -401,7 +372,7 @@ ghi`, `0 abc
 0 def
 0 ghi`);
   // --- nested commands - every combination
-  mapTester.like(473, `#define mobile samsung
+  mapTester.like(`#define mobile samsung
 #ifdef mobile samsung
 	abc
 	#ifdef large
@@ -409,14 +380,14 @@ ghi`, `0 abc
 ghi`, `0 abc
 0 ghi`);
   // --- nested commands - every combination
-  mapTester.like(487, `#define large anything
+  mapTester.like(`#define large anything
 #ifdef mobile samsung
 	abc
 	#ifdef large
 		def
 ghi`, `0 ghi`);
   // --- nested commands - every combination
-  return mapTester.like(500, `#ifdef mobile samsung
+  return mapTester.like(`#ifdef mobile samsung
 	abc
 	#ifdef large
 		def
@@ -438,15 +409,15 @@ ghi`, `0 ghi`);
 
   };
   walkTester = new Tester();
-  walkTester.equal(528, "", `BEGIN WALK
+  walkTester.equal("", `BEGIN WALK
 END WALK`);
-  walkTester.equal(534, `abc`, `BEGIN WALK
+  walkTester.equal(`abc`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(545, `abc
+  walkTester.equal(`abc
 def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
@@ -455,7 +426,7 @@ VISIT 0 'def'
 END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(559, `abc
+  walkTester.equal(`abc
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
@@ -466,7 +437,7 @@ VISIT 0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(575, `# this is a unit test
+  walkTester.equal(`# this is a unit test
 abc
 
 	def`, `BEGIN WALK
@@ -479,7 +450,7 @@ VISIT 0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  walkTester.equal(593, `# this is a unit test
+  walkTester.equal(`# this is a unit test
 abc
 __END__
 	def`, `BEGIN WALK
@@ -488,7 +459,7 @@ VISIT 0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
-  return walkTester.equal(607, `# this is a unit test
+  return walkTester.equal(`# this is a unit test
 abc
 		def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -517,14 +488,14 @@ WalkTester = class WalkTester extends UnitTester {
 walkTester = new WalkTester();
 
 // ..........................................................
-walkTester.equal(642, `abc`, `BEGIN WALK
+walkTester.equal(`abc`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
 END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(653, `abc
+walkTester.equal(`abc
 def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
@@ -534,7 +505,7 @@ END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(667, `abc
+walkTester.equal(`abc
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
 VISIT 0 'abc'
@@ -546,7 +517,7 @@ END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(683, `abc
+walkTester.equal(`abc
 #ifdef NOPE
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -555,7 +526,7 @@ END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(696, `abc
+walkTester.equal(`abc
 #ifndef NOPE
 	def`, `BEGIN WALK
 BEGIN LEVEL 0
@@ -566,7 +537,7 @@ END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(711, `#define NOPE 42
+walkTester.equal(`#define NOPE 42
 abc
 #ifndef NOPE
 	def`, `BEGIN WALK
@@ -576,7 +547,7 @@ END VISIT 0 'abc'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(725, `#define NOPE 42
+walkTester.equal(`#define NOPE 42
 abc
 #ifdef NOPE
 	def`, `BEGIN WALK
@@ -588,7 +559,7 @@ END VISIT 0 'def'
 END LEVEL 0
 END WALK`);
 
-walkTester.equal(741, `#define NOPE 42
+walkTester.equal(`#define NOPE 42
 #define name John
 abc
 #ifdef NOPE
@@ -617,22 +588,22 @@ END WALK`);
 line2
 
 line3`);
-  utest.like(776, mapper.get(), {
+  like(mapper.get(), {
     str: 'line1',
     level: 0,
     source: "<unknown>/1"
   });
-  utest.like(781, mapper.get(), {
+  like(mapper.get(), {
     str: 'line2',
     level: 0,
     source: "<unknown>/3"
   });
-  utest.like(786, mapper.get(), {
+  like(mapper.get(), {
     str: 'line3',
     level: 0,
     source: "<unknown>/5"
   });
-  return utest.equal(791, mapper.get(), undef);
+  return equal(mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -644,19 +615,19 @@ line3`);
 abc
 	def
 		ghi`);
-  utest.like(807, mapper.get(), {
+  like(mapper.get(), {
     str: 'abc',
     level: 0
   });
-  utest.like(811, mapper.get(), {
+  like(mapper.get(), {
     str: 'def',
     level: 1
   });
-  utest.like(815, mapper.get(), {
+  like(mapper.get(), {
     str: 'ghi',
     level: 2
   });
-  return utest.equal(819, mapper.get(), undef);
+  return equal(mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
@@ -669,21 +640,21 @@ abc
 __END__
 		ghi`);
   // --- get() should return {uobj, level}
-  utest.like(836, mapper.get(), {
+  like(mapper.get(), {
     str: 'abc def',
     level: 0
   });
-  utest.like(840, mapper.get(), {
+  like(mapper.get(), {
     str: 'ghi',
     level: 1
   });
-  return utest.equal(844, mapper.get(), undef);
+  return equal(mapper.get(), undef);
 })();
 
 // ---------------------------------------------------------------------------
 // __END__ only works with no identation
 (function() {
-  return utest.fails(851, function() {
+  return throws(function() {
     return map(`abc
 		def
 	ghi
@@ -704,14 +675,14 @@ __END__
   treeTester = new Tester();
   // ---------------------------------------------------------------------------
   // --- Test basic reading till EOF
-  treeTester.equal(875, `abc
+  treeTester.equal(`abc
 def`, `abc
 def`);
-  treeTester.equal(883, `abc
+  treeTester.equal(`abc
 
 def`, `abc
 def`);
-  return treeTester.equal(892, `# --- a comment
+  return treeTester.equal(`# --- a comment
 p
 	margin: 0
 	span
@@ -745,9 +716,9 @@ p
   block = `abc
 
 def`;
-  utest.equal(937, map(block, MyMapper), `abc
+  equal(map(block, MyMapper), `abc
 def`);
-  return treeTester.equal(942, block, `abc
+  return treeTester.equal(block, `abc
 def`);
 })();
 
@@ -781,10 +752,10 @@ def`);
 # not a comment
 abc
 def`;
-  utest.equal(985, map(block, MyMapper), `# not a comment
+  equal(map(block, MyMapper), `# not a comment
 abc
 def`);
-  return treeTester.equal(991, block, `# not a comment
+  return treeTester.equal(block, `# not a comment
 abc
 def`);
 })();
@@ -841,7 +812,7 @@ def`);
 abc
 - command
 def`;
-  return treeTester.equal(1054, block, `abc
+  return treeTester.equal(block, `abc
 COMMAND: command
 def`);
 })();
@@ -879,7 +850,7 @@ def`);
   };
   treeTester = new MyTester();
   // ..........................................................
-  return treeTester.equal(1098, `abc
+  return treeTester.equal(`abc
 	def
 
 ghi`, `x
@@ -911,7 +882,7 @@ x`);
   };
   treeTester = new MyTester();
   // ..........................................................
-  return treeTester.equal(1136, `abc
+  return treeTester.equal(`abc
 
 def
 ghi`, `abc
@@ -930,7 +901,7 @@ ghi`);
   };
   // ..........................................................
   treeTester = new MyTester();
-  return treeTester.equal(1162, `abc
+  return treeTester.equal(`abc
 	#include title.md
 def`, `abc
 	title
@@ -952,7 +923,7 @@ def`);
 
   };
   treeTester = new MyTester();
-  return treeTester.like(1191, `abc
+  return treeTester.like(`abc
 	def
 		ghi
 jkl`, fromTAML(`---
@@ -979,27 +950,27 @@ jkl`, fromTAML(`---
 		then this
 while (x > 2)
 	--x`);
-  utest.like(1227, mapper.get(), {
+  like(mapper.get(), {
     level: 0,
     str: 'if (x == 2)'
   });
-  utest.like(1228, mapper.get(), {
+  like(mapper.get(), {
     level: 1,
     str: 'doThis'
   });
-  utest.like(1229, mapper.get(), {
+  like(mapper.get(), {
     level: 1,
     str: 'doThat'
   });
-  utest.like(1230, mapper.get(), {
+  like(mapper.get(), {
     level: 2,
     str: 'then this'
   });
-  utest.like(1231, mapper.get(), {
+  like(mapper.get(), {
     level: 0,
     str: 'while (x > 2)'
   });
-  return utest.like(1232, mapper.get(), {
+  return like(mapper.get(), {
     level: 1,
     str: '--x'
   });
@@ -1017,7 +988,7 @@ while (x > 2)
   };
   // ..........................................................
   treeTester = new MyTester();
-  treeTester.equal(1250, `abc
+  treeTester.equal(`abc
 if x == <<<
 	abc
 	def
@@ -1025,7 +996,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  treeTester.equal(1263, `abc
+  treeTester.equal(`abc
 if x == <<<
 	===
 	abc
@@ -1034,7 +1005,7 @@ if x == <<<
 def`, `abc
 if x == "abc\\ndef"
 def`);
-  return treeTester.equal(1277, `abc
+  return treeTester.equal(`abc
 if x == <<<
 	...
 	abc
@@ -1138,7 +1109,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
   };
   treeTester = new MyTester();
   // ----------------------------------------------------------
-  return treeTester.equal(1386, `body
+  return treeTester.equal(`body
 	# a comment
 
 	div:markdown
@@ -1173,7 +1144,7 @@ HtmlMapper = class HtmlMapper extends TreeMapper {
 
   };
   treeTester = new MyTester();
-  return treeTester.equal(1428, `abc
+  return treeTester.equal(`abc
 #ifdef something
 	def
 	ghi
@@ -1185,29 +1156,27 @@ xyz`);
 // ---------------------------------------------------------------------------
 // --- test beginLevel() and endLevel()
 (function() {
-  var MyMapper, MyTester, lTrace, treeTester;
-  lTrace = [];
+  var MyMapper, block, mapped;
   MyMapper = class MyMapper extends TreeMapper {
+    constructor(hInput) {
+      super(hInput);
+      this.lMyTrace = [];
+    }
+
     beginLevel(hEnv, hNode) {
-      lTrace.push(`B ${hNode.level}`);
+      this.lMyTrace.push(`B ${hNode.level}`);
     }
 
     endLevel(hEnv, hNode) {
-      lTrace.push(`E ${hNode.level}`);
+      this.lMyTrace.push(`E ${hNode.level}`);
     }
 
   };
-  MyTester = class MyTester extends UnitTester {
-    transformValue(block) {
-      return map(block, MyMapper);
-    }
-
-  };
-  treeTester = new MyTester();
-  treeTester.equal(1467, `abc
-	def`, `abc
+  block = `abc
+	def`;
+  mapped = map(block, MyMapper);
+  return equal(mapped, `abc
 	def`);
-  return utest.equal(1475, lTrace, ["B 0", "B 1", "E 1", "E 0"]);
 })();
 
-// ---------------------------------------------------------------------------
+//# sourceMappingURL=TreeMapper.test.js.map

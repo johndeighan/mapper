@@ -42,3 +42,5 @@ export var openDB = function() {
 export var closeDB = function(db) {
   db.end();
 };
+
+//# sourceMappingURL=mysql.js.map

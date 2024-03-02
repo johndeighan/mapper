@@ -194,3 +194,5 @@ export var Getter = class Getter extends FetcherInc {
   }
 
 };
+
+//# sourceMappingURL=Getter.js.map

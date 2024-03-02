@@ -9,8 +9,8 @@ import {LOG} from '@jdeighan/base-utils/log'
 import {
 	dbg, dbgEnter, dbgReturn, setDebugging,
 	} from '@jdeighan/base-utils/debug'
-import {UnitTester, utest} from '@jdeighan/unit-tester'
-import {undented} from '@jdeighan/coffee-utils/indent'
+import {UnitTester, equal} from '@jdeighan/base-utils/utest'
+import {undented} from '@jdeighan/base-utils/indent'
 import {
 	firstLine, remainingLines,
 	} from '@jdeighan/coffee-utils/block'
@@ -21,11 +21,11 @@ import {
 
 # ---------------------------------------------------------------------------
 
-utest.equal 24, lineToParts('this is not a heredoc'), [
+equal lineToParts('this is not a heredoc'), [
 	'this is not a heredoc'
 	]
 
-utest.equal 28, lineToParts('this <<< is <<< heredoc'), [
+equal lineToParts('this <<< is <<< heredoc'), [
 	'this '
 	'<<<'
 	' is '
@@ -33,7 +33,7 @@ utest.equal 28, lineToParts('this <<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-utest.equal 36, lineToParts('<<< is <<< heredoc'), [
+equal lineToParts('<<< is <<< heredoc'), [
 	''
 	'<<<'
 	' is '
@@ -41,7 +41,7 @@ utest.equal 36, lineToParts('<<< is <<< heredoc'), [
 	' heredoc'
 	]
 
-utest.equal 44, lineToParts('this <<< is <<<'), [
+equal lineToParts('this <<< is <<<'), [
 	'this '
 	'<<<'
 	' is '
@@ -49,7 +49,7 @@ utest.equal 44, lineToParts('this <<< is <<<'), [
 	''
 	]
 
-utest.equal 52, lineToParts('<<< is <<<'), [
+equal lineToParts('<<< is <<<'), [
 	''
 	'<<<'
 	' is '
@@ -57,13 +57,13 @@ utest.equal 52, lineToParts('<<< is <<<'), [
 	''
 	]
 
-utest.equal 60, lineToParts('<<<'), [
+equal lineToParts('<<<'), [
 	''
 	'<<<'
 	''
 	]
 
-utest.equal 66, lineToParts('<<<<<<'), [
+equal lineToParts('<<<<<<'), [
 	''
 	'<<<'
 	''
@@ -83,7 +83,7 @@ tester = new HereDocTester()
 
 # ---------------------------------------------------------------------------
 
-utest.equal 86, mapHereDoc("""
+equal mapHereDoc("""
 		abc
 		def
 		"""),
@@ -91,7 +91,7 @@ utest.equal 86, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-utest.equal 94, mapHereDoc("""
+equal mapHereDoc("""
 		===
 		abc
 		def
@@ -100,7 +100,7 @@ utest.equal 94, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-utest.equal 103, mapHereDoc("""
+equal mapHereDoc("""
 		...
 		abc
 		def
@@ -109,7 +109,7 @@ utest.equal 103, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-utest.equal 112, mapHereDoc("""
+equal mapHereDoc("""
 		---
 		a: 1
 		b: 2
@@ -118,7 +118,7 @@ utest.equal 112, mapHereDoc("""
 
 # ---------------------------------------------------------------------------
 
-utest.equal 121, mapHereDoc("""
+equal mapHereDoc("""
 		---
 		- a
 		- b
@@ -128,7 +128,7 @@ utest.equal 121, mapHereDoc("""
 # ------------------------------------------------------------------------
 # Default heredoc type is a block
 
-tester.equal 131, """
+tester.equal """
 		this is a
 		block of text
 		""",
@@ -137,7 +137,7 @@ tester.equal 131, """
 # ------------------------------------------------------------------------
 # Make explicit that the heredoc type is a block
 
-tester.equal 140, """
+tester.equal """
 		===
 		this is a
 		block of text
@@ -147,7 +147,7 @@ tester.equal 140, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 150, """
+tester.equal """
 		...this is a
 		line of text
 		""",
@@ -156,7 +156,7 @@ tester.equal 150, """
 # ------------------------------------------------------------------------
 # One Line block
 
-tester.equal 159, """
+tester.equal """
 		...
 		this is a
 		line of text
@@ -183,7 +183,7 @@ class MatrixHereDoc extends BaseHereDoc
 
 addHereDocType 'matrix', new MatrixHereDoc()
 
-tester.equal 186, """
+tester.equal """
 		1 2 3
 		2 4 6
 		""",
@@ -209,7 +209,7 @@ class UCHereDoc extends BaseHereDoc
 
 addHereDocType 'upper case', new UCHereDoc()
 
-tester.equal 212, """
+tester.equal """
 		^^^
 		This is a
 		block of text
@@ -241,7 +241,7 @@ addHereDocType 'upper case 2', new UCHereDoc2()
 
 # ---------------------------------------------------------------------------
 
-tester.equal 244, """
+tester.equal """
 		***
 		select ID,Name
 		from Users
@@ -251,7 +251,7 @@ tester.equal 244, """
 # ---------------------------------------------------------------------------
 # TAML block
 
-tester.equal 254, """
+tester.equal """
 		---
 		- abc
 		- def
@@ -261,7 +261,7 @@ tester.equal 254, """
 # ---------------------------------------------------------------------------
 # TAML-like block, but actually a block
 
-tester.equal 264, """
+tester.equal """
 		===
 		---
 		- abc
@@ -272,7 +272,7 @@ tester.equal 264, """
 # ---------------------------------------------------------------------------
 # TAML block 2
 
-tester.equal 275, """
+tester.equal """
 		---
 		-
 			label: Help
@@ -301,7 +301,7 @@ replacer = new HereDocReplacer()
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 304, """
+replacer.equal """
 		TopMenu lItems={<<<}
 			---
 			-
@@ -316,7 +316,7 @@ replacer.equal 304, """
 
 # ---------------------------------------------------------------------------
 
-replacer.equal 319, """
+replacer.equal """
 		<TopMenu lItems={<<<}>
 			---
 			-

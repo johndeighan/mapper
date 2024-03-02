@@ -44,11 +44,7 @@ import {
 import {
   splitPrefix,
   splitLine
-} from '@jdeighan/coffee-utils/indent';
-
-import {
-  parseSource
-} from '@jdeighan/coffee-utils/fs';
+} from '@jdeighan/base-utils/indent';
 
 import {
   Node
@@ -71,7 +67,7 @@ export var Mapper = class Mapper extends Getter {
     dbgEnter("Mapper", hInput, options);
     super(hInput, options);
     // --- These never change
-    this.setConst('FILE', this.hSourceInfo.filename);
+    this.setConst('FILE', this.hSourceInfo.fileName);
     this.setConst('DIR', this.hSourceInfo.dir);
     this.setConst('SRC', this.sourceInfoStr());
     this.hSpecials = {};
@@ -234,12 +230,12 @@ export var Mapper = class Mapper extends Getter {
 //				return hNode.uobj
 
 // ===========================================================================
-// --- mapper must be a subclass of Mapper or an array
+// --- mapperClass must be a subclass of Mapper or an array
 //     of subclasses of Mapper.
-export var map = function(input, mapperClass = Mapper, options = undef) {
-  var content, hOptions, i, item, len, mapper, result;
-  dbgEnter("map", input, mapperClass, options);
-  hOptions = getOptions(options, {
+export var map = function(input, mapperClass = Mapper, hOptions = {}) {
+  var content, i, item, len, mapper, result;
+  dbgEnter("map", input, mapperClass, hOptions);
+  hOptions = getOptions(hOptions, {
     as: 'block',
     oneIndent: '\t'
   });
@@ -256,7 +252,7 @@ export var map = function(input, mapperClass = Mapper, options = undef) {
     for (i = 0, len = mapperClass.length; i < len; i++) {
       item = mapperClass[i];
       if (defined(item)) {
-        content = map(content, item, options);
+        content = map(content, item, hOptions);
         dbg('new content', content);
       }
     }
@@ -268,10 +264,10 @@ export var map = function(input, mapperClass = Mapper, options = undef) {
   assert(mapper instanceof Mapper, "not a Mapper instance");
   switch (hOptions.as) {
     case 'block':
-      result = mapper.getBlock(options);
+      result = mapper.getBlock(hOptions.oneIndent);
       break;
     case 'lines':
-      result = mapper.getLines(options);
+      result = mapper.getLines(hOptions);
       break;
     default:
       croak("option 'as' must be 'block' or 'lines'");
@@ -279,3 +275,5 @@ export var map = function(input, mapperClass = Mapper, options = undef) {
   dbgReturn("map", result);
   return result;
 };
+
+//# sourceMappingURL=Mapper.js.map

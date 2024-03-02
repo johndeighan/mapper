@@ -21,8 +21,9 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  utest
-} from '@jdeighan/unit-tester';
+  equal,
+  like
+} from '@jdeighan/base-utils/utest';
 
 import {
   Node
@@ -38,7 +39,7 @@ node = new Node({
 
 node.incLevel();
 
-utest.like(21, node, {
+like(node, {
   str: 'div',
   level: 1,
   source: import.meta.url,
@@ -46,28 +47,30 @@ utest.like(21, node, {
   srcLevel: 0
 });
 
-utest.equal(28, node.getLine({
+equal(node.getLine({
   oneIndent: "=> "
 }), "=> div");
 
-utest.equal(30, new Node({
+equal(new Node({
   str: 'abc',
   level: 1
 }).getLine(), "\tabc");
 
-utest.equal(32, new Node({
+equal(new Node({
   str: 'abc',
   level: 2
 }).getLine({
   oneIndent: '  '
 }), "    abc");
 
-utest.equal(34, new Node({
+equal(new Node({
   str: 'abc',
   level: 0
 }).getLine(), "abc");
 
-utest.equal(36, new Node({
+equal(new Node({
   str: 'abc',
   level: 3
 }).getLine(), "\t\t\tabc");
+
+//# sourceMappingURL=Node.test.js.map

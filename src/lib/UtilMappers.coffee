@@ -1,7 +1,7 @@
 # UtilMappers.coffee
 
 import {undef, defined} from '@jdeighan/base-utils'
-import {fromTAML} from '@jdeighan/base-utils/taml'
+import {dbgEnter, dbgReturn, dbg} from '@jdeighan/base-utils/debug'
 
 import {Mapper} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -19,13 +19,17 @@ export class StoryMapper extends TreeMapper
 
 	getUserObj: (hNode) ->
 
+		dbgEnter 'getUserObj', hNode
 		if lMatches = hNode.str.match(///
 				([A-Za-z_][A-Za-z0-9_]*)  # identifier
 				\:                        # colon
 				\s*                       # optional whitespace
 				(.+)                      # a non-empty string
 				$///)
+			dbg "is <key>: <value>"
 			[_, key, value] = lMatches
+			dbg 'key', key
+			dbg 'value', value
 
 			if value.match(///
 					\d+
@@ -35,11 +39,16 @@ export class StoryMapper extends TreeMapper
 						)?
 					$///)
 				# --- don't mess with numbers
-				return "#{key}: #{value}"
+				dbg "<value> is a number, return <key>: <value>"
+				result = "#{key}: #{value}"
 			else
+				dbg "<value> is not a number"
 				# --- surround with single quotes,
 				#     double internal single quotes
 				value = "'" + value.replace(/\'/g, "''") + "'"
-				return "#{key}: #{value}"
+				result = "#{key}: #{value}"
 		else
-			return hNode.str
+			dbg "not <key>: <value>, return hNode.str"
+			result = hNode.str
+		dbgReturn 'getUserObj', result
+		return result

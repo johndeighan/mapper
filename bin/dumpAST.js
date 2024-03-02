@@ -42,3 +42,5 @@ if (isEmpty(info)) {
 }
 
 walker.barfAST("./test/ast.txt");
+
+//# sourceMappingURL=dumpAST.js.map

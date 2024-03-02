@@ -4,9 +4,8 @@ import {undef, isEmpty, nonEmpty} from '@jdeighan/base-utils'
 import {assert} from '@jdeighan/base-utils/exceptions'
 import {LOG, LOGVALUE} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {
-	UnitTesterNorm, UnitTester, utest,
-	} from '@jdeighan/unit-tester'
+import {slurp} from '@jdeighan/base-utils/fs'
+import {UnitTester, equal, like} from '@jdeighan/base-utils/utest'
 
 import {map} from '@jdeighan/mapper'
 import {TreeMapper} from '@jdeighan/mapper/tree'
@@ -39,7 +38,7 @@ import {
 	# ------------------------------------------------------------------------
 	# --- test removing comments
 
-	cieloTester.equal 44, """
+	cieloTester.equal """
 			# --- a comment
 			y = x
 			""", """
@@ -49,7 +48,7 @@ import {
 	# ------------------------------------------------------------------------
 	# --- test removing blank lines
 
-	cieloTester.equal 54, """
+	cieloTester.equal """
 			y = x
 
 			""", """
@@ -62,7 +61,7 @@ import {
 	# for i in range(5)
 	#    y *= i
 
-	cieloTester.equal 67, """
+	cieloTester.equal """
 			for x in [1,5]
 				#include include.txt
 			""", """
@@ -75,7 +74,7 @@ import {
 	# ------------------------------------------------------------------------
 	# --- test continuation lines
 
-	cieloTester.equal 80, """
+	cieloTester.equal """
 			x = 23
 			y = x
 					+ 5
@@ -87,7 +86,7 @@ import {
 	# ------------------------------------------------------------------------
 	# --- can't use backslash continuation lines
 
-	cieloTester.equal 92, """
+	cieloTester.equal """
 			x = 23
 			y = x \
 			+ 5
@@ -100,7 +99,7 @@ import {
 	# ------------------------------------------------------------------------
 	# --- test replacing LINE, FILE, DIR
 
-	cieloTester.equal 105, """
+	cieloTester.equal """
 			x = 23
 			y = "line __LINE__ in __FILE__"
 			+ 5
@@ -110,7 +109,7 @@ import {
 			+ 5
 			"""
 
-	cieloTester.equal 115, """
+	cieloTester.equal """
 			str = <<<
 				abc
 				def
@@ -121,7 +120,7 @@ import {
 			x = 42
 			"""
 
-	cieloTester.equal 126, """
+	cieloTester.equal """
 			str = <<<
 				===
 				abc
@@ -133,7 +132,7 @@ import {
 			x = 42
 			"""
 
-	cieloTester.equal 138, """
+	cieloTester.equal """
 			str = <<<
 				...this is a
 					long line
@@ -141,7 +140,7 @@ import {
 			str = "this is a long line"
 			"""
 
-	cieloTester.equal 146, """
+	cieloTester.equal """
 			lItems = <<<
 				---
 				- a
@@ -150,7 +149,7 @@ import {
 			lItems = ["a","b"]
 			"""
 
-	cieloTester.equal 155, """
+	cieloTester.equal """
 			hItems = <<<
 				---
 				a: 13
@@ -159,7 +158,7 @@ import {
 			hItems = {"a":13,"b":42}
 			"""
 
-	cieloTester.equal 164, """
+	cieloTester.equal """
 			lItems = <<<
 				---
 				-
@@ -172,7 +171,7 @@ import {
 			lItems = [{"a":13,"b":42},{"c":2,"d":3}]
 			"""
 
-	cieloTester.equal 177, """
+	cieloTester.equal """
 			func(<<<, <<<, <<<)
 				a block
 				of text
@@ -188,7 +187,7 @@ import {
 			func("a block\\nof text", ["a","b"], {"a":13,"b":42})
 			"""
 
-	cieloTester.equal 193, """
+	cieloTester.equal """
 			x = 42
 			func(x, "abc")
 			__END__
@@ -201,7 +200,7 @@ import {
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 206, """
+	cieloTester.equal """
 			str = \"\"\"
 				this is a
 				long string
@@ -215,7 +214,7 @@ import {
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 220, '''
+	cieloTester.equal '''
 			str = """
 				this is a
 				long string
@@ -229,7 +228,7 @@ import {
 
 	# --- Make sure triple quoted strings are passed through as is
 
-	cieloTester.equal 234, """
+	cieloTester.equal """
 			str = '''
 				this is a
 				long string
@@ -245,10 +244,31 @@ import {
 	)()
 
 # ----------------------------------------------------------------------------
+# --- test contents of .symbols
+
+like slurp('./test/.symbols'), """
+	fs
+		*fs exists readFile
+
+	@jdeighan/base-utils/fs
+		mkpath slurp barf
+
+	@jdeighan/coffee-utils
+		say undef
+
+	@jdeighan/coffee-utils/fs
+		mydir
+
+	@jdeighan/coffee-utils/log
+		log/logger
+	"""
+
+# ----------------------------------------------------------------------------
 
 (() ->
 	hInput = {
-		# --- must supply source, else wrong .symbols file is used
+		# --- must supply source,
+		#     else wrong .symbols file is used
 		source: import.meta.url
 		content: """
 			# --- temp.cielo
@@ -258,7 +278,7 @@ import {
 		}
 	jsCode = cieloToJSCode(hInput)
 
-	utest.equal 266, jsCode, """
+	like jsCode, """
 			import fs from 'fs';
 			import {log as logger} from '@jdeighan/coffee-utils/log';
 			// --- temp.cielo
@@ -272,7 +292,7 @@ import {
 
 (() ->
 
-	class CieloTester extends UnitTesterNorm
+	class CieloTester extends UnitTester
 
 		transformValue: (code) ->
 
@@ -281,14 +301,13 @@ import {
 				source: import.meta.url
 				content: code
 				}
-#			return map(hInput, CieloToJSCodeMapper)
 			return cieloToJSCode(hInput)
 
 	cieloTester = new CieloTester('cielo.test')
 
 	# --- Should auto-import mydir & mkpath from @jdeighan/coffee-utils/fs
 
-	cieloTester.equal 295, """
+	cieloTester.like """
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
@@ -301,21 +320,21 @@ import {
 
 	# --- But not if we're already importing them
 
-	cieloTester.equal 307, """
+	cieloTester.like """
 			import {mkpath,mydir} from '@jdeighan/coffee-utils/fs'
 			dir = mydir(import.meta.url)
 			filepath = mkpath(dir, 'test.txt')
 			""", """
 			var dir, filepath;
 			import {
-				mkpath,
-				mydir
-				} from '@jdeighan/coffee-utils/fs';
+			  mkpath,
+			  mydir
+			} from '@jdeighan/coffee-utils/fs';
 			dir = mydir(import.meta.url);
 			filepath = mkpath(dir, 'test.txt');
 			"""
 
-	cieloTester.equal 321, """
+	cieloTester.equal """
 			x = undef
 			""", """
 			import {undef} from '@jdeighan/coffee-utils';
@@ -323,7 +342,7 @@ import {
 			x = undef;
 			"""
 
-	cieloTester.equal 329, """
+	cieloTester.equal """
 			x = undef
 			contents = 'this is a file'
 			fs.writeFileSync('temp.txt', contents, {encoding: 'utf8'})
@@ -334,11 +353,11 @@ import {
 			x = undef;
 			contents = 'this is a file';
 			fs.writeFileSync('temp.txt', contents, {
-				encoding: 'utf8'
-				});
+			  encoding: 'utf8'
+			});
 			"""
 
-	cieloTester.equal 344, """
+	cieloTester.equal """
 			x = 23
 			logger x
 			""", """
@@ -375,7 +394,7 @@ import {
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 381, """
+	cieloTester.equal """
 			# --- a comment
 			# |||| stuff
 			y = x
@@ -410,7 +429,7 @@ import {
 
 	# ------------------------------------------------------------------------
 
-	cieloTester.equal 416, """
+	cieloTester.equal """
 			# --- a comment
 			# |||| stuff
 			y = x

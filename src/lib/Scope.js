@@ -43,3 +43,5 @@ export var Scope = class Scope {
   }
 
 };
+
+//# sourceMappingURL=Scope.js.map

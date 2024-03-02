@@ -2,19 +2,19 @@
 
 import {assert} from '@jdeighan/base-utils/exceptions'
 import {
-	isString, isNonEmptyString, isInteger, isHash, isIterable, isFunction,
-	isEmpty, nonEmpty, getOptions, toArray, toBlock,
+	isString, isNonEmptyString, isInteger, isHash, isIterable,
+	isFunction, isEmpty, nonEmpty, getOptions, toArray, toBlock,
 	undef, defined, notdefined, rtrim, OL,
 	} from '@jdeighan/base-utils'
 import {
 	dbg, dbgEnter, dbgReturn, dbgYield, dbgResume,
 	} from '@jdeighan/base-utils/debug'
 import {slurp} from '@jdeighan/base-utils/fs'
+import {parsePath} from '@jdeighan/base-utils/fs'
 import {
 	indentLevel, splitLine, splitPrefix,
 	getOneIndent, undented, isUndented,
-	} from '@jdeighan/coffee-utils/indent'
-import {parseSource} from '@jdeighan/coffee-utils/fs'
+	} from '@jdeighan/base-utils/indent'
 
 import {Node} from '@jdeighan/mapper/node'
 
@@ -56,7 +56,7 @@ export class Fetcher
 
 		if isString(hInput)
 			dbg "string passed as hInput"
-			@hSourceInfo = { filename: '<unknown>' }
+			@hSourceInfo = { fileName: '<unknown>' }
 			content = toArray(hInput)
 			@iterator = content[Symbol.iterator]()
 			dbg "iterator is an array with #{content.length} items"
@@ -66,10 +66,11 @@ export class Fetcher
 			assert defined(source) || defined(content),
 					"No source or content"
 			if defined(source)
-				@hSourceInfo = parseSource(source)
+				@hSourceInfo = parsePath(source)
 			else
-				dbg "No source, so filename is <unknown>"
-				@hSourceInfo = {filename: '<unknown>'}
+				dbg "No source, so fileName is <unknown>"
+				@hSourceInfo = {fileName: '<unknown>'}
+			dbg 'hSourceInfo', @hSourceInfo
 
 			if defined(content)
 				if isString(content)
@@ -78,26 +79,26 @@ export class Fetcher
 				assert isIterable(content), "content not iterable"
 				@iterator = content[Symbol.iterator]()
 			else
-				dbg "No content - check for fullpath"
-				fullpath = @hSourceInfo.fullpath
-				assert nonEmpty(fullpath), "No content and no fullpath"
+				dbg "No content - check for filePath"
+				filePath = @hSourceInfo.filePath
+				assert nonEmpty(filePath), "No content and no filePath"
 
 				# --- ultimately, we want to create an iterator here
 				#     rather than blindly reading the entire file
 
-				dbg "slurping #{fullpath}"
-				content = toArray(slurp(fullpath))
+				dbg "slurping #{filePath}"
+				content = toArray(slurp(filePath))
 				@iterator = content[Symbol.iterator]()
 		else
 			dbg "iterable passed as hInput"
-			@hSourceInfo = { filename: '<unknown>' }
+			@hSourceInfo = { fileName: '<unknown>' }
 			assert isIterable(hInput), "hInput not iterable"
 			@iterator = hInput[Symbol.iterator]()
 
-		# --- @hSourceInfo must exist and have a filename key
+		# --- @hSourceInfo must exist and have a fileName key
 		dbg 'hSourceInfo', @hSourceInfo
-		assert nonEmpty(@hSourceInfo.filename),
-			"parseSource returned no filename"
+		assert nonEmpty(@hSourceInfo.fileName),
+			"parsePath returned no fileName"
 
 		@lineNum = 0
 		@oneIndent = undef   # set from 1st line with indentation
@@ -261,9 +262,9 @@ export class Fetcher
 		dbgEnter 'Fetcher.sourceInfoStr', lineNum
 		if defined(lineNum)
 			assert isInteger(lineNum), "Bad lineNum: #{OL(lineNum)}"
-			result = "#{@hSourceInfo.filename}/#{lineNum}"
+			result = "#{@hSourceInfo.fileName}/#{lineNum}"
 		else
-			result = "#{@hSourceInfo.filename}"
+			result = "#{@hSourceInfo.fileName}"
 		dbgReturn 'Fetcher.sourceInfoStr', result
 		return result
 
@@ -299,6 +300,7 @@ export class Fetcher
 	getBlock: (oneIndent="\t") ->
 
 		dbgEnter "Fetcher.getBlock", oneIndent
+		assert isString(oneIndent), "Not a string: #{OL(oneIndent)}"
 		lLines = []
 		for hNode from @allNodes()
 			dbg 'GOT hNode', hNode

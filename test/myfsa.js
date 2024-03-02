@@ -35,3 +35,5 @@ if2     'tag'      start   {/if}
 if2     'if'       if1     {/if}
 if2     EOF        end     {/if}`);
 };
+
+//# sourceMappingURL=myfsa.js.map

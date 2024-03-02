@@ -341,3 +341,5 @@ isIntegerStr = function(str) {
 };
 
 // ---------------------------------------------------------------------------
+
+//# sourceMappingURL=MathML.js.map

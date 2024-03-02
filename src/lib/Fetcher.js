@@ -36,17 +36,17 @@ import {
 } from '@jdeighan/base-utils/fs';
 
 import {
+  parsePath
+} from '@jdeighan/base-utils/fs';
+
+import {
   indentLevel,
   splitLine,
   splitPrefix,
   getOneIndent,
   undented,
   isUndented
-} from '@jdeighan/coffee-utils/indent';
-
-import {
-  parseSource
-} from '@jdeighan/coffee-utils/fs';
+} from '@jdeighan/base-utils/indent';
 
 import {
   Node
@@ -63,7 +63,7 @@ import {
 // 8. define finalizeBlock() - to override
 export var Fetcher = class Fetcher {
   constructor(hInput, options = {}) {
-    var addLevel, content, fullpath, noLevels, source;
+    var addLevel, content, filePath, noLevels, source;
     // --- Valid options:
     //        addLevel - num of levels to add to each line
     //                   unless the line is empty
@@ -88,7 +88,7 @@ export var Fetcher = class Fetcher {
     if (isString(hInput)) {
       dbg("string passed as hInput");
       this.hSourceInfo = {
-        filename: '<unknown>'
+        fileName: '<unknown>'
       };
       content = toArray(hInput);
       this.iterator = content[Symbol.iterator]();
@@ -98,13 +98,14 @@ export var Fetcher = class Fetcher {
       ({source, content} = hInput);
       assert(defined(source) || defined(content), "No source or content");
       if (defined(source)) {
-        this.hSourceInfo = parseSource(source);
+        this.hSourceInfo = parsePath(source);
       } else {
-        dbg("No source, so filename is <unknown>");
+        dbg("No source, so fileName is <unknown>");
         this.hSourceInfo = {
-          filename: '<unknown>'
+          fileName: '<unknown>'
         };
       }
+      dbg('hSourceInfo', this.hSourceInfo);
       if (defined(content)) {
         if (isString(content)) {
           content = toArray(content);
@@ -113,26 +114,26 @@ export var Fetcher = class Fetcher {
         assert(isIterable(content), "content not iterable");
         this.iterator = content[Symbol.iterator]();
       } else {
-        dbg("No content - check for fullpath");
-        fullpath = this.hSourceInfo.fullpath;
-        assert(nonEmpty(fullpath), "No content and no fullpath");
+        dbg("No content - check for filePath");
+        filePath = this.hSourceInfo.filePath;
+        assert(nonEmpty(filePath), "No content and no filePath");
         // --- ultimately, we want to create an iterator here
         //     rather than blindly reading the entire file
-        dbg(`slurping ${fullpath}`);
-        content = toArray(slurp(fullpath));
+        dbg(`slurping ${filePath}`);
+        content = toArray(slurp(filePath));
         this.iterator = content[Symbol.iterator]();
       }
     } else {
       dbg("iterable passed as hInput");
       this.hSourceInfo = {
-        filename: '<unknown>'
+        fileName: '<unknown>'
       };
       assert(isIterable(hInput), "hInput not iterable");
       this.iterator = hInput[Symbol.iterator]();
     }
-    // --- @hSourceInfo must exist and have a filename key
+    // --- @hSourceInfo must exist and have a fileName key
     dbg('hSourceInfo', this.hSourceInfo);
-    assert(nonEmpty(this.hSourceInfo.filename), "parseSource returned no filename");
+    assert(nonEmpty(this.hSourceInfo.fileName), "parsePath returned no fileName");
     this.lineNum = 0;
     this.oneIndent = undef; // set from 1st line with indentation
     this.refill(); // sets @nextLevel and @nextStr
@@ -288,9 +289,9 @@ export var Fetcher = class Fetcher {
     dbgEnter('Fetcher.sourceInfoStr', lineNum);
     if (defined(lineNum)) {
       assert(isInteger(lineNum), `Bad lineNum: ${OL(lineNum)}`);
-      result = `${this.hSourceInfo.filename}/${lineNum}`;
+      result = `${this.hSourceInfo.fileName}/${lineNum}`;
     } else {
-      result = `${this.hSourceInfo.filename}`;
+      result = `${this.hSourceInfo.fileName}`;
     }
     dbgReturn('Fetcher.sourceInfoStr', result);
     return result;
@@ -325,6 +326,7 @@ export var Fetcher = class Fetcher {
   getBlock(oneIndent = "\t") {
     var hNode, lLines, line, ref, result;
     dbgEnter("Fetcher.getBlock", oneIndent);
+    assert(isString(oneIndent), `Not a string: ${OL(oneIndent)}`);
     lLines = [];
     ref = this.allNodes();
     for (hNode of ref) {
@@ -363,3 +365,5 @@ export var Fetcher = class Fetcher {
   }
 
 };
+
+//# sourceMappingURL=Fetcher.js.map

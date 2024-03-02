@@ -3,8 +3,9 @@
 var context;
 
 import {
-  utest
-} from '@jdeighan/unit-tester';
+  truthy,
+  falsy
+} from '@jdeighan/base-utils/utest';
 
 import {
   Context
@@ -18,20 +19,22 @@ context.beginScope();
 
 context.add('func2', 'func3');
 
-utest.truthy(11, context.has('main'));
+truthy(context.has('main'));
 
-utest.truthy(12, context.has('func'));
+truthy(context.has('func'));
 
-utest.truthy(13, context.has('func3'));
+truthy(context.has('func3'));
 
-utest.falsy(14, context.has('notthere'));
+falsy(context.has('notthere'));
 
 context.endScope();
 
-utest.truthy(17, context.has('main'));
+truthy(context.has('main'));
 
-utest.truthy(18, context.has('func'));
+truthy(context.has('func'));
 
-utest.falsy(19, context.has('func3'));
+falsy(context.has('func3'));
 
-utest.falsy(20, context.has('notthere'));
+falsy(context.has('notthere'));
+
+//# sourceMappingURL=Context.test.js.map

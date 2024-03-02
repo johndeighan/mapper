@@ -4,17 +4,14 @@ import {undef, OL, words, isEmpty} from '@jdeighan/base-utils'
 import {assert, croak} from '@jdeighan/base-utils/exceptions'
 import {LOG} from '@jdeighan/base-utils/log'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {
-	UnitTesterNorm, UnitTester, utest,
-	} from '@jdeighan/unit-tester'
+import {UnitTester, equal} from '@jdeighan/base-utils/utest'
 import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
 import {joinBlocks} from '@jdeighan/coffee-utils/block'
 
 import {
-	getAvailSymbols, getNeededSymbols, buildImportList,
+	getAvailSymbols, getAvailSymbolsFrom,
+	getNeededSymbols, buildImportList,
 	} from '@jdeighan/mapper/symbols'
-
-dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 
 # ---------------------------------------------------------------------------
 # Contents of .symbols:
@@ -33,7 +30,7 @@ dumpfile = "c:/Users/johnd/string-input/test/ast.txt"
 # @jdeighan/coffee-utils/log
 # 	log/logger
 
-utest.equal 36, getAvailSymbols(import.meta.url), {
+hSymbols = {
 	barf: {
 		lib: '@jdeighan/base-utils/fs',
 		},
@@ -68,6 +65,9 @@ utest.equal 36, getAvailSymbols(import.meta.url), {
 		},
 	}
 
+equal getAvailSymbolsFrom("./test/.symbols"), hSymbols
+equal getAvailSymbols(import.meta.url), hSymbols
+
 # ---------------------------------------------------------------------------
 
 class SymbolsTester extends UnitTester
@@ -79,37 +79,37 @@ symTester = new SymbolsTester()
 
 # ---------------------------------------------------------------------------
 
-utest.equal 82, getNeededSymbols("""
+equal getNeededSymbols("""
 	name = 'John'
 	"""), []
 
-utest.equal 86, getNeededSymbols("""
+equal getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-utest.equal 91, getNeededSymbols("""
+equal getNeededSymbols("""
 	x = 23
 	y = x + 5
 	"""), []
 
-utest.equal 96, getNeededSymbols("""
+equal getNeededSymbols("""
 	x = z
 	y = x + 5
 	"""), ['z']
 
-utest.equal 101, getNeededSymbols("""
+equal getNeededSymbols("""
 	x = myfunc(4)
 	y = x + 5
 	"""), ['myfunc']
 
-utest.equal 106, getNeededSymbols("""
+equal getNeededSymbols("""
 	import {z} from 'somewhere'
 	x = z
 	y = x + 5
 	"""), []
 
-utest.equal 112, getNeededSymbols("""
+equal getNeededSymbols("""
 	import {myfunc} from 'somewhere'
 	x = myfunc(4)
 	y = x + 5
@@ -123,7 +123,7 @@ utest.equal 112, getNeededSymbols("""
 # --- make sure it's using the testing .symbols file
 
 hSymbols = getAvailSymbols(import.meta.url)
-utest.equal 126, hSymbols, {
+equal hSymbols, {
 		fs:      {lib: 'fs', isDefault: true}
 		exists:  {lib: 'fs'}
 		readFile:{lib: 'fs'}
@@ -149,7 +149,7 @@ utest.equal 126, hSymbols, {
 		"import {slurp} from '#jdeighan/base-utils/fs'",
 		]
 
-	utest.equal 152, joinBlocks(lImports..., text), """
+	equal joinBlocks(lImports..., text), """
 			import {say} from '@jdeighan/coffee-utils'
 			import {slurp} from '#jdeighan/base-utils/fs'
 			x = 42
@@ -160,17 +160,17 @@ utest.equal 126, hSymbols, {
 # ----------------------------------------------------------------------------
 
 (() ->
-	utest.equal 163, buildImportList([]), {lImports: [], lNotFound: []}
+	equal buildImportList([]), {lNotFound: [], lImportStmts: []}
 
 	lMissing = words('say undef logger slurp barf fs')
-	utest.equal 166, buildImportList(lMissing, import.meta.url), {
-		lImports: [
+	equal buildImportList(lMissing, import.meta.url), {
+		lNotFound: []
+		lImportStmts: [
 			"import fs from 'fs'"
 			"import {slurp,barf} from '@jdeighan/base-utils/fs'"
 			"import {say,undef} from '@jdeighan/coffee-utils'"
 			"import {log as logger} from '@jdeighan/coffee-utils/log'"
 			],
-		lNotFound: []
 		}
 
 	)()

@@ -6,8 +6,8 @@
     "test\\Scope.test.coffee"
   ],
   "names": [],
-  "mappings": ";AAAmB;AAAA,IAAA;;AAEnB,OAAA;EAAQ,KAAR;CAAA,MAAA;;AACA,OAAA;EAAQ,KAAR;CAAA,MAAA;;AAEA,KAAA,GAAQ,IAAI,KAAJ,CAAU,CAAC,MAAD,CAAV;;AACR,KAAK,CAAC,GAAN,CAAU,MAAV;;AAEA,KAAK,CAAC,MAAN,CAAc,CAAd,EAAiB,KAAK,CAAC,GAAN,CAAU,MAAV,CAAjB;;AACA,KAAK,CAAC,MAAN,CAAa,EAAb,EAAiB,KAAK,CAAC,GAAN,CAAU,MAAV,CAAjB;;AACA,KAAK,CAAC,KAAN,CAAa,EAAb,EAAiB,KAAK,CAAC,GAAN,CAAU,UAAV,CAAjB",
+  "mappings": ";AAAmB;AAAA,IAAA;;AAEnB,OAAA;EAAQ,MAAR;EAAgB,KAAhB;CAAA,MAAA;;AACA,OAAA;EAAQ,KAAR;CAAA,MAAA;;AAEA,KAAA,GAAQ,IAAI,KAAJ,CAAU,QAAV,EAAoB,CAAC,MAAD,CAApB;;AACR,KAAK,CAAC,GAAN,CAAU,MAAV;;AAEA,MAAA,CAAO,KAAK,CAAC,GAAN,CAAU,MAAV,CAAP;;AACA,MAAA,CAAO,KAAK,CAAC,GAAN,CAAU,MAAV,CAAP;;AACA,KAAA,CAAO,KAAK,CAAC,GAAN,CAAU,UAAV,CAAP",
   "sourcesContent": [
-    "# Scope.test.coffee\r\n\r\nimport {utest} from '@jdeighan/unit-tester'\r\nimport {Scope} from '@jdeighan/mapper/scope'\r\n\r\nscope = new Scope(['main'])\r\nscope.add('func')\r\n\r\nutest.truthy  9, scope.has('main')\r\nutest.truthy 10, scope.has('func')\r\nutest.falsy  11, scope.has('notthere')\r\n\r\n"
+    "# Scope.test.coffee\r\n\r\nimport {truthy, falsy} from '@jdeighan/base-utils/utest'\r\nimport {Scope} from '@jdeighan/mapper/scope'\r\n\r\nscope = new Scope('global', ['main'])\r\nscope.add('func')\r\n\r\ntruthy scope.has('main')\r\ntruthy scope.has('func')\r\nfalsy  scope.has('notthere')\r\n\r\n"
   ]
 }

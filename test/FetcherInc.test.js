@@ -20,9 +20,8 @@ import {
 } from '@jdeighan/base-utils/debug';
 
 import {
-  utest,
   UnitTester
-} from '@jdeighan/unit-tester';
+} from '@jdeighan/base-utils/utest';
 
 import {
   FetcherInc
@@ -45,7 +44,7 @@ import {
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  tester.equal(28, `abc
+  tester.equal(`abc
 def`, `abc
 def`);
   // ------------------------------------------------------------------------
@@ -65,7 +64,7 @@ def`);
   // title
   // =====
   // ------------------------------------------------------------------------
-  tester.equal(54, {
+  tester.equal({
     source: 'FetcherInc.test.coffee',
     content: `abc
 #include include.md
@@ -75,14 +74,14 @@ header
 ======
 
 ghi`);
-  tester.like(69, {
+  tester.equal({
     source: 'FetcherInc.test.coffee',
     content: `abc
 		#include include.md
 ghi`
   }, `abc #include include.md
 ghi`);
-  return tester.like(80, {
+  return tester.equal({
     source: 'FetcherInc.test.coffee',
     content: `abc
 #include include2.md
@@ -114,7 +113,7 @@ ghi`);
   };
   tester = new MyTester();
   // ----------------------------------------------------------
-  return tester.like(120, {
+  return tester.like({
     source: 'FetcherInc.test.coffee',
     content: `abc
 #include include2.md
@@ -162,3 +161,5 @@ ghi`
     }
   ]);
 })();
+
+//# sourceMappingURL=FetcherInc.test.js.map

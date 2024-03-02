@@ -4,7 +4,7 @@ import {
 	undef, defined, spaces, toArray, toBlock,
 	} from '@jdeighan/base-utils'
 import {setDebugging} from '@jdeighan/base-utils/debug'
-import {utest, UnitTester} from '@jdeighan/unit-tester'
+import {equal, like, UnitTester} from '@jdeighan/base-utils/utest'
 
 import {Fetcher} from '@jdeighan/mapper/fetcher'
 
@@ -38,7 +38,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 41, """
+	tester.equal """
 		abc
 		def
 		""", """
@@ -53,19 +53,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		yield 'def'
 		return
 
-	tester.equal 56, gen(), """
+	tester.equal gen(), """
 		0 abc
 		0 def
 		"""
 
 	# ----------------------------------------------------------
 
-	tester.equal 63, ['abc  ', 'def\t\t'], "0 abc\n0 def"
+	tester.equal ['abc  ', 'def\t\t'], "0 abc\n0 def"
 
 	# ----------------------------------------------------------
 	# NOTE: Our output does not take level into account
 
-	tester.equal 68, """
+	tester.equal """
 		abc
 			def
 		ghi
@@ -77,7 +77,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 80, """
+	tester.equal """
 		abc
 				def
 		ghi
@@ -88,7 +88,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 91, """
+	tester.equal """
 		abc
 		def
 		__END__
@@ -100,7 +100,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 103, ["abc", "def"], """
+	tester.equal ["abc", "def"], """
 		0 abc
 		0 def
 		"""
@@ -108,7 +108,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	# ----------------------------------------------------------
 	# --- test TABs
 
-	tester.equal 111, ["abc", "\tdef", "\t\tghi"], """
+	tester.equal ["abc", "\tdef", "\t\tghi"], """
 		0 abc
 		1 def
 		2 ghi
@@ -117,7 +117,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 	# ----------------------------------------------------------
 	# --- test spaces
 
-	tester.equal 120, ["abc", spaces(3)+"def", spaces(6)+"ghi"], """
+	tester.equal ["abc", spaces(3)+"def", spaces(6)+"ghi"], """
 		0 abc
 		1 def
 		2 ghi
@@ -136,19 +136,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		""")
 
 	node1 = fetcher.fetch()
-	utest.like 139, node1, {
+	like node1, {
 		str: 'abc def ghi'
 		source: "<unknown>/1"
 		}
 
 	node2 = fetcher.fetch()
-	utest.like 145, node2, {
+	like node2, {
 		str: 'jkl'
 		source: "<unknown>/4"
 		}
 
 	node3 = fetcher.fetch()
-	utest.equal 151, node3, undef
+	equal node3, undef
 
 	)()
 
@@ -165,19 +165,19 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 			"""})
 
 	node1 = fetcher.fetch()
-	utest.like 168, node1, {
+	like node1, {
 		str: 'abc def ghi'
 		source: "test.coffee/1"
 		}
 
 	node2 = fetcher.fetch()
-	utest.like 174, node2, {
+	like node2, {
 		str: 'jkl'
 		source: "test.coffee/4"
 		}
 
 	node3 = fetcher.fetch()
-	utest.equal 180, node3, undef
+	equal node3, undef
 
 	)()
 
@@ -195,7 +195,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		})
 
 	node1 = fetcher.fetch()
-	utest.like 198, node1, {
+	like node1, {
 		str: 'abc def ghi'
 		source: "file.coffee/1"
 		}
@@ -216,7 +216,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.like 219, """
+	tester.like """
 		abc
 		def
 		""", [
@@ -226,7 +226,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.like 229, """
+	tester.like """
 		abc
 			def
 		ghi
@@ -238,7 +238,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.like 241, """
+	tester.like """
 		abc
 				def
 		ghi
@@ -264,7 +264,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 267, """
+	tester.equal """
 		abc
 		def
 		""", """
@@ -274,7 +274,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 277, """
+	tester.equal """
 		abc
 			def
 		ghi
@@ -286,7 +286,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 289, """
+	tester.equal """
 		abc
 				def
 		ghi
@@ -312,7 +312,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 315, """
+	tester.equal """
 		abc
 		def
 		""", [
@@ -322,7 +322,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 325, """
+	tester.equal """
 		abc
 			def
 		ghi
@@ -334,7 +334,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 337, """
+	tester.equal """
 		abc
 				def
 		ghi
@@ -366,7 +366,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 369, """
+	tester.equal """
 		你好
 				约翰
 		我在这里
@@ -398,7 +398,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 401, """
+	tester.equal """
 		abc
 				def
 		ghi
@@ -425,7 +425,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 
 	# ----------------------------------------------------------
 
-	tester.equal 428, """
+	tester.equal """
 		abc
 			def
 		ghi
@@ -434,7 +434,7 @@ import {Fetcher} from '@jdeighan/mapper/fetcher'
 		ghi
 		"""
 
-	tester.equal 437, """
+	tester.equal """
 		abc
 		   def
 		ghi

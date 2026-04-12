@@ -1,0 +1,87 @@
+# iter-utils.lib.civet
+
+import {getErrStr, croak, assert, obviously} from 'croak'
+import {
+	sleep, undef, defined, notdefined,
+	} from 'base-utils'
+
+# ---------------------------------------------------------------------------
+
+export arrayAndAccumFrom := <TOut, TAccum>(
+		iter: Generator<TOut, TAccum, void>
+		): [TOut[], TAccum] ->
+
+	let lItems: TOut[] = []
+	let finalVal: TAccum? = undef
+	loop
+		{value, done} := iter.next()
+		if done
+			finalVal = value
+			break
+		else
+			lItems.push value
+	return [lItems, finalVal]
+
+# ---------------------------------------------------------------------------
+# ASYNC - returns a Promise<[TOut[], TAccum]
+
+export asyncArrayAndAccumFrom := <TOut, TAccum>(
+		iter: AsyncGenerator<TOut, TAccum, void>
+		): Promise<[TOut[], TAccum]> ->
+
+	let lItems: TOut[] = []
+	let finalVal: TAccum? = undef
+	loop
+		{value, done} := await iter.next()
+		if done
+			finalVal = value
+			break
+		else
+			lItems.push value
+	return new Promise (resolve, reject) =>
+		try
+			resolve [lItems, finalVal]
+		catch err
+			reject err
+
+# ---------------------------------------------------------------------------
+
+export valuesFrom := <TOut>(
+		iter: Iterator<TOut, void, void> | AsyncIterator<TOut, void, void>
+		): TOut[] ->
+
+	let lItems: TOut[] = []
+	loop
+		{value, done} := await iter.next()
+		if done
+			break
+		else
+			lItems.push value
+	return lItems
+
+# ---------------------------------------------------------------------------
+
+export accumFrom := <TOut, TAccum>(
+		iter: Iterator<TOut, TAccum>
+		initAcc: TAccum? = undef
+		): TAccum? =>
+
+	loop
+		{value, done} := iter.next()
+		if done
+			return value
+
+# ---------------------------------------------------------------------------
+# ASYNC
+
+export generateAsync := <T>(
+		lItems: T[],
+		sleepFor = 1
+		): AsyncGenerator<T> ->
+
+	for item of lItems
+		await sleep(sleepFor)
+		yield item
+	return
+
+# ---------------------------------------------------------------------------

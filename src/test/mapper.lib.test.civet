@@ -1,0 +1,275 @@
+# mapper.lib.test.civet
+
+import {sleep, undef} from 'base-utils'
+import {TIterator, TAsyncIterator} from 'datatypes'
+import {
+	MAP, MAPv1, MAPv2, MAPv3, MAPv4, MAPv5, MAPv6,
+	} from 'mapper'
+import {equal, generates, generatesAsync} from 'unit-test'
+import {arrayAndAccumFrom, asyncArrayAndAccumFrom} from 'iter-utils'
+
+# ---------------------------------------------------------------------------
+
+gen := (): TIterator<number> ->
+	yield 1
+	yield 3
+	yield 5
+	return
+
+# ---------------------------------------------------------------------------
+# Variant 1
+
+generates
+	MAPv1 [1,3,5], (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+generates
+	MAPv1 gen(), (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+# ---------------------------------------------------------------------------
+# Variant 2
+
+equal
+	MAPv2 [1,3,5], 0, (x, acc) ->
+		return acc + x
+	9
+
+equal
+	MAPv2 gen(), 0, (x, acc) ->
+		return acc + x
+	9
+
+# ---------------------------------------------------------------------------
+# Variant 3
+
+(() =>
+	iter := MAPv3 [1,3,5], 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal arrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+(() =>
+	iter := MAPv3 gen(), 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal arrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+
+agen := (): TAsyncIterator<number> ->
+	await sleep 0.1
+	yield 1
+	await sleep 0.1
+	yield 3
+	await sleep 0.1
+	yield 5
+	return
+
+# ---------------------------------------------------------------------------
+# Variant 4
+
+await generatesAsync
+	await MAPv4 agen(), (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+# ---------------------------------------------------------------------------
+# Variant 5
+
+equal
+	await MAPv5 agen(), 0, (n, acc) ->
+		return acc + n
+	9
+
+# ---------------------------------------------------------------------------
+# Variant 6
+
+await (() =>
+	iter := await MAPv6 agen(), 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal await asyncArrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+# Variant 4 with async generator and mapper
+
+await generatesAsync
+	await MAPv4 agen(), (n) ->
+		await sleep 0.1
+		yield 2*n
+		return
+	[2,6,10]
+
+await generatesAsync
+	await MAPv4 gen(), (n) ->
+		await sleep 0.1
+		yield 2*n
+		return
+	[2,6,10]
+
+# ---------------------------------------------------------------------------
+# Variant 5 with async generator and mapper
+
+await equal
+	await MAPv5 agen(), 0, (n, acc) ->
+		await sleep 0.1
+		return acc + n
+	9
+
+await equal
+	await MAPv5 gen(), 0, (n, acc) ->
+		await sleep 0.1
+		return acc + n
+	9
+
+# ---------------------------------------------------------------------------
+# Variant 6 with async generator and mapper
+
+await (() =>
+	iter := await MAPv6 agen(), 0, (x, acc) ->
+		await sleep 0.1
+		yield 2*x
+		return acc + x
+
+	equal await asyncArrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+await (() =>
+	iter := await MAPv6 gen(), 0, (x, acc) ->
+		await sleep 0.1
+		yield 2*x
+		return acc + x
+
+	equal await asyncArrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+#      using MAP()
+# ---------------------------------------------------------------------------
+# Variant 1
+
+generates
+	MAP [1,3,5], (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+generates
+	MAP gen(), (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+# ---------------------------------------------------------------------------
+# Variant 2
+
+equal
+	MAP [1,3,5], 0, (x, acc) ->
+		return acc + x
+	9
+
+equal
+	MAP gen(), 0, (x, acc) ->
+		return acc + x
+	9
+
+# ---------------------------------------------------------------------------
+# Variant 3
+
+(() =>
+	iter := MAP [1,3,5], 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal arrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+(() =>
+	iter := MAP gen(), 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal arrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+# Variant 4
+
+await generatesAsync
+	await MAP agen(), (n) ->
+		yield 2*n
+		return
+	[2,6,10]
+
+# ---------------------------------------------------------------------------
+# Variant 5
+
+equal
+	await MAP agen(), 0, (n, acc) ->
+		return acc + n
+	9
+
+# ---------------------------------------------------------------------------
+# Variant 6
+
+await (() =>
+	iter := await MAP agen(), 0, (x, acc) ->
+		yield 2*x
+		return acc + x
+
+	equal await asyncArrayAndAccumFrom(iter), [
+		[2, 6, 10]
+		9
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+# Variant 4 with async generator and mapper
+
+(() =>
+	asyncMapper := (n: number) ->
+		await sleep 0.1
+		yield 2*n
+		return
+
+	await generatesAsync
+		MAP(agen(), asyncMapper), [2, 6, 10]
+
+	await generatesAsync
+		MAP(gen(), asyncMapper), [2, 6, 10]
+
+	return
+	)()

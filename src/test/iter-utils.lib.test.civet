@@ -1,0 +1,10 @@
+# iter-utils.lib.test.civet
+
+import {
+	arrayAndAccumFrom, accumFrom,
+	} from 'iter-utils'
+import {equal} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+equal 2+2, 4

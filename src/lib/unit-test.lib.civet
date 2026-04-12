@@ -1,0 +1,177 @@
+# unit-test.lib.civet
+
+import {assert, assertEquals} from '@std/assert'
+
+import {justThrow, croak} from 'croak'
+import {
+	undef, sleep, defined, notdefined,
+	} from 'base-utils'
+import {TIterator, TAsyncIterator, TVoidFunc, hash} from 'datatypes'
+
+let nextNum = 0
+
+# ---------------------------------------------------------------------------
+
+export getTestName := (
+		name: string? = undef
+		): string =>
+
+	if (name == undefined)
+		nextNum += 1
+		return "test #{nextNum}"
+	else
+		return name
+
+# ---------------------------------------------------------------------------
+
+export equal := (
+		value: unknown,
+		expected: unknown
+		testName: string? = undef
+		): void =>
+
+	name := getTestName(testName)
+	Deno.test name, () => assertEquals(value, expected)
+	return
+
+# ---------------------------------------------------------------------------
+
+export truthy := (
+	value: unknown
+	testName: string? = undef
+	): void =>
+
+	name := getTestName(testName)
+	Deno.test name, () => assert value
+	return
+
+# ---------------------------------------------------------------------------
+
+export falsy := (
+	value: unknown
+	testName: string? = undef
+	): void =>
+
+	name := getTestName(testName)
+	Deno.test name, () => assert (not value)
+	return
+
+# ---------------------------------------------------------------------------
+
+export succeeds := (
+	func: TVoidFunc
+	testName: string? = undef
+	): void =>
+
+	name := getTestName(testName)
+	Deno.test name, (): void =>
+		await func()
+	return
+
+# ---------------------------------------------------------------------------
+
+export fails := (
+	func: TVoidFunc
+	testName: string? = undef
+	): void =>
+
+	name := getTestName(testName)
+	Deno.test name, (): void =>
+		justThrow true
+		try
+			func()
+			croak "in fails() but function succeeded"
+		catch err
+		finally
+			justThrow false
+	return
+
+# ---------------------------------------------------------------------------
+# ASYNC
+
+export generates := <TOut>(
+		value: TIterator<TOut>
+		expected: unknown
+		testName: string? = undef
+		): void =>
+
+	lItems := [...value]
+	name := getTestName(testName)
+	Deno.test name, () => assertEquals(lItems, expected)
+	return
+
+# ---------------------------------------------------------------------------
+# ASYNC
+
+export generatesAsync := <TOut>(
+		value: TAsyncIterator<TOut>
+		expected: unknown
+		testName: string? = undef
+		): void =>
+
+	lItems := await Array.fromAsync value
+	name := getTestName(testName)
+	Deno.test name, () => assertEquals(lItems, expected)
+	return
+
+# ---------------------------------------------------------------------------
+
+export isType := (
+		typeStr: string,
+		value: unknown,
+		isOfType: Function? = undef
+		): void =>
+
+	# --- do nothing
+
+# ---------------------------------------------------------------------------
+
+export notType := (
+		typeStr: string,
+		value: unknown,
+		isOfType: Function? = undef
+		): void =>
+
+	# --- do nothing
+
+# ---------------------------------------------------------------------------
+# --- Create some values for testing
+#     There should be at least one for each jsType
+
+class MyClass
+	fname: string
+	lname: string
+	constructor(@fname: string, @lname: string)
+	fullname()
+		return "#{@fname} #{@lname}"
+
+export sampleVal: hash := {
+	undef: undefined
+	null: null
+	emptyStr: ''
+	str: 'abc'
+	i: 42
+	f: 3.14159
+	inf: Infinity
+	neginf: -Infinity
+	NaN: Number.NaN
+	b: true
+	sym: Symbol('xxx')
+	genFunc: () ->
+		yield 42
+		return
+	asyncGenFunc: () ->
+		await sleep(1)
+		yield 42
+		return
+	regularFunc:    (): number -> return 42
+	lambdaFunc:     (): number => return 42
+	falsePredicate: () => return false
+	truePredicate:  () => return true
+	emptyHash: {}
+	fullHash: {a: 42}
+	emptyList: []
+	fullList: [42]
+	MyClass
+	}
+

@@ -1,0 +1,48 @@
+# base-utils.lib.civet
+
+export deepCopy = structuredClone
+
+# ---------------------------------------------------------------------------
+# ASYNC
+
+export sleep := (sec: number): void =>
+
+	await new Promise((r) => setTimeout r, 1000 * sec)
+	return
+
+# ---------------------------------------------------------------------------
+
+export undef := undefined
+type TDefined = NonNullable<unknown>
+type TNotDefined = null | undefined
+
+# ---------------------------------------------------------------------------
+
+export defined := (x: unknown): x is TDefined =>
+
+	return (x != undef) && (x != null)
+
+# ---------------------------------------------------------------------------
+
+export anyDefined := (...lItems: unknown[]): boolean =>
+
+	for item of lItems
+		if defined(item)
+			return true
+	return false
+
+# ---------------------------------------------------------------------------
+
+export notdefined := (x: unknown): x is TNotDefined =>
+
+	return (x == undef) || (x == null)
+
+# ---------------------------------------------------------------------------
+
+export anyNotDefined := (...lItems: unknown[]): boolean =>
+
+	for item of lItems
+		if notdefined(item)
+			return true
+	return false
+

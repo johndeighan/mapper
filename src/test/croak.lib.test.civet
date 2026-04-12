@@ -1,0 +1,39 @@
+# croak.lib.test.civet
+
+import {
+	normalizePath, TFrameType, TStackFrame, TFrameFilter,
+	dumpFrame, allStackFrames, croak,
+	} from 'croak'
+import {
+	equal, truthy, falsy, succeeds, fails,
+	isType, notType,
+	} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+isType  'TFrameType', 'function'
+notType 'TFrameType', 'xxx'
+
+frame1 := {
+	i: 3
+	type: 'function'
+	source: 'src/lib/datatypes.lib.civet'
+	line: 42
+	col: 20
+	name: 'main'
+	}
+
+frame2 := {
+	i: 5
+	type: 'function'
+	source: 'src/lib/croak.lib.civet'
+	line: 42
+	col: 20
+	name: 'dumpFrame'
+	}
+
+isType  'TStackFrame', frame1
+isType  'TStackFrame', frame2
+
+succeeds () => Array.from(allStackFrames())
+fails    () => croak("Bad")

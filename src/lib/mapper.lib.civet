@@ -1,0 +1,282 @@
+# mapper.lib.civet
+
+import {yellow} from '@std/fmt/colors'
+
+import {getErrStr, assert, obviously} from 'croak'
+import {undef} from 'base-utils'
+import {
+	array, hash, jsType, TNonFunction, TIterator, TAsyncIterator,
+	isString, isArray, isObject, isAsyncFunction,
+	isFunction, isIterator, isAsyncIterator,
+	isGeneratorFunction, isAsyncGeneratorFunction,
+	} from 'datatypes'
+
+let traceFlag: boolean = false
+
+# ---------------------------------------------------------------------------
+
+export doTrace := (flag: boolean): void =>
+
+	traceFlag = flag
+	return
+
+# ---------------------------------------------------------------------------
+
+trace := (x: unknown): void =>
+
+	if traceFlag
+		if isString(x)
+			console.log yellow(x)
+		else if isObject(x)
+			console.log x.toString()
+		else
+			console.log x
+	return
+
+# ---------------------------------------------------------------------------
+
+type TMapper<TIn, TOut> = (
+	x: TIn
+	) => TIterator<TOut>
+
+type TAccumMapper<TIn, TAccum extends TNonFunction> = (
+	x: TIn
+	acc: TAccum
+	) => TAccum
+
+type TBothMapper<TIn, TOut, TAccum extends TNonFunction> = (
+	x: TIn,
+	acc: TAccum
+	) => TIterator<TOut, TAccum>
+
+type TAsyncMapper<TIn, TOut> = (
+	x: TIn
+	) => TAsyncIterator<TOut>
+
+type TAsyncAccumMapper<TIn, TAccum extends TNonFunction> = (
+	x: TIn
+	acc: TAccum
+	) => Promise<TAccum>
+
+type TAsyncBothMapper<TIn, TOut, TAccum extends TNonFunction> = (
+	x: TIn,
+	acc: TAccum
+	) => TAsyncIterator<TOut, TAccum>
+
+# ---------------------------------------------------------------------------
+# --- Variant 1, no accumulator, just iterator
+
+export function MAPv1<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn>
+		mapFunc: TMapper<TIn, TOut>
+		): TIterator<TOut>
+
+	iter := isArray(lItems) ? lItems.values() : lItems
+	loop
+		{value, done} := iter.next()
+		if done
+			break
+		else
+			yield* mapFunc(value)   # --- don't care about return value
+	return
+
+# ---------------------------------------------------------------------------
+# --- Variant 2, only accumulator, no iterator
+
+export function MAPv2<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn>
+		acc: TAccum
+		mapFunc: TAccumMapper<TIn, TAccum>         # plain function
+		): TAccum
+
+	iter := isArray(lItems) ? lItems.values() : lItems
+	loop
+		{value, done} := iter.next()
+		if done
+			break
+		else
+			acc = mapFunc(value, acc)
+	return acc
+
+# ---------------------------------------------------------------------------
+# --- Variant 3, iterator with accumulator
+
+export function MAPv3<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | Iterator<TIn>
+		acc: TAccum
+		mapFunc: TBothMapper<TIn, TOut, TAccum>    # generator function
+		): TIterator<TOut, TAccum>
+
+	iter := Array.isArray(lItems) ? lItems.values() : lItems
+	loop
+		{value, done} := iter.next()
+		if done
+			break
+		else
+			acc = yield* mapFunc(value, acc)
+	return acc
+
+# ---------------------------------------------------------------------------
+# --- Variant 4, async input, no accumulator
+# ASYNC
+
+export function MAPv4<TIn, TOut, TAccum extends TNonFunction>(
+		iter:  TIterator<TIn> | TAsyncIterator<TIn>
+		mapFunc: TMapper<TIn, TOut> | TAsyncMapper<TIn, TOut>
+		nothing: void
+		): TAsyncIterator<TOut>
+
+	loop
+		{value, done} := await iter.next()
+		if done
+			break
+		else
+			yield* await mapFunc(value)   # --- don't care about return value
+	return
+
+# ---------------------------------------------------------------------------
+# --- Variant 5, async input, only accumulator
+# ASYNC
+
+export function MAPv5<TIn, TOut, TAccum extends TNonFunction>(
+		iter:  TIterator<TIn> | TAsyncIterator<TIn>
+		acc: TAccum
+		mapFunc: TAccumMapper<TIn, TAccum> | TAsyncAccumMapper<TIn, TAccum>
+		): Promise<TAccum>
+
+	loop
+		{value, done} := await iter.next()
+		if done
+			break
+		else
+			acc = await mapFunc(value, acc)
+	return acc
+
+# ---------------------------------------------------------------------------
+# --- Variant 6, async input, iterator with accumulator
+# ASYNC
+
+export function MAPv6<TIn, TOut, TAccum extends TNonFunction>(
+		iter: TIterator<TIn> | TAsyncIterator<TIn>
+		acc: TAccum
+		mapFunc: TBothMapper<TIn, TOut, TAccum> | TAsyncBothMapper<TIn, TOut, TAccum>
+		): TAsyncIterator<TOut, TAccum>
+
+	loop
+		{value, done} := await iter.next()
+		if done
+			break
+		else
+			acc = yield* await mapFunc(value, acc)
+	return acc
+
+# ---------------------------------------------------------------------------
+
+# --- Variant 1, no accumulator
+#     NOT ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn>
+		mapFunc: TMapper<TIn, TOut>
+		nothing: void
+		): TIterator<TOut>
+
+# --- Variant 2, only accumulator
+#     NOT ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn>
+		acc: TAccum
+		mapFunc: TAccumMapper<TIn, TAccum>         # plain function
+		): TAccum
+
+# --- Variant 3, iterator with accumulator
+#     NOT ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn>
+		acc: TAccum
+		mapFunc: TBothMapper<TIn, TOut, TAccum>    # generator function
+		): TIterator<TOut, TAccum>
+
+# --- Variant 4, async input, no accumulator
+#     ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		iter: TIterator<TIn> | TAsyncIterator<TIn>
+		mapFunc: TMapper<TIn, TOut> | TAsyncMapper<TIn, TOut>
+		nothing: void
+		): TAsyncIterator<TOut>
+
+# --- Variant 5, async input, only accumulator
+#     ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		iter: TIterator<TIn> | TAsyncIterator<TIn>
+		acc: TAccum
+		mapFunc: TAccumMapper<TIn, TAccum>         # plain function
+		): Promise<TAccum>
+
+# --- Variant 6, async input, iterator with accumulator
+#     ASYNC
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		iter: TIterator<TIn> | TAsyncIterator<TIn>
+		acc: TAccum
+		mapFunc: TBothMapper<TIn, TOut, TAccum>    # generator function
+		): TAsyncIterator<TOut, TAccum, void>
+
+export function MAP<TIn, TOut, TAccum extends TNonFunction>(
+		lItems:  TIn[] | TIterator<TIn> | TAsyncIterator<TIn>
+		arg2: TMapper<TIn, TOut> | TAsyncMapper<TIn, TOut> | TAccum
+		arg3: TAccumMapper<TIn, TAccum> | TBothMapper<TIn, TOut, TAccum> | void
+		): TIterator<TOut> |              # variant 1
+			TAsyncIterator<TOut> |         # variant 4
+			TIterator<TOut, TAccum> |      # variant 3
+			TAsyncIterator<TOut, TAccum> | # variant 6
+			TAccum |                       # variant 2
+			Promise<TAccum>                # variant 5
+
+	if isAsyncIterator(lItems)
+		if isFunction(arg2)
+			mapFunc := arg2
+			typ := jsType(mapFunc)
+			trace "mapFunc is type '#{typ}'"
+			return MAPv4 lItems, mapFunc
+		else
+			acc := arg2
+			mapFunc := arg3
+			obviously not isFunction(acc)
+			obviously isFunction(mapFunc)
+			typ := jsType(mapFunc)
+			trace "mapFunc is a '#{typ}'"
+			if isGeneratorFunction(mapFunc)
+				# --- 3rd arg to MAPv6 is a generator function
+				# @ts-ignore
+				return MAPv6 lItems, acc, mapFunc
+			else
+				# --- 3rd arg to MAPv5 is a plain function
+				# @ts-ignore
+				return MAPv5 lItems, acc, mapFunc
+	else
+		if isFunction(arg2)
+			mapFunc := arg2
+			typ := jsType(mapFunc)
+			trace "mapFunc is a '#{typ}'"
+			if (jsType(mapFunc) == 'asyncGenerator')
+				# @ts-ignore
+				return MAPv4 lItems, mapFunc
+			else
+				# @ts-ignore
+				return MAPv1 lItems, mapFunc
+		else
+			acc := arg2
+			mapFunc := arg3
+			obviously not isFunction(acc)
+			obviously isFunction(mapFunc)
+			typ := jsType(mapFunc)
+			trace "mapFunc is a '#{typ}'"
+			if isGeneratorFunction(mapFunc)
+				# --- 3rd arg to MAPv3 is a generator function
+				# @ts-ignore
+				return MAPv3 lItems, acc, mapFunc
+			else
+				# --- 3rd arg to MAPv2 is a plain function
+				# @ts-ignore
+				return MAPv2 lItems, acc, mapFunc
+
+# ---------------------------------------------------------------------------

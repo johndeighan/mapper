@@ -1,0 +1,9 @@
+# unit-test.lib.test.civet
+
+import {equal, truthy, succeeds} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+equal 2+2, 4
+truthy (2+2 == 4)
+succeeds () => return

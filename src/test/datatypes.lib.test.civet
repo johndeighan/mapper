@@ -89,8 +89,8 @@ equal jsType(sampleVal.inf), 'inf'
 equal jsType(sampleVal.neginf), 'neginf'
 equal jsType(sampleVal.f), 'float'
 equal jsType(sampleVal.b), 'boolean'
-equal jsType(sampleVal.genFunc), 'generator'
-equal jsType(sampleVal.asyncGenFunc), 'asyncGenerator'
+equal jsType(sampleVal.genFunc), 'generatorFunction'
+equal jsType(sampleVal.asyncGenFunc), 'asyncGeneratorFunction'
 equal jsType(sampleVal.regularFunc), 'plainFunction'
 equal jsType(sampleVal.lambdaFunc), 'plainFunction'
 equal jsType(sampleVal.emptyHash), 'hash'
@@ -314,7 +314,7 @@ falsy  isIterator(sampleVal.lambdaFunc)
 		yield 3
 		return
 
-	equal jsType(agen), 'asyncGenerator'
+	equal jsType(agen), 'asyncGeneratorFunction'
 	)()
 
 # ---------------------------------------------------------------------------
@@ -325,5 +325,5 @@ falsy  isIterator(sampleVal.lambdaFunc)
 		yield 3
 		return
 
-	equal jsType(agen), 'generator'
+	equal jsType(agen), 'generatorFunction'
 	)()

@@ -46,3 +46,35 @@ export anyNotDefined := (...lItems: unknown[]): boolean =>
 			return true
 	return false
 
+# ---------------------------------------------------------------------------
+
+let lLogLines: string[] = []
+
+# ---------------------------------------------------------------------------
+
+export LOG := (x: unknown): void =>
+
+	console.log x
+	lLogLines.push String(x)
+	return
+
+# ---------------------------------------------------------------------------
+
+export ERR := (x: unknown): void =>
+
+	console.error x
+	lLogLines.push String(x)
+	return
+
+# ---------------------------------------------------------------------------
+
+export clearLog := (): void =>
+
+	lLogLines.length = 0
+	return
+
+# ---------------------------------------------------------------------------
+
+export getLog := (): string =>
+
+	return lLogLines.join('\n')

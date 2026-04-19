@@ -1,7 +1,11 @@
 # base-utils.lib.test.civet
 
-import {undef, deepCopy, sleep} from 'base-utils'
-import {equal, truthy, succeeds} from 'unit-test'
+import {
+	deepCopy, sleep,
+	undef, defined, notdefined, anyDefined, anyNotDefined,
+	LOG, ERR, clearLog, getLog,
+	} from 'base-utils'
+import {equal, truthy, falsy, succeeds} from 'unit-test'
 
 # ---------------------------------------------------------------------------
 
@@ -10,4 +14,30 @@ truthy (undef == undefined)
 equal {a:1, b:2}, deepCopy {a:1, b:2}
 
 # --- NOTE: sleep() is async, but deno awaits it
-succeeds () => sleep(2)
+succeeds () => sleep(0.1)
+
+truthy defined(42)
+truthy defined('abc')
+truthy notdefined(undef)
+truthy notdefined(null)
+truthy anyDefined(null, 42, undef)
+truthy anyNotDefined(null, 42, undef)
+
+falsy defined(undef)
+falsy defined(null)
+falsy notdefined(42)
+falsy notdefined('abc')
+falsy anyDefined(null, undef)
+falsy anyNotDefined(42, 'abc', false)
+
+(() =>
+	clearLog()
+	LOG 'abc'
+	LOG 'def'
+	ERR 'ghi'
+	equal getLog(), """
+		abc
+		def
+		ghi
+		"""
+	)()

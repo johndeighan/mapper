@@ -37,30 +37,36 @@ trace := (x: unknown): void =>
 
 type TMapper<TIn, TOut> = (
 	x: TIn
+	i: number
 	) => TIterator<TOut>
 
 type TAccumMapper<TIn, TAccum extends TNonFunction> = (
 	x: TIn
 	acc: TAccum
+	i: number
 	) => TAccum
 
 type TBothMapper<TIn, TOut, TAccum extends TNonFunction> = (
 	x: TIn,
 	acc: TAccum
+	i: number
 	) => TIterator<TOut, TAccum>
 
 type TAsyncMapper<TIn, TOut> = (
 	x: TIn
+	i: number
 	) => TAsyncIterator<TOut>
 
 type TAsyncAccumMapper<TIn, TAccum extends TNonFunction> = (
 	x: TIn
 	acc: TAccum
+	i: number
 	) => Promise<TAccum>
 
 type TAsyncBothMapper<TIn, TOut, TAccum extends TNonFunction> = (
 	x: TIn,
 	acc: TAccum
+	i: number
 	) => TAsyncIterator<TOut, TAccum>
 
 # ---------------------------------------------------------------------------
@@ -72,12 +78,14 @@ export function MAPv1<TIn, TOut, TAccum extends TNonFunction>(
 		): TIterator<TOut>
 
 	iter := isArray(lItems) ? lItems.values() : lItems
+	let i = 0
 	loop
 		{value, done} := iter.next()
 		if done
 			break
 		else
-			yield* mapFunc(value)   # --- don't care about return value
+			yield* mapFunc(value, i)   # --- don't care about return value
+			i += 1
 	return
 
 # ---------------------------------------------------------------------------
@@ -90,12 +98,14 @@ export function MAPv2<TIn, TOut, TAccum extends TNonFunction>(
 		): TAccum
 
 	iter := isArray(lItems) ? lItems.values() : lItems
+	let i = 0
 	loop
 		{value, done} := iter.next()
 		if done
 			break
 		else
-			acc = mapFunc(value, acc)
+			acc = mapFunc(value, acc, i)
+			i += 1
 	return acc
 
 # ---------------------------------------------------------------------------
@@ -108,12 +118,14 @@ export function MAPv3<TIn, TOut, TAccum extends TNonFunction>(
 		): TIterator<TOut, TAccum>
 
 	iter := Array.isArray(lItems) ? lItems.values() : lItems
+	let i = 0
 	loop
 		{value, done} := iter.next()
 		if done
 			break
 		else
-			acc = yield* mapFunc(value, acc)
+			acc = yield* mapFunc(value, acc, i)
+			i += 1
 	return acc
 
 # ---------------------------------------------------------------------------
@@ -126,12 +138,14 @@ export function MAPv4<TIn, TOut, TAccum extends TNonFunction>(
 		nothing: void
 		): TAsyncIterator<TOut>
 
+	let i = 0
 	loop
 		{value, done} := await iter.next()
 		if done
 			break
 		else
-			yield* await mapFunc(value)   # --- don't care about return value
+			yield* await mapFunc(value, i)   # --- don't care about return value
+			i += 1
 	return
 
 # ---------------------------------------------------------------------------
@@ -144,12 +158,14 @@ export function MAPv5<TIn, TOut, TAccum extends TNonFunction>(
 		mapFunc: TAccumMapper<TIn, TAccum> | TAsyncAccumMapper<TIn, TAccum>
 		): Promise<TAccum>
 
+	let i = 0
 	loop
 		{value, done} := await iter.next()
 		if done
 			break
 		else
-			acc = await mapFunc(value, acc)
+			acc = await mapFunc(value, acc, i)
+			i += 1
 	return acc
 
 # ---------------------------------------------------------------------------
@@ -162,12 +178,14 @@ export function MAPv6<TIn, TOut, TAccum extends TNonFunction>(
 		mapFunc: TBothMapper<TIn, TOut, TAccum> | TAsyncBothMapper<TIn, TOut, TAccum>
 		): TAsyncIterator<TOut, TAccum>
 
+	let i = 0
 	loop
 		{value, done} := await iter.next()
 		if done
 			break
 		else
-			acc = yield* await mapFunc(value, acc)
+			acc = yield* await mapFunc(value, acc, i)
+			i += 1
 	return acc
 
 # ---------------------------------------------------------------------------
@@ -234,16 +252,14 @@ export function MAP<TIn, TOut, TAccum extends TNonFunction>(
 	if isAsyncIterator(lItems)
 		if isFunction(arg2)
 			mapFunc := arg2
-			typ := jsType(mapFunc)
-			trace "mapFunc is type '#{typ}'"
+			trace "mapFunc is type '#{jsType(mapFunc)}'"
 			return MAPv4 lItems, mapFunc
 		else
 			acc := arg2
 			mapFunc := arg3
 			obviously not isFunction(acc)
 			obviously isFunction(mapFunc)
-			typ := jsType(mapFunc)
-			trace "mapFunc is a '#{typ}'"
+			trace "mapFunc is a '#{jsType(mapFunc)}'"
 			if isGeneratorFunction(mapFunc)
 				# --- 3rd arg to MAPv6 is a generator function
 				# @ts-ignore
@@ -255,8 +271,7 @@ export function MAP<TIn, TOut, TAccum extends TNonFunction>(
 	else
 		if isFunction(arg2)
 			mapFunc := arg2
-			typ := jsType(mapFunc)
-			trace "mapFunc is a '#{typ}'"
+			trace "mapFunc is a '#{jsType(mapFunc)}'"
 			if (jsType(mapFunc) == 'asyncGenerator')
 				# @ts-ignore
 				return MAPv4 lItems, mapFunc
@@ -268,8 +283,7 @@ export function MAP<TIn, TOut, TAccum extends TNonFunction>(
 			mapFunc := arg3
 			obviously not isFunction(acc)
 			obviously isFunction(mapFunc)
-			typ := jsType(mapFunc)
-			trace "mapFunc is a '#{typ}'"
+			trace "mapFunc is a '#{jsType(mapFunc)}'"
 			if isGeneratorFunction(mapFunc)
 				# --- 3rd arg to MAPv3 is a generator function
 				# @ts-ignore

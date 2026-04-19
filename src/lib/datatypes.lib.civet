@@ -38,11 +38,13 @@ export jsType := (x: unknown): string =>
 	switch typeof x
 		when 'undefined'
 			return 'undef'
-		when 'boolean', 'string', 'symbol', 'bigint'
+		when 'bigint'
+			return 'number'
+		when 'boolean', 'string', 'symbol'
 			return typeof x
 		when 'number'
 			if Number.isFinite(x)
-				return Number.isInteger(x) ? 'integer' : 'float'
+				return 'number'
 			else
 				return (
 					  Number.isNaN(x)  ? 'NaN'
@@ -68,6 +70,30 @@ export jsType := (x: unknown): string =>
 				: (x instanceof AsyncFunc)          ? 'asyncFunction'
 				:                                     'plainFunction'
 				)
+
+# ---------------------------------------------------------------------------
+
+export lPrimTypes := [
+	'boolean'
+	'string'
+	'number'
+	'symbol'
+	'regexp'
+	'plainFunction'
+	'asyncFunction'
+	'generatorFunction'
+	'asyncGeneratorFunction'
+	]
+
+export isPrimitive := (x: unknown): boolean =>
+
+	return lPrimTypes.includes jsType(x)
+
+# ---------------------------------------------------------------------------
+
+export isNonPrimitive := (x: unknown): boolean =>
+
+	return defined(x) ? not isPrimitive(x) : false
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -97,6 +123,12 @@ export isChar := (x: unknown): x is char =>
 export isBoolean := (x: unknown): x is boolean =>
 
 	return (typeof x == 'boolean') || (x instanceof Boolean)
+
+# ---------------------------------------------------------------------------
+
+export toBool := (x: unknown): boolean =>
+
+	return not not x
 
 # ---------------------------------------------------------------------------
 
@@ -244,32 +276,6 @@ export isNonEmptyString := (x: unknown): x is nonEmptyString =>
 
 	# --- must contain non-whitespace character
 	return isString(x) && defined(x.match /\S/)
-
-# ---------------------------------------------------------------------------
-
-export lPrimTypes := [
-	'undefined'
-	'boolean'
-	'string'
-	'symbol'
-	'bigint'
-	'number'
-	'function'
-	]
-
-export isPrimitive := (x: unknown): boolean =>
-
-	return (
-		   (x == null)
-		|| lPrimTypes.includes(typeof x)
-		|| (x instanceof RegExp)
-		)
-
-# ---------------------------------------------------------------------------
-
-export isNonPrimitive := (x: unknown): boolean =>
-
-	return not isPrimitive(x)
 
 # ---------------------------------------------------------------------------
 

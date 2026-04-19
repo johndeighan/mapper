@@ -1,0 +1,48 @@
+# source-map.lib.test.civet
+
+import {isEmpty} from 'datatypes'
+import {
+	TSourceMap, extractSourceMap,
+	splitFileContents, toInlineSourceMap,
+	} from 'source-map'
+import {equal, truthy} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+hOrgSrcMap := {
+	version: 3
+	file: "add.js"
+	sourceRoot: ""
+	sources: ["add.ts"]
+	names: ["add", "a", "b"]
+	mappings: "AAAA,OAAO,SAAS,IAAI,CAAC,EAAE;EACrB,OAAO,IAAI;AACb"
+	}
+
+(() =>
+	str := toInlineSourceMap hOrgSrcMap
+	console.log str
+
+	[code, hSrcMap] := splitFileContents str
+	truthy isEmpty(code)
+	equal hSrcMap, hOrgSrcMap
+	)()
+
+(() =>
+	contents := """
+		some code
+		//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYWRkLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiYWRkLnRzIl0sIm5hbWVzIjpbImFkZCIsImEiLCJiIl0sIm1hcHBpbmdzIjoiQUFBQSxPQUFPLFNBQVMsSUFBSSxDQUFDLEVBQUU7RUFDckIsT0FBTyxJQUFJO0FBQ2IifQ==
+		"""
+	[code, hSrcMap] := splitFileContents contents
+	equal code, 'some code\n'
+	equal hSrcMap, hOrgSrcMap
+	)()
+
+(() =>
+	contents := """
+		some code
+		//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYWRkLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiYWRkLnRzIl0sIm5hbWVzIjpbImFkZCIsImEiLCJiIl0sIm1hcHBpbmdzIjoiQUFBQSxPQUFPLFNBQVMsSUFBSSxDQUFDLEVBQUU7RUFDckIsT0FBTyxJQUFJO0FBQ2IifQ==
+		"""
+	[code, hSrcMap] := extractSourceMap contents
+	equal code, 'some code\n'
+	equal hSrcMap, hOrgSrcMap
+	)()

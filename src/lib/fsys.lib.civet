@@ -1,0 +1,93 @@
+# fsys.lib.civet
+
+import {expandGlobSync} from '@std/fs/expand-glob'
+
+import {normalizePath} from 'llfs'
+import {undef, defined, LOG} from 'base-utils'
+import {hash, isString, isEmpty, nonEmpty} from 'datatypes'
+import {getOptions} from 'llutils'
+import {MAP} from 'mapper'
+
+# ---------------------------------------------------------------------------
+# GENERATOR
+#
+#    Use like:
+#       for path of allFilesMatching(lPats)
+#          OR
+#       lPaths := Array.from(allFilesMatching(lPats))
+#
+#    NOTE: By default, searches from .
+#          By default, ignores files and directories whose
+#                      name begins with '.'
+
+export allFilesMatching := (
+		lPatterns: string | string[],
+		hOptions: hash = {}
+		): Generator<string> ->
+
+	type opt = {
+		root: string
+		hMoreGlobOptions: hash
+		lIgnoreDirs: string[]
+		includeDirs: boolean
+		}
+
+	{root, hMoreGlobOptions, lIgnoreDirs, includeDirs
+		} := getOptions<opt> hOptions, {
+			root: '.'
+			hMoreGlobOptions: {}
+			lIgnoreDirs: []
+			includeDirs: false
+			}
+
+	hGlobOptions: hash := {
+		root
+		includeDirs
+		followSymlinks: false
+		canonicalize: false
+		...hMoreGlobOptions
+		}
+
+	lAllPatterns: string[] := isString(lPatterns) ? [lPatterns] : lPatterns
+	lMorePatterns := (
+		  defined(lIgnoreDirs)
+		? lIgnoreDirs.map((x) => "! **/#{x}/**")
+		: []
+		)
+
+	[lPosPats, lNegPats] := splitPatterns lAllPatterns.concat(lMorePatterns...)
+	if isEmpty(lPosPats)
+		return
+	if nonEmpty(lNegPats)
+		hGlobOptions.exclude = lNegPats
+	setSkip := new Set<string>()
+	for pat of lPosPats
+		for entry of expandGlobSync(pat, hGlobOptions)
+			{path} := entry
+			if not setSkip.has(path)
+				npath := normalizePath(path)
+				if not npath.match(/// \/ \. ///)
+					yield npath
+				setSkip.add path
+	return
+
+# ---------------------------------------------------------------------------
+
+export splitPatterns := (
+		lPatterns: string[],
+		): [string[], string[]] =>
+
+	type TAccum = [string[], string[]]
+
+	acc0: TAccum := [[],[]]
+	accum := MAP lPatterns, acc0, (pat: string, acc: TAccum): TAccum ->
+		[lPos, lNeg] := acc
+		lMatches := pat.match ///^ \! \s+ (.*) $///
+		return (
+			  defined(lMatches)
+			? [ lPos,              lNeg.concat(lMatches[1])]
+			: [ lPos.concat(pat),  lNeg                    ]
+			)
+	return accum
+
+# ---------------------------------------------------------------------------

@@ -1,0 +1,91 @@
+# fsm.lib.test.civet
+
+import {undef, defined, notdefined} from 'base-utils'
+import {fromFSM} from 'fsm'
+import {equal} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+lStack := [
+	{ "type": "function", "src": "croak.lib.civet", "line": 66,   "name": "allStackFrames" },
+	{ "type": "method",   "src": "",                "line": null, "name": "next" },
+	{ "type": "method",   "src": "",                "line": null, "name": "from" },
+	{ "type": "function", "src": "croak.lib.civet", "line": 97,   "name": "getMyOutsideCaller" },
+	{ "type": "function", "src": "temp.lib.ts",     "line": 13,   "name": "func" },
+	{ "type": "function", "src": "temp.lib.ts",     "line": 20,   "name": "getTestName" },
+	{ "type": "function", "src": "temp.ts",         "line": 14,   "name": "func" },
+	{ "type": "script", "src": "temp.ts",           "line": 19,   "name": "" }
+	]
+
+# ---------------------------------------------------------------------------
+# --- find line number of call to getMyOutsideCaller()
+
+(() =>
+	equal 97, fromFSM lStack, [
+		{
+			# --- state 0
+			stateFunc: (frame) =>
+				{name} := frame
+				if (name == 'getMyOutsideCaller')
+					throw frame.line
+				else
+					return 0
+			}
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+# --- find line number of call to getMyOutsideCaller()
+
+(() =>
+	let lineNum: number? = undef
+
+	equal 97, fromFSM lStack, [
+		{
+			# --- state 0
+			stateFunc: (frame) =>
+				{name} := frame
+				if (name == 'getMyOutsideCaller')
+					lineNum = frame.line || undef
+					return -1
+				else
+					return 0
+			retFunc: () =>
+				return lineNum
+			}
+		]
+	)()
+
+# ---------------------------------------------------------------------------
+# --- find frame of caller of caller of getMyOutsideCaller()
+
+(() =>
+	let mySrc: string? = undef
+
+	equal fromFSM lFrames, [
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				if (
+						   (frame.name == 'getMyOutsideCaller')
+						&& frame.source.match(/\bcroak\.lib\.(?:ts|civet)$/)
+						)
+					return 1
+				else
+					return 0
+			}
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				{source} := frame
+				assert defined(source), "source after getMyOutsideCaller is undef"
+				mySrc = source
+				return 2
+			}
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				{source} := frame
+				if (source == mySrc)
+					return 2
+				else
+					throw frame
+			}
+		]

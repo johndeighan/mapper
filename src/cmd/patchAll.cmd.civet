@@ -1,0 +1,37 @@
+# patchAll.cmd.civet
+
+import {basename} from '@std/path'
+
+import {undef, defined, LOG} from 'base-utils'
+import {relpath} from 'llfs'
+import {sep, centered} from 'llutils'
+import {allFilesMatching} from 'fsys'
+import {
+	TSourceMap, extractSourceMapFrom, sourceMapTable, rewriteTsFile,
+	} from 'source-map'
+
+patch := (Deno.args[0] == '-patch')
+console.log "patch = #{patch}"
+
+# ---------------------------------------------------------------------------
+
+fixSrcMap := (hSrcMap: TSourceMap): void =>
+
+	hSrcMap.file = basename(hSrcMap.file)
+	for file,i of hSrcMap.sources
+		hSrcMap.sources[i] = basename(file)
+	return
+
+# ---------------------------------------------------------------------------
+
+debugger
+for path of allFilesMatching('**/*.ts')
+	[code, hSrcMap] := extractSourceMapFrom path
+	if defined(hSrcMap)
+		LOG centered relpath(path), {char: '=', color: 'cyan'}
+		LOG sourceMapTable(hSrcMap, {maxMaps: 2})
+		if patch
+			fixSrcMap(hSrcMap)
+			rewriteTsFile path, code, hSrcMap
+	else
+		LOG "no source map"

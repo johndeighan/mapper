@@ -1,11 +1,16 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/assert@*": "1.0.19",
+    "jsr:@std/bytes@^1.0.6": "1.0.6",
     "jsr:@std/fmt@*": "1.0.9",
+    "jsr:@std/fs@*": "1.0.23",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/path@*": "1.1.4",
+    "jsr:@std/path@^1.1.4": "1.1.4",
+    "jsr:@std/streams@*": "1.0.17",
     "npm:@danielx/civet@*": "0.11.6",
+    "npm:source-map@*": "0.7.6",
     "npm:uglify-js@*": "3.19.3"
   },
   "jsr": {
@@ -15,8 +20,18 @@
         "jsr:@std/internal"
       ]
     },
+    "@std/bytes@1.0.6": {
+      "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
+    },
     "@std/fmt@1.0.9": {
       "integrity": "2487343e8899fb2be5d0e3d35013e54477ada198854e52dd05ed0422eddcabe0"
+    },
+    "@std/fs@1.0.23": {
+      "integrity": "3ecbae4ce4fee03b180fa710caff36bb5adb66631c46a6460aaad49515565a37",
+      "dependencies": [
+        "jsr:@std/internal",
+        "jsr:@std/path@^1.1.4"
+      ]
     },
     "@std/internal@1.0.12": {
       "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
@@ -25,6 +40,12 @@
       "integrity": "1d2d43f39efb1b42f0b1882a25486647cb851481862dc7313390b2bb044314b5",
       "dependencies": [
         "jsr:@std/internal"
+      ]
+    },
+    "@std/streams@1.0.17": {
+      "integrity": "7859f3d9deed83cf4b41f19223d4a67661b3d3819e9fc117698f493bf5992140",
+      "dependencies": [
+        "jsr:@std/bytes"
       ]
     }
   },
@@ -84,6 +105,9 @@
     "picomatch@4.0.4": {
       "integrity": "sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A=="
     },
+    "source-map@0.7.6": {
+      "integrity": "sha512-i5uvt8C3ikiWeNZSVZNWcfZPItFQOsYTUAOkcUPGd8DqDy1uOUikjt5dG+uRlwyvR108Fb9DOd4GvXfT0N2/uQ=="
+    },
     "uglify-js@3.19.3": {
       "integrity": "sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==",
       "bin": true
@@ -103,9 +127,12 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1",
+      "jsr:@std/assert@*",
       "jsr:@std/fmt@*",
+      "jsr:@std/fs@*",
       "jsr:@std/path@*",
+      "jsr:@std/streams@*",
+      "npm:source-map@*",
       "npm:uglify-js@*"
     ]
   }

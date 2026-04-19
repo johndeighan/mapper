@@ -1,0 +1,10 @@
+# text-table.lib.test.civet
+
+import {
+	TextTable,
+	} from 'text-table'
+import {equal} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+equal 2+2, 4

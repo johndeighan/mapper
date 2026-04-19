@@ -1,0 +1,8 @@
+# llfs.lib.test.civet
+
+import {awaitAll} from 'promise-utils'
+import {equal} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+equal 2+2, 4

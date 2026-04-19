@@ -3,18 +3,30 @@
 		"dev": "deno run --watch main.ts"
 		},
 	"imports": {
-		"@std/assert": "jsr:@std/assert@1",
+		"@std/assert": "jsr:@std/assert",
+		"@std/streams": "jsr:@std/streams",
+		"@std/fs": "jsr:@std/fs",
 		"@std/fmt/colors": "jsr:@std/fmt/colors",
 		"@std/path": "jsr:@std/path",
 		"@std/fmt/printf": "jsr:@std/fmt/printf",
+		"@std/fs/expand-glob": "jsr:@std/fs/expand-glob",
 		"npm-uglify-js": "npm:uglify-js",
+		"npm-source-map": "npm:source-map",
+		"node-buffer": "node:buffer",
 
-		"base-utils": "file:///c:/Users/johnd/mapper/src/lib/base-utils.lib.ts",
-		"croak": "file:///c:/Users/johnd/mapper/src/lib/croak.lib.ts",
-		"unit-test": "file:///c:/Users/johnd/mapper/src/lib/unit-test.lib.ts"
-		"datatypes": "file:///c:/Users/johnd/mapper/src/lib/datatypes.lib.ts"
-		"iter-utils": "file:///c:/Users/johnd/mapper/src/lib/iter-utils.lib.ts"
-		"mapper": "file:///c:/Users/johnd/mapper/src/lib/mapper.lib.ts"
-		"promise-utils": "file:///c:/Users/johnd/mapper/src/lib/promise-utils.lib.ts"
+		"unify": "file:///C:/Users/johnd/mapper/src/lib/unify.lib.ts",
+		"llfs": "file:///C:/Users/johnd/mapper/src/lib/llfs.lib.ts",
+		"base-utils": "file:///C:/Users/johnd/mapper/src/lib/base-utils.lib.ts",
+		"croak": "file:///C:/Users/johnd/mapper/src/lib/croak.lib.ts",
+		"unit-test": "file:///C:/Users/johnd/mapper/src/lib/unit-test.lib.ts"
+		"datatypes": "file:///C:/Users/johnd/mapper/src/lib/datatypes.lib.ts"
+		"llutils": "file:///C:/Users/johnd/mapper/src/lib/llutils.lib.ts"
+		"text-table": "file:///C:/Users/johnd/mapper/src/lib/text-table.lib.ts"
+		"source-map": "file:///C:/Users/johnd/mapper/src/lib/source-map.lib.ts"
+		"iter-utils": "file:///C:/Users/johnd/mapper/src/lib/iter-utils.lib.ts"
+		"mapper": "file:///C:/Users/johnd/mapper/src/lib/mapper.lib.ts"
+		"fsys": "file:///C:/Users/johnd/mapper/src/lib/fsys.lib.ts"
+		"fsm": "file:///C:/Users/johnd/mapper/src/lib/fsm.lib.ts"
+		"promise-utils": "file:///C:/Users/johnd/mapper/src/lib/promise-utils.lib.ts"
 		}
 	}

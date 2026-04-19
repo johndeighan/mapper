@@ -21,8 +21,7 @@ import {
 	isIterator, isAsyncIterator, jsType,
 	} from 'datatypes'
 import {
-	equal, truthy, falsy, fails, succeeds,
-	isType, notType, sampleVal,
+	equal, truthy, falsy, fails, succeeds, sampleVal,
 	} from 'unit-test'
 
 # ---------------------------------------------------------------------------
@@ -63,9 +62,9 @@ equal jsType(''),          'string'
 equal jsType('abc'),       'string'
 equal jsType(Symbol('x')), 'symbol'
 equal jsType(Symbol()),    'symbol'
-equal jsType(12345n),      'bigint'
-equal jsType(42),          'integer'
-equal jsType(3.14),        'float'
+equal jsType(12345n),      'number'
+equal jsType(42),          'number'
+equal jsType(3.14),        'number'
 equal jsType(Number.NaN),  'NaN'
 equal jsType(Infinity),    'inf'
 equal jsType(-Infinity),   'neginf'
@@ -84,10 +83,10 @@ equal jsType(sampleVal.undef), 'undef'
 equal jsType(sampleVal.null), 'null'
 equal jsType(sampleVal.emptyStr), 'string'
 equal jsType(sampleVal.str), 'string'
-equal jsType(sampleVal.i), 'integer'
+equal jsType(sampleVal.i), 'number'
 equal jsType(sampleVal.inf), 'inf'
 equal jsType(sampleVal.neginf), 'neginf'
-equal jsType(sampleVal.f), 'float'
+equal jsType(sampleVal.f), 'number'
 equal jsType(sampleVal.b), 'boolean'
 equal jsType(sampleVal.genFunc), 'generatorFunction'
 equal jsType(sampleVal.asyncGenFunc), 'asyncGeneratorFunction'
@@ -97,14 +96,6 @@ equal jsType(sampleVal.emptyHash), 'hash'
 equal jsType(sampleVal.fullHash), 'hash'
 equal jsType(sampleVal.emptyList), 'array'
 equal jsType(sampleVal.fullList), 'array'
-
-# ---------------------------------------------------------------------------
-
-isType 'number', 42
-isType 'hash', {a:1, b:2}
-notType 'hashof<number>', {a:'a'}
-isType 'array', ['a', 2, undef]
-notType 'arrayof<number>', ['a']
 
 # ---------------------------------------------------------------------------
 
@@ -207,18 +198,18 @@ falsy  isNonEmptyString(42)
 falsy  isNonEmptyString('')
 falsy  isNonEmptyString('   ')
 
-truthy isPrimitive(null)
-truthy isPrimitive(undef)
-truthy isPrimitive(true)
-truthy isPrimitive('abc')
-truthy isPrimitive(Symbol())
-truthy isPrimitive(12345n)
-truthy isPrimitive(42)
-truthy isPrimitive(3.14)
-truthy isPrimitive((x: string): string => 'abc')
-truthy isPrimitive(/^abc$/)
-falsy  isPrimitive([1,2,3])
-falsy  isPrimitive({a:1, b:2})
+falsy isPrimitive(null), 'null'
+falsy isPrimitive(undef), 'undef'
+truthy isPrimitive(true), 'true'
+truthy isPrimitive('abc'), 'string'
+truthy isPrimitive(Symbol()), 'symbol'
+truthy isPrimitive(12345n), 'bitint'
+truthy isPrimitive(42), 'integer'
+truthy isPrimitive(3.14), 'float'
+truthy isPrimitive((x: string): string => 'abc'), 'function'
+truthy isPrimitive(/^abc$/), 'regexp'
+falsy  isPrimitive([1,2,3]), 'array'
+falsy  isPrimitive({a:1, b:2}), 'hash'
 
 truthy isNonPrimitive([1,2,3])
 truthy isNonPrimitive({a:1, b:2})

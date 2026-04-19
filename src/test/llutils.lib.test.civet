@@ -1,0 +1,23 @@
+# llutils.lib.test.civet
+
+import {
+	getOptions, sep,
+	} from 'llutils'
+import {equal} from 'unit-test'
+
+# ---------------------------------------------------------------------------
+
+equal 2+2, 4
+
+(() =>
+	type opt = {
+		aNumber: number
+		aString: string
+		}
+	{aNumber, aString} := getOptions<opt> {aNumber: 42}, {
+		aNumber: 23
+		aString: 'abc'
+		}
+	equal aNumber, 42
+	equal aString, 'abc'
+	)()

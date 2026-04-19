@@ -4,6 +4,11 @@ import {red} from '@std/fmt/colors'
 import {relative} from '@std/path'
 import {sprintf} from '@std/fmt/printf'
 
+import {undef, defined, notdefined, LOG} from 'base-utils'
+import {hash} from 'datatypes'
+import {fromFSM} from 'fsm'
+import {relpath} from 'llfs'
+
 export let onlyThrow = false
 
 # ---------------------------------------------------------------------------
@@ -34,27 +39,8 @@ export obviously: TAssertFunc := (
 		): asserts cond =>
 
 	if not cond
-		croak "obviously not"
+		croak "condition obviously not true"
 	return
-
-# ---------------------------------------------------------------------------
-
-export normalizePath := (path: string): string =>
-
-	newpath := path.replaceAll '\\', '/'
-	if (newpath.charAt(1) == ':')
-		return newpath.charAt(0).toUpperCase() + newpath.substring(1)
-	else
-		return newpath
-
-# ---------------------------------------------------------------------------
-
-export relpath := (
-		path: string,
-		root: string = Deno.cwd()
-		): string =>
-
-	return normalizePath relative(root, path)
 
 # ---------------------------------------------------------------------------
 
@@ -80,22 +66,6 @@ export type TStackFrame = {
 # ---------------------------------------------------------------------------
 
 export type TFrameFilter = (frame: TStackFrame) => boolean
-
-# ---------------------------------------------------------------------------
-
-export dumpFrame := (
-		frame: TStackFrame,
-		label: string = 'FRAME'
-		): void =>
-
-	{i, type, source, line, col, name} := frame
-	typeStr := sprintf('%-8s', type)
-	nameStr := sprintf('%-16s', name)
-	if source
-		console.log "#{label}[#{i}]: #{typeStr} #{nameStr} #{source}:#{line}:#{col}"
-	else
-		console.log "#{label}[#{i}]: #{typeStr} #{nameStr} <none>"
-	return
 
 # ---------------------------------------------------------------------------
 
@@ -131,7 +101,7 @@ export allStackFrames := (
 						: orgFrame.isToplevel()    ? 'script'
 						:                            'unknown'
 						)
-					source: fileName ? normalizePath(relpath(fileName)) : ''
+					source: fileName ? relpath(fileName) : ''
 					line :  orgFrame.getLineNumber()
 					col:    orgFrame.getColumnNumber()
 					name:   functionName || methodName || ''
@@ -174,6 +144,69 @@ export allStackFrames := (
 
 # ---------------------------------------------------------------------------
 
+export dumpFrame := (
+		frame: TStackFrame,
+		label: string = 'FRAME'
+		): void =>
+
+	{i, type, source, line, col, name} := frame
+	typeStr := sprintf('%-8s', type)
+	nameStr := sprintf('%-16s', name)
+	if source
+		LOG "#{label}[#{i}]: #{typeStr} #{nameStr} #{source}:#{line}:#{col}"
+	else
+		LOG "#{label}[#{i}]: #{typeStr} #{nameStr} <none>"
+	return
+
+# ---------------------------------------------------------------------------
+
+export getMyOutsideCaller := (
+	trace: boolean = false
+	): TStackFrame? =>
+
+	lFrames := Array.from(allStackFrames())
+	if trace
+		LOG '-'.repeat(70)
+		for frame of lFrames
+			dumpFrame frame
+
+	let mySrc: string? = undef
+	let outsideFrame: TStackFrame? = undef
+
+	return fromFSM lFrames, [
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				if (
+						   (frame.name == 'getMyOutsideCaller')
+						&& frame.source.match(/\bcroak\.lib\.(?:ts|civet)$/)
+						)
+					return 1
+				else
+					return 0
+			}
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				{source} := frame
+				assert defined(source), "source after getMyOutsideCaller is undef"
+				mySrc = source
+				return 2
+			}
+		{
+			stateFunc: (frame: TStackFrame): number =>
+				{source} := frame
+				if (source == mySrc)
+					return 2
+				else
+					outsideFrame = frame
+					return -1
+
+			retFunc: (): TStackFrame? =>
+				return outsideFrame as TStackFrame
+			}
+		]
+
+# ---------------------------------------------------------------------------
+
 export getErrStr := (err: unknown): string =>
 
 	if (typeof err == 'string')
@@ -185,20 +218,25 @@ export getErrStr := (err: unknown): string =>
 
 # ---------------------------------------------------------------------------
 
-type TNeverFunc = (err: unknown) => never
+type TNeverFunc = (err?: unknown) => never
 
-export croak: TNeverFunc := (err: unknown): never =>
+export croak: TNeverFunc := (
+		err: unknown = undef
+		): never =>
 
-	errMsg := getErrStr(err)
-	if onlyThrow
-		# --- allows the error to be caught and handled or ignored
-		throw new Error(errMsg)
+	if notdefined(err)
+		throw new Error()
 	else
-		console.error red('CROAK') + ': ' + errMsg
-		console.error "-----  STACK -----"
-		for frame of allStackFrames()
-			dumpFrame frame
-		Deno.exit()
+		errMsg := getErrStr(err)
+		if onlyThrow
+			# --- allows the error to be caught and handled or ignored
+			throw new Error(errMsg)
+		else
+			console.error red('CROAK') + ': ' + errMsg
+			console.error "-----  STACK -----"
+			for frame of allStackFrames()
+				dumpFrame frame
+			Deno.exit()
 
 # ---------------------------------------------------------------------------
 

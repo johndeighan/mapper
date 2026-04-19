@@ -1,0 +1,310 @@
+# source-map.lib.civet
+
+import {existsSync} from '@std/fs'
+import {basename} from '@std/path'
+import {SourceMapConsumer} from 'npm-source-map'
+import {Buffer} from "node-buffer";
+
+import {undef, defined, notdefined, LOG} from 'base-utils'
+import {normalizePath, relpath, toFullPath} from 'llfs'
+import {croak, getErrStr, assert} from 'croak'
+import {hash} from 'datatypes'
+import {getOptions, rtrim} from 'llutils'
+import {TextTable} from 'text-table'
+
+# ---------------------------------------------------------------------------
+
+export type TSourceMap = {
+	version: number;           # The version of the source map spec (usually 3)
+	file: string;              # The generated file this map is associated with
+	sources: string[];         # Array of URLs to the original source files
+	names: string[];           # Array of identifiers (names) used in the mappings
+	sourceRoot?: string;       # Optional: URL root for the sources
+	sourcesContent?: string[]; # Content of the original source files (optional)
+	mappings: string;          # The actual encoded mappings (Base64 VLQ)
+	lMappings?: number[][]     # [[i, line,col, line,col], ...]
+	}
+
+# ---------------------------------------------------------------------------
+
+export extractSourceMap := (
+		contents: string
+		): [string, TSourceMap?] =>
+
+	[code, hSrcMap] := splitFileContents(contents)
+	if defined(hSrcMap)
+		# --- convert all file paths to relative paths
+		hSrcMap.file = relpath(hSrcMap.file)
+		hSrcMap.sources = for path of hSrcMap.sources
+			relpath(path)
+		return [code, hSrcMap]
+	else
+		return [contents, undef]
+
+# ---------------------------------------------------------------------------
+
+export extractSourceMapFrom := (
+		path: string
+		): [string, TSourceMap?] =>
+
+	return extractSourceMap Deno.readTextFileSync(path)
+
+# ---------------------------------------------------------------------------
+
+export splitFileContents := (
+		contents: string
+		): [string, TSourceMap?] =>
+
+	lMatches := contents.match ///^
+			(.*)
+			\/ \/ \# \s+ sourceMappingURL
+			.*
+			base64,
+			(.+)
+			$///s
+	if (lMatches == null)
+		return [contents, undef]
+	[_, code, encodedStr] := lMatches
+	hSrcMap := JSON.parse(atob(encodedStr)) as TSourceMap
+	hSrcMap.lMappings = getMappings(hSrcMap.mappings)
+	return [code, hSrcMap]
+
+# ---------------------------------------------------------------------------
+
+export toInlineSourceMap := (
+		hSrcMap: TSourceMap
+		): string =>
+
+	# --- 1. Stringify and encode to Base64
+	{lMappings, ...hToUse} := hSrcMap    # hToUse will be missing key lMappings
+	mapString := JSON.stringify(hToUse)
+	base64Map := Buffer.from(mapString).toString('base64')
+
+	# --- 2. Wrap in the required comment format
+	return "//# sourceMappingURL=data:application/json;charset=utf-8;base64,#{base64Map}"
+
+# ---------------------------------------------------------------------------
+
+export rewriteTsFile := (
+		path: string
+		code: string
+		hSrcMap: TSourceMap
+		): void =>
+
+	assert path.endsWith('.ts'), "NOT A TS FILE"
+	Deno.writeTextFileSync path, rtrim(code) + "\n" + toInlineSourceMap(hSrcMap)
+	return
+
+# ---------------------------------------------------------------------------
+
+export filePosStr := (h: TFilePos): string =>
+
+	{source, line, col} := h
+	if defined(source)
+		fileName := basename(source)
+		return "#{fileName}:#{line}:#{col}"
+	else
+		return "unknown:#{line}:#{col}"
+
+# ---------------------------------------------------------------------------
+
+type TOrgPos = [fileNum: number, line: number, col: number]
+type TCompareResult = -1 | 0 | 1
+
+compare := (
+		find: [number, number],
+		gen:  [number, number]
+		): TCompareResult =>
+
+	return (
+		  (find[0] < gen[0]) ? -1
+		: (find[0] > gen[0]) ?  1
+		: (find[1] < gen[1]) ? -1
+		: (find[1] > gen[1]) ?  1
+		:                       0
+		)
+
+export orgPos := (
+		lMappings: number[][],
+		findLine: number,
+		findCol: number
+		): TOrgPos =>
+
+	assert (lMappings.length > 0), "Empty mappings array"
+	let pos = 0, end = lMappings.length - 1
+	while (pos <= end)
+
+		# --- Calculate the middle index
+		mid := Math.floor((pos + end) / 2)
+		[genLine, genCol, orgFile, orgLine, orgCol] := lMappings[mid]
+		switch compare([findLine, findCol], [genLine, genCol])
+			when 0
+				return [orgFile, orgLine, orgCol]
+			when -1
+				end = mid - 1;
+			when 1
+				pos = mid + 1;
+
+	# --- If the loop finishes, the target is not in the array
+	if (pos < lMappings.length)
+		usePos := (pos == 0) ? pos : pos-1
+		[genLine, genCol, orgFile, orgLine, orgCol] := lMappings[usePos]
+		return [orgFile, orgLine, orgCol]
+	else
+		last := lMappings.at(-1)
+		assert defined(last)
+		[genLine, genCol, orgFile, orgLine, orgCol] := last
+		return [orgFile, orgLine, orgCol]
+
+# ---------------------------------------------------------------------------
+
+type TStrictFilePos = {
+	source: string
+	line: number
+	col: number
+	}
+
+# --- This allows passing in a full stack frame
+#     as long as it has fields source, line and col
+export type TFilePos = TStrictFilePos & {
+	[key: string | symbol]: unknown
+	}
+
+# ---------------------------------------------------------------------------
+# --- returns undef if for any reason, it can't map
+
+export mapSourcePos := (
+		h: TFilePos,
+		): TStrictFilePos? =>
+
+	try
+		let {source, line, col} = h
+
+		assert source, "EMPTY source in mapSourcePos"
+
+		# --- This BS needs to be fixed
+		if source.includes('src/lib/src/lib/')
+			source = source.replace('src/lib/src/lib/', 'src/lib/')
+
+		assert existsSync(source), "No such source file: #{source}"
+		path := toFullPath(source)
+		[contents, hSrcMap] := extractSourceMapFrom path
+
+		if notdefined(hSrcMap)
+			LOG "Not found in source map: #{path}"
+			return undef
+		{version, sources, mappings, names} := hSrcMap as TSourceMap
+		assert (version == 3), "Bad version: #{version}"
+		lMappings := getMappings(mappings)
+		[fileNum, srcLine, srcCol] := orgPos(lMappings, line, col)
+
+		return {
+			source: sources[fileNum]
+			line: srcLine
+			col: srcCol
+			}
+	catch err
+		LOG getErrStr(err)
+		return undef
+
+# ---------------------------------------------------------------------------
+
+export sourceMapTable := (
+		hSrcMap: TSourceMap
+		hOptions: hash = {}
+		): string =>
+
+	assert (hSrcMap.version == 3), "Not version 3"
+	assert (hSrcMap.sources.length == 1), "Multiple sources"
+
+	type opt = {
+		linesOnly: boolean
+		maxMaps: number
+		}
+	{linesOnly, maxMaps} := getOptions<opt> hOptions, {
+		linesOnly: false
+		maxMaps: 10
+		}
+
+	fmtStr := (linesOnly ? 'r r r' : 'r r r r r')
+	table := new TextTable(fmtStr, {decPlaces: 0})
+	table.fullsep '='
+	table.title 'lMappings'
+	table.fullsep '='
+	lMappings := (
+		  defined(hSrcMap.lMappings)
+		? hSrcMap.lMappings
+		: getMappings(hSrcMap.mappings)
+		)
+	if linesOnly
+		table.labels  ['typescript', '=>', 'civet']
+		let prevLine = -1
+		let numMaps = 0
+		for item of lMappings
+			[line, col, iFile, iLine, iCol] := item
+			if (line != prevLine)
+				table.data [line, '=>', iLine]
+				prevLine = line
+				numMaps += 1
+				if (numMaps >= maxMaps)
+					break
+	else
+		table.labels  ['line', 'col', '=>', 'line', 'col']
+		for item,i of lMappings
+			if (i >= maxMaps)
+				break
+			[line, col, iFile, iLine, iCol] := item
+			table.data [line, col, '=>', iLine, iCol]
+	table.fullsep '='
+
+	{version, file, sources, names, sourceRoot} := hSrcMap
+	table2 := new TextTable('l l')
+	table2.data ['version',    "#{version}"]
+	table2.data ['file',       "#{file}"]
+	table2.data ['sources',    "#{sources}"]
+	table2.data ['sourceRoot', "#{sourceRoot || '<missing>'}"]
+
+	return [
+		table2.asString()
+		table.asString()
+		].join('\n')
+
+# ---------------------------------------------------------------------------
+
+export getMappings := (
+		data: string,
+		): number[][] =>
+
+	lMappings: number[][] := []
+	var sum: number[] = [0, 0, 0, 0]
+	for line,i of data.split(";")
+		sum[0] = 0
+		decodeLine(line).forEach (p) =>
+			for (i of [0...p.length])
+				sum[i] += p[i]
+			lMappings.push [i, sum[0], sum[1], sum[2], sum[3]]
+	return lMappings
+
+# ---------------------------------------------------------------------------
+
+export decodeLine := (line: string): number[][] =>
+
+	if (line == '')
+		return []
+
+	return for token of line.split(',')
+		lOutput: number[] := []
+		let i = 0
+		while (i < token.length)
+			let v = 0, d = atob("AAA" + token[i]).charCodeAt(2)
+			i += 1
+			v |= (d & 31)          # put lowest 5 bits of d into v
+			let shift = 5
+			while (d & 32)         # repeat if high bit of d is set
+				d = atob("AAA" + token[i]).charCodeAt(2)
+				i += 1
+				v |= (d & 31) << shift   # put lowest 5 bits of d into v
+				shift += 5
+			lOutput.push(v & 1 ? -(v >> 1) : v >> 1) # low bit is sign
+		lOutput
+

@@ -1,70 +1,65 @@
 # unit-test.lib.civet
 
-import {assert, assertEquals} from '@std/assert'
+import {doesNotThrow} from "node:assert"
+import {assert, assertEquals, assertThrows} from '@std/assert'
 
-import {justThrow, croak} from 'croak'
+import {unify} from 'unify'
 import {
 	undef, sleep, defined, notdefined,
 	} from 'base-utils'
+import {justThrow, croak, getMyOutsideCaller} from 'croak'
 import {TIterator, TAsyncIterator, TVoidFunc, hash} from 'datatypes'
 
-let nextNum = 0
+let nextNum = 1
 
 # ---------------------------------------------------------------------------
 
-export getTestName := (
-		name: string? = undef
-		): string =>
+getTestName := (): string =>
 
-	if (name == undefined)
-		nextNum += 1
-		return "test #{nextNum}"
-	else
-		return name
+	n := nextNum
+	nextNum += 1
+	frame := getMyOutsideCaller()
+	return "#{n}. " + (defined(frame) ? "line #{frame.line}" : "line ?")
 
 # ---------------------------------------------------------------------------
 
 export equal := (
 		value: unknown,
 		expected: unknown
-		testName: string? = undef
+		name?: string
 		): void =>
 
-	name := getTestName(testName)
-	Deno.test name, () => assertEquals(value, expected)
+	Deno.test name || getTestName(), () => assertEquals(value, expected)
 	return
 
 # ---------------------------------------------------------------------------
 
 export truthy := (
-	value: unknown
-	testName: string? = undef
-	): void =>
+		value: unknown
+		name?: string
+		): void =>
 
-	name := getTestName(testName)
-	Deno.test name, () => assert value
+	Deno.test name || getTestName(), () => assert value
 	return
 
 # ---------------------------------------------------------------------------
 
 export falsy := (
-	value: unknown
-	testName: string? = undef
-	): void =>
+		value: unknown
+		name?: string
+		): void =>
 
-	name := getTestName(testName)
-	Deno.test name, () => assert (not value)
+	Deno.test name || getTestName(), () => assert (not value)
 	return
 
 # ---------------------------------------------------------------------------
 
 export succeeds := (
 	func: TVoidFunc
-	testName: string? = undef
+	name?: string
 	): void =>
 
-	name := getTestName(testName)
-	Deno.test name, (): void =>
+	Deno.test name || getTestName(), (): void =>
 		await func()
 	return
 
@@ -72,11 +67,10 @@ export succeeds := (
 
 export fails := (
 	func: TVoidFunc
-	testName: string? = undef
+	name?: string
 	): void =>
 
-	name := getTestName(testName)
-	Deno.test name, (): void =>
+	Deno.test name || getTestName(), (): void =>
 		justThrow true
 		try
 			func()
@@ -92,12 +86,11 @@ export fails := (
 export generates := <TOut>(
 		value: TIterator<TOut>
 		expected: unknown
-		testName: string? = undef
+		name?: string
 		): void =>
 
 	lItems := [...value]
-	name := getTestName(testName)
-	Deno.test name, () => assertEquals(lItems, expected)
+	Deno.test name || getTestName(), () => assertEquals(lItems, expected)
 	return
 
 # ---------------------------------------------------------------------------
@@ -106,33 +99,24 @@ export generates := <TOut>(
 export generatesAsync := <TOut>(
 		value: TAsyncIterator<TOut>
 		expected: unknown
-		testName: string? = undef
+		name?: string
 		): void =>
 
 	lItems := await Array.fromAsync value
-	name := getTestName(testName)
-	Deno.test name, () => assertEquals(lItems, expected)
+	Deno.test name || getTestName(), () => assertEquals(lItems, expected)
 	return
 
 # ---------------------------------------------------------------------------
 
-export isType := (
-		typeStr: string,
-		value: unknown,
-		isOfType: Function? = undef
+export unifies := (
+		value: unknown
+		expected: unknown
+		name?: string
 		): void =>
 
-	# --- do nothing
-
-# ---------------------------------------------------------------------------
-
-export notType := (
-		typeStr: string,
-		value: unknown,
-		isOfType: Function? = undef
-		): void =>
-
-	# --- do nothing
+	Deno.test name || getTestName(), (): void =>
+		unify value, expected
+	return
 
 # ---------------------------------------------------------------------------
 # --- Create some values for testing

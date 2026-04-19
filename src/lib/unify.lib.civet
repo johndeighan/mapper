@@ -5,7 +5,7 @@ import {croak, assert, obviously} from 'croak'
 import {
 	hash, array, isHash, isArray, jsType,
 	} from 'datatypes'
-import {max} from 'llutils'
+import {max, range} from 'llutils'
 
 # ---------------------------------------------------------------------------
 # --- throws error if unification is not possible
@@ -47,6 +47,9 @@ export function unify(
 			obviously isArray(x)
 			obviously isArray(y)
 			maxlen := max(x.length, y.length)
-			return 0
+			let lNew = []
+			for i of range(maxlen)
+				lNew.push unify(x[i], y[i])
+			return lNew
 		else
 			croak "Not Implemented"

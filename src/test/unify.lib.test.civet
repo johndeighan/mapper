@@ -1,5 +1,6 @@
 # unify.lib.test.civet
 
+import {undef} from 'base-utils'
 import {unify} from 'unify'
 import {equal, succeeds, fails} from 'unit-test'
 
@@ -8,3 +9,4 @@ import {equal, succeeds, fails} from 'unit-test'
 succeeds () => unify {a:1}, {b:2}
 fails    () => unify {a:1, b:2}, {b:1}
 equal unify({a:1}, {b:2}), {a:1, b:2}
+equal unify([undef, 42], ['abc']), ['abc', 42]

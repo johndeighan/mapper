@@ -241,3 +241,10 @@ export max := (x: number, y: number): number =>
 
 # ---------------------------------------------------------------------------
 
+export range := (n: number): Generator<number, void, void> ->
+
+	for i of [0...n]
+		yield i
+	return
+
+# ---------------------------------------------------------------------------

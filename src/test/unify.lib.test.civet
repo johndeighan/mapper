@@ -8,5 +8,14 @@ import {equal, succeeds, fails} from 'unit-test'
 
 succeeds () => unify {a:1}, {b:2}
 fails    () => unify {a:1, b:2}, {b:1}
+succeeds () => unify 1, 1
+fails    () => unify 1, 2
+
 equal unify({a:1}, {b:2}), {a:1, b:2}
 equal unify([undef, 42], ['abc']), ['abc', 42]
+equal unify({a:1, b:2}, undef), {a:1, b:2}
+equal unify({a:1, b:2}, null), {a:1, b:2}
+equal unify([1,2], undef), [1,2]
+equal unify([1,2], null), [1,2]
+equal unify(undef, [1,2]), [1,2]
+equal unify(null, [1,2]), [1,2]

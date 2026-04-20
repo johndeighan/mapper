@@ -1,0 +1,9 @@
+export h := {
+	"parseOptions": {
+		"coffeeEq": true,
+		"coffeeForLoops": false,
+		"coffeeInterpolation": true,
+		"coffeeComment": true,
+		"tab": 3
+		}
+	}

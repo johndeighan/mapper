@@ -52,4 +52,7 @@ export function unify(
 				lNew.push unify(x[i], y[i])
 			return lNew
 		else
-			croak "Not Implemented"
+			if (x == y)
+				return x
+			else
+				croak "#{x} != #{y}"
